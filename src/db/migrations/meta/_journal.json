@@ -50,6 +50,13 @@
       "when": 1793994345395,
       "tag": "0006_cute_human_robot",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793994963833,
+      "tag": "0007_military_kat_farrell",
+      "breakpoints": true
     }
   ]
 }
