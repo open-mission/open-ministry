@@ -56,7 +56,7 @@ async function OnboardingContent() {
         </p>
       </div>
 
-      <OnboardingForm />
+      <OnboardingForm needsBirthday={!session.user.birthday} />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
   type AuthFormState,
 } from "@/app/actions/auth";
 import { FormAlert } from "@/components/auth/form-alert";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { SubmitButton } from "@/components/auth/submit-button";
 import {
   Field,
@@ -21,12 +22,13 @@ import { withRedirect } from "@/lib/redirects";
 
 type LoginFormProps = {
   redirectTo?: string;
+  initialError?: string;
 };
 
-export function LoginForm({ redirectTo }: LoginFormProps) {
+export function LoginForm({ redirectTo, initialError }: LoginFormProps) {
   const [state, formAction] = useActionState<AuthFormState, FormData>(
     signInAction,
-    undefined,
+    initialError ? { error: initialError } : undefined,
   );
 
   return (
@@ -41,6 +43,17 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
         <p className="text-sm leading-relaxed text-muted-foreground">
           Entre para continuar cuidando da sua igreja e da sua equipe.
         </p>
+      </div>
+
+      <div className="space-y-5">
+        <GoogleSignInButton redirectTo={redirectTo} />
+        <div className="flex items-center gap-3">
+          <span className="h-px flex-1 bg-border" />
+          <span className="text-[0.7rem] tracking-[0.16em] text-muted-foreground uppercase">
+            ou
+          </span>
+          <span className="h-px flex-1 bg-border" />
+        </div>
       </div>
 
       <form action={formAction} className="space-y-5">

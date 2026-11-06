@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { actionErrorMessage } from "@/lib/auth-errors";
 import { auth } from "@/lib/auth";
+import { birthdayFieldSchema } from "@/lib/profile";
 import { redirectTarget, safeRedirectPath } from "@/lib/redirects";
 
 export type AuthFormState =
@@ -15,6 +16,7 @@ export type AuthFormState =
         name?: string[];
         email?: string[];
         password?: string[];
+        birthday?: string[];
       };
     }
   | undefined;
@@ -30,6 +32,7 @@ const signUpSchema = z.object({
     .string()
     .min(8, "A senha precisa ter pelo menos 8 caracteres.")
     .max(128, "A senha pode ter no máximo 128 caracteres."),
+  birthday: birthdayFieldSchema,
   redirectTo: z.string().optional(),
 });
 
@@ -47,6 +50,7 @@ export async function signUpAction(
     name: formData.get("name"),
     email: formData.get("email"),
     password: formData.get("password"),
+    birthday: formData.get("birthday"),
     redirectTo: formData.get("redirectTo") ?? undefined,
   });
 
@@ -60,6 +64,7 @@ export async function signUpAction(
         name: parsed.data.name,
         email: parsed.data.email,
         password: parsed.data.password,
+        birthday: parsed.data.birthday,
       },
       headers: await headers(),
     });

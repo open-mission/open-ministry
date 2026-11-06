@@ -8,6 +8,7 @@ import {
   type AuthFormState,
 } from "@/app/actions/auth";
 import { FormAlert } from "@/components/auth/form-alert";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { SubmitButton } from "@/components/auth/submit-button";
 import {
   Field,
@@ -42,6 +43,20 @@ export function SignUpForm({ redirectTo }: SignUpFormProps) {
           Em poucos minutos sua igreja terá um espaço para organizar pessoas e
           convites.
         </p>
+      </div>
+
+      <div className="space-y-5">
+        <GoogleSignInButton
+          redirectTo={redirectTo}
+          label="Cadastrar com Google"
+        />
+        <div className="flex items-center gap-3">
+          <span className="h-px flex-1 bg-border" />
+          <span className="text-[0.7rem] tracking-[0.16em] text-muted-foreground uppercase">
+            ou
+          </span>
+          <span className="h-px flex-1 bg-border" />
+        </div>
       </div>
 
       <form action={formAction} className="space-y-5">
@@ -81,6 +96,26 @@ export function SignUpForm({ redirectTo }: SignUpFormProps) {
             />
             <FieldError
               errors={state?.fieldErrors?.email?.map((message) => ({
+                message,
+              }))}
+            />
+          </Field>
+
+          <Field data-invalid={Boolean(state?.fieldErrors?.birthday)}>
+            <FieldLabel htmlFor="birthday">Data de aniversário</FieldLabel>
+            <Input
+              id="birthday"
+              name="birthday"
+              type="date"
+              autoComplete="bday"
+              className="h-10"
+              aria-invalid={Boolean(state?.fieldErrors?.birthday)}
+            />
+            <FieldDescription>
+              Opcional. Usamos para lembrar aniversários da equipe.
+            </FieldDescription>
+            <FieldError
+              errors={state?.fieldErrors?.birthday?.map((message) => ({
                 message,
               }))}
             />

@@ -161,7 +161,10 @@ async function InvitationContent({ params }: InvitationPageProps) {
       }
       description="Ao aceitar, esta igreja se tornará seu espaço ativo no OpenMinistry."
     >
-      <AcceptInvitationForm invitationId={details.id} />
+      <AcceptInvitationForm
+        invitationId={details.id}
+        needsBirthday={!session.user.birthday}
+      />
     </InvitationCard>
   );
 }

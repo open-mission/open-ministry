@@ -17,7 +17,11 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
-export function OnboardingForm() {
+export function OnboardingForm({
+  needsBirthday = false,
+}: {
+  needsBirthday?: boolean;
+}) {
   const [state, formAction] = useActionState<ChurchFormState, FormData>(
     createChurchAction,
     undefined,
@@ -48,6 +52,28 @@ export function OnboardingForm() {
             }))}
           />
         </Field>
+
+        {needsBirthday ? (
+          <Field data-invalid={Boolean(state?.fieldErrors?.birthday)}>
+            <FieldLabel htmlFor="birthday">Data de aniversário</FieldLabel>
+            <Input
+              id="birthday"
+              name="birthday"
+              type="date"
+              autoComplete="bday"
+              className="h-10"
+              aria-invalid={Boolean(state?.fieldErrors?.birthday)}
+            />
+            <FieldDescription>
+              Opcional. Usamos para lembrar aniversários da equipe.
+            </FieldDescription>
+            <FieldError
+              errors={state?.fieldErrors?.birthday?.map((message) => ({
+                message,
+              }))}
+            />
+          </Field>
+        ) : null}
       </FieldGroup>
 
       {state?.error ? <FormAlert>{state.error}</FormAlert> : null}

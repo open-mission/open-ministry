@@ -7,6 +7,7 @@ import { z } from "zod";
 import { actionErrorMessage } from "@/lib/auth-errors";
 import { auth } from "@/lib/auth";
 import { buildOrganizationSlug } from "@/lib/format";
+import { birthdayFieldSchema, updateBirthday } from "@/lib/profile";
 import { getSession } from "@/lib/session";
 
 export type ChurchFormState =
@@ -14,6 +15,7 @@ export type ChurchFormState =
       error?: string;
       fieldErrors?: {
         name?: string[];
+        birthday?: string[];
       };
     }
   | undefined;
@@ -24,6 +26,7 @@ const churchSchema = z.object({
     .trim()
     .min(2, "Informe o nome da igreja.")
     .max(80, "O nome pode ter no máximo 80 caracteres."),
+  birthday: birthdayFieldSchema,
 });
 
 export async function createChurchAction(
@@ -32,6 +35,7 @@ export async function createChurchAction(
 ): Promise<ChurchFormState> {
   const parsed = churchSchema.safeParse({
     name: formData.get("name"),
+    birthday: formData.get("birthday"),
   });
 
   if (!parsed.success) {
@@ -45,6 +49,7 @@ export async function createChurchAction(
   }
 
   try {
+    await updateBirthday(parsed.data.birthday);
     await auth.api.createOrganization({
       body: {
         name: parsed.data.name,
