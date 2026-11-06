@@ -193,7 +193,7 @@ async function EventContent({
       </header>
 
       <section className="space-y-4">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
           <h2 className="font-heading text-2xl tracking-tight">Escala</h2>
           <span className="text-xs text-muted-foreground">
             {progress.totalFunctions === 0

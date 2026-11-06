@@ -149,11 +149,7 @@ async function BirthdaysContent() {
                           </span>
                         </div>
 
-                        {group.entries.length === 0 ? (
-                          <p className="text-xs text-muted-foreground">
-                            Nenhum aniversário neste mês.
-                          </p>
-                        ) : (
+                        {group.entries.length === 0 ? null : (
                           <ul className="space-y-1">
                             {group.entries.map((entry) => (
                               <li

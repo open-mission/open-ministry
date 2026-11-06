@@ -10,8 +10,8 @@ import {
 } from "@/app/actions/events";
 import { FormAlert } from "@/components/auth/form-alert";
 import { SubmitButton } from "@/components/auth/submit-button";
+import { DepartmentCheckboxRow } from "@/components/events/department-checkbox-row";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -283,21 +283,14 @@ function EditEventForm({
           ) : (
             <div className="grid gap-2 sm:grid-cols-2">
               {departments.map((department) => (
-                <label
+                <DepartmentCheckboxRow
                   key={department.id}
-                  htmlFor={`edit-event-department-${department.id}`}
-                  className="flex items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition-colors hover:bg-muted/50"
-                >
-                  <Checkbox
-                    id={`edit-event-department-${department.id}`}
-                    name="departments"
-                    value={department.id}
-                    defaultChecked={selectedDepartmentIds.includes(
-                      department.id,
-                    )}
-                  />
-                  {department.name}
-                </label>
+                  value={department.id}
+                  label={department.name}
+                  defaultChecked={selectedDepartmentIds.includes(
+                    department.id,
+                  )}
+                />
               ))}
             </div>
           )}

@@ -139,7 +139,7 @@ async function DepartmentContent({
         ) : null}
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+      <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
         <PeopleSection
           department={department}
           availableMembers={availableMembers}
@@ -165,7 +165,7 @@ function DepartmentSkeleton() {
         <Skeleton className="h-4 w-96 max-w-full" />
         <Skeleton className="h-4 w-72 max-w-full" />
       </div>
-      <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+      <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
         <Skeleton className="h-72 rounded-xl" />
         <Skeleton className="h-72 rounded-xl" />
       </div>
