@@ -14,7 +14,7 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 - [ ] Configurar deploy na Vercel (repositório GitHub, variáveis de ambiente e domínio).
   - [x] Repositório público criado em `open-mission/open-ministry`
-  - [ ] Variáveis de ambiente configuradas na Vercel
+  - [x] Variáveis de ambiente configuradas na Vercel (incluindo `DATABASE_AUTHENTICATED_URL`)
   - [ ] Domínio configurado
 
 ### Doing
@@ -43,6 +43,14 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - [x] Nome, email e avatar preenchidos automaticamente pelo Google
   - [x] Campo `birthday` no usuário, coletado no cadastro, onboarding e aceite de convite
   - [x] URL de autorização e persistência do aniversário validadas no banco real
+- [x] Configurar RLS no Neon com role dedicado e JWT para manter isolamento por igreja.
+  - [x] Role `app_authenticated` com `LOGIN`, sem `BYPASSRLS`, separado do owner
+  - [x] Better Auth JWT com `sub`/`org_id` e verificação no servidor (`jose`)
+  - [x] Claims injetados por transação em `request.jwt.claims`
+  - [x] Policies RLS para `organization`, `member`, `invitation` e `user`
+  - [x] Leituras do dashboard/membros usando a conexão autenticada
+  - [x] Smoke test de isolamento entre duas igrejas
+  - [x] Role, migrations e `DATABASE_AUTHENTICATED_URL` aplicados no banco/Vercel de produção
 
 ## Comentários ao Usuário (Para agentes deixar mensagens para os seres humanos)
 
@@ -50,3 +58,4 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 - **06/11/2026:** Organizations concluído. O cadastro leva ao onboarding, onde o primeiro usuário cria a igreja e se torna `owner`; convidados entram por link com validade de 7 dias e papel `member` ou `admin`. O dashboard lista membros e convites pendentes. Todos os fluxos foram exercitados contra o NeonDB, incluindo a server action de convite. Próxima task: OAuth2 do Google.
 - **06/11/2026:** OAuth2 do Google concluído. Nome, email e avatar vêm do perfil Google; a data de aniversário é opcional e coletada no cadastro, no onboarding e no aceite de convite. A URL de autorização foi validada (PKCE, escopos e redirect `http://localhost:3000/api/auth/callback/google`) e a persistência do aniversário foi confirmada no NeonDB. Próxima task: deploy na Vercel.
 - **06/11/2026:** Repositório público criado em `open-mission/open-ministry` sob a **Sustainable Use License** (modelo fair-code, similar ao n8n): permite ver o código e fazer self-host, mas restringe uso comercial por terceiros e exige preservar a identidade visual da Open Mission. Faltam as variáveis de ambiente e o domínio na Vercel.
+- **06/11/2026:** RLS concluído. A aplicação passou a usar duas conexões: `neondb_owner` para migrations/Better Auth e `app_authenticated` (sem `BYPASSRLS`) para leituras por igreja. O JWT do Better Auth carrega `sub`/`org_id`, os claims são injetados por transação e as policies isolam `organization`, `member`, `invitation` e `user`. O Neon MCP foi ativado via OAuth. O role e as migrations foram aplicados também no banco de produção; `DATABASE_AUTHENTICATED_URL` está configurada na Vercel (Production e Preview/develop). Próxima pendência: domínio na Vercel.

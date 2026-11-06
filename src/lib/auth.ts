@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { openAPI, organization } from "better-auth/plugins";
+import { jwt } from "better-auth/plugins/jwt";
 import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
@@ -71,6 +72,17 @@ export const auth = betterAuth({
     organization({
       // Convites ficam válidos por 7 dias.
       invitationExpiresIn: 60 * 60 * 24 * 7,
+    }),
+    jwt({
+      jwt: {
+        audience: "openministry",
+        expirationTime: "15m",
+        definePayload: ({ user, session }) => ({
+          email: user.email,
+          name: user.name,
+          org_id: session.activeOrganizationId ?? null,
+        }),
+      },
     }),
     openAPI(),
     // nextCookies must always be the last plugin.
