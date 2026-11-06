@@ -12,6 +12,7 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
+- [ ] Configurar deploy na Vercel (repositório GitHub, variáveis de ambiente e domínio).
 - [ ] Configurar o Better Auth para Organizations se for o primeiro usuário deve ser o Administrador ou Owner, mas se for link de invite ele entra na igreja. Configurar permissões iniciais básicas como member e admin. Depois vamos implementando outras. Por enquanto vamos usar o invite por link.
 - [ ] Configurar o Better Auth para funcionar com o OAuth2 do Google inicialmente. Usando como dados de usuários iniciais: Nome, Email, Profile Avatar, Data de Aniversário.
 
