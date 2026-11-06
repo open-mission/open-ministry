@@ -56,10 +56,20 @@ async function getJwks() {
   // Authentication, so a server-to-self HTTP call would receive the SSO
   // redirect instead of the keys.
   const rows = await db
-    .select({ publicKey: schema.jwks.publicKey })
+    .select({
+      id: schema.jwks.id,
+      publicKey: schema.jwks.publicKey,
+      alg: schema.jwks.alg,
+      crv: schema.jwks.crv,
+    })
     .from(schema.jwks);
 
-  const keys = rows.map((row) => JSON.parse(row.publicKey) as JWK);
+  const keys = rows.map((row) => ({
+    ...(JSON.parse(row.publicKey) as JWK),
+    kid: row.id,
+    ...(row.alg ? { alg: row.alg } : {}),
+    ...(row.crv ? { crv: row.crv } : {}),
+  }));
 
   return createLocalJWKSet({ keys });
 }

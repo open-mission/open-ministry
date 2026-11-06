@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import {
   ArrowRightIcon,
@@ -43,6 +44,8 @@ export default function AcceptInvitationPage({
 }
 
 async function InvitationContent({ params }: InvitationPageProps) {
+  await connection();
+
   const { invitationId } = await params;
   const details = await findInvitationDetails(invitationId);
 
