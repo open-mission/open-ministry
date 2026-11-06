@@ -10,8 +10,9 @@ web
 
 Líderes e administradores de igrejas locais, e os membros dessas igrejas. O
 administrador entra no painel para cuidar das pessoas, organizar departamentos e
-montar as escalas de cultos e eventos. O membro entra para ver a equipe, os
-aniversários e as escalas em que foi designado.
+montar as escalas de cultos e eventos. O membro entra pelo celular para ver os
+encontros em que foi escalado, a agenda do seu departamento, os aniversários e
+as notificações. Pessoas podem ser cadastradas antes de terem uma conta.
 
 ## Product Purpose
 
@@ -28,8 +29,12 @@ culto se repete — em vez de uma agenda genérica de eventos.
 
 ## Operating Context
 
-- O painel é usado principalmente em desktop, durante o planejamento semanal e
-  nos dias de culto; precisa funcionar bem também no celular.
+- O painel é usado em desktop durante o planejamento semanal e no celular nos
+  dias de culto. A experiência mobile é instalável como PWA e tem navegação
+  própria para o membro.
+- Pessoas podem existir na igreja antes de criarem uma conta: são cadastradas
+  pela liderança, entram em departamentos e escalas, e depois são vinculadas ao
+  usuário pelo email ou manualmente.
 - A igreja cadastra pessoas por convite por link e organiza o trabalho em
   departamentos com líderes.
 - Cultos e eventos podem ser recorrentes (semanal, quinzenal, mensal ou
@@ -48,6 +53,13 @@ culto se repete — em vez de uma agenda genérica de eventos.
 - Cultos e eventos com recorrência gerando ocorrências independentes; edição de
   uma ocorrência ou de todas; departamentos atuantes e escala por função do
   departamento.
+- Pessoas têm cadastro próprio, com vínculo opcional a um usuário; o vínculo é
+  automático pelo email ao aceitar um convite e também pode ser feito
+  manualmente por um administrador.
+- PWA mobile-first com home do membro, escalas pessoais, agenda do departamento e
+  perfil.
+- Central de notificações in-app com sino, badge, marcação de leitura e avisos
+  enviados pela administração.
 - Leituras de dados da igreja usam a conexão `app_authenticated` com RLS;
   mutações usam a conexão owner com autorização na aplicação.
 - Stack: Next.js 16 (App Router, Cache Components), React 19, Bun, Neon +

@@ -14,8 +14,18 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - [x] Repositório público criado em `open-mission/open-ministry`
   - [x] Variáveis de ambiente configuradas na Vercel (incluindo `DATABASE_AUTHENTICATED_URL`)
   - [ ] Domínio configurado — pendente de acesso ao DNS/domínio
+- [ ] Desenvolver o Mobile que permitira os admin gerenciar as partes, mas tbm permitira os membros veres os eventos em que eles estaram escalados, informacoes sobre a agenda em que o seu departamento está vinculado. Desenvolver o seu perfil page tbm.
+
+- [ ] Desenvolver barra de notificacao que será usado para notificar quando um usuario for escalado, quando tiver notificacoes, os admin podem enviar notificacoes para a sua equipe e assim por diante.
 
 ### Doing
+
+- [ ] Permitir cadastrar pessoas que ainda nao tem um usuario e depois poder vincular eles com um usuario cadastrado e/ou poder enviar um link de cadastro para essa pessoa.
+  - [ ] Modelo de pessoa com vínculo opcional a usuário
+  - [ ] Migrar departamentos e escalas para referenciar pessoas
+  - [ ] Cadastro, edição, exclusão e convite de pessoas
+  - [ ] Vínculo automático pelo email e vínculo manual pelo admin
+  - [ ] Aniversariantes e painel usando pessoas
 
 ### Done
 
