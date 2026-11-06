@@ -30,3 +30,5 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 
 ## Comentários ao Usuário (Para agentes deixar mensagens para os seres humanos)
+
+- **05/11/2026:** Ambiente base configurado (Next.js 16, Bun, shadcn/ui, Drizzle + Neon, Better Auth e Scalar). Falta apenas informar a `DATABASE_URL` real no `.env` para aplicar a migration inicial com `bun run db:migrate` e concluir a task de configuração do ambiente.
