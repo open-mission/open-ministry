@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CakeIcon,
+  CalendarDaysIcon,
+  ClipboardListIcon,
   HandHeartIcon,
   LayoutDashboardIcon,
   UsersIcon,
@@ -32,6 +34,18 @@ const items = [
     href: "/dashboard/departments",
     label: "Departamentos",
     icon: HandHeartIcon,
+    exact: false,
+  },
+  {
+    href: "/dashboard/events",
+    label: "Cultos e eventos",
+    icon: CalendarDaysIcon,
+    exact: false,
+  },
+  {
+    href: "/dashboard/schedules",
+    label: "Escalas",
+    icon: ClipboardListIcon,
     exact: false,
   },
   {

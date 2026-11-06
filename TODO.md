@@ -17,7 +17,6 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - [x] Variáveis de ambiente configuradas na Vercel (incluindo `DATABASE_AUTHENTICATED_URL`)
   - [ ] Domínio configurado
 
-- [ ] Implementar a funcionalidade de Cultos e Eventos para cadastrar dados do Evento e Definir os Departamentos e Equipes que estaram atuando nesse evento, a ideia é começarmos simples e depois vamos aperfeiçoando. Entao ao cadastrar um evento ou Culto podemos definir Quais departamentos estaram atuando nesse evento. Com isso teremos uma aba chamado Escala que nos permite definir as pessoas que irao atuar nessa evento/culto, ele nao precisa configurar tudo na mesma hora, ele pode começar e depois terminar de ajustar. Com essa funcionalidade tbm teremos uma nova secao chamado Escalas, aonde poderemos ver todas as escalas criadas, as quejá passaram e as que virão. Assim Escala é um tipo de dados que pode estar vinculado a um evento ou culto. Ponto importante Quando cadastramos um evento podemos definri um evento recorreente (semanal, mensal, quinzenal ou customizado) mas precisamos de instancias separadas desse culto, pois a escala de um culto X recorrente que aconteceu por exemoplo nesse domingo, nao será a mesma que da semana que vem por exemplo. Mas quando for ajustarmos informacoes do evento precisamos da opcao de salvar esse ajusta apenas para esse evento ou para todos as ocorrencias.
 
 
 
@@ -67,6 +66,15 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - [x] Próximo aniversariante em evidência
   - [x] Privacidade: dia/mês para todos; ano e idade só para admin
   - [x] Cada pessoa pode completar a própria data de nascimento
+- [x] Implementar a funcionalidade de Cultos e Eventos para cadastrar dados do Evento e Definir os Departamentos e Equipes que estaram atuando nesse evento, a ideia é começarmos simples e depois vamos aperfeiçoando. Entao ao cadastrar um evento ou Culto podemos definir Quais departamentos estaram atuando nesse evento. Com isso teremos uma aba chamado Escala que nos permite definir as pessoas que irao atuar nessa evento/culto, ele nao precisa configurar tudo na mesma hora, ele pode começar e depois terminar de ajustar. Com essa funcionalidade tbm teremos uma nova secao chamado Escalas, aonde poderemos ver todas as escalas criadas, as quejá passaram e as que virão. Assim Escala é um tipo de dados que pode estar vinculado a um evento ou culto. Ponto importante Quando cadastramos um evento podemos definri um evento recorreente (semanal, mensal, quinzenal ou customizado) mas precisamos de instancias separadas desse culto, pois a escala de um culto X recorrente que aconteceu por exemoplo nesse domingo, nao será a mesma que da semana que vem por exemplo. Mas quando for ajustarmos informacoes do evento precisamos da opcao de salvar esse ajusta apenas para esse evento ou para todos as ocorrencias.
+  - [x] Cadastro de cultos e eventos com tipo, local, descrição, data, horário e duração
+  - [x] Recorrência semanal, quinzenal, mensal e personalizada, com ocorrências separadas
+  - [x] Edição e exclusão apenas desta ocorrência ou de toda a série
+  - [x] Departamentos atuando em cada evento
+  - [x] Escala por função do departamento, com pessoas do próprio departamento
+  - [x] Seção Escalas com os encontros futuros e o histórico
+  - [x] Admin gerencia eventos; líder do departamento monta a escala da sua equipe
+  - [x] Policies de leitura RLS para eventos, departamentos atuantes e escalas
 
 ## Comentários ao Usuário (Para agentes deixar mensagens para os seres humanos)
 
@@ -77,3 +85,4 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 - **06/11/2026:** RLS concluído. A aplicação passou a usar duas conexões: `neondb_owner` para migrations/Better Auth e `app_authenticated` (sem `BYPASSRLS`) para leituras por igreja. O JWT do Better Auth carrega `sub`/`org_id`, os claims são injetados por transação e as policies isolam `organization`, `member`, `invitation` e `user`. O Neon MCP foi ativado via OAuth. O role e as migrations foram aplicados também no banco de produção; `DATABASE_AUTHENTICATED_URL` está configurada na Vercel (Production e Preview/develop). Próxima pendência: domínio na Vercel.
 - **06/11/2026:** Departamentos concluído. Administradores criam e excluem ministérios e definem líderes; líderes editam o próprio departamento. Cada departamento tem funções com descrição opcional e pessoas com funções e nível de experiência, visível apenas para admin/líder. As novas tabelas têm policies de leitura RLS e grants para `app_authenticated`. Próxima task: aniversariantes.
 - **06/11/2026:** Aniversariantes concluído. O painel mostra hoje, amanhã e os próximos aniversários; a página dedicada lista os 12 meses a partir do mês atual, com o próximo aniversariante em destaque. O dia e o mês são visíveis para a igreja; ano e idade só para owner/admin. A própria pessoa pode completar a data de nascimento em `/dashboard/birthdays`. Próxima task: cultos, eventos e escalas.
+- **06/11/2026:** Cultos, eventos e escalas concluídos. Eventos têm tipo, local, descrição, duração e recorrência (semanal, quinzenal, mensal ou a cada N semanas), gerando ocorrências independentes com escala própria. A edição e a exclusão podem valer só para a ocorrência ou para toda a série. Cada evento define os departamentos atuantes e a escala é montada por função, com pessoas do próprio departamento; admin gerencia eventos e líderes montam a escala da sua equipe. A seção Escalas mostra os encontros futuros e o histórico. Faltam apenas o domínio na Vercel e a validação visual final.
