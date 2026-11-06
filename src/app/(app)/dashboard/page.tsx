@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import {
   ArrowRightIcon,
@@ -38,6 +39,8 @@ export default function DashboardPage() {
 }
 
 async function DashboardContent() {
+  await connection();
+
   const { organization, session, isAdmin } = await requireOrganizationContext();
 
   const members = organization.members;

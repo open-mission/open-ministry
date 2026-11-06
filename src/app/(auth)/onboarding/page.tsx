@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { ArrowRightIcon, ChurchIcon } from "lucide-react";
 
@@ -28,6 +29,8 @@ export default function OnboardingPage() {
 }
 
 async function OnboardingContent() {
+  await connection();
+
   const session = await requireSession();
   const context = await getOrganizationContext();
 
