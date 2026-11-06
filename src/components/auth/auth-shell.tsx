@@ -7,6 +7,7 @@ import {
   UsersIcon,
 } from "lucide-react";
 
+import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 type AuthShellProps = {
@@ -87,12 +88,15 @@ export function AuthShell({ children, contentClassName }: AuthShellProps) {
               OpenMinistry
             </span>
           </Link>
-          <Link
-            href="/"
-            className="ml-auto text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Voltar ao site
-          </Link>
+          <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle />
+            <Link
+              href="/"
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Voltar ao site
+            </Link>
+          </div>
         </header>
 
         <div className="flex flex-1 items-center justify-center px-5 pb-16 sm:px-8">

@@ -37,6 +37,11 @@ culto se repete — em vez de uma agenda genérica de eventos.
   usuário pelo email ou manualmente.
 - A igreja cadastra pessoas por convite por link e organiza o trabalho em
   departamentos com líderes.
+- Cada pessoa tem uma foto de perfil opcional, enviada pelo UploadThing. A
+  administração também personaliza o nome e o logo da igreja, que aparecem no
+  painel.
+- Donos e administradores podem entrar como uma pessoa da igreja para conferir
+  a experiência dela, com um aviso fixo para voltar à própria conta.
 - Cultos e eventos podem ser recorrentes (semanal, quinzenal, mensal ou
   customizado) e cada ocorrência tem sua própria escala.
 - Toda a interface é em português do Brasil.
@@ -57,20 +62,28 @@ culto se repete — em vez de uma agenda genérica de eventos.
   automático pelo email ao aceitar um convite e também pode ser feito
   manualmente por um administrador.
 - PWA mobile-first com home do membro, escalas pessoais, agenda do departamento e
-  perfil.
+  perfil em modo somente leitura, com edição sob demanda.
+- Foto de perfil enviada pelo UploadThing; a igreja tem nome e logo editáveis
+  por `owner`/`admin`, e o logo aparece no topo do painel.
+- Impersonação para `owner`/`admin`: a pessoa autorizada vê o painel como um
+  membro da própria igreja, com aviso fixo e retorno para a conta original. A
+  autorização é verificada por igreja e os endpoints HTTP administrativos do
+  Better Auth ficam bloqueados.
+- Tema claro, escuro ou sistema, com alternância no painel, no login e no site.
 - Central de notificações in-app com sino, badge, marcação de leitura e avisos
   enviados pela administração.
 - Leituras de dados da igreja usam a conexão `app_authenticated` com RLS;
   mutações usam a conexão owner com autorização na aplicação.
 - Stack: Next.js 16 (App Router, Cache Components), React 19, Bun, Neon +
-  Drizzle, Better Auth, shadcn/ui e Tailwind CSS 4.
+  Drizzle, Better Auth, UploadThing, shadcn/ui e Tailwind CSS 4.
 
 ## Brand Commitments
 
 - Nome OpenMinistry / Open Mission preservado.
 - Interface e documentação em português do Brasil.
 - Identidade visual já existente no produto: papel creme quente, verde-floresta
-  profundo, acento dourado, títulos em Fraunces e corpo em Geist.
+  profundo, acento dourado, títulos em Fraunces e corpo em Geist. A mesma
+  identidade se adapta ao tema escuro sem perder o caráter acolhedor.
 
 ## Evidence on Hand
 
@@ -88,7 +101,9 @@ culto se repete — em vez de uma agenda genérica de eventos.
 3. Planejamento e execução vivem juntos: o culto recorrente e a escala daquela
    ocorrência são coisas distintas.
 4. Privacidade por padrão: dados sensíveis, como idade e experiência, ficam com
-   quem lidera.
+   quem lidera, e o acesso como outra pessoa é restrito à liderança da igreja.
+5. A pessoa reconhece a igreja pelo nome e pelo logo; a identidade da igreja é
+   parte do cuidado, não um detalhe de configuração.
 
 ## Accessibility & Inclusion
 

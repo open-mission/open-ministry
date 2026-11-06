@@ -3,6 +3,7 @@ import { CrownIcon } from "lucide-react";
 import { RoleBadge } from "@/components/members/role-badge";
 import { DeletePersonButton } from "@/components/people/delete-person-button";
 import { EditPersonDialog } from "@/components/people/edit-person-dialog";
+import { ImpersonatePersonButton } from "@/components/people/impersonate-person-button";
 import { InvitePersonDialog } from "@/components/people/invite-person-dialog";
 import { LinkPersonDialog } from "@/components/people/link-person-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -43,11 +44,13 @@ export function PeopleTable({
   roleByUserId,
   linkableMembers,
   isAdmin,
+  currentUserId,
 }: {
   people: PersonRecord[];
   roleByUserId: Record<string, string>;
   linkableMembers: LinkableMember[];
   isAdmin: boolean;
+  currentUserId: string;
 }) {
   const withAccount = people.filter((person) => person.userId).length;
   const withoutAccount = people.length - withAccount;
@@ -156,6 +159,7 @@ export function PeopleTable({
                                 <PersonActions
                                   person={person}
                                   linkableMembers={linkableMembers}
+                                  currentUserId={currentUserId}
                                 />
                               </div>
                             </TableCell>
@@ -228,6 +232,7 @@ export function PeopleTable({
                         <PersonActions
                           person={person}
                           linkableMembers={linkableMembers}
+                          currentUserId={currentUserId}
                         />
                       </div>
                     ) : null}
@@ -292,9 +297,11 @@ function MembershipChips({
 function PersonActions({
   person,
   linkableMembers,
+  currentUserId,
 }: {
   person: PersonRecord;
   linkableMembers: LinkableMember[];
+  currentUserId: string;
 }) {
   const displayName = personDisplayName(person);
   const displayEmail = personDisplayEmail(person);
@@ -318,6 +325,12 @@ function PersonActions({
             : null,
         }}
       />
+      {person.userId && person.userId !== currentUserId ? (
+        <ImpersonatePersonButton
+          userId={person.userId}
+          personName={displayName}
+        />
+      ) : null}
       {!person.userId && displayEmail ? (
         <InvitePersonDialog
           person={{

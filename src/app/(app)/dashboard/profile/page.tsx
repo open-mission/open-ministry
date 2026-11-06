@@ -11,7 +11,7 @@ import {
 
 import { AssignmentList } from "@/components/app/assignment-list";
 import { RoleBadge } from "@/components/members/role-badge";
-import { ProfileForm } from "@/components/profile/profile-form";
+import { ProfileEditor } from "@/components/profile/profile-editor";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -140,11 +140,11 @@ async function ProfileContent() {
                 Dados pessoais
               </CardTitle>
               <CardDescription>
-                Atualize seu nome, aniversário e avatar.
+                Nome, email, aniversário e foto do perfil.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ProfileForm
+              <ProfileEditor
                 name={session.user.name}
                 email={session.user.email}
                 birthday={session.user.birthday ?? null}

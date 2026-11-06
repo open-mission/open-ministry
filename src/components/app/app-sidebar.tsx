@@ -22,6 +22,7 @@ import { getInitials, roleLabel } from "@/lib/format";
 
 type AppSidebarProps = {
   organizationName: string;
+  organizationLogo: string | null;
   role: string;
   user: {
     name: string;
@@ -32,6 +33,7 @@ type AppSidebarProps = {
 
 export function AppSidebar({
   organizationName,
+  organizationLogo,
   role,
   user,
 }: AppSidebarProps) {
@@ -42,9 +44,21 @@ export function AppSidebar({
           <SidebarMenuItem>
             <SidebarMenuButton asChild size="lg" tooltip="OpenMinistry">
               <Link href="/dashboard">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <ChurchIcon className="size-4" />
-                </span>
+                {organizationLogo ? (
+                  <Avatar className="size-8 shrink-0 rounded-lg ring-1 ring-foreground/10">
+                    <AvatarImage
+                      src={organizationLogo}
+                      alt={`Logo de ${organizationName}`}
+                    />
+                    <AvatarFallback className="rounded-lg bg-primary text-primary-foreground">
+                      <ChurchIcon className="size-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                    <ChurchIcon className="size-4" />
+                  </span>
+                )}
                 <span className="flex min-w-0 flex-col">
                   <span className="truncate font-heading text-base leading-tight tracking-tight">
                     OpenMinistry

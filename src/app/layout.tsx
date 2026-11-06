@@ -1,7 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Geist } from "next/font/google";
+import { Suspense } from "react";
 
 import { ServiceWorker } from "@/components/app/service-worker";
+import { UploadThingSSR } from "@/components/app/uploadthing-ssr";
+import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -47,14 +50,25 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
+      suppressHydrationWarning
       className={cn("font-sans", geist.variable, fraunces.variable)}
     >
       <body>
-        <TooltipProvider>
-          {children}
-          <Toaster mobileOffset={{ bottom: 80 }} />
-          <ServiceWorker />
-        </TooltipProvider>
+        <Suspense fallback={null}>
+          <UploadThingSSR />
+        </Suspense>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <TooltipProvider>
+            {children}
+            <Toaster mobileOffset={{ bottom: 80 }} />
+            <ServiceWorker />
+          </TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

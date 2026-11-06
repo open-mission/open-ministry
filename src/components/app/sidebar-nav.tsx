@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   CakeIcon,
   CalendarDaysIcon,
+  ChurchIcon,
   ClipboardListIcon,
   HandHeartIcon,
   LayoutDashboardIcon,
@@ -34,6 +35,12 @@ const items = [
     href: "/dashboard/departments",
     label: "Departamentos",
     icon: HandHeartIcon,
+    exact: false,
+  },
+  {
+    href: "/dashboard/church",
+    label: "Igreja",
+    icon: ChurchIcon,
     exact: false,
   },
   {

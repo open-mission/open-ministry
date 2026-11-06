@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { actionErrorMessage } from "@/lib/auth-errors";
 import { auth } from "@/lib/auth";
+import { syncUserAdminRole } from "@/lib/admin-role";
 import { buildOrganizationSlug } from "@/lib/format";
 import { ensurePersonForUser } from "@/lib/people";
 import { birthdayFieldSchema, updateBirthday } from "@/lib/profile";
@@ -67,6 +68,7 @@ export async function createChurchAction(
         image: session.user.image ?? null,
         birthday: parsed.data.birthday ?? session.user.birthday ?? null,
       });
+      await syncUserAdminRole(session.user.id);
     }
   } catch (error) {
     return { error: actionErrorMessage(error) };

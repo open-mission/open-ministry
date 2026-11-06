@@ -11,6 +11,7 @@ export async function AppSidebarLoader() {
   return (
     <AppSidebar
       organizationName={organization.name}
+      organizationLogo={organization.logo}
       role={role}
       user={{
         name: session.user.name,
