@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { AppSidebarLoader } from "@/components/app/app-sidebar-loader";
+import { ImpersonationBannerLoader } from "@/components/app/impersonation-banner-loader";
 import { MobileNav } from "@/components/app/mobile-nav";
 import { MobileNavShell } from "@/components/app/mobile-nav-shell";
 import { NotificationBarLoader } from "@/components/app/notification-bar-loader";
@@ -8,6 +9,7 @@ import {
   NotificationBellFallback,
   NotificationBellLoader,
 } from "@/components/app/notification-bell-loader";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
@@ -34,11 +36,15 @@ export default function DashboardLayout({
             <Suspense fallback={<NotificationBellFallback />}>
               <NotificationBellLoader />
             </Suspense>
+            <ThemeToggle />
             <span className="hidden text-xs tracking-[0.16em] text-muted-foreground uppercase sm:block">
               OpenMinistry
             </span>
           </div>
         </header>
+        <Suspense fallback={null}>
+          <ImpersonationBannerLoader />
+        </Suspense>
         <Suspense fallback={null}>
           <NotificationBarLoader />
         </Suspense>
