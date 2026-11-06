@@ -79,6 +79,7 @@ cadastrados e convidar novas pessoas para a igreja.
 | --- | --- |
 | `bun run dev` | Inicia o servidor de desenvolvimento |
 | `bun run build` | Gera o build de produção |
+| `bun run vercel-build` | Build da Vercel: roda as migrations em Production e depois o build |
 | `bun run start` | Inicia o build de produção |
 | `bun run lint` | Executa o ESLint |
 | `bun run typecheck` | Gera os tipos de rota e verifica o TypeScript |
@@ -124,6 +125,21 @@ src/
 - `feature/<nome>`: uma branch por tarefa, criada a partir de `develop`.
 
 Commits seguem [Conventional Commits](https://www.conventionalcommits.org/).
+
+## Deploy na Vercel
+
+O projeto está publicado na Vercel em `openmission/openministry`. O comando de
+build `vercel-build` aplica as migrations do Drizzle antes do build:
+
+- **Production** (`VERCEL_ENV=production`): executa `drizzle-kit migrate` e
+  depois `next build`.
+- **Preview** e desenvolvimento: executa apenas `next build`, para não alterar o
+  banco usado em produção.
+
+O `DATABASE_URL` precisa estar configurado no ambiente de Production da Vercel.
+As migrations são idempotentes: o Drizzle registra o que já foi aplicado, então
+deploys repetidos não recriam tabelas. Para desativar temporariamente, altere o
+Build Command no dashboard da Vercel para `bun run build`.
 
 ## Licença
 
