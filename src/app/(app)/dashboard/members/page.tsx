@@ -26,7 +26,8 @@ export default function MembersPage() {
 async function MembersContent() {
   await connection();
 
-  const { organization, isAdmin } = await requireOrganizationContext();
+  const { organization, isAdmin, session } =
+    await requireOrganizationContext();
   const people = await listPeople(organization.id);
   const roleByUserId = Object.fromEntries(
     organization.members.map((member) => [
@@ -85,6 +86,7 @@ async function MembersContent() {
         roleByUserId={roleByUserId}
         linkableMembers={linkableMembers}
         isAdmin={isAdmin}
+        currentUserId={session.user.id}
       />
 
       {isAdmin ? (

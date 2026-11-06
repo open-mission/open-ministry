@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { actionErrorMessage } from "@/lib/auth-errors";
 import { auth } from "@/lib/auth";
+import { syncUserAdminRole } from "@/lib/admin-role";
 import { findInvitationDetails } from "@/lib/invitations";
 import {
   ensurePersonForEmail,
@@ -193,6 +194,8 @@ export async function acceptInvitationAction(
       body: { invitationId: parsed.data.invitationId },
       headers: requestHeaders,
     });
+
+    await syncUserAdminRole(session.user.id);
 
     if (invitation) {
       await auth.api.setActiveOrganization({

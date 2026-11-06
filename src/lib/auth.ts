@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { openAPI, organization } from "better-auth/plugins";
+import { admin, openAPI, organization } from "better-auth/plugins";
 import { jwt } from "better-auth/plugins/jwt";
 import { eq } from "drizzle-orm";
 
@@ -73,6 +73,11 @@ export const auth = betterAuth({
     organization({
       // Convites ficam válidos por 7 dias.
       invitationExpiresIn: 60 * 60 * 24 * 7,
+    }),
+    admin({
+      // A autorização real é feita por igreja nas server actions; os endpoints
+      // HTTP do plugin admin ficam bloqueados em /api/auth/admin/*.
+      allowImpersonatingAdmins: true,
     }),
     jwt({
       jwt: {
