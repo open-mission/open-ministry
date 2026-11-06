@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 
 import { AppSidebarLoader } from "@/components/app/app-sidebar-loader";
+import { MobileNav } from "@/components/app/mobile-nav";
+import { MobileNavShell } from "@/components/app/mobile-nav-shell";
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
@@ -27,9 +29,12 @@ export default function DashboardLayout({
             OpenMinistry
           </span>
         </header>
-        <div className="flex flex-1 flex-col p-4 sm:p-6 lg:p-8">
+        <div className="flex flex-1 flex-col p-4 pb-24 sm:p-6 sm:pb-24 md:pb-6 lg:p-8">
           {children}
         </div>
+        <Suspense fallback={<MobileNavShell />}>
+          <MobileNav />
+        </Suspense>
       </SidebarInset>
     </SidebarProvider>
   );
