@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboardIcon, UsersIcon } from "lucide-react";
+import {
+  HandHeartIcon,
+  LayoutDashboardIcon,
+  UsersIcon,
+} from "lucide-react";
 
 import {
   SidebarMenu,
@@ -21,6 +25,12 @@ const items = [
     href: "/dashboard/members",
     label: "Pessoas",
     icon: UsersIcon,
+    exact: false,
+  },
+  {
+    href: "/dashboard/departments",
+    label: "Departamentos",
+    icon: HandHeartIcon,
     exact: false,
   },
 ];

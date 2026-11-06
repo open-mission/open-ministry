@@ -43,6 +43,13 @@
       "when": 1793987985579,
       "tag": "0005_fix_rls_claims",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793994345395,
+      "tag": "0006_cute_human_robot",
+      "breakpoints": true
     }
   ]
 }
