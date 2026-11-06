@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { InviteDialog } from "@/components/members/invite-dialog";
@@ -21,6 +22,8 @@ export default function MembersPage() {
 }
 
 async function MembersContent() {
+  await connection();
+
   const { organization, session, isAdmin } = await requireOrganizationContext();
 
   return (
