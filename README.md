@@ -45,8 +45,8 @@ cadastrados e convidar novas pessoas para a igreja.
    | `BETTER_AUTH_SECRET` | Segredo do Better Auth. Gere com `openssl rand -base64 32` |
    | `BETTER_AUTH_URL` | URL base da aplicação (`http://localhost:3000` em dev) |
    | `NEXT_PUBLIC_APP_URL` | URL pública usada pelo cliente |
-   | `GOOGLE_CLIENT_ID` | Client ID do Google OAuth (configurado na próxima etapa) |
-   | `GOOGLE_CLIENT_SECRET` | Client Secret do Google OAuth (configurado na próxima etapa) |
+   | `GOOGLE_CLIENT_ID` | Client ID do Google OAuth |
+   | `GOOGLE_CLIENT_SECRET` | Client Secret do Google OAuth |
 
 4. Aplique as migrations no banco:
 
@@ -124,6 +124,17 @@ src/
 - `feature/<nome>`: uma branch por tarefa, criada a partir de `develop`.
 
 Commits seguem [Conventional Commits](https://www.conventionalcommits.org/).
+
+## Licença
+
+Este projeto é **source-available**, não open source. O código pode ser visto,
+auto-hospedado e modificado para uso interno ou não comercial, mas a revenda, a
+prestação de serviço comercial a terceiros e a remoção da identidade visual
+dependem de autorização da Open Mission.
+
+A marca, o nome e a identidade visual da Open Ministry/OpenMinistry são
+propriedade da Open Mission e devem ser preservados em qualquer deploy. Veja o
+arquivo [LICENSE](./LICENSE) para os termos completos.
 
 ## Próximas etapas
 
