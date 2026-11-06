@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { actionErrorMessage } from "@/lib/auth-errors";
 import { auth } from "@/lib/auth";
+import { birthdayFieldSchema, updateBirthday } from "@/lib/profile";
 import { getSession } from "@/lib/session";
 
 export type InviteFormState =
@@ -29,6 +30,9 @@ export type InviteFormState =
 export type AcceptInvitationState =
   | {
       error?: string;
+      fieldErrors?: {
+        birthday?: string[];
+      };
     }
   | undefined;
 
@@ -46,6 +50,7 @@ const inviteSchema = z.object({
 
 const acceptInvitationSchema = z.object({
   invitationId: z.string().trim().min(1, "Convite inválido."),
+  birthday: birthdayFieldSchema,
 });
 
 async function getRequestOrigin(requestHeaders: Headers): Promise<string> {
@@ -152,10 +157,11 @@ export async function acceptInvitationAction(
 ): Promise<AcceptInvitationState> {
   const parsed = acceptInvitationSchema.safeParse({
     invitationId: formData.get("invitationId"),
+    birthday: formData.get("birthday"),
   });
 
   if (!parsed.success) {
-    return { error: "Convite inválido." };
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
   const session = await getSession();
@@ -165,6 +171,7 @@ export async function acceptInvitationAction(
   }
 
   try {
+    await updateBirthday(parsed.data.birthday);
     await auth.api.acceptInvitation({
       body: { invitationId: parsed.data.invitationId },
       headers: await headers(),
