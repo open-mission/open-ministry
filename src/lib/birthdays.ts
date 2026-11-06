@@ -1,3 +1,10 @@
+import {
+  personDisplayBirthday,
+  personDisplayImage,
+  personDisplayName,
+  type PersonLike,
+} from "@/lib/person-format";
+
 const TIME_ZONE = "America/Sao_Paulo";
 
 export type CalendarDate = {
@@ -7,8 +14,8 @@ export type CalendarDate = {
 };
 
 export type BirthdayEntry = {
-  memberId: string;
-  userId: string;
+  personId: string;
+  userId: string | null;
   name: string;
   image: string | null;
   month: number;
@@ -22,15 +29,7 @@ export type BirthdayEntry = {
   turningAge: number | null;
 };
 
-type BirthdayMember = {
-  id: string;
-  userId: string;
-  user: {
-    name: string;
-    image: string | null;
-    birthday: string | null;
-  };
-};
+type BirthdayPerson = PersonLike & { id: string };
 
 const monthFormatter = new Intl.DateTimeFormat("pt-BR", {
   month: "long",
@@ -134,18 +133,20 @@ function nextOccurrence(
 }
 
 export function buildBirthdayEntries(
-  members: BirthdayMember[],
+  people: BirthdayPerson[],
   options: { includeAge: boolean; today?: CalendarDate },
 ): BirthdayEntry[] {
   const today = options.today ?? getTodayInSaoPaulo();
   const entries: BirthdayEntry[] = [];
 
-  for (const member of members) {
-    if (!member.user.birthday) {
+  for (const person of people) {
+    const birthdayValue = personDisplayBirthday(person);
+
+    if (!birthdayValue) {
       continue;
     }
 
-    const birthday = parseBirthday(member.user.birthday);
+    const birthday = parseBirthday(birthdayValue);
 
     if (!birthday) {
       continue;
@@ -155,10 +156,10 @@ export function buildBirthdayEntries(
     const daysUntil = daysBetween(today, occurrence);
 
     entries.push({
-      memberId: member.id,
-      userId: member.userId,
-      name: member.user.name,
-      image: member.user.image,
+      personId: person.id,
+      userId: person.userId,
+      name: personDisplayName(person),
+      image: personDisplayImage(person),
       month: birthday.month,
       day: birthday.day,
       dateLabel: `${birthday.day} de ${monthLabel(birthday.month).toLowerCase()}`,

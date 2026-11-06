@@ -15,6 +15,7 @@ import { BirthdaysCard } from "@/components/birthdays/birthdays-card";
 import { InviteDialog } from "@/components/members/invite-dialog";
 import { RoleBadge } from "@/components/members/role-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,6 +31,12 @@ import {
 } from "@/lib/birthdays";
 import { getInitials, isAdminRole } from "@/lib/format";
 import { requireOrganizationContext } from "@/lib/organizations";
+import {
+  listPeople,
+  personDisplayEmail,
+  personDisplayImage,
+  personDisplayName,
+} from "@/lib/people";
 
 export const metadata: Metadata = {
   title: "Visão geral",
@@ -49,21 +56,25 @@ async function DashboardContent() {
   const { organization, session, isAdmin } = await requireOrganizationContext();
 
   const members = organization.members;
+  const people = await listPeople(organization.id);
+  const roleByUserId = new Map(
+    members.map((member) => [member.userId, member.role]),
+  );
   const pendingInvitations = organization.invitations.filter(
     (invitation) => invitation.status === "pending",
   );
   const admins = members.filter((member) => isAdminRole(member.role));
   const firstName = session.user.name.trim().split(/\s+/)[0] ?? "líder";
-  const recentMembers = [...members]
+  const recentPeople = [...people]
     .sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     )
     .slice(0, 4);
 
-  const hasTeam = members.length > 1 || pendingInvitations.length > 0;
+  const hasTeam = people.length > 1 || pendingInvitations.length > 0;
   const hasAdminTeam = admins.length > 1;
-  const birthdayEntries = buildBirthdayEntries(members, {
+  const birthdayEntries = buildBirthdayEntries(people, {
     includeAge: isAdmin,
     today: getTodayInSaoPaulo(),
   });
@@ -93,7 +104,7 @@ async function DashboardContent() {
         <StatCard
           icon={UsersIcon}
           label="Pessoas"
-          value={members.length}
+          value={people.length}
           hint="fazem parte da igreja"
         />
         <StatCard
@@ -154,38 +165,50 @@ async function DashboardContent() {
         <Card>
           <CardHeader>
             <CardTitle className="font-heading text-xl tracking-tight">
-              Equipe recente
+              Pessoas recentes
             </CardTitle>
             <CardDescription>
-              As pessoas que chegaram por último.
+              Quem chegou por último, com ou sem conta.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-1">
-            {recentMembers.map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/60"
-              >
-                <Avatar className="size-9">
-                  <AvatarImage
-                    src={member.user.image ?? undefined}
-                    alt={member.user.name}
-                  />
-                  <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
-                    {getInitials(member.user.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">
-                    {member.user.name}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {member.user.email}
-                  </p>
+            {recentPeople.map((person) => {
+              const role = person.userId
+                ? roleByUserId.get(person.userId)
+                : undefined;
+
+              return (
+                <div
+                  key={person.id}
+                  className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/60"
+                >
+                  <Avatar className="size-9">
+                    <AvatarImage
+                      src={personDisplayImage(person) ?? undefined}
+                      alt={personDisplayName(person)}
+                    />
+                    <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
+                      {getInitials(personDisplayName(person))}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
+                      {personDisplayName(person)}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {personDisplayEmail(person) ?? "Sem email cadastrado"}
+                    </p>
+                  </div>
+                  {role ? (
+                    <RoleBadge role={role} />
+                  ) : (
+                    <Badge variant="outline" className="font-normal">
+                      Sem conta
+                    </Badge>
+                  )}
                 </div>
-                <RoleBadge role={member.role} />
-              </div>
-            ))}
+              );
+            })}
 
             <Button
               asChild

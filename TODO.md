@@ -14,18 +14,16 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - [x] Repositório público criado em `open-mission/open-ministry`
   - [x] Variáveis de ambiente configuradas na Vercel (incluindo `DATABASE_AUTHENTICATED_URL`)
   - [ ] Domínio configurado — pendente de acesso ao DNS/domínio
-- [ ] Desenvolver o Mobile que permitira os admin gerenciar as partes, mas tbm permitira os membros veres os eventos em que eles estaram escalados, informacoes sobre a agenda em que o seu departamento está vinculado. Desenvolver o seu perfil page tbm.
-
 - [ ] Desenvolver barra de notificacao que será usado para notificar quando um usuario for escalado, quando tiver notificacoes, os admin podem enviar notificacoes para a sua equipe e assim por diante.
 
 ### Doing
 
-- [ ] Permitir cadastrar pessoas que ainda nao tem um usuario e depois poder vincular eles com um usuario cadastrado e/ou poder enviar um link de cadastro para essa pessoa.
-  - [ ] Modelo de pessoa com vínculo opcional a usuário
-  - [ ] Migrar departamentos e escalas para referenciar pessoas
-  - [ ] Cadastro, edição, exclusão e convite de pessoas
-  - [ ] Vínculo automático pelo email e vínculo manual pelo admin
-  - [ ] Aniversariantes e painel usando pessoas
+- [ ] Desenvolver o Mobile que permitira os admin gerenciar as partes, mas tbm permitira os membros veres os eventos em que eles estaram escalados, informacoes sobre a agenda em que o seu departamento está vinculado. Desenvolver o seu perfil page tbm.
+  - [ ] PWA instalável com manifest e ícones
+  - [ ] Navegação inferior no celular
+  - [ ] Home do membro com escalas pessoais e agenda do departamento
+  - [ ] Página de perfil com nome, aniversário e avatar
+  - [ ] Ajustes de responsividade nas telas de gestão
 
 ### Done
 
@@ -69,6 +67,12 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - [x] Próximo aniversariante em evidência
   - [x] Privacidade: dia/mês para todos; ano e idade só para admin
   - [x] Cada pessoa pode completar a própria data de nascimento
+- [x] Permitir cadastrar pessoas que ainda nao tem um usuario e depois poder vincular eles com um usuario cadastrado e/ou poder enviar um link de cadastro para essa pessoa.
+  - [x] Modelo de pessoa com vínculo opcional a usuário
+  - [x] Migrar departamentos e escalas para referenciar pessoas
+  - [x] Cadastro, edição, exclusão e convite de pessoas
+  - [x] Vínculo automático pelo email e vínculo manual pelo admin
+  - [x] Aniversariantes e painel usando pessoas
 - [x] Implementar a funcionalidade de Cultos e Eventos para cadastrar dados do Evento e Definir os Departamentos e Equipes que estaram atuando nesse evento, a ideia é começarmos simples e depois vamos aperfeiçoando. Entao ao cadastrar um evento ou Culto podemos definir Quais departamentos estaram atuando nesse evento. Com isso teremos uma aba chamado Escala que nos permite definir as pessoas que irao atuar nessa evento/culto, ele nao precisa configurar tudo na mesma hora, ele pode começar e depois terminar de ajustar. Com essa funcionalidade tbm teremos uma nova secao chamado Escalas, aonde poderemos ver todas as escalas criadas, as quejá passaram e as que virão. Assim Escala é um tipo de dados que pode estar vinculado a um evento ou culto. Ponto importante Quando cadastramos um evento podemos definri um evento recorreente (semanal, mensal, quinzenal ou customizado) mas precisamos de instancias separadas desse culto, pois a escala de um culto X recorrente que aconteceu por exemoplo nesse domingo, nao será a mesma que da semana que vem por exemplo. Mas quando for ajustarmos informacoes do evento precisamos da opcao de salvar esse ajusta apenas para esse evento ou para todos as ocorrencias.
   - [x] Cadastro de cultos e eventos com tipo, local, descrição, data, horário e duração
   - [x] Recorrência semanal, quinzenal, mensal e personalizada, com ocorrências separadas
@@ -90,3 +94,4 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 - **06/11/2026:** Aniversariantes concluído. O painel mostra hoje, amanhã e os próximos aniversários; a página dedicada lista os 12 meses a partir do mês atual, com o próximo aniversariante em destaque. O dia e o mês são visíveis para a igreja; ano e idade só para owner/admin. A própria pessoa pode completar a data de nascimento em `/dashboard/birthdays`. Próxima task: cultos, eventos e escalas.
 - **06/11/2026:** Cultos, eventos e escalas concluídos. Eventos têm tipo, local, descrição, duração e recorrência (semanal, quinzenal, mensal ou a cada N semanas), gerando ocorrências independentes com escala própria. A edição e a exclusão podem valer só para a ocorrência ou para toda a série. Cada evento define os departamentos atuantes e a escala é montada por função, com pessoas do próprio departamento; admin gerencia eventos e líderes montam a escala da sua equipe. A seção Escalas mostra os encontros futuros e o histórico.
 - **06/11/2026:** Validação final concluída. As novas páginas e diálogos foram revisados no navegador em 1440px e 390px; os fluxos reais de criar/editar/excluir série recorrente, criar departamento e função, adicionar/remover pessoa, definir liderança, atribuir função com experiência, escalar e remover da escala foram exercitados contra o NeonDB. As permissões foram conferidas com uma conta de líder de departamento (vê apenas a própria equipe e não gerencia eventos). Os dados de teste foram removidos. Pendência restante: domínio na Vercel.
+- **06/11/2026:** Pessoas pré-cadastradas concluído. Departamentos, escalas e aniversariantes passaram a referenciar `person`, que pode existir sem usuário; a migração fez o backfill das igrejas existentes. É possível criar, editar, excluir e convidar pessoas, vincular manualmente a uma conta e o vínculo automático acontece ao aceitar um convite pelo email. A tela de Pessoas mostra contas e pessoas sem conta, com departamentos e funções, e o mobile usa cartões em vez de tabela. Fluxos testados no navegador (criar, convidar, vincular, escalar sem conta, editar e excluir) e aceite de convite validado com vínculo automático e igreja ativa.

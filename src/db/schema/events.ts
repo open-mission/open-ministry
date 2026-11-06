@@ -9,8 +9,9 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-import { organization, user } from "./auth";
+import { organization } from "./auth";
 import { department, departmentFunction } from "./departments";
+import { person } from "./people";
 
 export const event = pgTable(
   "event",
@@ -98,19 +99,17 @@ export const scheduleAssignment = pgTable(
     functionId: text("function_id")
       .notNull()
       .references(() => departmentFunction.id, { onDelete: "cascade" }),
-    userId: text("user_id")
+    personId: text("person_id")
       .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
+      .references(() => person.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
     index("schedule_assignment_scheduleId_idx").on(table.scheduleId),
-    index("schedule_assignment_userId_idx").on(table.userId),
-    uniqueIndex("schedule_assignment_scheduleId_functionId_userId_uidx").on(
-      table.scheduleId,
-      table.functionId,
-      table.userId,
-    ),
+    index("schedule_assignment_personId_idx").on(table.personId),
+    uniqueIndex(
+      "schedule_assignment_scheduleId_functionId_personId_uidx",
+    ).on(table.scheduleId, table.functionId, table.personId),
   ],
 );
 
@@ -160,9 +159,9 @@ export const scheduleAssignmentRelations = relations(
       fields: [scheduleAssignment.functionId],
       references: [departmentFunction.id],
     }),
-    user: one(user, {
-      fields: [scheduleAssignment.userId],
-      references: [user.id],
+    person: one(person, {
+      fields: [scheduleAssignment.personId],
+      references: [person.id],
     }),
   }),
 );

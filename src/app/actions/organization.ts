@@ -7,6 +7,7 @@ import { z } from "zod";
 import { actionErrorMessage } from "@/lib/auth-errors";
 import { auth } from "@/lib/auth";
 import { buildOrganizationSlug } from "@/lib/format";
+import { ensurePersonForUser } from "@/lib/people";
 import { birthdayFieldSchema, updateBirthday } from "@/lib/profile";
 import { getSession } from "@/lib/session";
 
@@ -50,13 +51,23 @@ export async function createChurchAction(
 
   try {
     await updateBirthday(parsed.data.birthday);
-    await auth.api.createOrganization({
+    const organization = await auth.api.createOrganization({
       body: {
         name: parsed.data.name,
         slug: buildOrganizationSlug(parsed.data.name),
       },
       headers: await headers(),
     });
+
+    if (organization) {
+      await ensurePersonForUser(organization.id, {
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+        image: session.user.image ?? null,
+        birthday: parsed.data.birthday ?? session.user.birthday ?? null,
+      });
+    }
   } catch (error) {
     return { error: actionErrorMessage(error) };
   }

@@ -106,7 +106,7 @@ export async function listEvents(organizationId: string) {
         with: {
           assignments: {
             with: {
-              user: true,
+              person: { with: { user: true } },
               function: true,
             },
           },
@@ -140,7 +140,7 @@ export async function getEvent(
         with: {
           assignments: {
             with: {
-              user: true,
+              person: { with: { user: true } },
               function: true,
             },
           },

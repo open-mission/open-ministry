@@ -26,13 +26,19 @@ import {
   type ExperienceLevel,
 } from "@/lib/experience";
 import { getInitials } from "@/lib/format";
+import {
+  personDisplayEmail,
+  personDisplayImage,
+  personDisplayName,
+} from "@/lib/person-format";
 
 type DepartmentMember = DepartmentRecord["members"][number];
 
 type AvailableMember = {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
+  hasAccount: boolean;
 };
 
 function sortMembers(members: DepartmentMember[]) {
@@ -41,7 +47,10 @@ function sortMembers(members: DepartmentMember[]) {
       return a.isLeader ? -1 : 1;
     }
 
-    return a.user.name.localeCompare(b.user.name, "pt-BR");
+    return personDisplayName(a.person).localeCompare(
+      personDisplayName(b.person),
+      "pt-BR",
+    );
   });
 }
 
@@ -119,17 +128,19 @@ export function PeopleSection({
                       <div className="flex min-w-48 items-center gap-3">
                         <Avatar className="size-9">
                           <AvatarImage
-                            src={member.user.image ?? undefined}
-                            alt={member.user.name}
+                            src={
+                              personDisplayImage(member.person) ?? undefined
+                            }
+                            alt={personDisplayName(member.person)}
                           />
                           <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
-                            {getInitials(member.user.name)}
+                            {getInitials(personDisplayName(member.person))}
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-1.5">
                             <p className="truncate text-sm font-medium">
-                              {member.user.name}
+                              {personDisplayName(member.person)}
                             </p>
                             {member.isLeader ? (
                               <Badge
@@ -140,9 +151,18 @@ export function PeopleSection({
                                 Líder
                               </Badge>
                             ) : null}
+                            {!member.person.userId ? (
+                              <Badge
+                                variant="outline"
+                                className="font-normal"
+                              >
+                                Sem conta
+                              </Badge>
+                            ) : null}
                           </div>
                           <p className="truncate text-xs text-muted-foreground">
-                            {member.user.email}
+                            {personDisplayEmail(member.person) ??
+                              "Sem email cadastrado"}
                           </p>
                         </div>
                       </div>
@@ -184,7 +204,7 @@ export function PeopleSection({
                           />
                           <DepartmentMemberActions
                             memberId={member.id}
-                            memberName={member.user.name}
+                            memberName={personDisplayName(member.person)}
                             isLeader={member.isLeader}
                             canManageLeaders={canManageLeaders}
                           />

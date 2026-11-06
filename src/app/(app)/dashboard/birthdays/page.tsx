@@ -21,6 +21,7 @@ import {
   type BirthdayEntry,
 } from "@/lib/birthdays";
 import { requireOrganizationContext } from "@/lib/organizations";
+import { listPeople } from "@/lib/people";
 
 export const metadata: Metadata = {
   title: "Aniversariantes",
@@ -38,29 +39,37 @@ async function BirthdaysContent() {
   await connection();
 
   const { organization, session, isAdmin } = await requireOrganizationContext();
+  const people = await listPeople(organization.id);
   const today = getTodayInSaoPaulo();
-  const entries = buildBirthdayEntries(organization.members, {
+  const entries = buildBirthdayEntries(people, {
     includeAge: isAdmin,
     today,
   });
   const groups = groupBirthdaysByMonth(entries, today);
-  const todayEntry = entries.find((entry) => entry.isToday);
-  const tomorrowEntry = entries.find((entry) => entry.isTomorrow);
-  const highlights = [
-    todayEntry ? { entry: todayEntry, label: "Hoje" } : null,
-    tomorrowEntry ? { entry: tomorrowEntry, label: "Amanhã" } : null,
-  ].filter(Boolean) as { entry: BirthdayEntry; label: string }[];
+  const highlights: { entry: BirthdayEntry; label: string }[] = [
+    ...entries
+      .filter((entry) => entry.isToday)
+      .map((entry) => ({ entry, label: "Hoje" })),
+    ...entries
+      .filter((entry) => entry.isTomorrow)
+      .map((entry) => ({ entry, label: "Amanhã" })),
+  ];
 
   if (highlights.length < 2) {
-    const fallback = entries.find(
-      (entry) =>
-        !highlights.some(
-          (highlight) => highlight.entry.memberId === entry.memberId,
-        ),
-    );
+    for (const entry of entries) {
+      if (
+        highlights.some(
+          (highlight) => highlight.entry.personId === entry.personId,
+        )
+      ) {
+        continue;
+      }
 
-    if (fallback) {
-      highlights.push({ entry: fallback, label: "Próximo" });
+      highlights.push({ entry, label: "Próximo" });
+
+      if (highlights.length >= 2) {
+        break;
+      }
     }
   }
 
@@ -69,7 +78,7 @@ async function BirthdaysContent() {
   const thisMonthCount = entries.filter(
     (entry) => entry.month === today.month,
   ).length;
-  const withoutBirthday = organization.members.length - entries.length;
+  const withoutBirthday = people.length - entries.length;
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
@@ -114,7 +123,7 @@ async function BirthdaysContent() {
               <div className="grid gap-3 sm:grid-cols-2">
                 {highlights.map(({ entry, label }, index) => (
                   <HighlightPanel
-                    key={`${entry.memberId}-${label}`}
+                    key={`${entry.personId}-${label}`}
                     entry={entry}
                     label={label}
                     tone={index === 0 ? "primary" : "accent"}
@@ -153,7 +162,7 @@ async function BirthdaysContent() {
                           <ul className="space-y-1">
                             {group.entries.map((entry) => (
                               <li
-                                key={entry.memberId}
+                                key={entry.personId}
                                 className="flex items-baseline justify-between gap-3"
                               >
                                 <span className="flex min-w-0 items-baseline gap-2">

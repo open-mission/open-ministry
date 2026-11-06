@@ -8,7 +8,8 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-import { organization, user } from "./auth";
+import { organization } from "./auth";
+import { person } from "./people";
 
 export const department = pgTable(
   "department",
@@ -61,18 +62,18 @@ export const departmentMember = pgTable(
     departmentId: text("department_id")
       .notNull()
       .references(() => department.id, { onDelete: "cascade" }),
-    userId: text("user_id")
+    personId: text("person_id")
       .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
+      .references(() => person.id, { onDelete: "cascade" }),
     isLeader: boolean("is_leader").default(false).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
     index("department_member_departmentId_idx").on(table.departmentId),
-    index("department_member_userId_idx").on(table.userId),
-    uniqueIndex("department_member_departmentId_userId_uidx").on(
+    index("department_member_personId_idx").on(table.personId),
+    uniqueIndex("department_member_departmentId_personId_uidx").on(
       table.departmentId,
-      table.userId,
+      table.personId,
     ),
   ],
 );
@@ -128,9 +129,9 @@ export const departmentMemberRelations = relations(
       fields: [departmentMember.departmentId],
       references: [department.id],
     }),
-    user: one(user, {
-      fields: [departmentMember.userId],
-      references: [user.id],
+    person: one(person, {
+      fields: [departmentMember.personId],
+      references: [person.id],
     }),
     assignments: many(departmentMemberFunction),
   }),
