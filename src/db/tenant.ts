@@ -1,10 +1,11 @@
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { Pool } from "@neondatabase/serverless";
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import { createLocalJWKSet, jwtVerify, type JWK } from "jose";
 import { cache } from "react";
 import { headers } from "next/headers";
 
+import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { getAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
@@ -14,7 +15,6 @@ const JWT_AUDIENCE = "openministry";
 
 const globalForTenant = globalThis as unknown as {
   __tenantPool?: Pool;
-  __tenantJwks?: ReturnType<typeof createRemoteJWKSet>;
 };
 
 export function isTenantDbEnabled(): boolean {
@@ -50,16 +50,18 @@ export type TenantTransaction = Parameters<
   Parameters<TenantDb["transaction"]>[0]
 >[0];
 
-function getJwks() {
-  const baseUrl = getAppBaseUrl();
+async function getJwks() {
+  // Read the public keys from the database instead of fetching this app's own
+  // /api/auth/jwks endpoint. Preview deployments are protected by Vercel
+  // Authentication, so a server-to-self HTTP call would receive the SSO
+  // redirect instead of the keys.
+  const rows = await db
+    .select({ publicKey: schema.jwks.publicKey })
+    .from(schema.jwks);
 
-  if (!globalForTenant.__tenantJwks) {
-    globalForTenant.__tenantJwks = createRemoteJWKSet(
-      new URL("/api/auth/jwks", baseUrl),
-    );
-  }
+  const keys = rows.map((row) => JSON.parse(row.publicKey) as JWK);
 
-  return globalForTenant.__tenantJwks;
+  return createLocalJWKSet({ keys });
 }
 
 const getAuthToken = cache(async (): Promise<string | null> => {
@@ -75,7 +77,7 @@ const getAuthToken = cache(async (): Promise<string | null> => {
 });
 
 async function verifyToken(token: string) {
-  const { payload } = await jwtVerify(token, getJwks(), {
+  const { payload } = await jwtVerify(token, await getJwks(), {
     issuer: getAppBaseUrl(),
     audience: JWT_AUDIENCE,
   });
