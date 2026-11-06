@@ -10,6 +10,10 @@ import {
   type EventListItem,
 } from "@/lib/events";
 import { getInitials } from "@/lib/format";
+import {
+  personDisplayImage,
+  personDisplayName,
+} from "@/lib/person-format";
 import { cn } from "@/lib/utils";
 
 export function ScheduleList({
@@ -71,11 +75,11 @@ function ScheduleRow({
   const people = [
     ...new Map(
       assignments.map((assignment) => [
-        assignment.userId,
-        assignment.user,
+        assignment.personId,
+        assignment.person,
       ]),
-    ).values(),
-  ];
+    ).entries(),
+  ].map(([personId, person]) => ({ personId, person }));
 
   return (
     <Link
@@ -108,18 +112,18 @@ function ScheduleRow({
         {people.length > 0 ? (
           <div className="flex items-center gap-2 pt-0.5">
             <div className="flex -space-x-2">
-              {people.slice(0, 5).map((person) => (
+              {people.slice(0, 5).map(({ personId, person }) => (
                 <Avatar
-                  key={person.id}
+                  key={personId}
                   className="size-6 ring-2 ring-card"
-                  title={person.name}
+                  title={personDisplayName(person)}
                 >
                   <AvatarImage
-                    src={person.image ?? undefined}
-                    alt={person.name}
+                    src={personDisplayImage(person) ?? undefined}
+                    alt={personDisplayName(person)}
                   />
                   <AvatarFallback className="bg-primary/10 text-[0.55rem] font-medium text-primary">
-                    {getInitials(person.name)}
+                    {getInitials(personDisplayName(person))}
                   </AvatarFallback>
                 </Avatar>
               ))}

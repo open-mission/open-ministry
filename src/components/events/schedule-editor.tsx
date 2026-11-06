@@ -13,13 +13,19 @@ import {
 } from "@/components/ui/card";
 import type { DepartmentRecord } from "@/lib/departments";
 import { getInitials } from "@/lib/format";
+import {
+  personDisplayEmail,
+  personDisplayImage,
+  personDisplayName,
+  type PersonLike,
+} from "@/lib/person-format";
 
 type Assignment = {
   id: string;
   departmentId: string;
   functionId: string;
-  userId: string;
-  user: { name: string; image: string | null };
+  personId: string;
+  person: PersonLike;
   function: { name: string };
 };
 
@@ -49,13 +55,14 @@ export function ScheduleEditor({
         const canManage =
           isAdmin ||
           department.members.some(
-            (member) => member.userId === currentUserId && member.isLeader,
+            (member) =>
+              member.person?.userId === currentUserId && member.isLeader,
           );
         const memberOptions = department.members
           .map((member) => ({
-            id: member.userId,
-            name: member.user.name,
-            email: member.user.email,
+            id: member.personId,
+            name: personDisplayName(member.person),
+            email: personDisplayEmail(member.person),
           }))
           .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
 
@@ -76,7 +83,9 @@ export function ScheduleEditor({
                     <CrownIcon className="size-3 text-accent-foreground" />
                     {leaders.length === 0
                       ? "Sem líder definido"
-                      : leaders.map((leader) => leader.user.name).join(", ")}
+                      : leaders
+                          .map((leader) => personDisplayName(leader.person))
+                          .join(", ")}
                   </span>
                   {department.functions.length > 0 ? (
                     <>
@@ -106,7 +115,7 @@ export function ScheduleEditor({
                   members={memberOptions}
                   assignments={departmentAssignments.map((assignment) => ({
                     functionId: assignment.functionId,
-                    userId: assignment.userId,
+                    personId: assignment.personId,
                   }))}
                 />
               ) : null}
@@ -165,20 +174,27 @@ export function ScheduleEditor({
                             >
                               <Avatar className="size-5">
                                 <AvatarImage
-                                  src={assignment.user.image ?? undefined}
-                                  alt={assignment.user.name}
+                                  src={
+                                    personDisplayImage(assignment.person) ??
+                                    undefined
+                                  }
+                                  alt={personDisplayName(assignment.person)}
                                 />
                                 <AvatarFallback className="bg-primary/10 text-[0.55rem] font-medium text-primary">
-                                  {getInitials(assignment.user.name)}
+                                  {getInitials(
+                                    personDisplayName(assignment.person),
+                                  )}
                                 </AvatarFallback>
                               </Avatar>
                               <span className="max-w-40 truncate">
-                                {assignment.user.name}
+                                {personDisplayName(assignment.person)}
                               </span>
                               {canManage ? (
                                 <RemoveAssignmentButton
                                   assignmentId={assignment.id}
-                                  userName={assignment.user.name}
+                                  userName={personDisplayName(
+                                    assignment.person,
+                                  )}
                                   functionName={departmentFunction.name}
                                 />
                               ) : null}

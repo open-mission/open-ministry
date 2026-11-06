@@ -3,6 +3,11 @@ import { ArrowUpRightIcon, CrownIcon } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/format";
+import {
+  personDisplayImage,
+  personDisplayName,
+  type PersonLike,
+} from "@/lib/person-format";
 
 type DepartmentSummary = {
   id: string;
@@ -12,7 +17,7 @@ type DepartmentSummary = {
   members: {
     id: string;
     isLeader: boolean;
-    user: { name: string; image: string | null };
+    person: PersonLike;
   }[];
 };
 
@@ -77,14 +82,14 @@ export function DepartmentCard({
               <Avatar
                 key={member.id}
                 className="size-7 ring-2 ring-card"
-                title={member.user.name}
+                title={personDisplayName(member.person)}
               >
                 <AvatarImage
-                  src={member.user.image ?? undefined}
-                  alt={member.user.name}
+                  src={personDisplayImage(member.person) ?? undefined}
+                  alt={personDisplayName(member.person)}
                 />
                 <AvatarFallback className="bg-primary/10 text-[0.6rem] font-medium text-primary">
-                  {getInitials(member.user.name)}
+                  {getInitials(personDisplayName(member.person))}
                 </AvatarFallback>
               </Avatar>
             ))}
@@ -103,7 +108,9 @@ export function DepartmentCard({
           <span className="truncate">
             {leaders.length === 0
               ? "Sem líder definido"
-              : leaders.map((leader) => leader.user.name).join(", ")}
+              : leaders
+                  .map((leader) => personDisplayName(leader.person))
+                  .join(", ")}
           </span>
         </div>
 

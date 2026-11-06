@@ -37,6 +37,10 @@ import {
   experienceLevelLabels,
   type ExperienceLevel,
 } from "@/lib/experience";
+import {
+  personDisplayName,
+  type PersonLike,
+} from "@/lib/person-format";
 
 type Assignment = {
   id: string;
@@ -56,7 +60,7 @@ export function MemberFunctionsDialog({
 }: {
   member: {
     id: string;
-    user: { name: string };
+    person: PersonLike;
     assignments: Assignment[];
   };
   functions: DepartmentFunction[];
@@ -75,7 +79,7 @@ export function MemberFunctionsDialog({
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label={`Gerenciar funções de ${member.user.name}`}
+          aria-label={`Gerenciar funções de ${personDisplayName(member.person)}`}
           title="Funções e experiência"
         >
           <SlidersHorizontalIcon />
@@ -84,7 +88,7 @@ export function MemberFunctionsDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-heading text-2xl tracking-tight">
-            {member.user.name}
+            {personDisplayName(member.person)}
           </DialogTitle>
           <DialogDescription>
             Funções em que esta pessoa atua e o nível de experiência em cada

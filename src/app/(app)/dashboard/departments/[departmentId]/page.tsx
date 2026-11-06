@@ -13,6 +13,11 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getDepartmentAccess } from "@/lib/departments";
 import { requireOrganizationContext } from "@/lib/organizations";
+import {
+  listPeople,
+  personDisplayEmail,
+  personDisplayName,
+} from "@/lib/people";
 
 export const metadata: Metadata = {
   title: "Departamento",
@@ -39,12 +44,15 @@ async function DepartmentContent({
 
   const { departmentId } = await params;
   const context = await requireOrganizationContext();
-  const access = await getDepartmentAccess(
-    context.organization.id,
-    departmentId,
-    context.session.user.id,
-    context.isAdmin,
-  );
+  const [access, people] = await Promise.all([
+    getDepartmentAccess(
+      context.organization.id,
+      departmentId,
+      context.session.user.id,
+      context.isAdmin,
+    ),
+    listPeople(context.organization.id),
+  ]);
 
   if (!access) {
     notFound();
@@ -52,13 +60,16 @@ async function DepartmentContent({
 
   const { department } = access;
   const leaders = department.members.filter((member) => member.isLeader);
-  const assignedIds = new Set(department.members.map((member) => member.userId));
-  const availableMembers = context.organization.members
-    .filter((member) => !assignedIds.has(member.userId))
-    .map((member) => ({
-      id: member.userId,
-      name: member.user.name,
-      email: member.user.email,
+  const assignedIds = new Set(
+    department.members.map((member) => member.personId),
+  );
+  const availableMembers = people
+    .filter((person) => !assignedIds.has(person.id))
+    .map((person) => ({
+      id: person.id,
+      name: personDisplayName(person),
+      email: personDisplayEmail(person),
+      hasAccount: Boolean(person.userId),
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
 
@@ -118,7 +129,7 @@ async function DepartmentContent({
                     className="inline-flex items-center gap-1.5 rounded-full bg-accent/60 px-2.5 py-0.5 font-medium text-accent-foreground"
                   >
                     <CrownIcon className="size-3" />
-                    {leader.user.name}
+                    {personDisplayName(leader.person)}
                   </span>
                 ))}
               </span>

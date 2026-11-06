@@ -34,7 +34,8 @@ import {
 type AvailableMember = {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
+  hasAccount: boolean;
 };
 
 export function AddDepartmentMemberDialog({
@@ -111,14 +112,14 @@ function AddMemberForm({
       <input type="hidden" name="departmentId" value={departmentId} />
 
       <FieldGroup>
-        <Field data-invalid={Boolean(state?.fieldErrors?.userId)}>
+        <Field data-invalid={Boolean(state?.fieldErrors?.personId)}>
           <FieldLabel htmlFor="department-member-person">Pessoa</FieldLabel>
           <NativeSelect
             id="department-member-person"
-            name="userId"
+            name="personId"
             defaultValue=""
             className="w-full [&_select]:h-10"
-            aria-invalid={Boolean(state?.fieldErrors?.userId)}
+            aria-invalid={Boolean(state?.fieldErrors?.personId)}
             required
           >
             <NativeSelectOption value="" disabled>
@@ -126,12 +127,14 @@ function AddMemberForm({
             </NativeSelectOption>
             {availableMembers.map((member) => (
               <NativeSelectOption key={member.id} value={member.id}>
-                {member.name} — {member.email}
+                {member.name}
+                {member.email ? ` — ${member.email}` : ""}
+                {member.hasAccount ? "" : " (sem conta)"}
               </NativeSelectOption>
             ))}
           </NativeSelect>
           <FieldError
-            errors={state?.fieldErrors?.userId?.map((message) => ({
+            errors={state?.fieldErrors?.personId?.map((message) => ({
               message,
             }))}
           />

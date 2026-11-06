@@ -38,12 +38,12 @@ type DepartmentFunction = {
 type DepartmentMember = {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
 };
 
 type Assignment = {
   functionId: string;
-  userId: string;
+  personId: string;
 };
 
 export function AddAssignmentDialog({
@@ -124,13 +124,13 @@ function AssignmentForm({
     }
   }, [state]);
 
-  const assignedUserIds = new Set(
+  const assignedPersonIds = new Set(
     assignments
       .filter((assignment) => assignment.functionId === functionId)
-      .map((assignment) => assignment.userId),
+      .map((assignment) => assignment.personId),
   );
   const availableMembers = members
-    .filter((member) => !assignedUserIds.has(member.id))
+    .filter((member) => !assignedPersonIds.has(member.id))
     .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
   const selectedFunction = functions.find(
     (departmentFunction) => departmentFunction.id === functionId,
@@ -169,14 +169,14 @@ function AssignmentForm({
           />
         </Field>
 
-        <Field data-invalid={Boolean(state?.fieldErrors?.userId)}>
+        <Field data-invalid={Boolean(state?.fieldErrors?.personId)}>
           <FieldLabel htmlFor="assignment-person">Pessoa</FieldLabel>
           <NativeSelect
             id="assignment-person"
-            name="userId"
+            name="personId"
             defaultValue=""
             className="w-full [&_select]:h-10"
-            aria-invalid={Boolean(state?.fieldErrors?.userId)}
+            aria-invalid={Boolean(state?.fieldErrors?.personId)}
             disabled={availableMembers.length === 0}
             required
           >
@@ -185,12 +185,13 @@ function AssignmentForm({
             </NativeSelectOption>
             {availableMembers.map((member) => (
               <NativeSelectOption key={member.id} value={member.id}>
-                {member.name} — {member.email}
+                {member.name}
+                {member.email ? ` — ${member.email}` : ""}
               </NativeSelectOption>
             ))}
           </NativeSelect>
           <FieldError
-            errors={state?.fieldErrors?.userId?.map((message) => ({
+            errors={state?.fieldErrors?.personId?.map((message) => ({
               message,
             }))}
           />

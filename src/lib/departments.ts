@@ -12,7 +12,7 @@ export async function listDepartments(organizationId: string) {
       },
       members: {
         with: {
-          user: true,
+          person: { with: { user: true } },
           assignments: {
             with: { function: true },
           },
@@ -38,7 +38,7 @@ export async function getDepartment(
       },
       members: {
         with: {
-          user: true,
+          person: { with: { user: true } },
           assignments: {
             with: { function: true },
           },
@@ -73,7 +73,7 @@ export async function getDepartmentAccess(
   }
 
   const membership = department.members.find(
-    (member) => member.userId === userId,
+    (member) => member.person?.userId === userId,
   );
   const isLeader = membership?.isLeader ?? false;
 
@@ -98,7 +98,10 @@ export async function getFunctionWithDepartment(functionId: string) {
 export async function getDepartmentMemberWithDepartment(memberId: string) {
   const row = await db.query.departmentMember.findFirst({
     where: eq(schema.departmentMember.id, memberId),
-    with: { department: true },
+    with: {
+      department: true,
+      person: { with: { user: true } },
+    },
   });
 
   return row ?? null;
@@ -109,25 +112,13 @@ export async function getAssignmentWithDepartment(assignmentId: string) {
     where: eq(schema.departmentMemberFunction.id, assignmentId),
     with: {
       member: {
-        with: { department: true },
+        with: {
+          department: true,
+          person: { with: { user: true } },
+        },
       },
     },
   });
 
   return row ?? null;
-}
-
-export async function isOrganizationMember(
-  organizationId: string,
-  userId: string,
-) {
-  const row = await db.query.member.findFirst({
-    where: and(
-      eq(schema.member.organizationId, organizationId),
-      eq(schema.member.userId, userId),
-    ),
-    columns: { id: true },
-  });
-
-  return Boolean(row);
 }

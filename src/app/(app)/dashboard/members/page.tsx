@@ -3,11 +3,13 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { InviteDialog } from "@/components/members/invite-dialog";
-import { MembersTable } from "@/components/members/members-table";
 import { PendingInvitations } from "@/components/members/pending-invitations";
+import { CreatePersonDialog } from "@/components/people/create-person-dialog";
+import { PeopleTable } from "@/components/people/people-table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrganizationContext } from "@/lib/organizations";
+import { listPeople } from "@/lib/people";
 
 export const metadata: Metadata = {
   title: "Pessoas",
@@ -24,7 +26,27 @@ export default function MembersPage() {
 async function MembersContent() {
   await connection();
 
-  const { organization, session, isAdmin } = await requireOrganizationContext();
+  const { organization, isAdmin } = await requireOrganizationContext();
+  const people = await listPeople(organization.id);
+  const roleByUserId = Object.fromEntries(
+    organization.members.map((member) => [
+      member.userId,
+      member.role,
+    ]),
+  );
+  const linkedUserIds = new Set(
+    people
+      .map((person) => person.userId)
+      .filter((userId): userId is string => Boolean(userId)),
+  );
+  const linkableMembers = organization.members
+    .filter((member) => !linkedUserIds.has(member.userId))
+    .map((member) => ({
+      id: member.userId,
+      name: member.user.name,
+      email: member.user.email,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
@@ -35,7 +57,7 @@ async function MembersContent() {
               Pessoas
             </p>
             <Badge variant="outline" className="font-normal">
-              {organization.members.length}
+              {people.length}
             </Badge>
           </div>
           <h1 className="font-heading text-4xl leading-none tracking-tight">
@@ -46,15 +68,23 @@ async function MembersContent() {
             <span className="font-medium text-foreground">
               {organization.name}
             </span>
-            . Administradores também podem convidar novas pessoas.
+            , com ou sem conta. Administradores também podem cadastrar pessoas,
+            convidar e vincular contas.
           </p>
         </div>
-        {isAdmin ? <InviteDialog /> : null}
+        {isAdmin ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <CreatePersonDialog />
+            <InviteDialog variant="outline" />
+          </div>
+        ) : null}
       </header>
 
-      <MembersTable
-        members={organization.members}
-        currentUserId={session.user.id}
+      <PeopleTable
+        people={people}
+        roleByUserId={roleByUserId}
+        linkableMembers={linkableMembers}
+        isAdmin={isAdmin}
       />
 
       {isAdmin ? (
@@ -72,7 +102,7 @@ function MembersSkeleton() {
         <Skeleton className="h-10 w-48" />
         <Skeleton className="h-4 w-96 max-w-full" />
       </div>
-      <Skeleton className="h-72 rounded-xl" />
+      <Skeleton className="h-80 rounded-xl" />
       <Skeleton className="h-48 rounded-xl" />
     </div>
   );

@@ -13,10 +13,10 @@ import {
   getDepartmentAccess,
   getDepartmentMemberWithDepartment,
   getFunctionWithDepartment,
-  isOrganizationMember,
 } from "@/lib/departments";
 import { EXPERIENCE_LEVELS } from "@/lib/experience";
 import { getOrganizationContext } from "@/lib/organizations";
+import { getPerson } from "@/lib/people";
 
 export type DepartmentFormState =
   | {
@@ -44,7 +44,7 @@ export type AddMemberFormState =
   | {
       error?: string;
       fieldErrors?: {
-        userId?: string[];
+        personId?: string[];
         isLeader?: string[];
       };
       success?: boolean;
@@ -115,7 +115,7 @@ const functionUpdateSchema = functionSchema.extend({
 
 const addMemberSchema = z.object({
   departmentId: z.string().trim().min(1, "Departamento inválido."),
-  userId: z.string().trim().min(1, "Escolha uma pessoa."),
+  personId: z.string().trim().min(1, "Escolha uma pessoa."),
   isLeader: z.preprocess(
     (value) => value === "on" || value === "true",
     z.boolean(),
@@ -473,7 +473,7 @@ export async function addDepartmentMemberAction(
 ): Promise<AddMemberFormState> {
   const parsed = addMemberSchema.safeParse({
     departmentId: formData.get("departmentId"),
-    userId: formData.get("userId"),
+    personId: formData.get("personId"),
     isLeader: formData.get("isLeader"),
   });
 
@@ -487,12 +487,12 @@ export async function addDepartmentMemberAction(
     return { error: result.error };
   }
 
-  const belongsToChurch = await isOrganizationMember(
+  const person = await getPerson(
     result.context.organization.id,
-    parsed.data.userId,
+    parsed.data.personId,
   );
 
-  if (!belongsToChurch) {
+  if (!person) {
     return { error: "Essa pessoa não faz parte da igreja." };
   }
 
@@ -502,7 +502,7 @@ export async function addDepartmentMemberAction(
     await db.insert(schema.departmentMember).values({
       id: randomUUID(),
       departmentId: parsed.data.departmentId,
-      userId: parsed.data.userId,
+      personId: parsed.data.personId,
       isLeader,
     });
   } catch (error) {

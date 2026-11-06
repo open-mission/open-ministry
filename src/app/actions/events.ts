@@ -45,7 +45,7 @@ export type ScheduleFormState =
       fieldErrors?: {
         departmentId?: string[];
         functionId?: string[];
-        userId?: string[];
+        personId?: string[];
       };
       success?: boolean;
     }
@@ -166,7 +166,7 @@ const scheduleAssignmentSchema = z.object({
   eventId: z.string().trim().min(1, "Evento inválido."),
   departmentId: z.string().trim().min(1, "Departamento inválido."),
   functionId: z.string().trim().min(1, "Escolha uma função."),
-  userId: z.string().trim().min(1, "Escolha uma pessoa."),
+  personId: z.string().trim().min(1, "Escolha uma pessoa."),
 });
 
 function errorCode(error: unknown): string | undefined {
@@ -634,7 +634,7 @@ export async function saveScheduleAssignmentAction(
     eventId: formData.get("eventId"),
     departmentId: formData.get("departmentId"),
     functionId: formData.get("functionId"),
-    userId: formData.get("userId"),
+    personId: formData.get("personId"),
   });
 
   if (!parsed.success) {
@@ -665,7 +665,7 @@ export async function saveScheduleAssignmentAction(
   const belongsToDepartment = await db.query.departmentMember.findFirst({
     where: and(
       eq(schema.departmentMember.departmentId, parsed.data.departmentId),
-      eq(schema.departmentMember.userId, parsed.data.userId),
+      eq(schema.departmentMember.personId, parsed.data.personId),
     ),
     columns: { id: true },
   });
@@ -686,7 +686,7 @@ export async function saveScheduleAssignmentAction(
       scheduleId: scheduleRow.id,
       departmentId: parsed.data.departmentId,
       functionId: parsed.data.functionId,
-      userId: parsed.data.userId,
+      personId: parsed.data.personId,
     });
   } catch (error) {
     if (isUniqueViolation(error)) {

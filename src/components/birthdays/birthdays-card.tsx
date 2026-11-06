@@ -17,8 +17,14 @@ import {
 } from "@/lib/birthdays";
 
 export function BirthdaysCard({ entries }: { entries: BirthdayEntry[] }) {
-  const today = entries.find((entry) => entry.isToday);
-  const tomorrow = entries.find((entry) => entry.isTomorrow);
+  const highlights = [
+    ...entries
+      .filter((entry) => entry.isToday)
+      .map((entry) => ({ entry, label: "Hoje" })),
+    ...entries
+      .filter((entry) => entry.isTomorrow)
+      .map((entry) => ({ entry, label: "Amanhã" })),
+  ];
   const upcoming = entries
     .filter((entry) => !entry.isToday && !entry.isTomorrow)
     .slice(0, 4);
@@ -60,12 +66,15 @@ export function BirthdaysCard({ entries }: { entries: BirthdayEntry[] }) {
           </div>
         ) : (
           <>
-            {today || tomorrow ? (
+            {highlights.length > 0 ? (
               <div className="grid gap-3 sm:grid-cols-2">
-                {today ? <Highlight entry={today} label="Hoje" /> : null}
-                {tomorrow ? (
-                  <Highlight entry={tomorrow} label="Amanhã" />
-                ) : null}
+                {highlights.map(({ entry, label }) => (
+                  <Highlight
+                    key={`${entry.personId}-${label}`}
+                    entry={entry}
+                    label={label}
+                  />
+                ))}
               </div>
             ) : null}
 
@@ -73,7 +82,7 @@ export function BirthdaysCard({ entries }: { entries: BirthdayEntry[] }) {
               <ul className="grid gap-1 sm:grid-cols-2 lg:grid-cols-4">
                 {upcoming.map((entry) => (
                   <li
-                    key={entry.memberId}
+                    key={entry.personId}
                     className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/60"
                   >
                     <span className="flex w-9 shrink-0 flex-col items-center">

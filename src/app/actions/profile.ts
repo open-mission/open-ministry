@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { syncPersonProfile } from "@/lib/people";
 import { birthdayFieldSchema, updateBirthday } from "@/lib/profile";
 import { getSession } from "@/lib/session";
 
@@ -46,6 +47,9 @@ export async function updateOwnBirthdayAction(
 
   try {
     await updateBirthday(parsed.data.birthday);
+    await syncPersonProfile(session.user.id, {
+      birthday: parsed.data.birthday,
+    });
   } catch (error) {
     console.error("Erro ao atualizar aniversário", error);
     return { error: "Não foi possível salvar sua data de nascimento." };
