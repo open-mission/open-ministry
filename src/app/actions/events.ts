@@ -13,10 +13,13 @@ import { EVENT_KINDS, RECURRENCE_OPTIONS } from "@/lib/event-options";
 import {
   applyTimeOfDay,
   endOfDayInZone,
+  formatEventFullDate,
+  formatEventTime,
   generateOccurrences,
   getEvent,
   zonedDateTimeToUtc,
 } from "@/lib/events";
+import { createNotifications } from "@/lib/notifications";
 import { getOrganizationContext } from "@/lib/organizations";
 
 export type EventFormState =
@@ -655,7 +658,7 @@ export async function saveScheduleAssignmentAction(
       eq(schema.departmentFunction.id, parsed.data.functionId),
       eq(schema.departmentFunction.departmentId, parsed.data.departmentId),
     ),
-    columns: { id: true },
+    columns: { id: true, name: true },
   });
 
   if (!targetFunction) {
@@ -697,6 +700,33 @@ export async function saveScheduleAssignmentAction(
     return { error: "Não foi possível salvar a escala." };
   }
 
+  const assignedPerson = await db.query.person.findFirst({
+    where: and(
+      eq(schema.person.id, parsed.data.personId),
+      eq(schema.person.organizationId, result.context.organization.id),
+    ),
+    with: { user: true },
+  });
+
+  if (
+    assignedPerson?.userId &&
+    assignedPerson.userId !== result.context.session.user.id
+  ) {
+    try {
+      await createNotifications({
+        organizationId: result.context.organization.id,
+        userIds: [assignedPerson.userId],
+        actorId: result.context.session.user.id,
+        type: "schedule_assigned",
+        title: `Você foi escalado em ${result.event.title}`,
+        body: `${result.access.department.name} · ${targetFunction.name} · ${formatEventFullDate(result.event.startsAt)} às ${formatEventTime(result.event.startsAt)}`,
+        href: `/dashboard/events/${result.event.id}`,
+      });
+    } catch (error) {
+      console.error("Erro ao notificar escala", error);
+    }
+  }
+
   revalidateEvents(parsed.data.eventId);
   return { success: true };
 }
@@ -712,6 +742,9 @@ export async function removeScheduleAssignmentAction(
     where: eq(schema.scheduleAssignment.id, assignmentId),
     with: {
       schedule: { with: { event: true } },
+      department: true,
+      function: true,
+      person: { with: { user: true } },
     },
   });
 
@@ -735,6 +768,25 @@ export async function removeScheduleAssignmentAction(
   } catch (error) {
     console.error("Erro ao remover da escala", error);
     return { ok: false, error: "Não foi possível remover da escala." };
+  }
+
+  if (
+    assignment.person.userId &&
+    assignment.person.userId !== result.context.session.user.id
+  ) {
+    try {
+      await createNotifications({
+        organizationId: result.context.organization.id,
+        userIds: [assignment.person.userId],
+        actorId: result.context.session.user.id,
+        type: "schedule_removed",
+        title: `Você saiu da escala de ${assignment.schedule.event.title}`,
+        body: `${assignment.department.name} · ${assignment.function.name} · ${formatEventFullDate(assignment.schedule.event.startsAt)} às ${formatEventTime(assignment.schedule.event.startsAt)}`,
+        href: `/dashboard/events/${assignment.schedule.event.id}`,
+      });
+    } catch (error) {
+      console.error("Erro ao notificar remoção da escala", error);
+    }
   }
 
   revalidateEvents(assignment.schedule.eventId);

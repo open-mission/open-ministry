@@ -3,6 +3,11 @@ import { Suspense } from "react";
 import { AppSidebarLoader } from "@/components/app/app-sidebar-loader";
 import { MobileNav } from "@/components/app/mobile-nav";
 import { MobileNavShell } from "@/components/app/mobile-nav-shell";
+import { NotificationBarLoader } from "@/components/app/notification-bar-loader";
+import {
+  NotificationBellFallback,
+  NotificationBellLoader,
+} from "@/components/app/notification-bell-loader";
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
@@ -25,10 +30,18 @@ export default function DashboardLayout({
           <SidebarTrigger />
           <Separator orientation="vertical" className="h-4" />
           <span className="text-sm font-medium">Painel</span>
-          <span className="ml-auto hidden text-xs tracking-[0.16em] text-muted-foreground uppercase sm:block">
-            OpenMinistry
-          </span>
+          <div className="ml-auto flex items-center gap-1">
+            <Suspense fallback={<NotificationBellFallback />}>
+              <NotificationBellLoader />
+            </Suspense>
+            <span className="hidden text-xs tracking-[0.16em] text-muted-foreground uppercase sm:block">
+              OpenMinistry
+            </span>
+          </div>
         </header>
+        <Suspense fallback={null}>
+          <NotificationBarLoader />
+        </Suspense>
         <div className="flex flex-1 flex-col p-4 pb-24 sm:p-6 sm:pb-24 md:pb-6 lg:p-8">
           {children}
         </div>

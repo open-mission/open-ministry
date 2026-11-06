@@ -14,7 +14,6 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - [x] Repositório público criado em `open-mission/open-ministry`
   - [x] Variáveis de ambiente configuradas na Vercel (incluindo `DATABASE_AUTHENTICATED_URL`)
   - [ ] Domínio configurado — pendente de acesso ao DNS/domínio
-- [ ] Desenvolver barra de notificacao que será usado para notificar quando um usuario for escalado, quando tiver notificacoes, os admin podem enviar notificacoes para a sua equipe e assim por diante.
 
 ### Doing
 
@@ -60,6 +59,13 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - [x] Próximo aniversariante em evidência
   - [x] Privacidade: dia/mês para todos; ano e idade só para admin
   - [x] Cada pessoa pode completar a própria data de nascimento
+- [x] Desenvolver barra de notificacao que será usado para notificar quando um usuario for escalado, quando tiver notificacoes, os admin podem enviar notificacoes para a sua equipe e assim por diante.
+  - [x] Notificações in-app por pessoa, com leitura e histórico
+  - [x] Sino com badge e barra da notificação não lida no painel
+  - [x] Notificação automática ao escalar e ao remover da escala
+  - [x] Avisos da administração para toda a igreja ou para um departamento
+  - [x] Central com marcar como lida e marcar todas como lidas
+  - [x] Policies RLS e API de contagem para o sino
 - [x] Desenvolver o Mobile que permitira os admin gerenciar as partes, mas tbm permitira os membros veres os eventos em que eles estaram escalados, informacoes sobre a agenda em que o seu departamento está vinculado. Desenvolver o seu perfil page tbm.
   - [x] PWA instalável com manifest, ícones, service worker e página offline
   - [x] Navegação inferior no celular
@@ -96,3 +102,4 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 - **06/11/2026:** Validação final concluída. As novas páginas e diálogos foram revisados no navegador em 1440px e 390px; os fluxos reais de criar/editar/excluir série recorrente, criar departamento e função, adicionar/remover pessoa, definir liderança, atribuir função com experiência, escalar e remover da escala foram exercitados contra o NeonDB. As permissões foram conferidas com uma conta de líder de departamento (vê apenas a própria equipe e não gerencia eventos). Os dados de teste foram removidos. Pendência restante: domínio na Vercel.
 - **06/11/2026:** Pessoas pré-cadastradas concluído. Departamentos, escalas e aniversariantes passaram a referenciar `person`, que pode existir sem usuário; a migração fez o backfill das igrejas existentes. É possível criar, editar, excluir e convidar pessoas, vincular manualmente a uma conta e o vínculo automático acontece ao aceitar um convite pelo email. A tela de Pessoas mostra contas e pessoas sem conta, com departamentos e funções, e o mobile usa cartões em vez de tabela. Fluxos testados no navegador (criar, convidar, vincular, escalar sem conta, editar e excluir) e aceite de convite validado com vínculo automático e igreja ativa.
 - **06/11/2026:** Mobile/PWA concluído. O app é instalável (manifest, ícones, service worker e página offline), tem navegação inferior no celular e uma home própria para membros com próximas escalas, agenda dos departamentos, aniversários e estatísticas pessoais. A aba Escalas mostra apenas as escalas do membro, com próximas e passadas. O perfil permite editar nome, aniversário e avatar, lista departamentos/funções e as próximas escalas. Tudo revisado em 390px e 1440px; atualização de perfil, service worker, cache offline e manifesto validados.
+- **06/11/2026:** Notificações concluído. A central in-app tem sino com badge, barra da notificação não lida, leitura individual e em lote. Escalar ou remover uma pessoa gera notificação para a pessoa vinculada; a administração pode enviar avisos para toda a igreja ou para um departamento. Contagem do sino é atualizada por polling. Testado com criação real de escala e aviso, leitura, marcar todas, barra e contador sumindo, API de contagem e RLS.
