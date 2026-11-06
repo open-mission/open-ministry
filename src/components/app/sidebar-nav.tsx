@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  CakeIcon,
   HandHeartIcon,
   LayoutDashboardIcon,
   UsersIcon,
@@ -31,6 +32,12 @@ const items = [
     href: "/dashboard/departments",
     label: "Departamentos",
     icon: HandHeartIcon,
+    exact: false,
+  },
+  {
+    href: "/dashboard/birthdays",
+    label: "Aniversariantes",
+    icon: CakeIcon,
     exact: false,
   },
 ];

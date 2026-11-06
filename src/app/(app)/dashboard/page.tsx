@@ -11,6 +11,7 @@ import {
   UsersIcon,
 } from "lucide-react";
 
+import { BirthdaysCard } from "@/components/birthdays/birthdays-card";
 import { InviteDialog } from "@/components/members/invite-dialog";
 import { RoleBadge } from "@/components/members/role-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -23,6 +24,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  buildBirthdayEntries,
+  getTodayInSaoPaulo,
+} from "@/lib/birthdays";
 import { getInitials, isAdminRole } from "@/lib/format";
 import { requireOrganizationContext } from "@/lib/organizations";
 
@@ -58,6 +63,10 @@ async function DashboardContent() {
 
   const hasTeam = members.length > 1 || pendingInvitations.length > 0;
   const hasAdminTeam = admins.length > 1;
+  const birthdayEntries = buildBirthdayEntries(members, {
+    includeAge: isAdmin,
+    today: getTodayInSaoPaulo(),
+  });
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
@@ -100,6 +109,8 @@ async function DashboardContent() {
           hint="cuidando da equipe"
         />
       </div>
+
+      <BirthdaysCard entries={birthdayEntries} />
 
       <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
         <Card>
@@ -272,6 +283,7 @@ function DashboardSkeleton() {
         <Skeleton className="h-28 rounded-xl" />
         <Skeleton className="h-28 rounded-xl" />
       </div>
+      <Skeleton className="h-40 rounded-xl" />
       <div className="grid gap-4 lg:grid-cols-2">
         <Skeleton className="h-72 rounded-xl" />
         <Skeleton className="h-72 rounded-xl" />

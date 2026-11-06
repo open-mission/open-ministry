@@ -17,7 +17,6 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - [x] Variáveis de ambiente configuradas na Vercel (incluindo `DATABASE_AUTHENTICATED_URL`)
   - [ ] Domínio configurado
 
-- [ ] Implementar a funcionalidade de Aniversáriantes aonde mostra As datas de aniversáriantes da equipe, e qual o proximo aniversariante. Tbm é interessante ter um component que se tiver um aniversáriante hoje mostrar, tanto se for hoje, como também se for amanhã, por exemplo imagine que o lider entra no painel e ele pode ver que amanha é aniversário de um liderado.
 - [ ] Implementar a funcionalidade de Cultos e Eventos para cadastrar dados do Evento e Definir os Departamentos e Equipes que estaram atuando nesse evento, a ideia é começarmos simples e depois vamos aperfeiçoando. Entao ao cadastrar um evento ou Culto podemos definir Quais departamentos estaram atuando nesse evento. Com isso teremos uma aba chamado Escala que nos permite definir as pessoas que irao atuar nessa evento/culto, ele nao precisa configurar tudo na mesma hora, ele pode começar e depois terminar de ajustar. Com essa funcionalidade tbm teremos uma nova secao chamado Escalas, aonde poderemos ver todas as escalas criadas, as quejá passaram e as que virão. Assim Escala é um tipo de dados que pode estar vinculado a um evento ou culto. Ponto importante Quando cadastramos um evento podemos definri um evento recorreente (semanal, mensal, quinzenal ou customizado) mas precisamos de instancias separadas desse culto, pois a escala de um culto X recorrente que aconteceu por exemoplo nesse domingo, nao será a mesma que da semana que vem por exemplo. Mas quando for ajustarmos informacoes do evento precisamos da opcao de salvar esse ajusta apenas para esse evento ou para todos as ocorrencias.
 
 
@@ -62,6 +61,12 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - [x] Pessoas do departamento, com líderes definidos pelo admin
   - [x] Funções por pessoa e nível de experiência visível só para admin/líder
   - [x] Policies de leitura RLS e navegação própria no painel
+- [x] Implementar a funcionalidade de Aniversáriantes aonde mostra As datas de aniversáriantes da equipe, e qual o proximo aniversariante. Tbm é interessante ter um component que se tiver um aniversáriante hoje mostrar, tanto se for hoje, como também se for amanhã, por exemplo imagine que o lider entra no painel e ele pode ver que amanha é aniversário de um liderado.
+  - [x] Lista completa do ano, ordenada a partir do mês atual
+  - [x] Destaque de hoje e amanhã no painel e na página
+  - [x] Próximo aniversariante em evidência
+  - [x] Privacidade: dia/mês para todos; ano e idade só para admin
+  - [x] Cada pessoa pode completar a própria data de nascimento
 
 ## Comentários ao Usuário (Para agentes deixar mensagens para os seres humanos)
 
@@ -71,3 +76,4 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 - **06/11/2026:** Repositório público criado em `open-mission/open-ministry` sob a **Sustainable Use License** (modelo fair-code, similar ao n8n): permite ver o código e fazer self-host, mas restringe uso comercial por terceiros e exige preservar a identidade visual da Open Mission. Faltam as variáveis de ambiente e o domínio na Vercel.
 - **06/11/2026:** RLS concluído. A aplicação passou a usar duas conexões: `neondb_owner` para migrations/Better Auth e `app_authenticated` (sem `BYPASSRLS`) para leituras por igreja. O JWT do Better Auth carrega `sub`/`org_id`, os claims são injetados por transação e as policies isolam `organization`, `member`, `invitation` e `user`. O Neon MCP foi ativado via OAuth. O role e as migrations foram aplicados também no banco de produção; `DATABASE_AUTHENTICATED_URL` está configurada na Vercel (Production e Preview/develop). Próxima pendência: domínio na Vercel.
 - **06/11/2026:** Departamentos concluído. Administradores criam e excluem ministérios e definem líderes; líderes editam o próprio departamento. Cada departamento tem funções com descrição opcional e pessoas com funções e nível de experiência, visível apenas para admin/líder. As novas tabelas têm policies de leitura RLS e grants para `app_authenticated`. Próxima task: aniversariantes.
+- **06/11/2026:** Aniversariantes concluído. O painel mostra hoje, amanhã e os próximos aniversários; a página dedicada lista os 12 meses a partir do mês atual, com o próximo aniversariante em destaque. O dia e o mês são visíveis para a igreja; ano e idade só para owner/admin. A própria pessoa pode completar a data de nascimento em `/dashboard/birthdays`. Próxima task: cultos, eventos e escalas.
