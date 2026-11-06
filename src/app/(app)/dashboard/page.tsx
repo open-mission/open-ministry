@@ -11,6 +11,8 @@ import {
   UsersIcon,
 } from "lucide-react";
 
+import { MemberDashboard } from "@/components/app/member-dashboard";
+import { StatCard } from "@/components/app/stat-card";
 import { BirthdaysCard } from "@/components/birthdays/birthdays-card";
 import { InviteDialog } from "@/components/members/invite-dialog";
 import { RoleBadge } from "@/components/members/role-badge";
@@ -26,12 +28,19 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  getDepartmentAgenda,
+  getPersonMemberships,
+  getUpcomingAssignments,
+} from "@/lib/agenda";
+import {
   buildBirthdayEntries,
   getTodayInSaoPaulo,
 } from "@/lib/birthdays";
 import { getInitials, isAdminRole } from "@/lib/format";
 import { requireOrganizationContext } from "@/lib/organizations";
 import {
+  ensurePersonForUser,
+  findPersonByUserId,
   listPeople,
   personDisplayEmail,
   personDisplayImage,
@@ -55,8 +64,46 @@ async function DashboardContent() {
 
   const { organization, session, isAdmin } = await requireOrganizationContext();
 
-  const members = organization.members;
   const people = await listPeople(organization.id);
+  const firstName = session.user.name.trim().split(/\s+/)[0] ?? "líder";
+  const birthdayEntries = buildBirthdayEntries(people, {
+    includeAge: isAdmin,
+    today: getTodayInSaoPaulo(),
+  });
+
+  if (!isAdmin) {
+    const person =
+      (await findPersonByUserId(organization.id, session.user.id)) ??
+      (await ensurePersonForUser(organization.id, {
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+        image: session.user.image ?? null,
+        birthday: session.user.birthday ?? null,
+      }));
+
+    const [memberships, assignments, agenda] = person
+      ? await Promise.all([
+          getPersonMemberships(person.id),
+          getUpcomingAssignments(organization.id, person.id),
+          getDepartmentAgenda(organization.id, person.id),
+        ])
+      : [[], [], []];
+
+    return (
+      <MemberDashboard
+        firstName={firstName}
+        organizationName={organization.name}
+        peopleCount={people.length}
+        birthdayEntries={birthdayEntries}
+        memberships={memberships}
+        assignments={assignments}
+        agenda={agenda}
+      />
+    );
+  }
+
+  const members = organization.members;
   const roleByUserId = new Map(
     members.map((member) => [member.userId, member.role]),
   );
@@ -64,7 +111,6 @@ async function DashboardContent() {
     (invitation) => invitation.status === "pending",
   );
   const admins = members.filter((member) => isAdminRole(member.role));
-  const firstName = session.user.name.trim().split(/\s+/)[0] ?? "líder";
   const recentPeople = [...people]
     .sort(
       (a, b) =>
@@ -74,10 +120,6 @@ async function DashboardContent() {
 
   const hasTeam = people.length > 1 || pendingInvitations.length > 0;
   const hasAdminTeam = admins.length > 1;
-  const birthdayEntries = buildBirthdayEntries(people, {
-    includeAge: isAdmin,
-    today: getTodayInSaoPaulo(),
-  });
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
@@ -225,37 +267,6 @@ async function DashboardContent() {
         </Card>
       </div>
     </div>
-  );
-}
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  hint,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: number;
-  hint: string;
-}) {
-  return (
-    <Card>
-      <CardContent className="flex items-start gap-4 p-5">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <Icon className="size-5" />
-        </span>
-        <div className="space-y-0.5">
-          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            {label}
-          </p>
-          <p className="font-heading text-3xl leading-none tracking-tight">
-            {value}
-          </p>
-          <p className="text-xs text-muted-foreground">{hint}</p>
-        </div>
-      </CardContent>
-    </Card>
   );
 }
 

@@ -18,13 +18,6 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Doing
 
-- [ ] Desenvolver o Mobile que permitira os admin gerenciar as partes, mas tbm permitira os membros veres os eventos em que eles estaram escalados, informacoes sobre a agenda em que o seu departamento está vinculado. Desenvolver o seu perfil page tbm.
-  - [ ] PWA instalável com manifest e ícones
-  - [ ] Navegação inferior no celular
-  - [ ] Home do membro com escalas pessoais e agenda do departamento
-  - [ ] Página de perfil com nome, aniversário e avatar
-  - [ ] Ajustes de responsividade nas telas de gestão
-
 ### Done
 
 - [x] Configuração do Ambiente: NextJs (ultima versão), NeonDB com Drizzle ORM, ShadnUI UI (Instale todos os componentes), Bun, Better Auth. Os Itens de configuração deixar em .env. Inicializar o Git. Configurar o Scalar API já desde de inicio para que possamos ter a documentação da api.
@@ -67,6 +60,13 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - [x] Próximo aniversariante em evidência
   - [x] Privacidade: dia/mês para todos; ano e idade só para admin
   - [x] Cada pessoa pode completar a própria data de nascimento
+- [x] Desenvolver o Mobile que permitira os admin gerenciar as partes, mas tbm permitira os membros veres os eventos em que eles estaram escalados, informacoes sobre a agenda em que o seu departamento está vinculado. Desenvolver o seu perfil page tbm.
+  - [x] PWA instalável com manifest, ícones, service worker e página offline
+  - [x] Navegação inferior no celular
+  - [x] Home do membro com escalas pessoais e agenda do departamento
+  - [x] Página de perfil com nome, aniversário e avatar
+  - [x] Aba Escalas pessoal para membros, com próximas e passadas
+  - [x] Ajustes de responsividade nas telas de gestão e lista de pessoas em cartões no celular
 - [x] Permitir cadastrar pessoas que ainda nao tem um usuario e depois poder vincular eles com um usuario cadastrado e/ou poder enviar um link de cadastro para essa pessoa.
   - [x] Modelo de pessoa com vínculo opcional a usuário
   - [x] Migrar departamentos e escalas para referenciar pessoas
@@ -95,3 +95,4 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 - **06/11/2026:** Cultos, eventos e escalas concluídos. Eventos têm tipo, local, descrição, duração e recorrência (semanal, quinzenal, mensal ou a cada N semanas), gerando ocorrências independentes com escala própria. A edição e a exclusão podem valer só para a ocorrência ou para toda a série. Cada evento define os departamentos atuantes e a escala é montada por função, com pessoas do próprio departamento; admin gerencia eventos e líderes montam a escala da sua equipe. A seção Escalas mostra os encontros futuros e o histórico.
 - **06/11/2026:** Validação final concluída. As novas páginas e diálogos foram revisados no navegador em 1440px e 390px; os fluxos reais de criar/editar/excluir série recorrente, criar departamento e função, adicionar/remover pessoa, definir liderança, atribuir função com experiência, escalar e remover da escala foram exercitados contra o NeonDB. As permissões foram conferidas com uma conta de líder de departamento (vê apenas a própria equipe e não gerencia eventos). Os dados de teste foram removidos. Pendência restante: domínio na Vercel.
 - **06/11/2026:** Pessoas pré-cadastradas concluído. Departamentos, escalas e aniversariantes passaram a referenciar `person`, que pode existir sem usuário; a migração fez o backfill das igrejas existentes. É possível criar, editar, excluir e convidar pessoas, vincular manualmente a uma conta e o vínculo automático acontece ao aceitar um convite pelo email. A tela de Pessoas mostra contas e pessoas sem conta, com departamentos e funções, e o mobile usa cartões em vez de tabela. Fluxos testados no navegador (criar, convidar, vincular, escalar sem conta, editar e excluir) e aceite de convite validado com vínculo automático e igreja ativa.
+- **06/11/2026:** Mobile/PWA concluído. O app é instalável (manifest, ícones, service worker e página offline), tem navegação inferior no celular e uma home própria para membros com próximas escalas, agenda dos departamentos, aniversários e estatísticas pessoais. A aba Escalas mostra apenas as escalas do membro, com próximas e passadas. O perfil permite editar nome, aniversário e avatar, lista departamentos/funções e as próximas escalas. Tudo revisado em 390px e 1440px; atualização de perfil, service worker, cache offline e manifesto validados.

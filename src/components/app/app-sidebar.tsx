@@ -70,18 +70,24 @@ export function AppSidebar({
 
       <SidebarFooter>
         <div className="flex items-center gap-2 rounded-lg border bg-sidebar-accent/40 p-2">
-          <Avatar className="size-9">
-            <AvatarImage src={user.image ?? undefined} alt={user.name} />
-            <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
-              {getInitials(user.name)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{user.name}</p>
-            <p className="truncate text-xs text-muted-foreground">
-              {roleLabel(role)}
-            </p>
-          </div>
+          <Link
+            href="/dashboard/profile"
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-md outline-none transition-colors hover:bg-sidebar-accent/60 focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+            title="Abrir meu perfil"
+          >
+            <Avatar className="size-9">
+              <AvatarImage src={user.image ?? undefined} alt={user.name} />
+              <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
+                {getInitials(user.name)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{user.name}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {roleLabel(role)}
+              </p>
+            </div>
+          </Link>
           <form action={signOutAction}>
             <input type="hidden" name="redirectTo" value="/" />
             <Button

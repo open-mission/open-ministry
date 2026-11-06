@@ -4,16 +4,22 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { ClipboardListIcon } from "lucide-react";
 
+import { MemberSchedules } from "@/components/app/member-schedules";
 import { ScheduleList } from "@/components/events/schedule-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  getPersonAssignments,
+  splitAssignments,
+} from "@/lib/agenda";
 import {
   listEvents,
   scheduleProgress,
   splitEvents,
 } from "@/lib/events";
 import { requireOrganizationContext } from "@/lib/organizations";
+import { findPersonByUserId } from "@/lib/people";
 
 export const metadata: Metadata = {
   title: "Escalas",
@@ -30,7 +36,28 @@ export default function SchedulesPage() {
 async function SchedulesContent() {
   await connection();
 
-  const { organization } = await requireOrganizationContext();
+  const { organization, session, isAdmin } =
+    await requireOrganizationContext();
+
+  if (!isAdmin) {
+    const person = await findPersonByUserId(
+      organization.id,
+      session.user.id,
+    );
+    const assignments = person
+      ? await getPersonAssignments(organization.id, person.id)
+      : [];
+    const { upcoming, past } = splitAssignments(assignments);
+
+    return (
+      <MemberSchedules
+        organizationName={organization.name}
+        upcoming={upcoming}
+        past={past}
+      />
+    );
+  }
+
   const events = await listEvents(organization.id);
   const { upcoming, past } = splitEvents(events);
   const complete = upcoming.filter(
