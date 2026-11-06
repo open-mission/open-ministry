@@ -1,7 +1,8 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { openAPI } from "better-auth/plugins";
+import { openAPI, organization } from "better-auth/plugins";
+import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
@@ -17,7 +18,60 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  user: {
+    additionalFields: {
+      birthday: {
+        type: "string",
+        required: false,
+        input: true,
+      },
+    },
+  },
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+      prompt: "select_account",
+    },
+  },
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google"],
+    },
+  },
+  databaseHooks: {
+    session: {
+      create: {
+        before: async (session) => {
+          // Quando a pessoa pertence a exatamente uma igreja, restauramos essa
+          // igreja como ativa em cada novo login. Com mais de uma, o onboarding
+          // permite escolher qual usar.
+          const memberships = await db.query.member.findMany({
+            where: eq(schema.member.userId, session.userId),
+            columns: { organizationId: true },
+            limit: 2,
+          });
+
+          if (memberships.length !== 1) {
+            return;
+          }
+
+          return {
+            data: {
+              ...session,
+              activeOrganizationId: memberships[0].organizationId,
+            },
+          };
+        },
+      },
+    },
+  },
   plugins: [
+    organization({
+      // Convites ficam válidos por 7 dias.
+      invitationExpiresIn: 60 * 60 * 24 * 7,
+    }),
     openAPI(),
     // nextCookies must always be the last plugin.
     nextCookies(),
