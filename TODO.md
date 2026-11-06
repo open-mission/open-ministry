@@ -17,13 +17,19 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - [x] Variáveis de ambiente configuradas na Vercel (incluindo `DATABASE_AUTHENTICATED_URL`)
   - [ ] Domínio configurado
 
+- [ ] Implementar o CRUD de Cadastro de Departamentos. A ideia é que possamos ter Nome, Descrição, Pessoas (podendo definir pessoas que fazem parte do Departamentos), tbm podemos definir as funcoes desse departamento, por exemplo Departamento de Midia tem as funcoes: Projeção, Stories, Fotografia e etc. Cada Função precisa ter um campo opcional de Descrição da funçao,a onde podemos explicar o que essa função faz. Cada Pessoa do departmanto podemos defiir quais areas elas podem atuar e qual nivel elas estao de experiencia nessa area (mais isso só visivel para os administradotes do departamento (ou Lider).
+- [ ] Implementar a funcionalidade de Aniversáriantes aonde mostra As datas de aniversáriantes da equipe, e qual o proximo aniversariante. Tbm é interessante ter um component que se tiver um aniversáriante hoje mostrar, tanto se for hoje, como também se for amanhã, por exemplo imagine que o lider entra no painel e ele pode ver que amanha é aniversário de um liderado.
+- [ ] Implementar a funcionalidade de Cultos e Eventos para cadastrar dados do Evento e Definir os Departamentos e Equipes que estaram atuando nesse evento, a ideia é começarmos simples e depois vamos aperfeiçoando. Entao ao cadastrar um evento ou Culto podemos definir Quais departamentos estaram atuando nesse evento. Com isso teremos uma aba chamado Escala que nos permite definir as pessoas que irao atuar nessa evento/culto, ele nao precisa configurar tudo na mesma hora, ele pode começar e depois terminar de ajustar. Com essa funcionalidade tbm teremos uma nova secao chamado Escalas, aonde poderemos ver todas as escalas criadas, as quejá passaram e as que virão. Assim Escala é um tipo de dados que pode estar vinculado a um evento ou culto. Ponto importante Quando cadastramos um evento podemos definri um evento recorreente (semanal, mensal, quinzenal ou customizado) mas precisamos de instancias separadas desse culto, pois a escala de um culto X recorrente que aconteceu por exemoplo nesse domingo, nao será a mesma que da semana que vem por exemplo. Mas quando for ajustarmos informacoes do evento precisamos da opcao de salvar esse ajusta apenas para esse evento ou para todos as ocorrencias.
+
+
+
 ### Doing
 
 
 
 ### Done
 
-- [x]  Configuração do Ambiente: NextJs (ultima versão), NeonDB com Drizzle ORM, ShadnUI UI (Instale todos os componentes), Bun, Better Auth. Os Itens de configuração deixar em .env. Inicializar o Git. Configurar o Scalar API já desde de inicio para que possamos ter a documentação da api.
+- [x] Configuração do Ambiente: NextJs (ultima versão), NeonDB com Drizzle ORM, ShadnUI UI (Instale todos os componentes), Bun, Better Auth. Os Itens de configuração deixar em .env. Inicializar o Git. Configurar o Scalar API já desde de inicio para que possamos ter a documentação da api.
   - [x] Next.js 16 + Bun + TypeScript + Tailwind CSS
   - [x] Todos os componentes do shadcn/ui instalados
   - [x] Better Auth configurado com Drizzle adapter e OpenAPI
