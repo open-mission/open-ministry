@@ -18,6 +18,7 @@ quem serve.
 - [Bun](https://bun.sh/) como runtime e gerenciador de pacotes
 - [NeonDB](https://neon.tech/) + [Drizzle ORM](https://orm.drizzle.team/)
 - [Better Auth](https://www.better-auth.com/)
+- [UploadThing](https://uploadthing.com/) para foto de perfil e logo da igreja
 - [shadcn/ui](https://ui.shadcn.com/) (todos os componentes instalados)
 - [Tailwind CSS 4](https://tailwindcss.com/)
 - [date-fns](https://date-fns.org/) + `date-fns-tz` para datas e recorrências
@@ -53,6 +54,7 @@ quem serve.
    | `NEXT_PUBLIC_APP_URL` | URL pública usada pelo cliente |
    | `GOOGLE_CLIENT_ID` | Client ID do Google OAuth |
    | `GOOGLE_CLIENT_SECRET` | Client Secret do Google OAuth |
+   | `UPLOADTHING_TOKEN` | Token do app no UploadThing, usado para foto de perfil e logo da igreja |
 
 4. Aplique as migrations no banco:
 
@@ -86,6 +88,7 @@ quem serve.
 | `/dashboard/members` | Pessoas, convites e vínculos com contas |
 | `/dashboard/departments` | Departamentos, funções e níveis de experiência |
 | `/dashboard/birthdays` | Aniversariantes e próxima celebração |
+| `/dashboard/church` | Nome e logo da igreja (edição para admin/owner) |
 | `/dashboard/events` | Cultos e eventos, com recorrência |
 | `/dashboard/schedules` | Escalas: todas para admin, pessoais para membros |
 | `/dashboard/profile` | Perfil, departamentos e próximas escalas |
@@ -125,6 +128,9 @@ quem serve.
 - **Cultos e eventos:** tipo, local, descrição e duração; recorrência semanal, quinzenal, mensal ou a cada N semanas, gerando ocorrências independentes. A edição e a exclusão podem valer só para a ocorrência ou para toda a série.
 - **Escalas:** cada evento define os departamentos atuantes; a escala é montada por função, com as pessoas do próprio departamento, tenham conta ou não. Admin gerencia eventos; admin e líder do departamento montam a escala da equipe. Membros veem apenas as próprias escalas.
 - **Mobile/PWA:** manifest, ícones, service worker e página offline; navegação inferior no celular; home do membro com escalas, agenda dos departamentos e aniversários; perfil com nome, aniversário e avatar.
+- **Perfil e identidade:** o perfil abre em modo somente leitura e entra em edição ao clicar em “Editar perfil”; nome, aniversário e foto são salvos juntos. A foto é enviada pelo UploadThing. Admin/owner também atualiza o nome e o logo da igreja em `/dashboard/church`; o logo aparece no topo do painel.
+- **Acesso como membro:** admin/owner pode entrar como uma pessoa da igreja para conferir a experiência dela. Um aviso fixo no topo mostra a sessão impersonada e permite voltar para a própria conta. A autorização é verificada por igreja na server action e os endpoints HTTP do plugin admin do Better Auth ficam bloqueados.
+- **Tema:** claro, escuro ou sistema. A alternância fica no painel, no login e no site; a preferência é lembrada no navegador.
 - **Notificações:** sino com badge e barra da notificação não lida; notificação ao ser escalado ou removido de uma escala; avisos da administração para toda a igreja ou para um departamento; leitura individual e em lote.
 
 ## Estrutura
@@ -139,7 +145,8 @@ src/
 │   │   ├── docs/route.ts            # Scalar API Reference
 │   │   ├── health/route.ts          # Health check
 │   │   ├── notifications/           # Contagem de notificações não lidas
-│   │   └── openapi/route.ts         # OpenAPI da aplicação
+│   │   ├── openapi/route.ts         # OpenAPI da aplicação
+│   │   └── uploadthing/             # File router de perfil e logo
 │   ├── actions/                     # Server actions
 │   ├── globals.css
 │   ├── layout.tsx
@@ -148,12 +155,14 @@ src/
 │   ├── app/
 │   ├── auth/
 │   ├── birthdays/
+│   ├── church/
 │   ├── departments/
 │   ├── events/
 │   ├── members/
 │   ├── notifications/
 │   ├── people/
 │   ├── profile/
+│   ├── uploads/
 │   └── ui/                          # Componentes do shadcn/ui
 ├── db/
 │   ├── migrations/                  # Migrations geradas pelo Drizzle Kit
@@ -168,6 +177,7 @@ src/
 │   └── tenant.ts                    # Cliente Drizzle + RLS (app_authenticated)
 ├── hooks/
 └── lib/
+    ├── admin-role.ts                # Papel global do plugin admin por igreja
     ├── agenda.ts                    # Escalas pessoais e agenda dos departamentos
     ├── auth.ts                      # Configuração do Better Auth
     ├── auth-client.ts               # Cliente do Better Auth
@@ -182,6 +192,7 @@ src/
     ├── person-format.ts             # Helpers puros de exibição de pessoas
     ├── request-origin.ts            # Origem segura para links de convite
     ├── session.ts                   # Sessão autenticada
+    ├── uploadthing.ts               # Hook tipado do UploadThing
     └── utils.ts
 
 public/
@@ -190,6 +201,7 @@ public/
 └── sw.js                            # Service worker (network-first em navegação)
 
 scripts/
+├── auth-generate.mjs                # Gera o schema do Better Auth sem o server-only
 ├── setup-app-role.mjs               # Cria o role e a URL de RLS
 └── rls-smoke-test.mjs               # Testa o isolamento por igreja
 ```
@@ -271,6 +283,13 @@ policies de leitura e grants para `app_authenticated`; as notificações são
 filtradas por pessoa e pela igreja ativa. As mutações continuam na conexão
 owner, com a autorização conferida nas server actions. A página pública de
 convite usa o owner apenas para localizar o convite por ID aleatório.
+
+O plugin admin do Better Auth é usado para impersonação. O papel global
+`user.role` é sincronizado com os papéis da igreja apenas para o plugin; a
+autorização de acesso como membro é feita na server action, que exige
+`owner`/`admin` na igreja ativa e confirma que a pessoa-alvo pertence a ela. Os
+endpoints HTTP `/api/auth/admin/*` ficam bloqueados (404) para impedir operações
+administrativas fora do escopo da igreja.
 
 Para validar o isolamento com o servidor de desenvolvimento rodando:
 
