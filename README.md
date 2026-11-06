@@ -4,8 +4,11 @@ Uma solução para ajudar igrejas a se organizarem, cuidarem das pessoas e
 crescerem em comunidade. Inspirado em ferramentas como Planning Center e
 Voluts.
 
-O projeto começa com a experiência do **admin**, que poderá ver os membros
-cadastrados e convidar novas pessoas para a igreja.
+O painel reúne as pessoas da igreja, os departamentos e suas funções, os
+aniversariantes, os cultos e eventos recorrentes e as escalas de cada
+ocorrência. O **admin** cuida da estrutura e das permissões; líderes de
+departamento montam a escala da própria equipe; membros acompanham a vida da
+igreja.
 
 ## Stack
 
@@ -16,6 +19,7 @@ cadastrados e convidar novas pessoas para a igreja.
 - [Better Auth](https://www.better-auth.com/)
 - [shadcn/ui](https://ui.shadcn.com/) (todos os componentes instalados)
 - [Tailwind CSS 4](https://tailwindcss.com/)
+- [date-fns](https://date-fns.org/) + `date-fns-tz` para datas e recorrências
 - [Scalar](https://scalar.com/) para documentação da API
 
 ## Pré-requisitos
@@ -77,6 +81,12 @@ cadastrados e convidar novas pessoas para a igreja.
 | URL | Descrição |
 | --- | --- |
 | `/` | Página inicial |
+| `/dashboard` | Visão geral da igreja |
+| `/dashboard/members` | Pessoas e convites |
+| `/dashboard/departments` | Departamentos, funções e níveis de experiência |
+| `/dashboard/birthdays` | Aniversariantes e próxima celebração |
+| `/dashboard/events` | Cultos e eventos, com recorrência |
+| `/dashboard/schedules` | Escalas futuras e histórico |
 | `/api/docs` | Documentação da API (Scalar) |
 | `/api/auth/reference` | Referência dos endpoints do Better Auth (Scalar) |
 | `/api/openapi` | OpenAPI da aplicação |
@@ -101,12 +111,20 @@ cadastrados e convidar novas pessoas para a igreja.
 | `node scripts/setup-app-role.mjs` | Cria/atualiza o role `app_authenticated` e a URL de RLS |
 | `node scripts/rls-smoke-test.mjs` | Valida o isolamento por igreja (requer `bun run dev`) |
 
+## Funcionalidades
+
+- **Pessoas e convites:** owner/admin convidam por link; o convite expira em 7 dias.
+- **Departamentos:** nome, descrição, funções com descrição opcional, pessoas e líderes. Cada pessoa pode atuar em várias funções, com nível de experiência visível apenas para admin e líderes do departamento.
+- **Aniversariantes:** dia e mês para toda a igreja; ano e idade só para owner/admin. O painel destaca hoje, amanhã e o próximo aniversariante; cada pessoa pode completar a própria data.
+- **Cultos e eventos:** tipo, local, descrição e duração; recorrência semanal, quinzenal, mensal ou a cada N semanas, gerando ocorrências independentes. A edição e a exclusão podem valer só para a ocorrência ou para toda a série.
+- **Escalas:** cada evento define os departamentos atuantes; a escala é montada por função, com as pessoas do próprio departamento. Admin gerencia eventos; admin e líder do departamento montam a escala da equipe.
+
 ## Estrutura
 
 ```txt
 src/
 ├── app/
-│   ├── (app)/dashboard/             # Painel e membros
+│   ├── (app)/dashboard/             # Painel, pessoas, departamentos, aniversariantes, eventos e escalas
 │   ├── (auth)/                      # Login, cadastro, onboarding e convite
 │   ├── api/
 │   │   ├── auth/[...all]/route.ts   # Handler do Better Auth
@@ -120,12 +138,17 @@ src/
 ├── components/
 │   ├── app/
 │   ├── auth/
+│   ├── birthdays/
+│   ├── departments/
+│   ├── events/
 │   ├── members/
 │   └── ui/                          # Componentes do shadcn/ui
 ├── db/
 │   ├── migrations/                  # Migrations geradas pelo Drizzle Kit
 │   ├── schema/
 │   │   ├── auth.ts                  # Tabelas geradas pelo Better Auth
+│   │   ├── departments.ts           # Departamentos, funções e experiência
+│   │   ├── events.ts                # Cultos, eventos, departamentos atuantes e escalas
 │   │   └── index.ts
 │   ├── index.ts                     # Cliente Drizzle + Neon (owner)
 │   └── tenant.ts                    # Cliente Drizzle + RLS (app_authenticated)
@@ -133,6 +156,11 @@ src/
 └── lib/
     ├── auth.ts                      # Configuração do Better Auth
     ├── auth-client.ts               # Cliente do Better Auth
+    ├── birthdays.ts                 # Cálculo dos aniversariantes
+    ├── departments.ts               # Consultas e permissões de departamentos
+    ├── event-options.ts             # Tipos e rótulos de cultos e eventos
+    ├── events.ts                    # Recorrência, consultas e formatação de eventos
+    ├── experience.ts                # Níveis de experiência por função
     ├── organizations.ts             # Contexto da igreja ativa
     ├── session.ts                   # Sessão autenticada
     └── utils.ts
@@ -213,8 +241,11 @@ uma função `SECURITY DEFINER`.
 
 As mutações do Better Auth (criar/cancelar/aceitar convite e criar igreja)
 continuam usando o role owner e a autorização da aplicação; as policies de
-escrita já estão prontas para uma migração futura. A página pública de convite
-usa o owner apenas para localizar o convite por ID aleatório.
+escrita já estão prontas para uma migração futura. As tabelas de departamentos,
+eventos, departamentos atuantes e escalas também têm policies de leitura e
+grants para `app_authenticated`; as mutações continuam na conexão owner, com a
+autorização conferida nas server actions. A página pública de convite usa o
+owner apenas para localizar o convite por ID aleatório.
 
 Para validar o isolamento com o servidor de desenvolvimento rodando:
 

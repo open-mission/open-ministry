@@ -104,10 +104,9 @@ export function PeopleSection({
               <TableHeader>
                 <TableRow>
                   <TableHead>Pessoa</TableHead>
-                  <TableHead>Funções</TableHead>
-                  {canViewExperience ? (
-                    <TableHead>Experiência</TableHead>
-                  ) : null}
+                  <TableHead>
+                    {canViewExperience ? "Funções e experiência" : "Funções"}
+                  </TableHead>
                   {canManage ? (
                     <TableHead className="text-right">Ações</TableHead>
                   ) : null}
@@ -162,38 +161,19 @@ export function PeopleSection({
                               className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
                             >
                               {assignment.function.name}
+                              {canViewExperience ? (
+                                <span className="font-normal text-muted-foreground">
+                                  {" · "}
+                                  {experienceLevelLabels[
+                                    assignment.experienceLevel as ExperienceLevel
+                                  ] ?? assignment.experienceLevel}
+                                </span>
+                              ) : null}
                             </span>
                           ))}
                         </div>
                       )}
                     </TableCell>
-
-                    {canViewExperience ? (
-                      <TableCell>
-                        {member.assignments.length === 0 ? (
-                          <span className="text-xs text-muted-foreground">
-                            —
-                          </span>
-                        ) : (
-                          <ul className="space-y-0.5">
-                            {member.assignments.map((assignment) => (
-                              <li
-                                key={assignment.id}
-                                className="text-xs whitespace-nowrap text-muted-foreground"
-                              >
-                                {assignment.function.name}
-                                <span className="mx-1 text-border">·</span>
-                                <span className="font-medium text-foreground">
-                                  {experienceLevelLabels[
-                                    assignment.experienceLevel as ExperienceLevel
-                                  ] ?? assignment.experienceLevel}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </TableCell>
-                    ) : null}
 
                     {canManage ? (
                       <TableCell>

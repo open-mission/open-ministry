@@ -43,3 +43,7 @@ next-env.d.ts
 
 # agent tooling
 /.commandcode/
+
+# design review artifacts
+/.impeccable/review/
+/.impeccable/mocks/

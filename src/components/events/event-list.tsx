@@ -87,7 +87,7 @@ function EventRow({
   return (
     <Link
       href={`/dashboard/events/${event.id}`}
-      className="group grid gap-3 rounded-lg px-2 py-4 transition-colors hover:bg-muted/50 sm:grid-cols-[auto_1fr_auto] sm:items-center"
+      className="group grid grid-cols-[auto_1fr] gap-3 rounded-lg px-2 py-4 transition-colors hover:bg-muted/50 sm:grid-cols-[auto_1fr_auto] sm:items-center"
     >
       <div className="flex size-14 shrink-0 flex-col items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
         <span className="font-heading text-2xl leading-none">{parts.day}</span>
@@ -138,7 +138,7 @@ function EventRow({
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-3 sm:justify-end">
+      <div className="col-span-2 flex items-center justify-between gap-3 sm:col-span-1 sm:justify-end">
         {showSchedule ? (
           <span
             className={cn(

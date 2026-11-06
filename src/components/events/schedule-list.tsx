@@ -81,7 +81,7 @@ function ScheduleRow({
     <Link
       href={`/dashboard/events/${event.id}`}
       className={cn(
-        "group grid gap-3 rounded-lg px-2 py-4 transition-colors hover:bg-muted/50 sm:grid-cols-[auto_1fr_auto] sm:items-center",
+        "group grid grid-cols-[auto_1fr] gap-3 rounded-lg px-2 py-4 transition-colors hover:bg-muted/50 sm:grid-cols-[auto_1fr_auto] sm:items-center",
         past ? "opacity-75" : null,
       )}
     >
@@ -130,14 +130,10 @@ function ScheduleRow({
                 : `${people.length} pessoas escaladas`}
             </span>
           </div>
-        ) : (
-          <p className="text-[0.7rem] text-muted-foreground">
-            Ninguém escalado ainda.
-          </p>
-        )}
+        ) : null}
       </div>
 
-      <div className="flex items-center justify-between gap-3 sm:justify-end">
+      <div className="col-span-2 flex items-center justify-between gap-3 sm:col-span-1 sm:justify-end">
         <span
           className={cn(
             "inline-flex items-center gap-1.5 text-xs whitespace-nowrap",
