@@ -6,6 +6,7 @@ import { cache } from "react";
 import { headers } from "next/headers";
 
 import * as schema from "@/db/schema";
+import { getAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { getSession, type AuthSession } from "@/lib/session";
 
@@ -50,7 +51,7 @@ export type TenantTransaction = Parameters<
 >[0];
 
 function getJwks() {
-  const baseUrl = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
+  const baseUrl = getAppBaseUrl();
 
   if (!globalForTenant.__tenantJwks) {
     globalForTenant.__tenantJwks = createRemoteJWKSet(
@@ -75,7 +76,7 @@ const getAuthToken = cache(async (): Promise<string | null> => {
 
 async function verifyToken(token: string) {
   const { payload } = await jwtVerify(token, getJwks(), {
-    issuer: process.env.BETTER_AUTH_URL,
+    issuer: getAppBaseUrl(),
     audience: JWT_AUDIENCE,
   });
 
