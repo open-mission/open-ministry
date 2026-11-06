@@ -22,6 +22,27 @@
       "when": 1793981578331,
       "tag": "0002_famous_black_cat",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793987662243,
+      "tag": "0003_white_adam_destine",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793987702344,
+      "tag": "0004_rls_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793987985579,
+      "tag": "0005_fix_rls_claims",
+      "breakpoints": true
     }
   ]
 }
