@@ -7,10 +7,11 @@ import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { getAppBaseUrl } from "@/lib/app-url";
 
 export const auth = betterAuth({
   appName: "OpenMinistry",
-  baseURL: process.env.BETTER_AUTH_URL,
+  baseURL: getAppBaseUrl(),
   secret: process.env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, {
     provider: "pg",

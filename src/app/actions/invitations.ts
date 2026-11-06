@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { actionErrorMessage } from "@/lib/auth-errors";
+import { getAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { birthdayFieldSchema, updateBirthday } from "@/lib/profile";
 import { getSession } from "@/lib/session";
@@ -64,7 +65,7 @@ async function getRequestOrigin(requestHeaders: Headers): Promise<string> {
     return `${protocol}://${host}`;
   }
 
-  return (process.env.BETTER_AUTH_URL ?? "").replace(/\/$/, "");
+  return getAppBaseUrl();
 }
 
 export async function inviteMemberAction(

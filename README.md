@@ -164,6 +164,18 @@ O `DATABASE_URL` precisa estar configurado no ambiente de Production da Vercel.
 O `DATABASE_AUTHENTICATED_URL` também precisa existir em Production e Preview,
 apontando para o role `app_authenticated` do banco de produção.
 
+Em **Preview**, `src/lib/app-url.ts` deriva a URL pública de `VERCEL_URL`, então
+cada deploy usa o próprio host para Better Auth/JWKS. O branch de preview do
+Neon precisa das migrations e do role `app_authenticated`; o
+`DATABASE_AUTHENTICATED_URL` do Preview/develop deve apontar para esse branch.
+Login com Google em preview exige um redirect URI adicional no Google Cloud
+(email/senha funciona normalmente).
+
+As variáveis de banco de Production/Preview foram recriadas como **Sensitive**.
+Se a integração Neon recriar `DATABASE_URL`/`DATABASE_URL_UNPOOLED`, os avisos de
+`readable-secret` podem voltar; verifique a página de Environment Variables após
+re-sincronizar a integração.
+
 Para preparar um banco de produção novo:
 
 ```bash
