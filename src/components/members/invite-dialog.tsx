@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, type ComponentProps } from "react";
 import {
   CheckIcon,
   ClockIcon,
@@ -38,14 +38,18 @@ import {
 } from "@/components/ui/native-select";
 import { formatDate } from "@/lib/format";
 
-export function InviteDialog() {
+export function InviteDialog({
+  variant = "default",
+}: {
+  variant?: ComponentProps<typeof Button>["variant"];
+}) {
   const [open, setOpen] = useState(false);
   const [formKey, setFormKey] = useState(0);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="lg" className="h-9">
+        <Button size="lg" className="h-9" variant={variant}>
           <UserPlusIcon data-icon="inline-start" />
           Convidar pessoa
         </Button>
@@ -121,10 +125,34 @@ function InviteForm({ onReset }: { onReset: () => void }) {
   }
 
   return (
-    <form action={formAction} className="space-y-4">
-      <FieldGroup>
-        <Field data-invalid={Boolean(state?.fieldErrors?.email)}>
-          <FieldLabel htmlFor="invite-email">Email da pessoa</FieldLabel>
+      <form action={formAction} className="space-y-4">
+    <FieldGroup>
+      <Field data-invalid={Boolean(state?.fieldErrors?.name)}>
+        <FieldLabel htmlFor="invite-name">
+          Nome{" "}
+          <span className="font-normal text-muted-foreground">
+            (opcional)
+          </span>
+        </FieldLabel>
+        <Input
+          id="invite-name"
+          name="name"
+          placeholder="Como a pessoa é chamada"
+          className="h-10"
+          aria-invalid={Boolean(state?.fieldErrors?.name)}
+        />
+        <FieldDescription>
+          Com o nome, a pessoa já aparece na igreja antes de criar a conta.
+        </FieldDescription>
+        <FieldError
+          errors={state?.fieldErrors?.name?.map((message) => ({
+            message,
+          }))}
+        />
+      </Field>
+
+      <Field data-invalid={Boolean(state?.fieldErrors?.email)}>
+        <FieldLabel htmlFor="invite-email">Email da pessoa</FieldLabel>
           <Input
             id="invite-email"
             name="email"

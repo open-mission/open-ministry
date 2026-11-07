@@ -11,9 +11,13 @@ import {
   UsersIcon,
 } from "lucide-react";
 
+import { MemberDashboard } from "@/components/app/member-dashboard";
+import { StatCard } from "@/components/app/stat-card";
+import { BirthdaysCard } from "@/components/birthdays/birthdays-card";
 import { InviteDialog } from "@/components/members/invite-dialog";
 import { RoleBadge } from "@/components/members/role-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,8 +27,25 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  getDepartmentAgenda,
+  getPersonMemberships,
+  getUpcomingAssignments,
+} from "@/lib/agenda";
+import {
+  buildBirthdayEntries,
+  getTodayInSaoPaulo,
+} from "@/lib/birthdays";
 import { getInitials, isAdminRole } from "@/lib/format";
 import { requireOrganizationContext } from "@/lib/organizations";
+import {
+  ensurePersonForUser,
+  findPersonByUserId,
+  listPeople,
+  personDisplayEmail,
+  personDisplayImage,
+  personDisplayName,
+} from "@/lib/people";
 
 export const metadata: Metadata = {
   title: "Visão geral",
@@ -43,20 +64,61 @@ async function DashboardContent() {
 
   const { organization, session, isAdmin } = await requireOrganizationContext();
 
+  const people = await listPeople(organization.id);
+  const firstName = session.user.name.trim().split(/\s+/)[0] ?? "líder";
+  const birthdayEntries = buildBirthdayEntries(people, {
+    includeAge: isAdmin,
+    today: getTodayInSaoPaulo(),
+  });
+
+  if (!isAdmin) {
+    const person =
+      (await findPersonByUserId(organization.id, session.user.id)) ??
+      (await ensurePersonForUser(organization.id, {
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+        image: session.user.image ?? null,
+        birthday: session.user.birthday ?? null,
+      }));
+
+    const [memberships, assignments, agenda] = person
+      ? await Promise.all([
+          getPersonMemberships(person.id),
+          getUpcomingAssignments(organization.id, person.id),
+          getDepartmentAgenda(organization.id, person.id),
+        ])
+      : [[], [], []];
+
+    return (
+      <MemberDashboard
+        firstName={firstName}
+        organizationName={organization.name}
+        peopleCount={people.length}
+        birthdayEntries={birthdayEntries}
+        memberships={memberships}
+        assignments={assignments}
+        agenda={agenda}
+      />
+    );
+  }
+
   const members = organization.members;
+  const roleByUserId = new Map(
+    members.map((member) => [member.userId, member.role]),
+  );
   const pendingInvitations = organization.invitations.filter(
     (invitation) => invitation.status === "pending",
   );
   const admins = members.filter((member) => isAdminRole(member.role));
-  const firstName = session.user.name.trim().split(/\s+/)[0] ?? "líder";
-  const recentMembers = [...members]
+  const recentPeople = [...people]
     .sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     )
     .slice(0, 4);
 
-  const hasTeam = members.length > 1 || pendingInvitations.length > 0;
+  const hasTeam = people.length > 1 || pendingInvitations.length > 0;
   const hasAdminTeam = admins.length > 1;
 
   return (
@@ -84,7 +146,7 @@ async function DashboardContent() {
         <StatCard
           icon={UsersIcon}
           label="Pessoas"
-          value={members.length}
+          value={people.length}
           hint="fazem parte da igreja"
         />
         <StatCard
@@ -100,6 +162,8 @@ async function DashboardContent() {
           hint="cuidando da equipe"
         />
       </div>
+
+      <BirthdaysCard entries={birthdayEntries} />
 
       <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
         <Card>
@@ -143,38 +207,50 @@ async function DashboardContent() {
         <Card>
           <CardHeader>
             <CardTitle className="font-heading text-xl tracking-tight">
-              Equipe recente
+              Pessoas recentes
             </CardTitle>
             <CardDescription>
-              As pessoas que chegaram por último.
+              Quem chegou por último, com ou sem conta.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-1">
-            {recentMembers.map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/60"
-              >
-                <Avatar className="size-9">
-                  <AvatarImage
-                    src={member.user.image ?? undefined}
-                    alt={member.user.name}
-                  />
-                  <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
-                    {getInitials(member.user.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">
-                    {member.user.name}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {member.user.email}
-                  </p>
+            {recentPeople.map((person) => {
+              const role = person.userId
+                ? roleByUserId.get(person.userId)
+                : undefined;
+
+              return (
+                <div
+                  key={person.id}
+                  className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/60"
+                >
+                  <Avatar className="size-9">
+                    <AvatarImage
+                      src={personDisplayImage(person) ?? undefined}
+                      alt={personDisplayName(person)}
+                    />
+                    <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
+                      {getInitials(personDisplayName(person))}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
+                      {personDisplayName(person)}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {personDisplayEmail(person) ?? "Sem email cadastrado"}
+                    </p>
+                  </div>
+                  {role ? (
+                    <RoleBadge role={role} />
+                  ) : (
+                    <Badge variant="outline" className="font-normal">
+                      Sem conta
+                    </Badge>
+                  )}
                 </div>
-                <RoleBadge role={member.role} />
-              </div>
-            ))}
+              );
+            })}
 
             <Button
               asChild
@@ -191,37 +267,6 @@ async function DashboardContent() {
         </Card>
       </div>
     </div>
-  );
-}
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  hint,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: number;
-  hint: string;
-}) {
-  return (
-    <Card>
-      <CardContent className="flex items-start gap-4 p-5">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <Icon className="size-5" />
-        </span>
-        <div className="space-y-0.5">
-          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            {label}
-          </p>
-          <p className="font-heading text-3xl leading-none tracking-tight">
-            {value}
-          </p>
-          <p className="text-xs text-muted-foreground">{hint}</p>
-        </div>
-      </CardContent>
-    </Card>
   );
 }
 
@@ -272,6 +317,7 @@ function DashboardSkeleton() {
         <Skeleton className="h-28 rounded-xl" />
         <Skeleton className="h-28 rounded-xl" />
       </div>
+      <Skeleton className="h-40 rounded-xl" />
       <div className="grid gap-4 lg:grid-cols-2">
         <Skeleton className="h-72 rounded-xl" />
         <Skeleton className="h-72 rounded-xl" />

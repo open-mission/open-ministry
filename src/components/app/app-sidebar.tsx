@@ -22,6 +22,7 @@ import { getInitials, roleLabel } from "@/lib/format";
 
 type AppSidebarProps = {
   organizationName: string;
+  organizationLogo: string | null;
   role: string;
   user: {
     name: string;
@@ -32,6 +33,7 @@ type AppSidebarProps = {
 
 export function AppSidebar({
   organizationName,
+  organizationLogo,
   role,
   user,
 }: AppSidebarProps) {
@@ -42,9 +44,21 @@ export function AppSidebar({
           <SidebarMenuItem>
             <SidebarMenuButton asChild size="lg" tooltip="OpenMinistry">
               <Link href="/dashboard">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <ChurchIcon className="size-4" />
-                </span>
+                {organizationLogo ? (
+                  <Avatar className="size-8 shrink-0 rounded-lg ring-1 ring-foreground/10">
+                    <AvatarImage
+                      src={organizationLogo}
+                      alt={`Logo de ${organizationName}`}
+                    />
+                    <AvatarFallback className="rounded-lg bg-primary text-primary-foreground">
+                      <ChurchIcon className="size-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                    <ChurchIcon className="size-4" />
+                  </span>
+                )}
                 <span className="flex min-w-0 flex-col">
                   <span className="truncate font-heading text-base leading-tight tracking-tight">
                     OpenMinistry
@@ -70,18 +84,24 @@ export function AppSidebar({
 
       <SidebarFooter>
         <div className="flex items-center gap-2 rounded-lg border bg-sidebar-accent/40 p-2">
-          <Avatar className="size-9">
-            <AvatarImage src={user.image ?? undefined} alt={user.name} />
-            <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
-              {getInitials(user.name)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{user.name}</p>
-            <p className="truncate text-xs text-muted-foreground">
-              {roleLabel(role)}
-            </p>
-          </div>
+          <Link
+            href="/dashboard/profile"
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-md outline-none transition-colors hover:bg-sidebar-accent/60 focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+            title="Abrir meu perfil"
+          >
+            <Avatar className="size-9">
+              <AvatarImage src={user.image ?? undefined} alt={user.name} />
+              <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
+                {getInitials(user.name)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{user.name}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {roleLabel(role)}
+              </p>
+            </div>
+          </Link>
           <form action={signOutAction}>
             <input type="hidden" name="redirectTo" value="/" />
             <Button

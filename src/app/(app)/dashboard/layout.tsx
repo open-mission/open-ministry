@@ -1,6 +1,15 @@
 import { Suspense } from "react";
 
 import { AppSidebarLoader } from "@/components/app/app-sidebar-loader";
+import { ImpersonationBannerLoader } from "@/components/app/impersonation-banner-loader";
+import { MobileNav } from "@/components/app/mobile-nav";
+import { MobileNavShell } from "@/components/app/mobile-nav-shell";
+import { NotificationBarLoader } from "@/components/app/notification-bar-loader";
+import {
+  NotificationBellFallback,
+  NotificationBellLoader,
+} from "@/components/app/notification-bell-loader";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
@@ -23,13 +32,28 @@ export default function DashboardLayout({
           <SidebarTrigger />
           <Separator orientation="vertical" className="h-4" />
           <span className="text-sm font-medium">Painel</span>
-          <span className="ml-auto hidden text-xs tracking-[0.16em] text-muted-foreground uppercase sm:block">
-            OpenMinistry
-          </span>
+          <div className="ml-auto flex items-center gap-1">
+            <Suspense fallback={<NotificationBellFallback />}>
+              <NotificationBellLoader />
+            </Suspense>
+            <ThemeToggle />
+            <span className="hidden text-xs tracking-[0.16em] text-muted-foreground uppercase sm:block">
+              OpenMinistry
+            </span>
+          </div>
         </header>
-        <div className="flex flex-1 flex-col p-4 sm:p-6 lg:p-8">
+        <Suspense fallback={null}>
+          <ImpersonationBannerLoader />
+        </Suspense>
+        <Suspense fallback={null}>
+          <NotificationBarLoader />
+        </Suspense>
+        <div className="flex flex-1 flex-col p-4 pb-24 sm:p-6 sm:pb-24 md:pb-6 lg:p-8">
           {children}
         </div>
+        <Suspense fallback={<MobileNavShell />}>
+          <MobileNav />
+        </Suspense>
       </SidebarInset>
     </SidebarProvider>
   );

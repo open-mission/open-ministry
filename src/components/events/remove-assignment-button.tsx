@@ -1,0 +1,45 @@
+"use client";
+
+import { useTransition } from "react";
+import { XIcon } from "lucide-react";
+import { toast } from "sonner";
+
+import { removeScheduleAssignmentAction } from "@/app/actions/events";
+
+export function RemoveAssignmentButton({
+  assignmentId,
+  userName,
+  functionName,
+}: {
+  assignmentId: string;
+  userName: string;
+  functionName: string;
+}) {
+  const [pending, startTransition] = useTransition();
+
+  function handleRemove() {
+    startTransition(async () => {
+      const result = await removeScheduleAssignmentAction(assignmentId);
+
+      if (result.ok) {
+        toast.success("Pessoa removida da escala.");
+        return;
+      }
+
+      toast.error(result.error ?? "Não foi possível remover da escala.");
+    });
+  }
+
+  return (
+    <button
+      type="button"
+      className="ml-0.5 flex size-4 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-50"
+      aria-label={`Remover ${userName} de ${functionName}`}
+      title={`Remover ${userName} de ${functionName}`}
+      disabled={pending}
+      onClick={handleRemove}
+    >
+      <XIcon className="size-3" />
+    </button>
+  );
+}

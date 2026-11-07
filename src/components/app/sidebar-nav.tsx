@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboardIcon, UsersIcon } from "lucide-react";
+import {
+  CakeIcon,
+  CalendarDaysIcon,
+  ChurchIcon,
+  ClipboardListIcon,
+  HandHeartIcon,
+  LayoutDashboardIcon,
+  UsersIcon,
+} from "lucide-react";
 
 import {
   SidebarMenu,
@@ -21,6 +29,36 @@ const items = [
     href: "/dashboard/members",
     label: "Pessoas",
     icon: UsersIcon,
+    exact: false,
+  },
+  {
+    href: "/dashboard/departments",
+    label: "Departamentos",
+    icon: HandHeartIcon,
+    exact: false,
+  },
+  {
+    href: "/dashboard/church",
+    label: "Igreja",
+    icon: ChurchIcon,
+    exact: false,
+  },
+  {
+    href: "/dashboard/events",
+    label: "Cultos e eventos",
+    icon: CalendarDaysIcon,
+    exact: false,
+  },
+  {
+    href: "/dashboard/schedules",
+    label: "Escalas",
+    icon: ClipboardListIcon,
+    exact: false,
+  },
+  {
+    href: "/dashboard/birthdays",
+    label: "Aniversariantes",
+    icon: CakeIcon,
     exact: false,
   },
 ];

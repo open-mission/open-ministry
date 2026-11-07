@@ -6,15 +6,22 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { actionErrorMessage } from "@/lib/auth-errors";
-import { getAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
+import { syncUserAdminRole } from "@/lib/admin-role";
+import { findInvitationDetails } from "@/lib/invitations";
+import {
+  ensurePersonForEmail,
+  ensurePersonForUser,
+} from "@/lib/people";
 import { birthdayFieldSchema, updateBirthday } from "@/lib/profile";
+import { getRequestOrigin } from "@/lib/request-origin";
 import { getSession } from "@/lib/session";
 
 export type InviteFormState =
   | {
       error?: string;
       fieldErrors?: {
+        name?: string[];
         email?: string[];
         role?: string[];
       };
@@ -43,6 +50,20 @@ export type InvitationActionResult = {
 };
 
 const inviteSchema = z.object({
+  name: z.preprocess(
+    (value) => {
+      if (typeof value !== "string") {
+        return undefined;
+      }
+
+      const trimmed = value.trim();
+      return trimmed === "" ? undefined : trimmed;
+    },
+    z
+      .string()
+      .max(80, "O nome pode ter no máximo 80 caracteres.")
+      .optional(),
+  ),
   email: z.email("Informe um email válido.").trim().toLowerCase(),
   role: z.enum(["member", "admin"], {
     error: "Escolha um papel válido.",
@@ -54,25 +75,12 @@ const acceptInvitationSchema = z.object({
   birthday: birthdayFieldSchema,
 });
 
-async function getRequestOrigin(requestHeaders: Headers): Promise<string> {
-  const host =
-    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
-  const forwardedProto = requestHeaders.get("x-forwarded-proto");
-
-  if (host) {
-    const protocol =
-      forwardedProto ?? (host.startsWith("localhost") ? "http" : "https");
-    return `${protocol}://${host}`;
-  }
-
-  return getAppBaseUrl();
-}
-
 export async function inviteMemberAction(
   _state: InviteFormState,
   formData: FormData,
 ): Promise<InviteFormState> {
   const parsed = inviteSchema.safeParse({
+    name: formData.get("name"),
     email: formData.get("email"),
     role: formData.get("role"),
   });
@@ -94,6 +102,12 @@ export async function inviteMemberAction(
   const requestHeaders = await headers();
 
   try {
+    await ensurePersonForEmail({
+      organizationId: session.session.activeOrganizationId,
+      email: parsed.data.email,
+      name: parsed.data.name,
+    });
+
     const invitation = await auth.api.createInvitation({
       body: {
         email: parsed.data.email,
@@ -171,16 +185,37 @@ export async function acceptInvitationAction(
     return { error: "Entre para aceitar o convite." };
   }
 
+  const invitation = await findInvitationDetails(parsed.data.invitationId);
+  const requestHeaders = await headers();
+
   try {
     await updateBirthday(parsed.data.birthday);
     await auth.api.acceptInvitation({
       body: { invitationId: parsed.data.invitationId },
-      headers: await headers(),
+      headers: requestHeaders,
     });
+
+    await syncUserAdminRole(session.user.id);
+
+    if (invitation) {
+      await auth.api.setActiveOrganization({
+        body: { organizationId: invitation.organizationId },
+        headers: requestHeaders,
+      });
+
+      await ensurePersonForUser(invitation.organizationId, {
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+        image: session.user.image ?? null,
+        birthday: parsed.data.birthday ?? session.user.birthday ?? null,
+      });
+    }
   } catch (error) {
     return { error: actionErrorMessage(error) };
   }
 
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/members");
   redirect("/dashboard");
 }

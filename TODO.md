@@ -6,8 +6,6 @@ A principio teremos a tela do admin e dos membros. Vamos começar com a tela Adm
 
 ## TODO
 
-
-
 Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre commitando de forma organizada e seguindo o git flow os ajustes.
 
 ### Backlog
@@ -15,15 +13,21 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 - [ ] Configurar deploy na Vercel (repositório GitHub, variáveis de ambiente e domínio).
   - [x] Repositório público criado em `open-mission/open-ministry`
   - [x] Variáveis de ambiente configuradas na Vercel (incluindo `DATABASE_AUTHENTICATED_URL`)
-  - [ ] Domínio configurado
+  - [ ] Domínio configurado — pendente de acesso ao DNS/domínio
 
 ### Doing
 
-
-
 ### Done
 
-- [x]  Configuração do Ambiente: NextJs (ultima versão), NeonDB com Drizzle ORM, ShadnUI UI (Instale todos os componentes), Bun, Better Auth. Os Itens de configuração deixar em .env. Inicializar o Git. Configurar o Scalar API já desde de inicio para que possamos ter a documentação da api.
+- [x] Perfil, identidade da igreja, acesso como membro e tema.
+  - [x] Perfil em modo somente leitura, com edição ao clicar em “Editar perfil”
+  - [x] Upload de foto de perfil pelo UploadThing
+  - [x] Admin/owner atualiza nome e logo da igreja; logo no painel
+  - [x] Impersonação para admin/owner, com aviso fixo e retorno à conta original
+  - [x] Schema do plugin admin do Better Auth e sincronização do papel global
+  - [x] Tema claro, escuro e sistema no painel, login e site
+
+- [x] Configuração do Ambiente: NextJs (ultima versão), NeonDB com Drizzle ORM, ShadnUI UI (Instale todos os componentes), Bun, Better Auth. Os Itens de configuração deixar em .env. Inicializar o Git. Configurar o Scalar API já desde de inicio para que possamos ter a documentação da api.
   - [x] Next.js 16 + Bun + TypeScript + Tailwind CSS
   - [x] Todos os componentes do shadcn/ui instalados
   - [x] Better Auth configurado com Drizzle adapter e OpenAPI
@@ -51,6 +55,47 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - [x] Leituras do dashboard/membros usando a conexão autenticada
   - [x] Smoke test de isolamento entre duas igrejas
   - [x] Role, migrations e `DATABASE_AUTHENTICATED_URL` aplicados no banco/Vercel de produção
+- [x] Implementar o CRUD de Cadastro de Departamentos. A ideia é que possamos ter Nome, Descrição, Pessoas (podendo definir pessoas que fazem parte do Departamentos), tbm podemos definir as funcoes desse departamento, por exemplo Departamento de Midia tem as funcoes: Projeção, Stories, Fotografia e etc. Cada Função precisa ter um campo opcional de Descrição da funçao,a onde podemos explicar o que essa função faz. Cada Pessoa do departmanto podemos defiir quais areas elas podem atuar e qual nivel elas estao de experiencia nessa area (mais isso só visivel para os administradotes do departamento (ou Lider).
+  - [x] Cadastro, edição e exclusão de departamentos (owner/admin)
+  - [x] Funções com descrição opcional e contagem de pessoas atribuídas
+  - [x] Pessoas do departamento, com líderes definidos pelo admin
+  - [x] Funções por pessoa e nível de experiência visível só para admin/líder
+  - [x] Policies de leitura RLS e navegação própria no painel
+- [x] Implementar a funcionalidade de Aniversáriantes aonde mostra As datas de aniversáriantes da equipe, e qual o proximo aniversariante. Tbm é interessante ter um component que se tiver um aniversáriante hoje mostrar, tanto se for hoje, como também se for amanhã, por exemplo imagine que o lider entra no painel e ele pode ver que amanha é aniversário de um liderado.
+  - [x] Lista completa do ano, ordenada a partir do mês atual
+  - [x] Destaque de hoje e amanhã no painel e na página
+  - [x] Próximo aniversariante em evidência
+  - [x] Privacidade: dia/mês para todos; ano e idade só para admin
+  - [x] Cada pessoa pode completar a própria data de nascimento
+- [x] Desenvolver barra de notificacao que será usado para notificar quando um usuario for escalado, quando tiver notificacoes, os admin podem enviar notificacoes para a sua equipe e assim por diante.
+  - [x] Notificações in-app por pessoa, com leitura e histórico
+  - [x] Sino com badge e barra da notificação não lida no painel
+  - [x] Notificação automática ao escalar e ao remover da escala
+  - [x] Avisos da administração para toda a igreja ou para um departamento
+  - [x] Central com marcar como lida e marcar todas como lidas
+  - [x] Policies RLS e API de contagem para o sino
+- [x] Desenvolver o Mobile que permitira os admin gerenciar as partes, mas tbm permitira os membros veres os eventos em que eles estaram escalados, informacoes sobre a agenda em que o seu departamento está vinculado. Desenvolver o seu perfil page tbm.
+  - [x] PWA instalável com manifest, ícones, service worker e página offline
+  - [x] Navegação inferior no celular
+  - [x] Home do membro com escalas pessoais e agenda do departamento
+  - [x] Página de perfil com nome, aniversário e avatar
+  - [x] Aba Escalas pessoal para membros, com próximas e passadas
+  - [x] Ajustes de responsividade nas telas de gestão e lista de pessoas em cartões no celular
+- [x] Permitir cadastrar pessoas que ainda nao tem um usuario e depois poder vincular eles com um usuario cadastrado e/ou poder enviar um link de cadastro para essa pessoa.
+  - [x] Modelo de pessoa com vínculo opcional a usuário
+  - [x] Migrar departamentos e escalas para referenciar pessoas
+  - [x] Cadastro, edição, exclusão e convite de pessoas
+  - [x] Vínculo automático pelo email e vínculo manual pelo admin
+  - [x] Aniversariantes e painel usando pessoas
+- [x] Implementar a funcionalidade de Cultos e Eventos para cadastrar dados do Evento e Definir os Departamentos e Equipes que estaram atuando nesse evento, a ideia é começarmos simples e depois vamos aperfeiçoando. Entao ao cadastrar um evento ou Culto podemos definir Quais departamentos estaram atuando nesse evento. Com isso teremos uma aba chamado Escala que nos permite definir as pessoas que irao atuar nessa evento/culto, ele nao precisa configurar tudo na mesma hora, ele pode começar e depois terminar de ajustar. Com essa funcionalidade tbm teremos uma nova secao chamado Escalas, aonde poderemos ver todas as escalas criadas, as quejá passaram e as que virão. Assim Escala é um tipo de dados que pode estar vinculado a um evento ou culto. Ponto importante Quando cadastramos um evento podemos definri um evento recorreente (semanal, mensal, quinzenal ou customizado) mas precisamos de instancias separadas desse culto, pois a escala de um culto X recorrente que aconteceu por exemoplo nesse domingo, nao será a mesma que da semana que vem por exemplo. Mas quando for ajustarmos informacoes do evento precisamos da opcao de salvar esse ajusta apenas para esse evento ou para todos as ocorrencias.
+  - [x] Cadastro de cultos e eventos com tipo, local, descrição, data, horário e duração
+  - [x] Recorrência semanal, quinzenal, mensal e personalizada, com ocorrências separadas
+  - [x] Edição e exclusão apenas desta ocorrência ou de toda a série
+  - [x] Departamentos atuando em cada evento
+  - [x] Escala por função do departamento, com pessoas do próprio departamento
+  - [x] Seção Escalas com os encontros futuros e o histórico
+  - [x] Admin gerencia eventos; líder do departamento monta a escala da sua equipe
+  - [x] Policies de leitura RLS para eventos, departamentos atuantes e escalas
 
 ## Comentários ao Usuário (Para agentes deixar mensagens para os seres humanos)
 
@@ -59,3 +104,11 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 - **06/11/2026:** OAuth2 do Google concluído. Nome, email e avatar vêm do perfil Google; a data de aniversário é opcional e coletada no cadastro, no onboarding e no aceite de convite. A URL de autorização foi validada (PKCE, escopos e redirect `http://localhost:3000/api/auth/callback/google`) e a persistência do aniversário foi confirmada no NeonDB. Próxima task: deploy na Vercel.
 - **06/11/2026:** Repositório público criado em `open-mission/open-ministry` sob a **Sustainable Use License** (modelo fair-code, similar ao n8n): permite ver o código e fazer self-host, mas restringe uso comercial por terceiros e exige preservar a identidade visual da Open Mission. Faltam as variáveis de ambiente e o domínio na Vercel.
 - **06/11/2026:** RLS concluído. A aplicação passou a usar duas conexões: `neondb_owner` para migrations/Better Auth e `app_authenticated` (sem `BYPASSRLS`) para leituras por igreja. O JWT do Better Auth carrega `sub`/`org_id`, os claims são injetados por transação e as policies isolam `organization`, `member`, `invitation` e `user`. O Neon MCP foi ativado via OAuth. O role e as migrations foram aplicados também no banco de produção; `DATABASE_AUTHENTICATED_URL` está configurada na Vercel (Production e Preview/develop). Próxima pendência: domínio na Vercel.
+- **06/11/2026:** Departamentos concluído. Administradores criam e excluem ministérios e definem líderes; líderes editam o próprio departamento. Cada departamento tem funções com descrição opcional e pessoas com funções e nível de experiência, visível apenas para admin/líder. As novas tabelas têm policies de leitura RLS e grants para `app_authenticated`. Próxima task: aniversariantes.
+- **06/11/2026:** Aniversariantes concluído. O painel mostra hoje, amanhã e os próximos aniversários; a página dedicada lista os 12 meses a partir do mês atual, com o próximo aniversariante em destaque. O dia e o mês são visíveis para a igreja; ano e idade só para owner/admin. A própria pessoa pode completar a data de nascimento em `/dashboard/birthdays`. Próxima task: cultos, eventos e escalas.
+- **06/11/2026:** Cultos, eventos e escalas concluídos. Eventos têm tipo, local, descrição, duração e recorrência (semanal, quinzenal, mensal ou a cada N semanas), gerando ocorrências independentes com escala própria. A edição e a exclusão podem valer só para a ocorrência ou para toda a série. Cada evento define os departamentos atuantes e a escala é montada por função, com pessoas do próprio departamento; admin gerencia eventos e líderes montam a escala da sua equipe. A seção Escalas mostra os encontros futuros e o histórico.
+- **06/11/2026:** Validação final concluída. As novas páginas e diálogos foram revisados no navegador em 1440px e 390px; os fluxos reais de criar/editar/excluir série recorrente, criar departamento e função, adicionar/remover pessoa, definir liderança, atribuir função com experiência, escalar e remover da escala foram exercitados contra o NeonDB. As permissões foram conferidas com uma conta de líder de departamento (vê apenas a própria equipe e não gerencia eventos). Os dados de teste foram removidos. Pendência restante: domínio na Vercel.
+- **06/11/2026:** Pessoas pré-cadastradas concluído. Departamentos, escalas e aniversariantes passaram a referenciar `person`, que pode existir sem usuário; a migração fez o backfill das igrejas existentes. É possível criar, editar, excluir e convidar pessoas, vincular manualmente a uma conta e o vínculo automático acontece ao aceitar um convite pelo email. A tela de Pessoas mostra contas e pessoas sem conta, com departamentos e funções, e o mobile usa cartões em vez de tabela. Fluxos testados no navegador (criar, convidar, vincular, escalar sem conta, editar e excluir) e aceite de convite validado com vínculo automático e igreja ativa.
+- **06/11/2026:** Mobile/PWA concluído. O app é instalável (manifest, ícones, service worker e página offline), tem navegação inferior no celular e uma home própria para membros com próximas escalas, agenda dos departamentos, aniversários e estatísticas pessoais. A aba Escalas mostra apenas as escalas do membro, com próximas e passadas. O perfil permite editar nome, aniversário e avatar, lista departamentos/funções e as próximas escalas. Tudo revisado em 390px e 1440px; atualização de perfil, service worker, cache offline e manifesto validados.
+- **06/11/2026:** Notificações concluído. A central in-app tem sino com badge, barra da notificação não lida, leitura individual e em lote. Escalar ou remover uma pessoa gera notificação para a pessoa vinculada; a administração pode enviar avisos para toda a igreja ou para um departamento. Contagem do sino é atualizada por polling. Testado com criação real de escala e aviso, leitura, marcar todas, barra e contador sumindo, API de contagem e RLS.
+- **06/11/2026:** Perfil, identidade da igreja, acesso como membro e tema concluídos. O perfil agora abre somente leitura e entra em edição por um botão; nome, aniversário e foto são salvos juntos, com upload pelo UploadThing. Admin/owner pode atualizar nome e logo da igreja em `/dashboard/church`, e o logo aparece no topo do painel. O plugin admin do Better Auth permite entrar como uma pessoa da igreja, com aviso fixo e retorno à conta original; a autorização é por igreja e os endpoints HTTP administrativos ficam bloqueados. O tema claro/escuro/sistema foi adicionado no painel, login e site. Fluxos de upload, edição de perfil, identidade da igreja, impersonação e alternância de tema validados no navegador em 1440px e 390px; schema e migration do admin plugin aplicados no Neon.

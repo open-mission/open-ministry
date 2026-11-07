@@ -1,6 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Geist } from "next/font/google";
+import { Suspense } from "react";
 
+import { ServiceWorker } from "@/components/app/service-worker";
+import { UploadThingSSR } from "@/components/app/uploadthing-ssr";
+import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -23,20 +27,49 @@ export const metadata: Metadata = {
     template: "%s | OpenMinistry",
   },
   description:
-    "Organize pessoas, convites e permissões da sua igreja em um só lugar.",
+    "Organize pessoas, departamentos, cultos e escalas da sua igreja em um só lugar.",
+  applicationName: "OpenMinistry",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "OpenMinistry",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#264a3a",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
+      suppressHydrationWarning
+      data-scroll-behavior="smooth"
       className={cn("font-sans", geist.variable, fraunces.variable)}
     >
       <body>
-        <TooltipProvider>
-          {children}
-          <Toaster />
-        </TooltipProvider>
+        <Suspense fallback={null}>
+          <UploadThingSSR />
+        </Suspense>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <TooltipProvider>
+            {children}
+            <Toaster mobileOffset={{ bottom: 80 }} />
+            <ServiceWorker />
+          </TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
