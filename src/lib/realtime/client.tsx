@@ -1,7 +1,16 @@
 "use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react";
-import { createRealtimeClient, type RealtimeClient } from "@neon/realtime/client";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+import {
+  createRealtimeClient,
+  type RealtimeClient,
+} from "@neon/realtime/client";
 import { drizzleParsers } from "@neon/realtime-drizzle/client";
 import { RealtimeProvider } from "@neon/realtime-react";
 
@@ -26,17 +35,23 @@ export function OpenMinistryRealtimeProvider({
 }) {
   const realtimeUrl = process.env.NEXT_PUBLIC_NEON_REALTIME_URL;
 
-  const [client] = useState<RealtimeClient | null>(() => {
-    if (!realtimeUrl) return null;
+  const [client, setClient] = useState<RealtimeClient | null>(null);
+
+  useEffect(() => {
+    if (!realtimeUrl) return;
     try {
-      return createRealtimeClient({
+      const c = createRealtimeClient({
         url: realtimeUrl,
         parsers: { ...drizzleParsers },
       });
+      setClient(c);
+      return () => {
+        c.close();
+      };
     } catch {
-      return null;
+      return;
     }
-  });
+  }, [realtimeUrl]);
 
   const value: RealtimeContextValue = {
     isEnabled: Boolean(client),
