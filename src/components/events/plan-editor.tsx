@@ -5,14 +5,18 @@ import { toast } from "sonner";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
+  BookmarkPlusIcon,
   ClockIcon,
+  DownloadIcon,
   GripVerticalIcon,
+  LayoutTemplateIcon,
   ListOrderedIcon,
-  Loader2Icon,
+  MoreHorizontalIcon,
   PencilIcon,
   PlusIcon,
   SparklesIcon,
   Trash2Icon,
+  UploadIcon,
   UserIcon,
 } from "lucide-react";
 import {
@@ -34,11 +38,17 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 import {
-  createPlanItemAction,
   deletePlanItemAction,
   reorderPlanItemsAction,
 } from "@/app/actions/events";
 import { PlanItemDialog } from "@/components/events/plan-item-dialog";
+import {
+  ClearPlanDialog,
+  exportPlanAsJson,
+  ImportPlanDialog,
+  ManagePlanTemplatesDialog,
+  SavePlanDialog,
+} from "@/components/events/plan-template-dialogs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,6 +67,13 @@ import {
   Card,
   CardContent,
 } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   computePlanItemTimes,
   type ComputedPlanItem,
@@ -101,6 +118,7 @@ type PlanEditorProps = {
 
 export function PlanEditor({
   eventId,
+  eventTitle,
   startsAt,
   endsAt,
   planItems,
@@ -113,6 +131,12 @@ export function PlanEditor({
   const [editingItem, setEditingItem] = useState<RawPlanItem | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Template and action dialog states
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [manageTemplatesOpen, setManageTemplatesOpen] = useState(false);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   if (prevPlanItems !== planItems) {
     setPrevPlanItems(planItems);
@@ -203,66 +227,6 @@ export function PlanEditor({
     });
   }
 
-  async function handleApplyTemplate() {
-    startTransition(async () => {
-      const template = [
-        { type: "header", title: "INTRODUÇÃO & ABERTURA", duration: 0 },
-        {
-          type: "item",
-          title: "Oração Inicial e Boas-Vindas",
-          duration: 300,
-          desc: "Acolhimento da congregação e oração de abertura.",
-        },
-        { type: "header", title: "LOUVOR & ADORAÇÃO", duration: 0 },
-        {
-          type: "item",
-          title: "Momento de Louvor Congregacional",
-          duration: 1200,
-          desc: "Músicas e adoração com o ministério de louvor.",
-        },
-        { type: "header", title: "COMUNHÃO & AVISOS", duration: 0 },
-        {
-          type: "item",
-          title: "Avisos e Recepção de Visitantes",
-          duration: 300,
-          desc: "Avisos gerais e acolhimento dos que nos visitam pela primeira vez.",
-        },
-        {
-          type: "item",
-          title: "Dízimos e Ofertas",
-          duration: 420,
-          desc: "Oração e cântico de gratidão pelas ofertas.",
-        },
-        { type: "header", title: "MINISTRAÇÃO DA PALAVRA", duration: 0 },
-        {
-          type: "item",
-          title: "Pregação da Palavra",
-          duration: 2100,
-          desc: "Ministração bíblica principal.",
-        },
-        { type: "header", title: "ENCERRAMENTO", duration: 0 },
-        {
-          type: "item",
-          title: "Apelo / Oração Final e Bênção Apostólica",
-          duration: 480,
-          desc: "Oração pastoral e encerramento.",
-        },
-      ];
-
-      for (const item of template) {
-        const formData = new FormData();
-        formData.set("eventId", eventId);
-        formData.set("type", item.type);
-        formData.set("title", item.title);
-        formData.set("durationSeconds", item.duration.toString());
-        if (item.desc) formData.set("description", item.desc);
-        await createPlanItemAction(undefined, formData);
-      }
-
-      toast.success("Modelo de culto carregado com sucesso!");
-    });
-  }
-
   return (
     <div className="space-y-6">
       {/* Header bar and action controls */}
@@ -306,6 +270,57 @@ export function PlanEditor({
               people={people}
               mode="create-item"
             />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5 h-9">
+                  <MoreHorizontalIcon className="size-4" />
+                  <span className="hidden sm:inline">Modelos &amp; Ações</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem
+                  onClick={() => setManageTemplatesOpen(true)}
+                  className="gap-2 cursor-pointer"
+                >
+                  <LayoutTemplateIcon className="size-4 text-muted-foreground" />
+                  <span>Modelos de cronograma</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setSaveDialogOpen(true)}
+                  disabled={computedItems.length === 0}
+                  className="gap-2 cursor-pointer"
+                >
+                  <BookmarkPlusIcon className="size-4 text-muted-foreground" />
+                  <span>Salvar como modelo...</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => exportPlanAsJson(eventTitle, computedItems)}
+                  disabled={computedItems.length === 0}
+                  className="gap-2 cursor-pointer"
+                >
+                  <DownloadIcon className="size-4 text-muted-foreground" />
+                  <span>Exportar arquivo (.json)</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setImportDialogOpen(true)}
+                  className="gap-2 cursor-pointer"
+                >
+                  <UploadIcon className="size-4 text-muted-foreground" />
+                  <span>Importar arquivo (.json)</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setClearDialogOpen(true)}
+                  disabled={computedItems.length === 0}
+                  className="gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                >
+                  <Trash2Icon className="size-4" />
+                  <span>Limpar cronograma</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         ) : null}
       </div>
@@ -327,16 +342,20 @@ export function PlanEditor({
             {canManage ? (
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <Button
-                  onClick={handleApplyTemplate}
+                  onClick={() => setManageTemplatesOpen(true)}
                   disabled={isPending}
                   className="gap-2"
                 >
-                  {isPending ? (
-                    <Loader2Icon className="size-4 animate-spin" />
-                  ) : (
-                    <SparklesIcon className="size-4" />
-                  )}
-                  Carregar modelo padrão de culto
+                  <SparklesIcon className="size-4" />
+                  Carregar modelo de culto
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setImportDialogOpen(true)}
+                  className="gap-2"
+                >
+                  <UploadIcon className="size-4" />
+                  Importar arquivo (.json)
                 </Button>
                 <PlanItemDialog
                   eventId={eventId}
@@ -422,6 +441,39 @@ export function PlanEditor({
           }}
         />
       ) : null}
+
+      {/* Save Template Dialog */}
+      <SavePlanDialog
+        eventId={eventId}
+        open={saveDialogOpen}
+        onOpenChange={setSaveDialogOpen}
+        itemsCount={computedItems.length}
+        totalDurationSeconds={totalPlanSeconds}
+      />
+
+      {/* Manage / Apply Templates Dialog */}
+      <ManagePlanTemplatesDialog
+        eventId={eventId}
+        open={manageTemplatesOpen}
+        onOpenChange={setManageTemplatesOpen}
+        currentItemsCount={computedItems.length}
+      />
+
+      {/* Clear Plan Confirmation Dialog */}
+      <ClearPlanDialog
+        eventId={eventId}
+        open={clearDialogOpen}
+        onOpenChange={setClearDialogOpen}
+        itemsCount={computedItems.length}
+      />
+
+      {/* Import Plan JSON Dialog */}
+      <ImportPlanDialog
+        eventId={eventId}
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        currentItemsCount={computedItems.length}
+      />
     </div>
   );
 }
