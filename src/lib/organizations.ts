@@ -107,21 +107,29 @@ export const getOrganizationContext = cache(
       return getOrganizationContextFromOwner();
     }
 
-    return withTenantDb(async (tx, session) => {
-      const organizationId = session.session.activeOrganizationId;
+    const session = await getSession();
+    const organizationId = session?.session.activeOrganizationId;
 
-      if (!organizationId) {
-        return null;
-      }
+    if (!session || !organizationId) {
+      return null;
+    }
 
-      const organization = await getTenantOrganization(tx, organizationId);
+    return remember(
+      `org:tenant-context:${organizationId}:${session.user.id}`,
+      60,
+      async () => {
+        return withTenantDb(async (tx, s) => {
+          const organization = await getTenantOrganization(tx, organizationId);
 
-      if (!organization) {
-        return null;
-      }
+          if (!organization) {
+            return null;
+          }
 
-      return buildContext(session, organization);
-    });
+          return buildContext(s, organization);
+        });
+      },
+      [`org:${organizationId}`],
+    );
   },
 );
 

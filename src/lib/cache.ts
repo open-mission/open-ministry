@@ -107,14 +107,17 @@ export async function cacheSet<T>(
   if (redis && isRedisConfigured()) {
     try {
       const serialized = JSON.stringify(value);
-      await redis.set(key, serialized, { ex: ttlSeconds });
+      const pipeline = redis.pipeline();
+      pipeline.set(key, serialized, { ex: ttlSeconds });
 
       // Salvar tags no Redis usando sets para invalidação remota
       for (const tag of tags) {
         const tagKey = `tag:${tag}`;
-        await redis.sadd(tagKey, key);
-        await redis.expire(tagKey, Math.max(ttlSeconds * 2, 86400));
+        pipeline.sadd(tagKey, key);
+        pipeline.expire(tagKey, Math.max(ttlSeconds * 2, 86400));
       }
+
+      await pipeline.exec();
     } catch (err) {
       console.warn(`[Cache] Erro ao salvar no Redis para chave "${key}":`, err);
     }
@@ -160,18 +163,34 @@ export async function cacheInvalidateTags(...tags: string[]): Promise<void> {
     }
   }
 
-  // Invalidação em L2 Redis
+  // Invalidação em L2 Redis usando pipeline
   const redis = getRedisClient();
   if (redis && isRedisConfigured()) {
     try {
-      for (const tag of tags) {
-        const tagKey = `tag:${tag}`;
-        const remoteKeys = await redis.smembers(tagKey);
-        if (remoteKeys && remoteKeys.length > 0) {
-          await redis.del(...remoteKeys);
-        }
-        await redis.del(tagKey);
+      const tagKeys = tags.map((t) => `tag:${t}`);
+      const pipelineRead = redis.pipeline();
+      for (const tagKey of tagKeys) {
+        pipelineRead.smembers(tagKey);
       }
+      const results = (await pipelineRead.exec()) as (string[] | null)[];
+
+      const allRemoteKeys = new Set<string>();
+      if (Array.isArray(results)) {
+        results.forEach((keys) => {
+          if (Array.isArray(keys)) {
+            keys.forEach((k) => allRemoteKeys.add(k));
+          }
+        });
+      }
+
+      const pipelineDel = redis.pipeline();
+      if (allRemoteKeys.size > 0) {
+        pipelineDel.del(...Array.from(allRemoteKeys));
+      }
+      for (const tagKey of tagKeys) {
+        pipelineDel.del(tagKey);
+      }
+      await pipelineDel.exec();
     } catch (err) {
       console.warn("[Cache] Erro ao invalidar tags no Redis:", err);
     }
