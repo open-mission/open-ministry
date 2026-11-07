@@ -792,3 +792,263 @@ export async function removeScheduleAssignmentAction(
   revalidateEvents(assignment.schedule.eventId);
   return { ok: true };
 }
+
+async function canManageEventPlan(
+  organizationId: string,
+  eventId: string,
+  userId: string,
+  isAdmin: boolean,
+): Promise<boolean> {
+  if (isAdmin) {
+    return true;
+  }
+
+  const event = await getEvent(organizationId, eventId);
+  if (!event) {
+    return false;
+  }
+
+  for (const dep of event.departments) {
+    const access = await getDepartmentAccess(
+      organizationId,
+      dep.departmentId,
+      userId,
+      false,
+    );
+    if (access?.canManage) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+const planItemSchema = z.object({
+  eventId: z.string().min(1, "ID do evento é obrigatório."),
+  type: z.enum(["header", "item"]).default("item"),
+  title: z
+    .string()
+    .trim()
+    .min(1, "Informe o título do item ou seção.")
+    .max(120, "O título pode ter no máximo 120 caracteres."),
+  description: optionalText(500, "A descrição pode ter no máximo 500 caracteres."),
+  durationSeconds: z.coerce.number().min(0).default(0),
+  personId: z.string().optional().or(z.literal("")),
+  customResponsible: optionalText(120, "O responsável pode ter no máximo 120 caracteres."),
+  sectionId: z.string().optional().or(z.literal("")),
+});
+
+export type PlanItemFormState =
+  | {
+      error?: string;
+      fieldErrors?: {
+        title?: string[];
+        description?: string[];
+        durationSeconds?: string[];
+      };
+      success?: boolean;
+    }
+  | undefined;
+
+export async function createPlanItemAction(
+  _state: PlanItemFormState,
+  formData: FormData,
+): Promise<PlanItemFormState> {
+  const parsed = planItemSchema.safeParse({
+    eventId: formData.get("eventId"),
+    type: formData.get("type") ?? "item",
+    title: formData.get("title"),
+    description: formData.get("description"),
+    durationSeconds: formData.get("durationSeconds") ?? 0,
+    personId: formData.get("personId") ?? undefined,
+    customResponsible: formData.get("customResponsible") ?? undefined,
+    sectionId: formData.get("sectionId") ?? undefined,
+  });
+
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  const context = await getOrganizationContext();
+  if (!context) {
+    return { error: "Sua sessão expirou." };
+  }
+
+  const canManage = await canManageEventPlan(
+    context.organization.id,
+    parsed.data.eventId,
+    context.session.user.id,
+    context.isAdmin,
+  );
+
+  if (!canManage) {
+    return {
+      error: "Você não tem permissão para editar o cronograma deste evento.",
+    };
+  }
+
+  const existingItems = await db.query.eventPlanItem.findMany({
+    where: eq(schema.eventPlanItem.eventId, parsed.data.eventId),
+    columns: { order: true },
+  });
+
+  const nextOrder =
+    existingItems.reduce((max, item) => Math.max(max, item.order), -1) + 1;
+
+  try {
+    await db.insert(schema.eventPlanItem).values({
+      id: randomUUID(),
+      eventId: parsed.data.eventId,
+      type: parsed.data.type,
+      title: parsed.data.title,
+      description: parsed.data.description,
+      durationSeconds: parsed.data.durationSeconds,
+      order: nextOrder,
+      personId: parsed.data.personId || null,
+      customResponsible: parsed.data.customResponsible || null,
+      sectionId: parsed.data.sectionId || null,
+    });
+  } catch (error) {
+    console.error("Erro ao criar item do cronograma", error);
+    return { error: "Não foi possível adicionar o item ao cronograma." };
+  }
+
+  revalidateEvents(parsed.data.eventId);
+  return { success: true };
+}
+
+export async function updatePlanItemAction(
+  _state: PlanItemFormState,
+  formData: FormData,
+): Promise<PlanItemFormState> {
+  const itemId = formData.get("id")?.toString();
+  if (!itemId) {
+    return { error: "Item não informado." };
+  }
+
+  const parsed = planItemSchema.safeParse({
+    eventId: formData.get("eventId"),
+    type: formData.get("type") ?? "item",
+    title: formData.get("title"),
+    description: formData.get("description"),
+    durationSeconds: formData.get("durationSeconds") ?? 0,
+    personId: formData.get("personId") ?? undefined,
+    customResponsible: formData.get("customResponsible") ?? undefined,
+    sectionId: formData.get("sectionId") ?? undefined,
+  });
+
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  const context = await getOrganizationContext();
+  if (!context) {
+    return { error: "Sua sessão expirou." };
+  }
+
+  const canManage = await canManageEventPlan(
+    context.organization.id,
+    parsed.data.eventId,
+    context.session.user.id,
+    context.isAdmin,
+  );
+
+  if (!canManage) {
+    return {
+      error: "Você não tem permissão para editar o cronograma deste evento.",
+    };
+  }
+
+  try {
+    await db
+      .update(schema.eventPlanItem)
+      .set({
+        title: parsed.data.title,
+        description: parsed.data.description ?? null,
+        durationSeconds: parsed.data.durationSeconds,
+        personId: parsed.data.personId || null,
+        customResponsible: parsed.data.customResponsible || null,
+      })
+      .where(eq(schema.eventPlanItem.id, itemId));
+  } catch (error) {
+    console.error("Erro ao atualizar item do cronograma", error);
+    return { error: "Não foi possível salvar as alterações." };
+  }
+
+  revalidateEvents(parsed.data.eventId);
+  return { success: true };
+}
+
+export async function deletePlanItemAction(
+  itemId: string,
+  eventId: string,
+): Promise<EventActionResult> {
+  const context = await getOrganizationContext();
+  if (!context) {
+    return { ok: false, error: "Sua sessão expirou." };
+  }
+
+  const canManage = await canManageEventPlan(
+    context.organization.id,
+    eventId,
+    context.session.user.id,
+    context.isAdmin,
+  );
+
+  if (!canManage) {
+    return { ok: false, error: "Permissão insuficiente." };
+  }
+
+  try {
+    await db
+      .delete(schema.eventPlanItem)
+      .where(eq(schema.eventPlanItem.id, itemId));
+  } catch (error) {
+    console.error("Erro ao remover item do cronograma", error);
+    return { ok: false, error: "Não foi possível remover o item." };
+  }
+
+  revalidateEvents(eventId);
+  return { ok: true };
+}
+
+export async function reorderPlanItemsAction(
+  eventId: string,
+  orderedIds: string[],
+): Promise<EventActionResult> {
+  const context = await getOrganizationContext();
+  if (!context) {
+    return { ok: false, error: "Sua sessão expirou." };
+  }
+
+  const canManage = await canManageEventPlan(
+    context.organization.id,
+    eventId,
+    context.session.user.id,
+    context.isAdmin,
+  );
+
+  if (!canManage) {
+    return { ok: false, error: "Permissão insuficiente." };
+  }
+
+  try {
+    for (let index = 0; index < orderedIds.length; index++) {
+      await db
+        .update(schema.eventPlanItem)
+        .set({ order: index })
+        .where(
+          and(
+            eq(schema.eventPlanItem.id, orderedIds[index]),
+            eq(schema.eventPlanItem.eventId, eventId),
+          ),
+        );
+    }
+  } catch (error) {
+    console.error("Erro ao reordenar cronograma", error);
+    return { ok: false, error: "Não foi possível reordenar o cronograma." };
+  }
+
+  revalidateEvents(eventId);
+  return { ok: true };
+}

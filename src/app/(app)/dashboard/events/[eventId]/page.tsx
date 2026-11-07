@@ -6,15 +6,19 @@ import { Suspense } from "react";
 import {
   ArrowLeftIcon,
   ClipboardListIcon,
+  ClockIcon,
   MapPinIcon,
   RepeatIcon,
+  UsersIcon,
 } from "lucide-react";
 
 import { DeleteEventButton } from "@/components/events/delete-event-button";
 import { EditEventDialog } from "@/components/events/edit-event-dialog";
+import { PlanEditor } from "@/components/events/plan-editor";
 import { ScheduleEditor } from "@/components/events/schedule-editor";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listDepartments } from "@/lib/departments";
 import {
   eventDateParts,
@@ -28,6 +32,8 @@ import {
 } from "@/lib/events";
 import { eventKindLabels, type EventKind } from "@/lib/event-options";
 import { requireOrganizationContext } from "@/lib/organizations";
+import { listPeople } from "@/lib/people";
+import { personDisplayImage } from "@/lib/person-format";
 
 export const metadata: Metadata = {
   title: "Culto ou evento",
@@ -61,7 +67,10 @@ async function EventContent({
     notFound();
   }
 
-  const departments = await listDepartments(organization.id);
+  const [departments, people] = await Promise.all([
+    listDepartments(organization.id),
+    listPeople(organization.id),
+  ]);
   const actingIds = new Set(
     event.departments.map((item) => item.departmentId),
   );
@@ -74,6 +83,14 @@ async function EventContent({
   const defaultDuration = Math.round(
     (event.endsAt.getTime() - event.startsAt.getTime()) / 60_000,
   );
+  const canManagePlan =
+    isAdmin ||
+    actingDepartments.some((department) =>
+      department.members.some(
+        (member) =>
+          member.person?.userId === session.user.id && member.isLeader,
+      ),
+    );
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
@@ -192,46 +209,84 @@ async function EventContent({
         ) : null}
       </header>
 
-      <section className="space-y-4">
-        <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
-          <h2 className="font-heading text-2xl tracking-tight">Escala</h2>
-          <span className="text-xs text-muted-foreground">
-            {progress.totalFunctions === 0
-              ? "Sem funções definidas"
-              : `${progress.filledFunctions} de ${progress.totalFunctions} funções preenchidas · ${progress.assignmentsCount} ${
-                  progress.assignmentsCount === 1
-                    ? "pessoa escalada"
-                    : "pessoas escaladas"
-                }`}
-          </span>
-        </div>
+      <Tabs defaultValue="order" className="space-y-6">
+        <TabsList className="w-fit p-1">
+          <TabsTrigger value="order" className="gap-2 py-1.5 px-3">
+            <ClockIcon className="size-4" />
+            Cronograma do Culto
+            {event.planItems?.length ? (
+              <span className="rounded-full bg-primary/10 px-1.5 py-0.2 text-[10px] font-semibold text-primary">
+                {event.planItems.length}
+              </span>
+            ) : null}
+          </TabsTrigger>
 
-        {actingDepartments.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed px-6 py-10 text-center">
-            <span className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-              <ClipboardListIcon className="size-5" />
+          <TabsTrigger value="teams" className="gap-2 py-1.5 px-3">
+            <UsersIcon className="size-4" />
+            Escala & Equipes
+            <span className="rounded-full bg-muted px-1.5 py-0.2 text-[10px] font-semibold text-muted-foreground">
+              {progress.assignmentsCount}
             </span>
-            <div className="max-w-md space-y-1">
-              <p className="text-sm font-medium">
-                Nenhum departamento atuando
-              </p>
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                {isAdmin
-                  ? "Edite o evento para escolher os departamentos. Depois, volte aqui para escalar as pessoas em cada função."
-                  : "A liderança ainda não definiu os departamentos deste evento."}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <ScheduleEditor
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="order">
+          <PlanEditor
             eventId={event.id}
-            departments={actingDepartments}
-            assignments={assignments}
-            currentUserId={session.user.id}
-            isAdmin={isAdmin}
+            eventTitle={event.title}
+            startsAt={event.startsAt}
+            endsAt={event.endsAt}
+            planItems={event.planItems ?? []}
+            people={people.map((p) => ({
+              id: p.id,
+              name: p.name,
+              avatarUrl: personDisplayImage(p),
+            }))}
+            canManage={canManagePlan}
           />
-        )}
-      </section>
+        </TabsContent>
+
+        <TabsContent value="teams" className="space-y-4">
+          <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
+            <h2 className="font-heading text-2xl tracking-tight">Equipes e Funções</h2>
+            <span className="text-xs text-muted-foreground">
+              {progress.totalFunctions === 0
+                ? "Sem funções definidas"
+                : `${progress.filledFunctions} de ${progress.totalFunctions} funções preenchidas · ${progress.assignmentsCount} ${
+                    progress.assignmentsCount === 1
+                      ? "pessoa escalada"
+                      : "pessoas escaladas"
+                  }`}
+            </span>
+          </div>
+
+          {actingDepartments.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed px-6 py-10 text-center">
+              <span className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                <ClipboardListIcon className="size-5" />
+              </span>
+              <div className="max-w-md space-y-1">
+                <p className="text-sm font-medium">
+                  Nenhum departamento atuando
+                </p>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {isAdmin
+                    ? "Edite o evento para escolher os departamentos. Depois, volte aqui para escalar as pessoas em cada função."
+                    : "A liderança ainda não definiu os departamentos deste evento."}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <ScheduleEditor
+              eventId={event.id}
+              departments={actingDepartments}
+              assignments={assignments}
+              currentUserId={session.user.id}
+              isAdmin={isAdmin}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

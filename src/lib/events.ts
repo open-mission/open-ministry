@@ -146,6 +146,12 @@ export async function getEvent(
           },
         },
       },
+      planItems: {
+        with: {
+          person: { with: { user: true } },
+        },
+        orderBy: (items, { asc }) => [asc(items.order), asc(items.createdAt)],
+      },
     },
   });
 
@@ -314,3 +320,5 @@ export function recurrenceLabel(
     ? "Toda semana"
     : `A cada ${weeks} semanas`;
 }
+
+export * from "./plan-utils";
