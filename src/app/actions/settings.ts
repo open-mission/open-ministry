@@ -414,7 +414,17 @@ export async function testEvolutionConnectionAction(
   apiUrl: string,
   apiKey: string,
   instanceName: string,
-): Promise<{ ok: boolean; state?: string; error?: string }> {
+): Promise<{
+  ok: boolean;
+  state?: string;
+  error?: string;
+  details?: {
+    instanceName?: string;
+    whatsappName?: string;
+    phoneJid?: string;
+    authType?: "global" | "instance";
+  };
+}> {
   const context = await getOrganizationContext();
   if (!context || !context.isAdmin) {
     return { ok: false, error: "Apenas administradores podem testar a conexão." };

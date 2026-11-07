@@ -61,6 +61,12 @@ export function AdminEvolutionApiCard({
     ok: boolean;
     state?: string;
     error?: string;
+    details?: {
+      instanceName?: string;
+      whatsappName?: string;
+      phoneJid?: string;
+      authType?: "global" | "instance";
+    };
   } | null>(null);
 
   // Test message state
@@ -101,6 +107,7 @@ export function AdminEvolutionApiCard({
       ok: res.ok,
       state: res.state,
       error: res.error,
+      details: res.details,
     });
 
     if (res.ok) {
@@ -208,8 +215,7 @@ export function AdminEvolutionApiCard({
                 aria-invalid={Boolean(state?.fieldErrors?.apiKey)}
               />
               <FieldDescription>
-                Chave de autenticação global ou da instância configurada no seu
-                servidor.
+                Aceita tanto a <strong>Global API Key</strong> quanto o <strong>Token da Instância</strong>. O sistema identifica e resolve o token da instância automaticamente no Evolution Go.
               </FieldDescription>
               <FieldError
                 errors={state?.fieldErrors?.apiKey?.map((m) => ({ message: m }))}
@@ -221,7 +227,7 @@ export function AdminEvolutionApiCard({
               <Input
                 id="instanceName"
                 name="instanceName"
-                placeholder="Ex.: igreja-sede"
+                placeholder="Ex.: claudio ou igreja-sede"
                 value={instanceName}
                 onChange={(e) => {
                   setInstanceName(e.target.value);
@@ -232,7 +238,7 @@ export function AdminEvolutionApiCard({
                 aria-invalid={Boolean(state?.fieldErrors?.instanceName)}
               />
               <FieldDescription>
-                Nome exato da instância criada no Evolution API.
+                Nome exato da instância cadastrada no seu servidor Evolution Go.
               </FieldDescription>
               <FieldError
                 errors={state?.fieldErrors?.instanceName?.map((m) => ({
@@ -243,46 +249,93 @@ export function AdminEvolutionApiCard({
           </FieldGroup>
 
           {/* Test connection row */}
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/30 p-3.5">
-            <div className="flex items-center gap-2">
-              <ServerIcon className="size-4 text-muted-foreground" />
-              <span className="text-xs font-medium text-foreground">
-                Status da Conexão:
-              </span>
-              {connectionStatus ? (
-                connectionStatus.ok ? (
-                  <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 gap-1 font-mono text-xs font-normal">
-                    <CheckCircle2Icon className="size-3.5" />
-                    Online ({connectionStatus.state || "conectado"})
-                  </Badge>
-                ) : (
-                  <Badge variant="destructive" className="gap-1 font-mono text-xs font-normal">
-                    <XCircleIcon className="size-3.5" />
-                    Falha na conexão
-                  </Badge>
-                )
-              ) : (
-                <span className="text-xs text-muted-foreground italic">
-                  Não testada recentemente
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/30 p-3.5">
+              <div className="flex items-center gap-2">
+                <ServerIcon className="size-4 text-muted-foreground" />
+                <span className="text-xs font-medium text-foreground">
+                  Status da Conexão:
                 </span>
-              )}
+                {connectionStatus ? (
+                  connectionStatus.ok ? (
+                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 gap-1 font-mono text-xs font-normal">
+                      <CheckCircle2Icon className="size-3.5" />
+                      Online ({connectionStatus.state || "conectado"})
+                    </Badge>
+                  ) : (
+                    <Badge variant="destructive" className="gap-1 font-mono text-xs font-normal">
+                      <XCircleIcon className="size-3.5" />
+                      Falha na conexão
+                    </Badge>
+                  )
+                ) : (
+                  <span className="text-xs text-muted-foreground italic">
+                    Não testada recentemente
+                  </span>
+                )}
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={testingConnection}
+                onClick={handleTestConnection}
+                className="gap-1.5 h-8"
+              >
+                {testingConnection ? (
+                  <Loader2Icon className="size-3.5 animate-spin" />
+                ) : (
+                  <WifiIcon className="size-3.5" />
+                )}
+                Testar conexão
+              </Button>
             </div>
 
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={testingConnection}
-              onClick={handleTestConnection}
-              className="gap-1.5 h-8"
-            >
-              {testingConnection ? (
-                <Loader2Icon className="size-3.5 animate-spin" />
-              ) : (
-                <WifiIcon className="size-3.5" />
-              )}
-              Testar conexão
-            </Button>
+            {/* Connection Details Feedback */}
+            {connectionStatus?.ok && connectionStatus.details && (
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3.5 text-xs text-emerald-950 dark:text-emerald-200 space-y-1.5">
+                <p className="font-semibold flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300">
+                  <CheckCircle2Icon className="size-4 shrink-0" />
+                  {connectionStatus.details.authType === "global"
+                    ? "Chave Global (Global API Key) validada com sucesso — Token da instância vinculado automaticamente!"
+                    : "Token da Instância validado com sucesso!"}
+                </p>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground pt-0.5">
+                  {connectionStatus.details.whatsappName ? (
+                    <span>
+                      Nome WhatsApp:{" "}
+                      <strong className="text-foreground">
+                        {connectionStatus.details.whatsappName}
+                      </strong>
+                    </span>
+                  ) : null}
+                  {connectionStatus.details.phoneJid ? (
+                    <span>
+                      Número:{" "}
+                      <strong className="text-foreground">
+                        +{connectionStatus.details.phoneJid.split(":")[0]}
+                      </strong>
+                    </span>
+                  ) : null}
+                  {connectionStatus.details.instanceName ? (
+                    <span>
+                      Instância:{" "}
+                      <strong className="text-foreground">
+                        {connectionStatus.details.instanceName}
+                      </strong>
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            )}
+
+            {connectionStatus && !connectionStatus.ok && connectionStatus.error && (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3.5 text-xs text-destructive">
+                <p className="font-semibold">Erro ao conectar:</p>
+                <p className="text-muted-foreground mt-0.5">{connectionStatus.error}</p>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end pt-1">
