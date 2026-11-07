@@ -25,6 +25,7 @@ export type DispatchNotificationOptions = {
   personId?: string | null;
   phone?: string | null;
   name?: string | null;
+  channels?: ("in_app" | "whatsapp" | "email" | "push")[];
   metadata?: {
     churchName?: string;
     eventTitle?: string;
@@ -153,11 +154,15 @@ export async function dispatchNotification(
     actorId,
     userId,
     personId,
+    channels,
     metadata,
   } = options;
 
-  // 1. Deliver in-app notification if userId is known
-  if (userId) {
+  const shouldSendInApp = !channels || channels.includes("in_app");
+  const shouldSendWhatsApp = !channels || channels.includes("whatsapp");
+
+  // 1. Deliver in-app notification if userId is known and in_app enabled
+  if (shouldSendInApp && userId) {
     try {
       await createNotifications({
         organizationId,
@@ -172,6 +177,10 @@ export async function dispatchNotification(
     } catch (err) {
       console.error("Falha ao criar notificação in-app:", err);
     }
+  }
+
+  if (!shouldSendWhatsApp) {
+    return { inAppSent, whatsappSent: false };
   }
 
   // 2. Fetch Church Organization details and Evolution API Config

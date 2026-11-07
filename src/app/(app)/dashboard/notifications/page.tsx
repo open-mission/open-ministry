@@ -15,12 +15,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { listDepartments } from "@/lib/departments";
+import { listDepartments, listUserLeaderDepartments } from "@/lib/departments";
 import { formatDateTime } from "@/lib/format";
 import {
   countUnreadNotifications,
   listNotifications,
 } from "@/lib/notifications";
+import { getOrganizationEvolutionConfig } from "@/lib/notification-service";
+import { listPeople, personDisplayName } from "@/lib/people";
 import { requireOrganizationContext } from "@/lib/organizations";
 
 export const metadata: Metadata = {
@@ -40,18 +42,47 @@ async function NotificationsContent() {
 
   const { organization, session, isAdmin } =
     await requireOrganizationContext();
-  const [notifications, unreadCount, departments] = await Promise.all([
+  const [
+    notifications,
+    unreadCount,
+    leaderDepartments,
+    allDepartments,
+    people,
+    evolutionResult,
+  ] = await Promise.all([
     listNotifications(organization.id, session.user.id, 50),
     countUnreadNotifications(organization.id, session.user.id),
+    listUserLeaderDepartments(organization.id, session.user.id),
     isAdmin ? listDepartments(organization.id) : Promise.resolve([]),
+    listPeople(organization.id),
+    getOrganizationEvolutionConfig(organization.id),
   ]);
+
+  const canSendAnnouncement = isAdmin || leaderDepartments.length > 0;
+  const availableDepartments = isAdmin ? allDepartments : leaderDepartments;
+
+  const ledDeptIds = new Set(leaderDepartments.map((d) => d.id));
+  const availablePeople = people
+    .filter((person) => person.userId !== session.user.id)
+    .filter((person) => {
+      if (isAdmin) return true;
+      return person.memberships.some((m) => ledDeptIds.has(m.departmentId));
+    })
+    .map((person) => ({
+      id: person.id,
+      name: personDisplayName(person),
+      phone: person.phone,
+      hasAccount: Boolean(person.userId),
+      departmentNames: person.memberships.map((m) => m.department.name),
+    }));
+
   const unread = notifications.filter(
     (notification) => !notification.readAt,
   );
   const read = notifications.filter(
     (notification) => notification.readAt,
   );
-  const departmentOptions = departments.map((department) => ({
+  const departmentOptions = availableDepartments.map((department) => ({
     id: department.id,
     name: department.name,
   }));
@@ -79,8 +110,13 @@ async function NotificationsContent() {
 
         <div className="flex flex-wrap items-center gap-2">
           {unreadCount > 0 ? <MarkAllReadButton /> : null}
-          {isAdmin ? (
-            <AnnouncementDialog departments={departmentOptions} />
+          {canSendAnnouncement ? (
+            <AnnouncementDialog
+              departments={departmentOptions}
+              people={availablePeople}
+              canBroadcastAll={isAdmin}
+              isWhatsAppConfigured={Boolean(evolutionResult.config)}
+            />
           ) : null}
         </div>
       </header>
