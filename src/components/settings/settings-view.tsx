@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   BellIcon,
+  CalendarIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChurchIcon,
@@ -22,10 +23,12 @@ import { AccountProfileCard } from "@/components/settings/account-profile-card";
 import { ActiveSessionsCard } from "@/components/settings/active-sessions-card";
 import { AdminChurchSettingsCard } from "@/components/settings/admin-church-settings-card";
 import { AdminEvolutionApiCard } from "@/components/settings/admin-evolution-api-card";
+import { CalendarPreferencesCard } from "@/components/settings/calendar-preferences-card";
 import { ChangePasswordCard } from "@/components/settings/change-password-card";
 import { NotificationPreferencesCard } from "@/components/settings/notification-preferences-card";
 import { PasskeysCard } from "@/components/settings/passkeys-card";
 import { ThemePreferenceCard } from "@/components/settings/theme-preference-card";
+import type { CalendarPreferences } from "@/lib/calendar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,6 +59,7 @@ type SettingsViewProps = {
     phone: string | null;
     image: string | null;
   };
+  calendarPreferences: CalendarPreferences;
   initialSessions: SessionItem[];
   initialPasskeys: PasskeyViewItem[];
   peopleCount: number;
@@ -65,6 +69,7 @@ type SettingsViewProps = {
 
 type MobileSection =
   | "account"
+  | "calendar"
   | "theme"
   | "security"
   | "notifications"
@@ -77,6 +82,7 @@ export function SettingsView({
   role,
   isAdmin,
   userData,
+  calendarPreferences,
   initialSessions,
   initialPasskeys,
   peopleCount,
@@ -149,6 +155,7 @@ export function SettingsView({
 
           <TabsContent value="account" className="space-y-6">
             <AccountProfileCard initialData={userData} />
+            <CalendarPreferencesCard initialPreferences={calendarPreferences} />
             <ThemePreferenceCard />
           </TabsContent>
 
@@ -226,6 +233,13 @@ export function SettingsView({
                   title="Minha Conta"
                   subtitle="Perfil, aniversário e telefone"
                   onClick={() => setActiveMobileSection("account")}
+                />
+                <IosSettingsRow
+                  icon={CalendarIcon}
+                  iconBg="bg-amber-500 text-white"
+                  title="Agenda &amp; Calendário"
+                  subtitle="Início da semana e fuso horário"
+                  onClick={() => setActiveMobileSection("calendar")}
                 />
                 <IosSettingsRow
                   icon={PaletteIcon}
@@ -325,6 +339,7 @@ export function SettingsView({
 
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {activeMobileSection === "account" && "Minha Conta"}
+                {activeMobileSection === "calendar" && "Agenda & Calendário"}
                 {activeMobileSection === "theme" && "Aparência"}
                 {activeMobileSection === "security" && "Segurança"}
                 {activeMobileSection === "notifications" && "Notificações"}
@@ -337,6 +352,12 @@ export function SettingsView({
             {activeMobileSection === "account" && (
               <div className="space-y-6">
                 <AccountProfileCard initialData={userData} />
+              </div>
+            )}
+
+            {activeMobileSection === "calendar" && (
+              <div className="space-y-6">
+                <CalendarPreferencesCard initialPreferences={calendarPreferences} />
               </div>
             )}
 

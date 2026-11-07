@@ -28,6 +28,8 @@ export const user = pgTable("user", {
   displayUsername: text("display_username"),
   birthday: text("birthday"),
   phone: text("phone"),
+  weekStartsOn: integer("week_starts_on").default(0).notNull(),
+  timezone: text("timezone").default("America/Sao_Paulo").notNull(),
 });
 
 export const session = pgTable(

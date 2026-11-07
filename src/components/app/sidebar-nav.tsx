@@ -6,6 +6,7 @@ import {
   CakeIcon,
   CalendarCheckIcon,
   CalendarDaysIcon,
+  CalendarRangeIcon,
   ChurchIcon,
   ClipboardListIcon,
   HandHeartIcon,
@@ -38,6 +39,12 @@ const navGroups = [
   {
     title: "Cultos & Escalas",
     items: [
+      {
+        href: "/dashboard/calendar",
+        label: "Agenda",
+        icon: CalendarRangeIcon,
+        exact: false,
+      },
       {
         href: "/dashboard/events",
         label: "Cultos e eventos",
