@@ -12,6 +12,7 @@ import {
   UsersIcon,
 } from "lucide-react";
 
+import { getEventUnavailablePeopleAction } from "@/app/actions/availability";
 import { DeleteEventButton } from "@/components/events/delete-event-button";
 import { EditEventDialog } from "@/components/events/edit-event-dialog";
 import { PlanEditor } from "@/components/events/plan-editor";
@@ -67,9 +68,10 @@ async function EventContent({
     notFound();
   }
 
-  const [departments, people] = await Promise.all([
+  const [departments, people, unavailablePeopleMap] = await Promise.all([
     listDepartments(organization.id),
     listPeople(organization.id),
+    getEventUnavailablePeopleAction(event.id),
   ]);
   const actingIds = new Set(
     event.departments.map((item) => item.departmentId),
@@ -283,6 +285,7 @@ async function EventContent({
               assignments={assignments}
               currentUserId={session.user.id}
               isAdmin={isAdmin}
+              unavailablePeopleMap={unavailablePeopleMap}
             />
           )}
         </TabsContent>

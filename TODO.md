@@ -10,12 +10,20 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
-- [ ] Implementar a opção do usuário selecionar datas específicas de indisponibilidade (bloqueio de data pontual com motivo/observação e período).
 - [ ] Implementar tela de agenda e calendário completo baseado no repositório dninomiya/full-calendar-for-shadcn-ui (views: dia, semana, mês, ano e agenda; exibição de cultos, escalas do usuário e dias indisponíveis; configurações de início da semana e fuso horário).
 
 ### Doing
 
+- [ ] Implementar tela de agenda e calendário completo baseado no repositório dninomiya/full-calendar-for-shadcn-ui (views: dia, semana, mês, ano e agenda; exibição de cultos, escalas do usuário e dias indisponíveis; configurações de início da semana e fuso horário).
+
 ### Done
+
+- [x] Bloqueio pontual de datas de indisponibilidade com motivo/observação e períodos.
+  - [x] Modelo de dados `person_unavailability` no Drizzle ORM com RLS policies e migration aplicada ao NeonDB
+  - [x] Diálogo e formulário para marcar dia específico de ausência com data, motivo descritivo e seleção de dia todo ou períodos (Manhã, Tarde, Noite)
+  - [x] Card de gerenciamento de indisponibilidades pontuais integrado em `/dashboard/availability`
+  - [x] Detecção inteligente em tempo real e aviso visual na tela de escalas ao selecionar um membro indisponível para o culto (`AddAssignmentDialog`)
+  - [x] Server actions para listar, salvar e remover bloqueios pontuais com revalidação instantânea de rotas
 
 - [x] Disponibilidade dos usuários para servir nos cultos (dias da semana e períodos manhã, tarde e noite).
   - [x] Modelo de dados `person_availability` no Drizzle ORM com RLS e migration aplicada

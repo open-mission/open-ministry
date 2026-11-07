@@ -2,8 +2,12 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
-import { getMyAvailabilityAction } from "@/app/actions/availability";
+import {
+  getMyAvailabilityAction,
+  getMyUnavailabilitiesAction,
+} from "@/app/actions/availability";
 import { AvailabilityEditor } from "@/components/availability/availability-editor";
+import { UnavailabilitySection } from "@/components/availability/unavailability-section";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrganizationContext } from "@/lib/organizations";
 
@@ -23,12 +27,17 @@ async function AvailabilityContent() {
   await connection();
   await requireOrganizationContext();
 
-  const data = await getMyAvailabilityAction();
+  const [data, unavailabilities] = await Promise.all([
+    getMyAvailabilityAction(),
+    getMyUnavailabilitiesAction(),
+  ]);
+
   if (!data) return null;
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
       <AvailabilityEditor initialData={data} />
+      <UnavailabilitySection initialItems={unavailabilities} />
     </div>
   );
 }
