@@ -3,28 +3,19 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCheckIcon } from "lucide-react";
-import { toast } from "sonner";
 
-import { markAllNotificationsReadAction } from "@/app/actions/notifications";
 import { Button } from "@/components/ui/button";
+import { useNotificationStore } from "@/lib/notification-store";
 
 export function MarkAllReadButton() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const { markAllAsRead } = useNotificationStore();
 
   function handleMarkAll() {
-    startTransition(async () => {
-      const result = await markAllNotificationsReadAction();
-
-      if (result.ok) {
-        toast.success("Notificações marcadas como lidas.");
-        router.refresh();
-        return;
-      }
-
-      toast.error(
-        result.error ?? "Não foi possível marcar as notificações.",
-      );
+    markAllAsRead();
+    startTransition(() => {
+      router.refresh();
     });
   }
 

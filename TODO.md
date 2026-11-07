@@ -14,6 +14,16 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Done
 
+- [x] UI Otimista, Notificações Reativas (0ms de latência percebida) e Otimização de Cache e Queries
+  - [x] Implementar store de notificações reativa no cliente (`src/lib/notification-store.ts`) com `useSyncExternalStore`, janela de cache de 30s e sincronização em tempo real
+  - [x] Hidratação inicial dos itens recentes no `NotificationBellLoader` para zero loading na primeira abertura do sino
+  - [x] Fechamento instantâneo (0ms) e otimista da barra superior de notificações (`DismissNotificationButton` e `NotificationBar`) sem aguardar roundtrips de rede ou refresh de página
+  - [x] Marcação otimista como lida no sino e na lista de notificações com atualização imediata do badge e rollback em caso de falha
+  - [x] Cache em memória do JWKS (`getJwks`) com TTL de 15 minutos evitando queries repetitivas ao NeonDB em operações tenant
+  - [x] Pipeline no Upstash Redis (`redis.pipeline()`) reduzindo múltiplos roundtrips HTTP sequenciais para uma única chamada batched
+  - [x] Cache L1/L2 do contexto da organização no modo tenant com invalidação por tag
+  - [x] Testes unitários cobrindo store reativa, descarte otimista e controle de expiração de cache (TTL)
+
 - [x] Recorrência de eventos e cultos por dia da semana no mês (ex: todo 2º domingo do mês, toda 3ª segunda-feira, último domingo).
   - [x] Adicionar opção `monthly_nth_weekday` em `RECURRENCE_OPTIONS` com cálculo dinâmico da posição (1º, 2º, 3º, 4º e último) e do dia da semana
   - [x] Criar módulo de utilitários isolado (`src/lib/recurrence-utils.ts`) com funções puras para geração e cálculo das ocorrências mensais
@@ -282,4 +292,12 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 - **07/11/2026:** PWA Push Notifications concluído. Foi implementado o suporte a notificações push nativas via VAPID/Web Push e OneSignal com persistência de subscrições (`push_subscription` no Drizzle/NeonDB), eventos de recebimento e clique no Service Worker (`public/sw.js`), card de ativação e disparo de teste em `/dashboard/settings` e integração direta com o canal push em avisos e escalas.
 - **07/11/2026:** Felicitômetro e Página do Membro concluídos. Os membros agora podem registrar diariamente seu estado emocional em uma escala de 5 níveis ilustrados, com opção de solicitar oração e conversa com a liderança. A central de pessoas ganhou uma nova aba de Cuidado Pastoral com gráficos shadcn/ui (`AreaChart` de evolução temporal e `BarChart` de distribuição), além de alertas de solicitações de oração. Foi criada a página dedicada do membro (`/dashboard/members/[personId]`) exibindo histórico completo de escalas, cultos servidos, gráficos do felicitômetro, indisponibilidades e atalhos rápidos de contato.
 - **07/11/2026:** Recorrência por dia da semana no mês concluída. Foi implementada a opção de recorrência mensal baseada no dia da semana (ex: "Todo 2º domingo do mês", "Toda 3ª segunda-feira do mês", "Todo último domingo do mês"). No formulário de criação de cultos/eventos (`CreateEventDialog`), o select adapta dinamicamente seu rótulo de acordo com a data escolhida. O usuário tem à disposição um seletor para ajustar a semana (1ª, 2ª, 3ª, 4ª ou última) e um card com feedback imediato das próximas ocorrências estimadas. A geração no banco e os rótulos respeitam o gênero gramatical e o fuso horário da igreja, com suite completa de testes unitários.
+- **07/11/2026:** UI Otimista, Notificações Reativas e Otimizações de Cache concluídas:
+  - Eliminação de loading e queries repetitivas no sino de notificações (`NotificationBell`): agora os dados são hidratados diretamente do servidor na primeira carga e gerenciados por uma store reativa no cliente (`useSyncExternalStore`), evitando requisições de rede ao abrir/fechar repetidamente.
+  - Fechamento imediato (0ms de latência percebida) da barra superior de notificação (`NotificationBar` / `DismissNotificationButton`): a notificação desaparece instantaneamente da tela ao clicar em fechar e atualiza o badge do sino, enviando a persistência no banco em segundo plano sem bloquear a interface nem forçar recarga da página.
+  - Marcação de lida otimista na central de notificações (`/dashboard/notifications`) e no sino com rollback automático se houver erro de rede.
+  - Cache em memória do conjunto de chaves JWKS (`schema.jwks`) em `src/db/tenant.ts` com TTL de 15 minutos, eliminando queries SQL desnecessárias ao NeonDB a cada operação tenant autenticada.
+  - Pipelining de comandos Upstash Redis (`redis.pipeline()`) em `src/lib/cache.ts`: operações de gravação e invalidação de tags agora são despachadas em um único roundtrip HTTP batched em vez de N chamadas sequenciais.
+  - Caching L1/L2 com tag da organização em `withTenantDb`.
+  - Cobertura de testes unitários para a store de notificações reativa (`src/lib/__tests__/notification-store.test.ts`).
 

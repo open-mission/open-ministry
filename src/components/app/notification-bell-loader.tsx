@@ -8,9 +8,15 @@ import { getUnreadNotificationSummary } from "@/lib/notifications";
 export async function NotificationBellLoader() {
   await connection();
 
-  const { count } = await getUnreadNotificationSummary();
+  const { count, recent } = await getUnreadNotificationSummary();
 
-  return <NotificationBell key={count} initialCount={count} />;
+  return (
+    <NotificationBell
+      key={count}
+      initialCount={count}
+      initialItems={recent}
+    />
+  );
 }
 
 export function NotificationBellFallback() {

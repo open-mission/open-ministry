@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowRightIcon,
@@ -8,9 +8,8 @@ import {
   ClipboardListIcon,
   MegaphoneIcon,
 } from "lucide-react";
-import { toast } from "sonner";
 
-import { markNotificationReadAction } from "@/app/actions/notifications";
+import { useNotificationStore } from "@/lib/notification-store";
 import { cn } from "@/lib/utils";
 
 type NotificationItem = {
@@ -41,28 +40,18 @@ export function NotificationRow({
   notification: NotificationItem;
 }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [isRead, setIsRead] = useState(notification.read);
+  const { markAsRead } = useNotificationStore();
 
   function handleOpen() {
-    startTransition(async () => {
-      if (!notification.read) {
-        const result = await markNotificationReadAction(notification.id);
+    if (!isRead) {
+      setIsRead(true);
+      markAsRead(notification.id);
+    }
 
-        if (!result.ok) {
-          toast.error(
-            result.error ?? "Não foi possível marcar como lida.",
-          );
-          return;
-        }
-      }
-
-      if (notification.href) {
-        router.push(notification.href);
-        return;
-      }
-
-      router.refresh();
-    });
+    if (notification.href) {
+      router.push(notification.href);
+    }
   }
 
   return (
@@ -70,16 +59,15 @@ export function NotificationRow({
       <button
         type="button"
         onClick={handleOpen}
-        disabled={pending}
         className={cn(
-          "flex w-full items-start gap-3 px-4 py-4 text-left transition-colors hover:bg-muted/50 disabled:opacity-60",
-          notification.read ? null : "bg-primary/5",
+          "flex w-full items-start gap-3 px-4 py-4 text-left transition-colors hover:bg-muted/50",
+          isRead ? null : "bg-primary/5",
         )}
       >
         <span
           className={cn(
             "mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full",
-            notification.read
+            isRead
               ? "bg-muted text-muted-foreground"
               : "bg-primary/10 text-primary",
           )}
@@ -92,14 +80,14 @@ export function NotificationRow({
             <span
               className={cn(
                 "text-sm font-medium",
-                notification.read
+                isRead
                   ? "text-muted-foreground"
                   : "text-foreground",
               )}
             >
               {notification.title}
             </span>
-            {!notification.read ? (
+            {!isRead ? (
               <span
                 aria-label="Não lida"
                 className="mt-1.5 size-2 shrink-0 rounded-full bg-primary"

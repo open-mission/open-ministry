@@ -107,11 +107,25 @@ export async function countUnreadNotifications(
   );
 }
 
+export type NotificationPreviewData = {
+  id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  href: string | null;
+  read: boolean;
+  createdAt: string;
+};
+
 export const getUnreadNotificationSummary = cache(async () => {
   const context = await getOrganizationContext();
 
   if (!context) {
-    return { count: 0, latest: null };
+    return {
+      count: 0,
+      latest: null,
+      recent: [] as NotificationPreviewData[],
+    };
   }
 
   const rows = await listNotifications(
@@ -121,7 +135,29 @@ export const getUnreadNotificationSummary = cache(async () => {
     true,
   );
 
-  return { count: rows.length, latest: rows[0] ?? null };
+  let recentRows = rows.slice(0, 5);
+  if (recentRows.length < 5) {
+    recentRows = await listNotifications(
+      context.organization.id,
+      context.session.user.id,
+      5,
+      false,
+    );
+  }
+
+  return {
+    count: rows.length,
+    latest: rows[0] ?? null,
+    recent: recentRows.map((n) => ({
+      id: n.id,
+      type: n.type,
+      title: n.title,
+      body: n.body,
+      href: n.href,
+      read: Boolean(n.readAt),
+      createdAt: n.createdAt.toISOString(),
+    })),
+  };
 });
 
 export async function markNotificationRead(
