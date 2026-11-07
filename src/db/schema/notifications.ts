@@ -94,3 +94,36 @@ export const organizationNotificationChannelRelations = relations(
     }),
   }),
 );
+
+export const pushSubscription = pgTable(
+  "push_subscription",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("push_sub_user_idx").on(table.userId),
+    uniqueIndex("push_sub_endpoint_uidx").on(table.endpoint),
+  ],
+);
+
+export const pushSubscriptionRelations = relations(
+  pushSubscription,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [pushSubscription.userId],
+      references: [user.id],
+    }),
+  }),
+);

@@ -159,6 +159,7 @@ function AnnouncementForm({
 
   const [sendInApp, setSendInApp] = useState(true);
   const [sendWhatsApp, setSendWhatsApp] = useState(isWhatsAppConfigured);
+  const [sendPush, setSendPush] = useState(true);
 
   useEffect(() => {
     if (state?.success && !handled.current) {
@@ -173,6 +174,7 @@ function AnnouncementForm({
       <input type="hidden" name="audienceType" value={audienceType} />
       {sendInApp && <input type="hidden" name="sendInApp" value="true" />}
       {sendWhatsApp && <input type="hidden" name="sendWhatsApp" value="true" />}
+      {sendPush && <input type="hidden" name="sendPush" value="true" />}
 
       {/* Seletor de Destinatário */}
       <FieldGroup className="space-y-3">
@@ -389,22 +391,34 @@ function AnnouncementForm({
             </div>
           </div>
 
-          {/* Canal 4: Push (Futuramente) */}
-          <div className="flex items-start gap-2.5 rounded-lg border border-border/40 bg-muted/20 p-2.5 opacity-60">
-            <Checkbox id="channel-push" disabled className="mt-0.5" />
+          {/* Canal 4: Push */}
+          <label
+            htmlFor="channel-push"
+            className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 transition-colors ${
+              sendPush
+                ? "border-primary/50 bg-background shadow-xs"
+                : "border-border/60 bg-card/60 opacity-70"
+            }`}
+          >
+            <Checkbox
+              id="channel-push"
+              checked={sendPush}
+              onCheckedChange={(checked) => setSendPush(Boolean(checked))}
+              className="mt-0.5"
+            />
             <div className="flex-1 space-y-0.5 text-xs">
-              <div className="flex items-center gap-1.5 font-medium text-muted-foreground">
-                <SmartphoneIcon className="size-3.5" />
+              <div className="flex items-center gap-1.5 font-medium text-foreground">
+                <SmartphoneIcon className="size-3.5 text-primary" />
                 <span>Push Mobile / Web</span>
-                <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1 border-dashed">
-                  Em breve
+                <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1">
+                  Ativo
                 </Badge>
               </div>
-              <p className="text-[11px] text-muted-foreground/80 leading-snug">
-                Notificação instantânea no celular
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                Notificação instantânea no celular e PWA
               </p>
             </div>
-          </div>
+          </label>
         </div>
 
         {state?.fieldErrors?.channels ? (

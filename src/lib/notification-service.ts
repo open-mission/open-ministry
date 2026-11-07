@@ -13,6 +13,7 @@ import {
   type NotificationJob,
 } from "@/lib/queue";
 import { getAppBaseUrl } from "@/lib/app-url";
+import { sendWebPushToUser } from "@/lib/push-notifications";
 
 export type DispatchNotificationOptions = {
   organizationId: string;
@@ -160,6 +161,7 @@ export async function dispatchNotification(
 
   const shouldSendInApp = !channels || channels.includes("in_app");
   const shouldSendWhatsApp = !channels || channels.includes("whatsapp");
+  const shouldSendPush = !channels || channels.includes("push");
 
   // 1. Deliver in-app notification if userId is known and in_app enabled
   if (shouldSendInApp && userId) {
@@ -177,6 +179,17 @@ export async function dispatchNotification(
     } catch (err) {
       console.error("Falha ao criar notificação in-app:", err);
     }
+  }
+
+  // 1.1 Deliver Web Push notification if userId is known and push enabled
+  if (shouldSendPush && userId) {
+    sendWebPushToUser(userId, {
+      title,
+      body: body || "Você tem uma nova notificação no OpenMinistry.",
+      url: href || "/dashboard/notifications",
+    }).catch((err) => {
+      console.warn("Falha no envio de push web:", err);
+    });
   }
 
   if (!shouldSendWhatsApp) {
