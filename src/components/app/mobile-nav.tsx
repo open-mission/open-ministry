@@ -2,18 +2,18 @@
 
 import { usePathname } from "next/navigation";
 
-import { useSidebar } from "@/components/ui/sidebar";
 import { MobileNavShell } from "@/components/app/mobile-nav-shell";
+import { useMobileMenu } from "@/components/app/mobile-menu";
 
 export function MobileNav() {
   const pathname = usePathname();
-  const { toggleSidebar, openMobile } = useSidebar();
+  const { open, setOpen } = useMobileMenu();
 
   return (
     <MobileNavShell
       activeHref={pathname}
-      onMenuClick={toggleSidebar}
-      isMenuOpen={openMobile}
+      onMenuClick={() => setOpen(true)}
+      isMenuOpen={open}
     />
   );
 }

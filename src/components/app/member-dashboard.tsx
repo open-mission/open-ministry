@@ -3,18 +3,18 @@ import {
   ArrowRightIcon,
   CalendarDaysIcon,
   ClipboardListIcon,
+  CrownIcon,
   HandHeartIcon,
-  UsersIcon,
 } from "lucide-react";
 
 import { AssignmentList } from "@/components/app/assignment-list";
 import { BirthdaysCard } from "@/components/birthdays/birthdays-card";
-import { StatCard } from "@/components/app/stat-card";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import {
   FelicitometroCard,
   type InitialMoodData,
 } from "@/components/felicitometro/felicitometro-card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -37,7 +37,6 @@ import {
 export function MemberDashboard({
   firstName,
   organizationName,
-  peopleCount,
   birthdayEntries,
   memberships,
   assignments,
@@ -46,7 +45,6 @@ export function MemberDashboard({
 }: {
   firstName: string;
   organizationName: string;
-  peopleCount: number;
   birthdayEntries: BirthdayEntry[];
   memberships: PersonMembership[];
   assignments: UpcomingAssignment[];
@@ -54,12 +52,9 @@ export function MemberDashboard({
   initialMood?: InitialMoodData;
 }) {
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 pb-4 sm:gap-12">
       <header className="space-y-2">
-        <p className="text-xs font-medium tracking-[0.18em] text-primary uppercase">
-          Visão geral
-        </p>
-        <h1 className="font-heading text-4xl leading-none tracking-tight">
+        <h1 className="font-heading text-[2.15rem] leading-none tracking-tight text-balance sm:text-4xl">
           Olá, {firstName}.
         </h1>
         <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
@@ -75,41 +70,22 @@ export function MemberDashboard({
 
       <FelicitometroCard initialMood={initialMood} userName={firstName} />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          icon={UsersIcon}
-          label="Pessoas"
-          value={peopleCount}
-          hint="fazem parte da igreja"
-        />
-        <StatCard
-          icon={ClipboardListIcon}
-          label="Minhas escalas"
-          value={assignments.length}
-          hint="encontros futuros"
-        />
-        <StatCard
-          icon={HandHeartIcon}
-          label="Meus departamentos"
-          value={memberships.length}
-          hint="onde você serve"
-        />
-      </div>
+      <MemberDepartments memberships={memberships} />
 
       <BirthdaysCard entries={birthdayEntries} />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-start justify-between gap-3">
             <div className="space-y-1.5">
-              <CardTitle className="font-heading text-xl tracking-tight">
+              <CardTitle className="font-heading text-lg tracking-tight sm:text-xl">
                 Minha escala
               </CardTitle>
               <CardDescription>
                 Os encontros em que você foi escalado.
               </CardDescription>
             </div>
-            <Button asChild variant="ghost" size="sm">
+            <Button asChild variant="ghost" size="sm" className="h-9 shrink-0 text-xs">
               <Link href="/dashboard/schedules">
                 Ver escalas
                 <ArrowRightIcon data-icon="inline-end" />
@@ -140,14 +116,14 @@ export function MemberDashboard({
         <Card>
           <CardHeader className="flex flex-row items-start justify-between gap-3">
             <div className="space-y-1.5">
-              <CardTitle className="font-heading text-xl tracking-tight">
+              <CardTitle className="font-heading text-lg tracking-tight sm:text-xl">
                 Agenda do departamento
               </CardTitle>
               <CardDescription>
                 Os encontros dos seus departamentos.
               </CardDescription>
             </div>
-            <Button asChild variant="ghost" size="sm">
+            <Button asChild variant="ghost" size="sm" className="h-9 shrink-0 text-xs">
               <Link href="/dashboard/events">
                 Ver agenda
                 <ArrowRightIcon data-icon="inline-end" />
@@ -230,5 +206,103 @@ export function MemberDashboard({
         </Card>
       </div>
     </div>
+  );
+}
+
+function MemberDepartments({
+  memberships,
+}: {
+  memberships: PersonMembership[];
+}) {
+  return (
+    <section aria-labelledby="my-departments-heading" className="space-y-4">
+      <div className="flex items-end justify-between gap-3">
+        <div className="space-y-1">
+          <h2
+            id="my-departments-heading"
+            className="font-heading text-lg leading-none tracking-tight sm:text-xl"
+          >
+            Meus departamentos
+          </h2>
+          <p className="text-xs text-muted-foreground sm:text-sm">
+            Onde você serve e as funções que exerce.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/departments"
+          className="group inline-flex shrink-0 items-center gap-1 pb-0.5 text-xs font-medium text-primary hover:underline"
+        >
+          Ver todos
+          <ArrowRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      </div>
+
+      {memberships.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed px-4 py-8 text-center">
+          <span className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <HandHeartIcon className="size-5" />
+          </span>
+          <div className="space-y-1">
+            <p className="text-sm font-medium">
+              Você ainda não faz parte de um departamento
+            </p>
+            <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
+              Quando entrar em um departamento, ele aparece aqui com suas
+              funções e a agenda.
+            </p>
+          </div>
+          <Button asChild variant="outline" size="sm" className="h-10">
+            <Link href="/dashboard/departments">
+              Conhecer departamentos
+            </Link>
+          </Button>
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {memberships.map((membership) => {
+            const functions = membership.assignments
+              .map((assignment) => assignment.function.name)
+              .join(" · ");
+
+            return (
+              <Link
+                key={membership.id}
+                href={`/dashboard/departments/${membership.department.id}`}
+                className="group flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-4 transition-[transform,border-color,box-shadow] duration-150 active:scale-[0.99] hover:border-primary/35 hover:shadow-sm motion-reduce:transition-none motion-reduce:active:scale-100"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <HandHeartIcon className="size-5" />
+                  </span>
+                  {membership.isLeader ? (
+                    <Badge
+                      variant="secondary"
+                      className="gap-1 font-normal"
+                    >
+                      <CrownIcon className="size-3" />
+                      Líder
+                    </Badge>
+                  ) : null}
+                </div>
+
+                <div className="min-w-0 space-y-1">
+                  <p className="truncate font-heading text-base leading-tight tracking-tight">
+                    {membership.department.name}
+                  </p>
+                  <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                    {functions || "Nenhuma função atribuída ainda."}
+                  </p>
+                </div>
+
+                <span className="mt-auto inline-flex items-center gap-1 text-xs font-medium text-primary">
+                  Abrir departamento
+                  <ArrowRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </section>
   );
 }

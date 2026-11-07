@@ -72,20 +72,18 @@ export function FelicitometroCard({
   const activeMood = MOOD_LEVELS[selectedScore];
 
   return (
-    <Card className="relative overflow-hidden border-primary/20 shadow-xs bg-gradient-to-b from-card to-muted/20">
-      <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-400 via-emerald-500 to-primary" />
-
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+    <Card className="relative overflow-hidden border-primary/15 bg-card shadow-xs">
+      <CardHeader className="px-5 pt-5 pb-3 sm:px-6 sm:pt-6">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-2.5">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <SparklesIcon className="size-4" />
             </span>
             <div>
-              <CardTitle className="font-heading text-lg tracking-tight">
+              <CardTitle className="font-heading text-lg leading-snug tracking-tight sm:text-xl">
                 Como você está hoje{userName ? `, ${userName}` : ""}?
               </CardTitle>
-              <CardDescription className="text-xs">
+              <CardDescription className="mt-1 text-xs leading-relaxed">
                 Check-in diário • Visível apenas para sua liderança e pastores.
               </CardDescription>
             </div>
@@ -99,7 +97,7 @@ export function FelicitometroCard({
                 handled.current = false;
                 setIsEditing(true);
               }}
-              className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+              className="h-9 shrink-0 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
             >
               <PencilIcon className="size-3" />
               Editar
@@ -108,10 +106,10 @@ export function FelicitometroCard({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 px-5 pb-5 sm:px-6 sm:pb-6">
         {!isEditing && initialMood ? (
-          <div className="rounded-xl border bg-background/80 p-4 space-y-3">
-            <div className="flex items-center justify-between">
+          <div className="space-y-3 rounded-xl border bg-background/80 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <span className="text-3xl" role="img" aria-label={activeMood.label}>
                   {activeMood.emoji}
@@ -177,17 +175,18 @@ export function FelicitometroCard({
                     key={score}
                     type="button"
                     onClick={() => setSelectedScore(score)}
-                    className={`group flex flex-col items-center justify-center rounded-xl p-2.5 transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                    aria-pressed={isSelected}
+                    className={`group flex min-h-[72px] flex-col items-center justify-center rounded-xl p-2.5 text-center transition-[transform,background-color,border-color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 ${
                       isSelected
                         ? `${item.bg} ${item.border} border-2 shadow-xs ring-1 ring-primary/40 scale-[1.03]`
-                        : "border border-border/60 bg-card hover:bg-muted/40 text-muted-foreground"
+                        : "border border-border/60 bg-card text-muted-foreground hover:bg-muted/40"
                     }`}
                   >
-                    <span className="text-2xl sm:text-3xl transition-transform group-hover:scale-110">
+                    <span className="text-2xl transition-transform duration-150 group-hover:scale-110 motion-reduce:transition-none sm:text-3xl">
                       {item.emoji}
                     </span>
                     <span
-                      className={`text-[10px] sm:text-xs font-medium mt-1.5 leading-tight ${
+                      className={`mt-1.5 text-[10px] font-medium leading-tight sm:text-xs ${
                         isSelected ? item.color : "text-muted-foreground"
                       }`}
                     >
@@ -206,10 +205,10 @@ export function FelicitometroCard({
             </p>
 
             {/* Opções Pastorais de Cuidado */}
-            <div className="rounded-xl border bg-muted/20 p-3 space-y-2.5 text-xs">
+            <div className="space-y-1 rounded-xl border bg-muted/20 p-2 text-sm">
               <label
                 htmlFor="check-prayer"
-                className="flex items-center gap-2.5 cursor-pointer text-foreground"
+                className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-1.5 py-2 text-foreground transition-colors active:bg-muted/50"
               >
                 <Checkbox
                   id="check-prayer"
@@ -218,15 +217,17 @@ export function FelicitometroCard({
                     setNeedsPrayer(Boolean(checked))
                   }
                 />
-                <div className="flex items-center gap-1.5 font-medium">
-                  <HeartHandshakeIcon className="size-3.5 text-amber-500" />
-                  <span>Gostaria de uma oração da minha liderança</span>
+                <div className="flex items-center gap-2 font-medium">
+                  <HeartHandshakeIcon className="size-4 shrink-0 text-amber-500" />
+                  <span className="text-sm leading-snug">
+                    Gostaria de uma oração da minha liderança
+                  </span>
                 </div>
               </label>
 
               <label
                 htmlFor="check-talk"
-                className="flex items-center gap-2.5 cursor-pointer text-foreground"
+                className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-1.5 py-2 text-foreground transition-colors active:bg-muted/50"
               >
                 <Checkbox
                   id="check-talk"
@@ -235,18 +236,20 @@ export function FelicitometroCard({
                     setNeedsTalk(Boolean(checked))
                   }
                 />
-                <div className="flex items-center gap-1.5 font-medium">
-                  <MessageSquareHeartIcon className="size-3.5 text-blue-500" />
-                  <span>Preciso conversar com um líder ou pastor</span>
+                <div className="flex items-center gap-2 font-medium">
+                  <MessageSquareHeartIcon className="size-4 shrink-0 text-blue-500" />
+                  <span className="text-sm leading-snug">
+                    Preciso conversar com um líder ou pastor
+                  </span>
                 </div>
               </label>
             </div>
 
             {/* Campo Opcional de Mensagem */}
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <label
                 htmlFor="mood-notes"
-                className="text-xs font-medium text-muted-foreground"
+                className="text-sm font-medium text-muted-foreground"
               >
                 Quer compartilhar algo com seus líderes? (Opcional, privado)
               </label>
@@ -256,22 +259,22 @@ export function FelicitometroCard({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Como tem sido sua semana? Algum motivo de gratidão ou pedido específico..."
-                rows={2}
+                rows={3}
                 maxLength={300}
-                className="text-xs resize-none"
+                className="resize-none text-sm sm:text-xs"
               />
             </div>
 
             {state?.error ? <FormAlert>{state.error}</FormAlert> : null}
 
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
               {initialMood ? (
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setIsEditing(false)}
-                  className="h-8 text-xs"
+                  className="h-10 w-full text-sm sm:h-9 sm:w-auto sm:text-xs"
                 >
                   Cancelar
                 </Button>
@@ -279,7 +282,7 @@ export function FelicitometroCard({
               <SubmitButton
                 size="sm"
                 pendingLabel="Salvando..."
-                className="h-8 text-xs px-4"
+                className="h-10 w-full px-4 text-sm sm:h-9 sm:w-auto sm:text-xs"
               >
                 Registrar sentimento
               </SubmitButton>

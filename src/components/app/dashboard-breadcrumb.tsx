@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { isMobileNavRoute } from "@/components/app/nav-config";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -12,6 +13,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { cn } from "@/lib/utils";
 
 const routeLabels: Record<string, string> = {
   dashboard: "Início",
@@ -28,7 +30,7 @@ const routeLabels: Record<string, string> = {
 
 export function DashboardBreadcrumbFallback() {
   return (
-    <Breadcrumb>
+    <Breadcrumb className="hidden md:block">
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbPage>Início</BreadcrumbPage>
@@ -41,10 +43,13 @@ export function DashboardBreadcrumbFallback() {
 export function DashboardBreadcrumb() {
   const pathname = usePathname();
   const segments = pathname.split("/").filter(Boolean);
+  const breadcrumbClassName = cn(
+    isMobileNavRoute(pathname) && "hidden md:block",
+  );
 
   if (segments.length <= 1) {
     return (
-      <Breadcrumb>
+      <Breadcrumb className={breadcrumbClassName}>
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbPage>Início</BreadcrumbPage>

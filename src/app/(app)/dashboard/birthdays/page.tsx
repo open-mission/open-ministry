@@ -9,6 +9,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -204,6 +205,10 @@ async function BirthdaysContent() {
             <CardContent>
               <BirthdayForm birthday={ownBirthday} maxDate={maxDate} />
             </CardContent>
+            <CardFooter className="text-xs leading-relaxed text-muted-foreground">
+              A equipe vê o dia e o mês para celebrar junto. O ano fica visível
+              apenas para administradores.
+            </CardFooter>
           </Card>
 
           {entries.length > 0 ? (

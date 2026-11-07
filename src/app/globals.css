@@ -136,3 +136,13 @@
     scroll-behavior: smooth;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-vaul-drawer],
+  [data-vaul-overlay],
+  [data-slot="drawer-content"],
+  [data-slot="drawer-overlay"] {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

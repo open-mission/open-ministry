@@ -59,7 +59,7 @@ export function EventList({
             </span>
           </div>
 
-          <div className="divide-y">
+          <div className="space-y-2 sm:space-y-0 sm:divide-y">
             {group.events.map((event) => (
               <EventRow
                 key={event.id}
@@ -87,18 +87,20 @@ function EventRow({
   return (
     <Link
       href={`/dashboard/events/${event.id}`}
-      className="group grid grid-cols-[auto_1fr] gap-3 rounded-lg px-2 py-4 transition-colors hover:bg-muted/50 sm:grid-cols-[auto_1fr_auto] sm:items-center"
+      className="group grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 rounded-xl border border-border/60 bg-card p-3 transition-[border-color,background-color] hover:border-primary/30 active:bg-muted/40 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:gap-3 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:px-2 sm:py-4 sm:hover:bg-muted/50"
     >
-      <div className="flex size-14 shrink-0 flex-col items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
-        <span className="font-heading text-2xl leading-none">{parts.day}</span>
-        <span className="mt-0.5 text-[0.6rem] font-medium tracking-[0.14em] text-muted-foreground">
+      <div className="flex size-12 shrink-0 flex-col items-center justify-center rounded-lg bg-secondary text-secondary-foreground sm:size-14 sm:rounded-xl">
+        <span className="font-heading text-xl leading-none sm:text-2xl">
+          {parts.day}
+        </span>
+        <span className="mt-0.5 text-[0.55rem] font-medium tracking-[0.14em] text-muted-foreground sm:text-[0.6rem]">
           {parts.monthShort}
         </span>
       </div>
 
       <div className="min-w-0 space-y-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="font-heading text-lg leading-tight tracking-tight">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          <p className="font-heading text-base leading-tight tracking-tight sm:text-lg">
             {event.title}
           </p>
           <Badge
@@ -138,14 +140,14 @@ function EventRow({
         )}
       </div>
 
-      <div className="col-span-2 flex items-center justify-between gap-3 sm:col-span-1 sm:justify-end">
+      <div className="col-span-2 flex items-center justify-between gap-3 border-t border-border/40 pt-2 sm:col-span-1 sm:justify-end sm:border-0 sm:pt-0">
         {showSchedule ? (
           <span
             className={cn(
-              "inline-flex items-center gap-1.5 text-xs whitespace-nowrap",
+              "inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[0.7rem] whitespace-nowrap sm:rounded-none sm:bg-transparent sm:p-0 sm:text-xs",
               progress.status === "complete"
-                ? "text-primary"
-                : "text-muted-foreground",
+                ? "bg-primary/10 text-primary"
+                : "bg-muted/60 text-muted-foreground",
             )}
           >
             {progress.status === "complete" ? (
@@ -163,7 +165,7 @@ function EventRow({
           </span>
         ) : null}
 
-        <ArrowRightIcon className="size-4 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100" />
+        <ArrowRightIcon className="size-4 shrink-0 text-primary opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100" />
       </div>
     </Link>
   );
