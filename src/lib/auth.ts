@@ -35,6 +35,23 @@ export const auth = betterAuth({
         required: false,
         input: true,
       },
+      phone: {
+        type: "string",
+        required: false,
+        input: true,
+      },
+      weekStartsOn: {
+        type: "number",
+        required: false,
+        defaultValue: 0,
+        input: true,
+      },
+      timezone: {
+        type: "string",
+        required: false,
+        defaultValue: "America/Sao_Paulo",
+        input: true,
+      },
     },
   },
   socialProviders: {

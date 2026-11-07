@@ -60,12 +60,18 @@ async function SettingsContent() {
     image: userRecord?.image ?? session.user.image ?? null,
   };
 
+  const calendarPreferences = {
+    weekStartsOn: (userRecord?.weekStartsOn === 1 ? 1 : 0) as 0 | 1,
+    timezone: userRecord?.timezone || "America/Sao_Paulo",
+  };
+
   return (
     <SettingsView
       organization={organization}
       role={role}
       isAdmin={isAdmin}
       userData={userData}
+      calendarPreferences={calendarPreferences}
       initialSessions={initialSessions}
       initialPasskeys={initialPasskeys}
       peopleCount={people.length}

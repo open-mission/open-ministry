@@ -22,7 +22,7 @@ const items = [
     exact: false,
   },
   {
-    href: "/dashboard/events",
+    href: "/dashboard/calendar",
     label: "Agenda",
     icon: CalendarDaysIcon,
     exact: false,

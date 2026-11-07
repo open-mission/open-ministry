@@ -10,13 +10,24 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
-- [ ] Implementar tela de agenda e calendário completo baseado no repositório dninomiya/full-calendar-for-shadcn-ui (views: dia, semana, mês, ano e agenda; exibição de cultos, escalas do usuário e dias indisponíveis; configurações de início da semana e fuso horário).
+Nenhum item pendente no backlog.
 
 ### Doing
 
-- [ ] Implementar tela de agenda e calendário completo baseado no repositório dninomiya/full-calendar-for-shadcn-ui (views: dia, semana, mês, ano e agenda; exibição de cultos, escalas do usuário e dias indisponíveis; configurações de início da semana e fuso horário).
+Nenhum item em andamento.
 
 ### Done
+
+- [x] Tela de Agenda e Calendário Completo (`/dashboard/calendar`).
+  - [x] Baseado no padrão de arquitetura headless do dninomiya/full-calendar-for-shadcn-ui integrado ao design system
+  - [x] Cinco modos de visualização totalmente responsivos: Mês (`month`), Semana (`week`), Dia (`day`), Ano (`year`) e Agenda linear (`agenda`)
+  - [x] Integração completa de dados: Cultos & Eventos da igreja, Minhas Escalas de serviço com função/departamento e Bloqueios de Indisponibilidade
+  - [x] Filtros interativos por chips: Todos, Cultos & Eventos, Minhas Escalas e Indisponibilidades
+  - [x] Navegação temporal fluida com botões Anterior/Próximo e atalho "Hoje"
+  - [x] Diálogo de detalhes ao clicar em qualquer item da agenda com ações rápidas (ir ao culto ou gerenciar ausências)
+  - [x] Configurações de início da semana (Domingo ou Segunda-feira) e fuso horário do usuário
+  - [x] Preferências de calendário configuráveis tanto pelo cabeçalho da agenda quanto pela tela de Configurações (`/dashboard/settings`), tanto no Desktop quanto no menu mobile estilo iOS
+  - [x] Item "Agenda" adicionado à barra de navegação lateral (Cultos & Escalas) e menu inferior mobile para acesso de administradores e membros
 
 - [x] Bloqueio pontual de datas de indisponibilidade com motivo/observação e períodos.
   - [x] Modelo de dados `person_unavailability` no Drizzle ORM com RLS policies e migration aplicada ao NeonDB
