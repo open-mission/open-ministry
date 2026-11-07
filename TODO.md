@@ -12,12 +12,18 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 - [ ] Implementar a funcionaldiade de Salvar um Cronograma como modelo e poder importar em evento vazio ou se estiver um evento já existente mostrar alerta dizendo que será substituido pelo novo, add opcao de limpar o cronograma (removendo todos os itens) e tbm a funcionalidade de exportar e importar cronogramas em evento/culto.
 - [ ] Implementar uma integracao com a evolution api go ([https://docs.evolutionfoundation.com.br/evolution-go/get-all-instances)](https://docs.evolutionfoundation.com.br/evolution-go/get-all-instances) para notificarmos integrantes quando for escalado, avisos do lider, entre outras coisas, a ideia é que cada igreja possa configurar uma conexao com sua propria instancia da evolution go, a ideia é tenhamos isso como canais de notificacao, tbm teremos o email futuramente. entao seria interessante desenvoler uma api de notificacao dos itens e ai só mudaria o canal e modelos de mensagem a ser enviado. Vamos iniciar com a notificacao de bem vindo quando a pessoa cria a conta e preenche os dados de telefone (whatsapp) pedir no onboarding do usuario., tbm iremos notificar quando a pessoa for escalada para um evento. Usar o queue com Upstash Redis e QStash. Assim podemos ter notificacoes agendadas por exemplo todo comeco do mes pedir para os usuarios preencher a disponibilidade de dias para servir nos cultos por exemplo.
-- [ ] Nos cronogramas add a possibilidade de drag on drop os itens do cronograma, ele tem o icone de drag mais nao funciona o drag on drop.
 - [ ] Implementar a funcionalidade dos usuarios preencher a disponibilidade de dias para servir nos cultos e quais dias tem disponivel. E se tem disponibilidade de manha, tarde e noite e o dias da semana.
 
 ### Doing
 
 ### Done
+
+- [x] Drag and Drop nos cronogramas de cultos e eventos.
+  - [x] Integração completa com `@dnd-kit/core` e `@dnd-kit/sortable`
+  - [x] Handle de arraste tátil com `GripVerticalIcon`, cursor dinâmico e feedback visual de elevação
+  - [x] Reordenação em tempo real com atualização instantânea dos horários de início calculados
+  - [x] Suporte a acessibilidade via teclado (`sortableKeyboardCoordinates`) e sensores de toque/ponteiro
+  - [x] Persistência assíncrona com reversão otimista em caso de erro
 
 - [x] Implementação da Funcionalidade de Cronograma: a ideia poder cadastrar o cronograma de um culto e evento. Podendo Add secoes, item, Horario e Tempo estimado podendo registrar quem será responsavel por aquela area (seja um usuario, ou registro manual com o nome da pessoa).
   - [x] Modelo de dados `event_plan_item` no Drizzle com RLS policies e migration aplicada
@@ -154,4 +160,5 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - Cabeçalho limpo: texto repetido "OpenMinistry" removido, separador vertical alinhado e substituído o texto estático "Painel" por `DashboardBreadcrumb` dinâmico integrado ao shadcn.
   - Sino de notificações com Popover interativo: prévia das últimas notificações com indicador de não lida, botão de marcar todas como lidas e link direto para a central completa.
   - Removidas bordas duplicadas nos avatares da igreja em `/dashboard/church` e no formulário de identidade visual.
+- **07/11/2026:** Drag and drop no cronograma concluído. Os momentos e seções do culto agora podem ser reordenados diretamente arrastando pelo handle vertical com animação suave, feedback de elevação e suporte tanto a mouse/toque quanto teclado. Os horários recalculam em tempo real e a persistência é sincronizada no banco com atualização otimista.
 
