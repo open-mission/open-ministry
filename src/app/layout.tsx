@@ -51,6 +51,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="pt-BR"
       suppressHydrationWarning
+      data-scroll-behavior="smooth"
       className={cn("font-sans", geist.variable, fraunces.variable)}
     >
       <body>
