@@ -14,6 +14,8 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Done
 
+- [x] Corrigir erro de exportação de objeto em Server Action (`src/app/actions/events.ts`): removido `export` de `const STARTER_PLAN_TEMPLATE` que violava a diretiva `"use server"` causando `Error: A "use server" file can only export async functions, found object` ao escalar pessoas em produção.
+
 - [x] Funcionalidade offline inteligente com segregação por nível de acesso (Membro, Líder e Admin)
   - [x] Estratégia de cache avançada no Service Worker (`public/sw.js`): pre-caching de manifest e ícones, e interceptação de `/api/offline-data` com Network-First e Cache-Fallback
   - [x] Bundle de dados offline inteligente por nível de usuário (`src/lib/offline-service.ts` e `/api/offline-data`):
