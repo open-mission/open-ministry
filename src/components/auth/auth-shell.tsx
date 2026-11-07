@@ -1,12 +1,12 @@
 import Link from "next/link";
 import {
-  ChurchIcon,
   HeartHandshakeIcon,
   QuoteIcon,
   ShieldCheckIcon,
   UsersIcon,
 } from "lucide-react";
 
+import { OpenMinistrySymbol } from "@/components/brand/openministry-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +43,7 @@ export function AuthShell({ children, contentClassName }: AuthShellProps) {
           className="relative flex w-fit items-center gap-3 rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-primary-foreground/30"
         >
           <span className="flex size-10 items-center justify-center rounded-xl bg-primary-foreground/10 ring-1 ring-primary-foreground/15">
-            <ChurchIcon className="size-5" />
+            <OpenMinistrySymbol className="size-5" />
           </span>
           <span className="flex flex-col leading-none">
             <span className="font-heading text-xl tracking-tight">
@@ -82,7 +82,7 @@ export function AuthShell({ children, contentClassName }: AuthShellProps) {
         <header className="flex items-center justify-between px-5 py-5 sm:px-8">
           <Link href="/" className="flex items-center gap-2 lg:hidden">
             <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <ChurchIcon className="size-4" />
+              <OpenMinistrySymbol className="size-4" />
             </span>
             <span className="font-heading text-lg tracking-tight">
               OpenMinistry
