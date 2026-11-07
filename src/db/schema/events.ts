@@ -3,6 +3,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -206,3 +207,41 @@ export const eventPlanItemRelations = relations(eventPlanItem, ({ one }) => ({
     references: [person.id],
   }),
 }));
+
+export type PlanTemplateItem = {
+  type: "header" | "item";
+  title: string;
+  description?: string | null;
+  durationSeconds: number;
+  order: number;
+  customResponsible?: string | null;
+};
+
+export const planTemplate = pgTable(
+  "plan_template",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    items: jsonb("items").$type<PlanTemplateItem[]>().notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("plan_template_organizationId_idx").on(table.organizationId),
+  ],
+);
+
+export const planTemplateRelations = relations(planTemplate, ({ one }) => ({
+  organization: one(organization, {
+    fields: [planTemplate.organizationId],
+    references: [organization.id],
+  }),
+}));
+

@@ -10,13 +10,21 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
-- [ ] Implementar a funcionaldiade de Salvar um Cronograma como modelo e poder importar em evento vazio ou se estiver um evento já existente mostrar alerta dizendo que será substituido pelo novo, add opcao de limpar o cronograma (removendo todos os itens) e tbm a funcionalidade de exportar e importar cronogramas em evento/culto.
-- [ ] Implementar uma integracao com a evolution api go ([https://docs.evolutionfoundation.com.br/evolution-go/get-all-instances)](https://docs.evolutionfoundation.com.br/evolution-go/get-all-instances) para notificarmos integrantes quando for escalado, avisos do lider, entre outras coisas, a ideia é que cada igreja possa configurar uma conexao com sua propria instancia da evolution go, a ideia é tenhamos isso como canais de notificacao, tbm teremos o email futuramente. entao seria interessante desenvoler uma api de notificacao dos itens e ai só mudaria o canal e modelos de mensagem a ser enviado. Vamos iniciar com a notificacao de bem vindo quando a pessoa cria a conta e preenche os dados de telefone (whatsapp) pedir no onboarding do usuario., tbm iremos notificar quando a pessoa for escalada para um evento. Usar o queue com Upstash Redis e QStash. Assim podemos ter notificacoes agendadas por exemplo todo comeco do mes pedir para os usuarios preencher a disponibilidade de dias para servir nos cultos por exemplo.
+- [ ] Implementar uma integracao com a evolution api go ([https://docs.evolutionfoundation.com.br/evolution-go/get-all-instances)](https://docs.evolutionfoundation.com.br/evolution-go/get-all-instances) para notificarmos integrantes quando for escalado, avisos do lider, entre outras coisas, a ideia é que cada igreja possa configurar uma conexao com sua propria instancia da evolution go, a ideia é tenhamos isso como canais de notificacao, tbm teremos o email futuramente. entao seria interessante desenvoler uma api de notificacao dos itens e ai só mudaria o canal e modelos de mensagem a ser enviado. Vamos iniciar com a notificacao de bem vindo quando a pessoa cria a conta e preenche os dados de telefone (whatsapp) pedir no onboarding do usuario., tbm iremos notificar quando a pessoa for escalada para um evento. Usar o queue com Upstash Redis e QStash. Assim podemos ter notificacoes agendadas por exemplo todo comeco do mes pedir para os usuarios preencher a disponibilidade de dias para servir nos cultos por exemplo. Use o Qstash localmente (npx @upstash/qstash-cli@latest dev) e,development
 - [ ] Implementar a funcionalidade dos usuarios preencher a disponibilidade de dias para servir nos cultos e quais dias tem disponivel. E se tem disponibilidade de manha, tarde e noite e o dias da semana.
 
 ### Doing
 
 ### Done
+
+- [x] Salvar cronograma como modelo, importação, limpeza e exportação de cronogramas de culto.
+  - [x] Tabela `plan_template` no Drizzle ORM com RLS e migration aplicada
+  - [x] Salvar qualquer cronograma como modelo personalizado com nome, descrição e contagem de itens
+  - [x] Listagem e aplicação de modelos (modelo padrão do sistema e modelos da igreja)
+  - [x] Alerta de confirmação seguro ao aplicar modelo ou importar caso o evento já possua momentos cadastrados
+  - [x] Limpeza completa do cronograma com diálogo de confirmação
+  - [x] Exportação de cronograma para arquivo estruturado `.json`
+  - [x] Importação de cronograma via upload de arquivo `.json` com validação de esquema
 
 - [x] Drag and Drop nos cronogramas de cultos e eventos.
   - [x] Integração completa com `@dnd-kit/core` e `@dnd-kit/sortable`
@@ -161,4 +169,5 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - Sino de notificações com Popover interativo: prévia das últimas notificações com indicador de não lida, botão de marcar todas como lidas e link direto para a central completa.
   - Removidas bordas duplicadas nos avatares da igreja em `/dashboard/church` e no formulário de identidade visual.
 - **07/11/2026:** Drag and drop no cronograma concluído. Os momentos e seções do culto agora podem ser reordenados diretamente arrastando pelo handle vertical com animação suave, feedback de elevação e suporte tanto a mouse/toque quanto teclado. Os horários recalculam em tempo real e a persistência é sincronizada no banco com atualização otimista.
+- **07/11/2026:** Modelos e gestão de cronograma concluídos. Agora é possível salvar o cronograma de qualquer culto como modelo reutilizável da igreja, aplicar modelos salvos ou o modelo padrão do sistema (com alerta inteligente caso já existam itens para evitar perdas acidentais), limpar o cronograma por completo com confirmação e exportar/importar cronogramas em formato `.json`.
 
