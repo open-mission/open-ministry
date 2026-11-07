@@ -52,7 +52,16 @@ export type TenantTransaction = Parameters<
   Parameters<TenantDb["transaction"]>[0]
 >[0];
 
+let cachedJwksSet: ReturnType<typeof createLocalJWKSet> | null = null;
+let jwksCachedAt = 0;
+const JWKS_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutos
+
 async function getJwks() {
+  const now = Date.now();
+  if (cachedJwksSet && now - jwksCachedAt < JWKS_CACHE_TTL_MS) {
+    return cachedJwksSet;
+  }
+
   // Read the public keys from the database instead of fetching this app's own
   // /api/auth/jwks endpoint. Preview deployments are protected by Vercel
   // Authentication, so a server-to-self HTTP call would receive the SSO
@@ -73,7 +82,9 @@ async function getJwks() {
     ...(row.crv ? { crv: row.crv } : {}),
   }));
 
-  return createLocalJWKSet({ keys });
+  cachedJwksSet = createLocalJWKSet({ keys });
+  jwksCachedAt = now;
+  return cachedJwksSet;
 }
 
 const getAuthToken = cache(async (): Promise<string | null> => {

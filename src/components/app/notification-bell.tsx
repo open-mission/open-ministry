@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -10,14 +10,7 @@ import {
   ClipboardListIcon,
   MegaphoneIcon,
 } from "lucide-react";
-import { toast } from "sonner";
 
-import {
-  getRecentNotificationsAction,
-  markAllNotificationsReadAction,
-  markNotificationReadAction,
-  type NotificationPreviewItem,
-} from "@/app/actions/notifications";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +29,10 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  type NotificationItem,
+  useNotificationStore,
+} from "@/lib/notification-store";
 import { cn } from "@/lib/utils";
 
 function TypeIcon({ type }: { type: string }) {
@@ -66,11 +63,11 @@ function formatRelativeTime(dateStr: string): string {
 
 type NotificationPanelProps = {
   count: number;
-  items: NotificationPreviewItem[];
+  items: NotificationItem[];
   loading: boolean;
   variant: "drawer" | "popover";
   onMarkAllRead: () => void;
-  onItemClick: (item: NotificationPreviewItem) => void;
+  onItemClick: (item: NotificationItem) => void;
   onClose: () => void;
 };
 
@@ -131,7 +128,7 @@ function NotificationPanel({
           isDrawer ? "max-h-[55dvh]" : "max-h-[340px]",
         )}
       >
-        {loading ? (
+        {loading && items.length === 0 ? (
           <div className={cn("space-y-3", isDrawer ? "p-4" : "p-3")}>
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex items-start gap-3">
@@ -248,16 +245,29 @@ function NotificationPanel({
 
 export function NotificationBell({
   initialCount,
+  initialItems,
 }: {
   initialCount: number;
+  initialItems?: NotificationItem[];
 }) {
   const router = useRouter();
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
-  const [count, setCount] = useState(initialCount);
-  const [items, setItems] = useState<NotificationPreviewItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [, startTransition] = useTransition();
+
+  const {
+    count,
+    items,
+    isLoading,
+    init,
+    revalidate,
+    markAsRead,
+    markAllAsRead,
+    setCount,
+  } = useNotificationStore();
+
+  useEffect(() => {
+    init({ count: initialCount, items: initialItems });
+  }, [init, initialCount, initialItems]);
 
   // Periodically refresh unread count
   useEffect(() => {
@@ -285,54 +295,31 @@ export function NotificationBell({
       active = false;
       window.clearInterval(interval);
     };
-  }, []);
+  }, [setCount]);
 
-  // Fetch recent notifications when the panel opens
+  // Fetch recent notifications when the panel opens (stale-while-revalidate cached)
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
     if (nextOpen) {
-      setLoading(true);
-      getRecentNotificationsAction(5)
-        .then((data) => {
-          setItems(data);
-          setLoading(false);
-        })
-        .catch(() => {
-          setLoading(false);
-        });
+      void revalidate();
     }
   };
 
   const handleMarkAllRead = () => {
-    startTransition(async () => {
-      const res = await markAllNotificationsReadAction();
-      if (res.ok) {
-        setCount(0);
-        setItems((prev) => prev.map((item) => ({ ...item, read: true })));
-        toast.success("Todas as notificações foram marcadas como lidas.");
-      } else {
-        toast.error("Não foi possível marcar como lidas.");
-      }
-    });
+    markAllAsRead();
   };
 
-  const handleItemClick = (item: NotificationPreviewItem) => {
+  const handleItemClick = (item: NotificationItem) => {
     setOpen(false);
-    startTransition(async () => {
-      if (!item.read) {
-        setCount((prev) => Math.max(0, prev - 1));
-        setItems((prev) =>
-          prev.map((i) => (i.id === item.id ? { ...i, read: true } : i)),
-        );
-        await markNotificationReadAction(item.id);
-      }
+    if (!item.read) {
+      markAsRead(item.id);
+    }
 
-      if (item.href) {
-        router.push(item.href);
-      } else {
-        router.push("/dashboard/notifications");
-      }
-    });
+    if (item.href) {
+      router.push(item.href);
+    } else {
+      router.push("/dashboard/notifications");
+    }
   };
 
   const trigger = (
@@ -368,7 +355,7 @@ export function NotificationBell({
           <NotificationPanel
             count={count}
             items={items}
-            loading={loading}
+            loading={isLoading}
             variant="drawer"
             onMarkAllRead={handleMarkAllRead}
             onItemClick={handleItemClick}
@@ -391,7 +378,7 @@ export function NotificationBell({
         <NotificationPanel
           count={count}
           items={items}
-          loading={loading}
+          loading={isLoading}
           variant="popover"
           onMarkAllRead={handleMarkAllRead}
           onItemClick={handleItemClick}
