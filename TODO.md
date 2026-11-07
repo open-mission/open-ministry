@@ -10,7 +10,6 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
-- [ ] Desenvolver popup de Tutorial de como instalar como pwa no celular (ios/ android) 
 - [ ] PWA implementar notificaoes com push usando nativo quando possivel ou onesignal. Se precisar de tokens ou algo de credencial colocar as variaveis em .env
 - [ ] Funcionalidade de Felicitometro aonde o usuario pode falar como está hoje e se precisa de alguma oracao ou precisa conversar, a ideia que ele possa preenhcer a cada dia, esses dados serao visivel apenas pelo lider do departamento ou administrador. imporrtante usarmos os graficos do shadnui para exibir os relatorios dos usuarios sobre os seus sentimentos. Implementar uma pagina de usuario aonde o o lider e ou admin pode ver a pessoa, as informacoes dele, o historico de felicitometros, dias que foram escalados, os cultos e eventos que eles serviram e etc.
 - [ ] Desenvolver uma nova pagina home da plataforma (Dashboard) a ideia é que quando o usuario admin entrar ele veja os principais informacoes dele, tenha uma secao de acesso rapidos que no mobile tera um scroll horizontal em cada secao. No mobile a ideia é ter uma cara real de app, entao teria o sidebar mais o ultimo item com 3 risco e acessamos os items do menu. 
@@ -21,6 +20,13 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 Nenhum item em andamento.
 
 ### Done
+
+- [x] Popup e tutorial de instalação como PWA no celular (iOS / Android).
+  - [x] Detecção inteligente de ambiente (iOS Safari, Android Chromium, modo standalone instalado)
+  - [x] Suporte ao evento nativo `beforeinstallprompt` para instalação com 1 toque no Android/Chrome
+  - [x] Tutorial passo a passo ilustrado para iOS (Compartilhar &gt; Adicionar à Tela de Início) e Android
+  - [x] Banner flutuante no mobile com animação fluida e descarte persistente (`localStorage`)
+  - [x] Card dedicado de PWA nas Configurações (`/dashboard/settings`), disponível tanto no desktop quanto no menu mobile estilo iOS
 
 - [x] Possibilidade de notificar (via sistema e WhatsApp) um usuário do departamento que sou líder, ou usuário da igreja se for admin ou owner, com seleção multicanal.
   - [x] Suporte a líderes de departamento enviarem avisos para seus departamentos e membros liderados com autorização estrita
@@ -224,4 +230,5 @@ Nenhum item em andamento.
 - **07/11/2026:** Disponibilidade para servir concluída. Foi criada a rota `/dashboard/availability` onde voluntários e membros podem definir seus dias e períodos disponíveis (manhã, tarde e noite) para servir nos cultos da igreja, além de registrar observações e preferências para a liderança. A navegação lateral agora conta com o atalho "Disponibilidade" e o modelo conta com RLS e persistência atômica.
 - **07/11/2026:** Design Feedback das Configurações no Mobile concluído. A tela `/dashboard/settings` ganhou layout inspirado nas configurações do iPhone/iOS em telas móveis: cabeçalho de perfil estilo Apple ID, seções agrupadas em cartões com cantos arredondados, ícones em squircle coloridos, navegação fluida em drill-down com botão de retorno ("‹ Configurações") e subtítulos informativos. No desktop, a navegação clássica por abas é mantida com total responsividade.
 - **07/11/2026:** Notificações multicanal e avisos para líderes de departamento concluídos. Líderes de departamentos agora podem enviar avisos para suas equipes e membros de forma direcionada, enquanto administradores podem notificar toda a igreja, departamentos ou membros individuais. O novo modal de avisos conta com seleção de canais (App, WhatsApp via Evolution API, além de slots para Email e Push), feedback em tempo real e integração direta na central de notificações e na página de detalhes do departamento.
+- **07/11/2026:** Tutorial e pop-up de instalação PWA concluídos. Foi desenvolvido um sistema completo de instalação como aplicativo com detecção automática de sistema operacional (iOS e Android), suporte ao prompt nativo do navegador para instalação em um toque no Chromium/Android, guia passo a passo ilustrado com ícones para Safari no iOS (Compartilhar > Adicionar à Tela de Início), banner flutuante no mobile com descarte persistente (`localStorage`) e card dedicado nas Configurações (`/dashboard/settings`).
 

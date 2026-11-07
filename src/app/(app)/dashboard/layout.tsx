@@ -13,6 +13,7 @@ import {
   NotificationBellFallback,
   NotificationBellLoader,
 } from "@/components/app/notification-bell-loader";
+import { PwaInstallBanner } from "@/components/pwa/pwa-install-banner";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -57,6 +58,7 @@ export default function DashboardLayout({
         <Suspense fallback={<MobileNavShell />}>
           <MobileNav />
         </Suspense>
+        <PwaInstallBanner />
       </SidebarInset>
     </SidebarProvider>
   );
