@@ -40,6 +40,41 @@ export function CalendarAgendaView({
     const existingGroup = groups.find((g) => isSameDay(g.date, itemDate));
 
     if (existingGroup) {
+      // Quando o evento é o mesmo, agrupa as escalas ou prioriza a escala sobre o evento geral
+      if (item.metadata?.eventId) {
+        const existingIndex = existingGroup.items.findIndex(
+          (i) => i.metadata?.eventId === item.metadata?.eventId,
+        );
+        if (existingIndex !== -1) {
+          const existingItem = existingGroup.items[existingIndex];
+
+          // Se já existe escala e o novo é evento geral, ignora o evento genérico
+          if (existingItem.type === "assignment" && item.type === "event") {
+            continue;
+          }
+
+          // Se já existe evento geral e o novo é escala, substitui pelo card de escala
+          if (existingItem.type === "event" && item.type === "assignment") {
+            existingGroup.items[existingIndex] = item;
+            continue;
+          }
+
+          // Se ambos são escalas do mesmo evento (múltiplas funções), combina as funções
+          if (
+            existingItem.type === "assignment" &&
+            item.type === "assignment"
+          ) {
+            const funcs = Array.from(
+              new Set([
+                ...(existingItem.metadata?.functionName?.split(", ") || []),
+                ...(item.metadata?.functionName?.split(", ") || []),
+              ]),
+            );
+            existingItem.title = `Escalado: ${funcs.join(", ")}`;
+            continue;
+          }
+        }
+      }
       existingGroup.items.push(item);
     } else {
       groups.push({ date: itemDate, items: [item] });

@@ -111,14 +111,28 @@ export function FullCalendar({
 
   // Filtered items
   const filteredItems = useMemo(() => {
-    if (filterType === "all") return initialItems;
     if (filterType === "events")
       return initialItems.filter((i) => i.type === "event");
     if (filterType === "assignments")
       return initialItems.filter((i) => i.type === "assignment");
     if (filterType === "unavailabilities")
       return initialItems.filter((i) => i.type === "unavailability");
-    return initialItems;
+
+    // filterType === "all"
+    // Quando o usuário possui escala em um culto/evento, agrupamos priorizando a escala
+    // para não exibir dois cards (um de culto geral e outro de escala) para o mesmo evento.
+    const assignmentEventIds = new Set(
+      initialItems
+        .filter((i) => i.type === "assignment" && i.metadata?.eventId)
+        .map((i) => i.metadata!.eventId!),
+    );
+
+    return initialItems.filter((item) => {
+      if (item.type === "event" && item.metadata?.eventId) {
+        return !assignmentEventIds.has(item.metadata.eventId);
+      }
+      return true;
+    });
   }, [initialItems, filterType]);
 
   return (
