@@ -10,13 +10,18 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
+- [ ] Implementar a funcionaldiade de Salvar um Cronograma como modelo e poder importar em evento vazio ou se estiver um evento já existente mostrar alerta dizendo que será substituido pelo novo, add opcao de limpar o cronograma (removendo todos os itens) e tbm a funcionalidade de exportar e importar cronogramas em evento/culto.
+- [ ] Implementar uma integracao com a evolution api go ([https://docs.evolutionfoundation.com.br/evolution-go/get-all-instances)](https://docs.evolutionfoundation.com.br/evolution-go/get-all-instances) para notificarmos integrantes quando for escalado, avisos do lider, entre outras coisas, a ideia é que cada igreja possa configurar uma conexao com sua propria instancia da evolution go, a ideia é tenhamos isso como canais de notificacao, tbm teremos o email futuramente. entao seria interessante desenvoler uma api de notificacao dos itens e ai só mudaria o canal e modelos de mensagem a ser enviado. Vamos iniciar com a notificacao de bem vindo quando a pessoa cria a conta e preenche os dados de telefone (whatsapp) pedir no onboarding do usuario., tbm iremos notificar quando a pessoa for escalada para um evento. Usar o queue com Upstash Redis e QStash. Assim podemos ter notificacoes agendadas por exemplo todo comeco do mes pedir para os usuarios preencher a disponibilidade de dias para servir nos cultos por exemplo.
+- [ ] Nos cronogramas add a possibilidade de drag on drop os itens do cronograma, ele tem o icone de drag mais nao funciona o drag on drop.
+- [ ] Implementar a funcionalidade dos usuarios preencher a disponibilidade de dias para servir nos cultos e quais dias tem disponivel. E se tem disponibilidade de manha, tarde e noite e o dias da semana.
+
 ### Doing
 
 ### Done
 
 - [x] Implementação da Funcionalidade de Cronograma: a ideia poder cadastrar o cronograma de um culto e evento. Podendo Add secoes, item, Horario e Tempo estimado podendo registrar quem será responsavel por aquela area (seja um usuario, ou registro manual com o nome da pessoa).
   - [x] Modelo de dados `event_plan_item` no Drizzle com RLS policies e migration aplicada
-  - [x] Abas "Cronograma do Culto" e "Escala & Equipes" integradas na página do evento
+  - [x] Abas "Cronograma do Culto" e "Escala &amp; Equipes" integradas na página do evento
   - [x] Adicionar, editar e excluir seções (cabeçalhos) e momentos com descrição e louvores
   - [x] Cálculo dinâmico do horário de início de cada item a partir do horário do culto
   - [x] Duração estimada em MM:SS ou minutos, com totalizador e comparativo com o tempo previsto
@@ -144,10 +149,9 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 - **07/11/2026:** Ajustes de design e refinamentos de UI (Design Feedback) concluídos:
   - Diálogo de momentos do cronograma atualizado: modal largo (`sm:max-w-2xl`) no desktop e `Drawer` (shadcn) em tela cheia no mobile para melhor ergonomia de toque.
   - Formulários de criação e edição de eventos atualizados: substituição do campo numérico de duração por "Horário de término aproximado" (`type="time"`), com cálculo automático da duração para a API.
-  - Navegação lateral reestruturada por categorias semânticas (*Principal*, *Cultos & Escalas*, *Pessoas & Equipes*, *Configurações* no final).
+  - Navegação lateral reestruturada por categorias semânticas (*Principal*, *Cultos &amp; Escalas*, *Pessoas &amp; Equipes*, *Configurações* no final).
   - Rodapé da barra lateral atualizado com `NavUser` (dropdown shadcn contendo avatar, nome, email, papel, links para perfil, configurações, notificações e logout).
   - Cabeçalho limpo: texto repetido "OpenMinistry" removido, separador vertical alinhado e substituído o texto estático "Painel" por `DashboardBreadcrumb` dinâmico integrado ao shadcn.
   - Sino de notificações com Popover interativo: prévia das últimas notificações com indicador de não lida, botão de marcar todas como lidas e link direto para a central completa.
   - Removidas bordas duplicadas nos avatares da igreja em `/dashboard/church` e no formulário de identidade visual.
-
 
