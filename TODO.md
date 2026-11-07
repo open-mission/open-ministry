@@ -10,14 +10,24 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
-- [ ] Configurar deploy na Vercel (repositório GitHub, variáveis de ambiente e domínio).
-  - [x] Repositório público criado em `open-mission/open-ministry`
-  - [x] Variáveis de ambiente configuradas na Vercel (incluindo `DATABASE_AUTHENTICATED_URL`)
-  - [ ] Domínio configurado — pendente de acesso ao DNS/domínio
+- [ ] Implementação da Tela de Configurações tanto para o admin como para o membro. O admin terá acesso a configurações mais avançadas. O membro terá acesso a configurações acerca do seu perfil, notificações, troca de senha,  passkey e etc.
+- [ ] Implementação da Funcionalidade de Cronograma: a ideia poder cadastrar o cronograma de um culto e evento. Podendo Add secoes, item, Horario e Tempo estimado podendo registrar quem será responsavel por aquela area (seja um usuario, ou registro manual com o nome da pessoa) Abaixo tem uma imagem de exemplo (mas nao commit ela, depois de desenvolver remover essa imagem abaixo)  
+![](orca-paste-1794017331643-b814f027-0f8e-44e7-ab28-46e89d5b35c3.png)
 
 ### Doing
 
 ### Done
+
+- [x] Configurar no Better Auth:  
+  - [x] [https://better-auth.com/docs/plugins/last-login-method](https://better-auth.com/docs/plugins/last-login-method)   
+  - [x] [https://better-auth.com/docs/plugins/passkey](https://better-auth.com/docs/plugins/passkey)  
+  - [x] [https://better-auth.com/docs/plugins/multi-session](https://better-auth.com/docs/plugins/multi-session)  
+  - [x] [https://better-auth.com/docs/plugins/username](https://better-auth.com/docs/plugins/username)
+
+- [x] Configurar deploy na Vercel (repositório GitHub, variáveis de ambiente e domínio).
+  - [x] Repositório público criado em `open-mission/open-ministry`
+  - [x] Variáveis de ambiente configuradas na Vercel (incluindo `DATABASE_AUTHENTICATED_URL`)
+  - [ ] Domínio configurado — pendente de acesso ao DNS/domínio
 
 - [x] Perfil, identidade da igreja, acesso como membro e tema.
   - [x] Perfil em modo somente leitura, com edição ao clicar em “Editar perfil”
@@ -112,3 +122,4 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 - **06/11/2026:** Mobile/PWA concluído. O app é instalável (manifest, ícones, service worker e página offline), tem navegação inferior no celular e uma home própria para membros com próximas escalas, agenda dos departamentos, aniversários e estatísticas pessoais. A aba Escalas mostra apenas as escalas do membro, com próximas e passadas. O perfil permite editar nome, aniversário e avatar, lista departamentos/funções e as próximas escalas. Tudo revisado em 390px e 1440px; atualização de perfil, service worker, cache offline e manifesto validados.
 - **06/11/2026:** Notificações concluído. A central in-app tem sino com badge, barra da notificação não lida, leitura individual e em lote. Escalar ou remover uma pessoa gera notificação para a pessoa vinculada; a administração pode enviar avisos para toda a igreja ou para um departamento. Contagem do sino é atualizada por polling. Testado com criação real de escala e aviso, leitura, marcar todas, barra e contador sumindo, API de contagem e RLS.
 - **06/11/2026:** Perfil, identidade da igreja, acesso como membro e tema concluídos. O perfil agora abre somente leitura e entra em edição por um botão; nome, aniversário e foto são salvos juntos, com upload pelo UploadThing. Admin/owner pode atualizar nome e logo da igreja em `/dashboard/church`, e o logo aparece no topo do painel. O plugin admin do Better Auth permite entrar como uma pessoa da igreja, com aviso fixo e retorno à conta original; a autorização é por igreja e os endpoints HTTP administrativos ficam bloqueados. O tema claro/escuro/sistema foi adicionado no painel, login e site. Fluxos de upload, edição de perfil, identidade da igreja, impersonação e alternância de tema validados no navegador em 1440px e 390px; schema e migration do admin plugin aplicados no Neon.
+- **06/11/2026:** Plugins do Better Auth concluídos. Foram ativados os plugins `last-login-method`, `passkey`, `multi-session` e `username` no servidor e no cliente, com schema gerado e migration aplicada no NeonDB. A tela de login passou a suportar autenticação com Passkey (WebAuthn/biometria), entrada com email ou @username, e badge indicador do último método de login utilizado; o cadastro permite registrar opcionalmente o nome de usuário.

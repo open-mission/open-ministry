@@ -1,7 +1,15 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { admin, openAPI, organization } from "better-auth/plugins";
+import { passkey } from "@better-auth/passkey";
+import {
+  admin,
+  lastLoginMethod,
+  multiSession,
+  openAPI,
+  organization,
+  username,
+} from "better-auth/plugins";
 import { jwt } from "better-auth/plugins/jwt";
 import { eq } from "drizzle-orm";
 
@@ -79,6 +87,12 @@ export const auth = betterAuth({
       // HTTP do plugin admin ficam bloqueados em /api/auth/admin/*.
       allowImpersonatingAdmins: true,
     }),
+    username(),
+    passkey(),
+    multiSession({
+      maximumSessions: 5,
+    }),
+    lastLoginMethod(),
     jwt({
       jwt: {
         audience: "openministry",

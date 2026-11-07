@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2Icon } from "lucide-react";
 
 import { FormAlert } from "@/components/auth/form-alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { withRedirect } from "@/lib/redirects";
@@ -11,11 +12,13 @@ import { withRedirect } from "@/lib/redirects";
 type GoogleSignInButtonProps = {
   redirectTo?: string;
   label?: string;
+  isLastUsed?: boolean;
 };
 
 export function GoogleSignInButton({
   redirectTo,
   label = "Continuar com Google",
+  isLastUsed = false,
 }: GoogleSignInButtonProps) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +53,7 @@ export function GoogleSignInButton({
         type="button"
         variant="outline"
         size="lg"
-        className="h-10 w-full"
+        className="relative h-10 w-full"
         onClick={handleSignIn}
         disabled={pending}
       >
@@ -59,7 +62,15 @@ export function GoogleSignInButton({
         ) : (
           <GoogleIcon />
         )}
-        {pending ? "Conectando..." : label}
+        <span className="truncate">{pending ? "Conectando..." : label}</span>
+        {isLastUsed && !pending ? (
+          <Badge
+            variant="secondary"
+            className="ml-auto text-[10px] font-medium tracking-wide uppercase"
+          >
+            Último usado
+          </Badge>
+        ) : null}
       </Button>
       {error ? <FormAlert>{error}</FormAlert> : null}
     </div>
