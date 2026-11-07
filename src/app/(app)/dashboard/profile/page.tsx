@@ -7,13 +7,16 @@ import {
   ChurchIcon,
   CrownIcon,
   MailIcon,
+  SettingsIcon,
 } from "lucide-react";
+import Link from "next/link";
 
 import { AssignmentList } from "@/components/app/assignment-list";
 import { RoleBadge } from "@/components/members/role-badge";
 import { ProfileEditor } from "@/components/profile/profile-editor";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -129,6 +132,20 @@ async function ProfileContent() {
                   Na igreja desde {formatDate(member.createdAt)}
                 </p>
               ) : null}
+            </div>
+
+            <div className="w-full pt-1">
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="w-full gap-1.5"
+              >
+                <Link href="/dashboard/settings">
+                  <SettingsIcon className="size-3.5" />
+                  Configurações e Segurança
+                </Link>
+              </Button>
             </div>
           </CardContent>
         </Card>
