@@ -21,12 +21,21 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 function TypeIcon({ type }: { type: string }) {
@@ -55,12 +64,195 @@ function formatRelativeTime(dateStr: string): string {
   }).format(new Date(dateStr));
 }
 
+type NotificationPanelProps = {
+  count: number;
+  items: NotificationPreviewItem[];
+  loading: boolean;
+  variant: "drawer" | "popover";
+  onMarkAllRead: () => void;
+  onItemClick: (item: NotificationPreviewItem) => void;
+  onClose: () => void;
+};
+
+function NotificationPanel({
+  count,
+  items,
+  loading,
+  variant,
+  onMarkAllRead,
+  onItemClick,
+  onClose,
+}: NotificationPanelProps) {
+  const isDrawer = variant === "drawer";
+
+  return (
+    <>
+      <div
+        className={cn(
+          "flex items-center justify-between gap-3",
+          isDrawer ? "bg-background px-5 py-4" : "bg-muted/30 px-4 py-3",
+        )}
+      >
+        <div className="flex items-center gap-2">
+          <span className="font-heading text-sm font-semibold">
+            Notificações
+          </span>
+          {count > 0 ? (
+            <Badge
+              variant="secondary"
+              className="h-4.5 px-1.5 text-[10px] font-normal"
+            >
+              {count} {count === 1 ? "nova" : "novas"}
+            </Badge>
+          ) : null}
+        </div>
+
+        {count > 0 ? (
+          <button
+            type="button"
+            onClick={onMarkAllRead}
+            className={cn(
+              "flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground",
+              isDrawer && "-mr-2 min-h-9 rounded-lg px-2",
+            )}
+            title="Marcar todas como lidas"
+          >
+            <CheckCheckIcon className="size-3.5" />
+            <span>Marcar lidas</span>
+          </button>
+        ) : null}
+      </div>
+
+      <Separator />
+
+      <div
+        className={cn(
+          "divide-y divide-border/40 overflow-y-auto",
+          isDrawer ? "max-h-[55dvh]" : "max-h-[340px]",
+        )}
+      >
+        {loading ? (
+          <div className={cn("space-y-3", isDrawer ? "p-4" : "p-3")}>
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-start gap-3">
+                <Skeleton className="mt-0.5 size-7 shrink-0 rounded-full" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-3.5 w-3/4" />
+                  <Skeleton className="h-3 w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <div
+            className={cn(
+              "flex flex-col items-center justify-center gap-2 px-4 text-center",
+              isDrawer ? "py-10" : "py-8",
+            )}
+          >
+            <span className="flex size-10 items-center justify-center rounded-full bg-muted/60 text-muted-foreground">
+              <BellIcon className="size-5" />
+            </span>
+            <p className="text-xs font-medium text-foreground">
+              Tudo em dia por aqui!
+            </p>
+            <p className="max-w-[200px] text-xs text-muted-foreground">
+              Nenhuma notificação nova no momento.
+            </p>
+          </div>
+        ) : (
+          items.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onItemClick(item)}
+              className={cn(
+                "group flex w-full items-start gap-3 text-left transition-colors hover:bg-muted/50",
+                isDrawer ? "min-h-16 p-4" : "p-3",
+                !item.read && "bg-primary/[0.03]",
+              )}
+            >
+              <div
+                className={cn(
+                  "flex size-8 shrink-0 items-center justify-center rounded-lg border",
+                  !item.read
+                    ? "border-primary/20 bg-primary/10 text-primary"
+                    : "border-border/40 bg-muted/40 text-muted-foreground",
+                )}
+              >
+                <TypeIcon type={item.type} />
+              </div>
+
+              <div className="min-w-0 flex-1 space-y-0.5">
+                <div className="flex items-center justify-between gap-1">
+                  <p
+                    className={cn(
+                      "truncate text-xs font-medium",
+                      !item.read
+                        ? "font-semibold text-foreground"
+                        : "text-foreground/80",
+                    )}
+                  >
+                    {item.title}
+                  </p>
+                  <span className="shrink-0 text-[10px] text-muted-foreground">
+                    {formatRelativeTime(item.createdAt)}
+                  </span>
+                </div>
+
+                {item.body ? (
+                  <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                    {item.body}
+                  </p>
+                ) : null}
+              </div>
+
+              {!item.read ? (
+                <span
+                  className="mt-1.5 size-2 shrink-0 rounded-full bg-primary"
+                  title="Não lida"
+                />
+              ) : null}
+            </button>
+          ))
+        )}
+      </div>
+
+      <Separator />
+
+      <div
+        className={cn(
+          isDrawer
+            ? "bg-background p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            : "bg-muted/20 p-2",
+        )}
+      >
+        <Button
+          asChild
+          variant="ghost"
+          size="sm"
+          className={cn(
+            "w-full justify-between text-xs text-muted-foreground hover:text-foreground",
+            isDrawer ? "h-11 text-sm" : "h-8",
+          )}
+        >
+          <Link href="/dashboard/notifications" onClick={onClose}>
+            <span>Ver todas as notificações</span>
+            <ArrowRightIcon className="size-3.5" />
+          </Link>
+        </Button>
+      </div>
+    </>
+  );
+}
+
 export function NotificationBell({
   initialCount,
 }: {
   initialCount: number;
 }) {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [count, setCount] = useState(initialCount);
   const [items, setItems] = useState<NotificationPreviewItem[]>([]);
@@ -95,7 +287,7 @@ export function NotificationBell({
     };
   }, []);
 
-  // Fetch recent notifications when popover opens
+  // Fetch recent notifications when the panel opens
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
     if (nextOpen) {
@@ -143,153 +335,68 @@ export function NotificationBell({
     });
   };
 
+  const trigger = (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      className="relative"
+      aria-label={
+        count > 0 ? `${count} notificações não lidas` : "Notificações"
+      }
+      title="Notificações"
+    >
+      <BellIcon className="size-4" />
+      {count > 0 ? (
+        <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.6rem] leading-none font-medium text-primary-foreground shadow-xs animate-in zoom-in-75">
+          {count > 9 ? "9+" : count}
+        </span>
+      ) : null}
+    </Button>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={handleOpenChange}>
+        <DrawerTrigger asChild>{trigger}</DrawerTrigger>
+        <DrawerContent className="gap-0 rounded-t-[28px] border-x-0 border-b-0 bg-background p-0 data-[vaul-drawer-direction=bottom]:max-h-[85dvh]">
+          <DrawerHeader className="sr-only">
+            <DrawerTitle>Notificações</DrawerTitle>
+            <DrawerDescription>
+              Suas notificações recentes e avisos da igreja.
+            </DrawerDescription>
+          </DrawerHeader>
+          <NotificationPanel
+            count={count}
+            items={items}
+            loading={loading}
+            variant="drawer"
+            onMarkAllRead={handleMarkAllRead}
+            onItemClick={handleItemClick}
+            onClose={() => setOpen(false)}
+          />
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="relative"
-          aria-label={
-            count > 0 ? `${count} notificações não lidas` : "Notificações"
-          }
-          title="Notificações"
-        >
-          <BellIcon className="size-4" />
-          {count > 0 ? (
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.6rem] font-medium leading-none text-primary-foreground shadow-xs animate-in zoom-in-75">
-              {count > 9 ? "9+" : count}
-            </span>
-          ) : null}
-        </Button>
-      </PopoverTrigger>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
 
       <PopoverContent
         align="end"
         sideOffset={8}
-        className="w-80 sm:w-96 p-0 rounded-xl shadow-lg border border-border/70 overflow-hidden"
+        className="w-80 overflow-hidden rounded-xl border border-border/70 p-0 shadow-lg sm:w-96"
       >
-        <div className="flex items-center justify-between px-4 py-3 bg-muted/30">
-          <div className="flex items-center gap-2">
-            <span className="font-heading text-sm font-semibold">Notificações</span>
-            {count > 0 ? (
-              <Badge variant="secondary" className="text-[10px] h-4.5 px-1.5 font-normal">
-                {count} {count === 1 ? "nova" : "novas"}
-              </Badge>
-            ) : null}
-          </div>
-
-          {count > 0 ? (
-            <button
-              type="button"
-              onClick={handleMarkAllRead}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              title="Marcar todas como lidas"
-            >
-              <CheckCheckIcon className="size-3.5" />
-              <span>Marcar lidas</span>
-            </button>
-          ) : null}
-        </div>
-
-        <Separator />
-
-        <div className="max-h-[340px] overflow-y-auto divide-y divide-border/40">
-          {loading ? (
-            <div className="p-3 space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex gap-3 items-start">
-                  <Skeleton className="size-7 rounded-full shrink-0 mt-0.5" />
-                  <div className="space-y-1.5 flex-1">
-                    <Skeleton className="h-3.5 w-3/4" />
-                    <Skeleton className="h-3 w-full" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-8 px-4 text-center">
-              <span className="flex size-10 items-center justify-center rounded-full bg-muted/60 text-muted-foreground">
-                <BellIcon className="size-5" />
-              </span>
-              <p className="text-xs font-medium text-foreground">
-                Tudo em dia por aqui!
-              </p>
-              <p className="text-xs text-muted-foreground max-w-[200px]">
-                Nenhuma notificação nova no momento.
-              </p>
-            </div>
-          ) : (
-            items.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleItemClick(item)}
-                className={cn(
-                  "w-full text-left p-3 flex items-start gap-3 transition-colors hover:bg-muted/50 cursor-pointer group",
-                  !item.read && "bg-primary/[0.03]",
-                )}
-              >
-                <div
-                  className={cn(
-                    "flex size-8 shrink-0 items-center justify-center rounded-lg border",
-                    !item.read
-                      ? "bg-primary/10 border-primary/20 text-primary"
-                      : "bg-muted/40 border-border/40 text-muted-foreground",
-                  )}
-                >
-                  <TypeIcon type={item.type} />
-                </div>
-
-                <div className="flex-1 min-w-0 space-y-0.5">
-                  <div className="flex items-center justify-between gap-1">
-                    <p
-                      className={cn(
-                        "truncate text-xs font-medium",
-                        !item.read ? "text-foreground font-semibold" : "text-foreground/80",
-                      )}
-                    >
-                      {item.title}
-                    </p>
-                    <span className="text-[10px] text-muted-foreground shrink-0">
-                      {formatRelativeTime(item.createdAt)}
-                    </span>
-                  </div>
-
-                  {item.body ? (
-                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                      {item.body}
-                    </p>
-                  ) : null}
-                </div>
-
-                {!item.read ? (
-                  <span
-                    className="size-2 rounded-full bg-primary shrink-0 mt-1.5"
-                    title="Não lida"
-                  />
-                ) : null}
-              </button>
-            ))
-          )}
-        </div>
-
-        <Separator />
-
-        <div className="p-2 bg-muted/20">
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="w-full justify-between text-xs h-8 text-muted-foreground hover:text-foreground"
-            onClick={() => setOpen(false)}
-          >
-            <Link href="/dashboard/notifications">
-              <span>Ver todas as notificações</span>
-              <ArrowRightIcon className="size-3.5" />
-            </Link>
-          </Button>
-        </div>
+        <NotificationPanel
+          count={count}
+          items={items}
+          loading={loading}
+          variant="popover"
+          onMarkAllRead={handleMarkAllRead}
+          onItemClick={handleItemClick}
+          onClose={() => setOpen(false)}
+        />
       </PopoverContent>
     </Popover>
   );

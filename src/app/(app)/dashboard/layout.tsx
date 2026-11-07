@@ -6,6 +6,7 @@ import {
   DashboardBreadcrumbFallback,
 } from "@/components/app/dashboard-breadcrumb";
 import { ImpersonationBannerLoader } from "@/components/app/impersonation-banner-loader";
+import { MobileHeaderLeading } from "@/components/app/mobile-header-leading";
 import { MobileMenuLoader } from "@/components/app/mobile-menu-loader";
 import {
   MobileMenuProvider,
@@ -39,7 +40,9 @@ export default function DashboardLayout({
         <SidebarInset>
           <header className="sticky top-0 z-20 flex min-h-[calc(3.5rem+env(safe-area-inset-top))] shrink-0 items-center gap-2 border-b bg-background/85 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-xl sm:gap-3 sm:px-6">
             <SidebarTrigger className="hidden md:inline-flex" />
-            <MobileMenuTrigger />
+            <Suspense fallback={<MobileMenuTrigger />}>
+              <MobileHeaderLeading />
+            </Suspense>
             <Separator
               orientation="vertical"
               className="mr-1 hidden h-4 self-center md:block"

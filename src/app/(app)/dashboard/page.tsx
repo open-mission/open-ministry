@@ -62,32 +62,45 @@ async function DashboardContent() {
   const { organization, session, isAdmin } = await requireOrganizationContext();
   const firstName = session.user.name.trim().split(/\s+/)[0] ?? "líder";
 
-  if (!isAdmin) {
-    const [people, initialPerson] = await Promise.all([
-      listPeople(organization.id),
-      findPersonByUserId(organization.id, session.user.id),
-    ]);
+  const [people, initialPerson] = await Promise.all([
+    listPeople(organization.id),
+    findPersonByUserId(organization.id, session.user.id),
+  ]);
 
-    const person =
-      initialPerson ??
-      (await ensurePersonForUser(organization.id, {
-        id: session.user.id,
-        name: session.user.name,
-        email: session.user.email,
-        image: session.user.image ?? null,
-        birthday: session.user.birthday ?? null,
-      }));
+  const person =
+    initialPerson ??
+    (await ensurePersonForUser(organization.id, {
+      id: session.user.id,
+      name: session.user.name,
+      email: session.user.email,
+      image: session.user.image ?? null,
+      birthday: session.user.birthday ?? null,
+    }));
 
-    const [memberships, assignments, agenda, todayMood] = person
+  const memberships =
+    !isAdmin && person ? await getPersonMemberships(person.id) : [];
+  const isLeader = memberships.some((membership) => membership.isLeader);
+
+  if (!isAdmin && !isLeader) {
+    const [assignments, agenda, todayMood] = person
       ? await Promise.all([
-          getPersonMemberships(person.id),
           getUpcomingAssignments(organization.id, person.id),
           getDepartmentAgenda(organization.id, person.id),
           getTodayMoodForPerson(organization.id, person.id),
         ])
-      : [[], [], [], null];
+      : [[], [], null];
 
-    const birthdayEntries = buildBirthdayEntries(people, {
+    const memberDepartmentIds = new Set(
+      memberships.map((membership) => membership.departmentId),
+    );
+    const visiblePeople = people.filter(
+      (personRecord) =>
+        personRecord.id === person?.id ||
+        personRecord.memberships.some((membership) =>
+          memberDepartmentIds.has(membership.departmentId),
+        ),
+    );
+    const birthdayEntries = buildBirthdayEntries(visiblePeople, {
       includeAge: false,
       today: getTodayInSaoPaulo(),
     });
@@ -96,7 +109,6 @@ async function DashboardContent() {
       <MemberDashboard
         firstName={firstName}
         organizationName={organization.name}
-        peopleCount={people.length}
         birthdayEntries={birthdayEntries}
         memberships={memberships}
         assignments={assignments}
@@ -107,45 +119,27 @@ async function DashboardContent() {
   }
 
   // Dados para administradores e líderes: carregamento 100% paralelo com caching de alta performance
-  const [
-    people,
-    events,
-    departments,
-    evolutionResult,
-    moodOverview,
-    initialAdminPerson,
-  ] = await Promise.all([
-    listPeople(organization.id),
-    listUpcomingEvents(organization.id, 8),
-    listDepartments(organization.id),
-    getOrganizationEvolutionConfig(organization.id),
-    getOrganizationMoodOverview({
-      organizationId: organization.id,
-      viewerUserId: session.user.id,
-      isAdmin: true,
-      days: 14,
-    }),
-    findPersonByUserId(organization.id, session.user.id),
-  ]);
+  const [events, departments, evolutionResult, moodOverview] =
+    await Promise.all([
+      listUpcomingEvents(organization.id, 8),
+      listDepartments(organization.id),
+      getOrganizationEvolutionConfig(organization.id),
+      getOrganizationMoodOverview({
+        organizationId: organization.id,
+        viewerUserId: session.user.id,
+        isAdmin,
+        days: 14,
+      }),
+    ]);
+
+  const todayMood = person
+    ? await getTodayMoodForPerson(organization.id, person.id)
+    : null;
 
   const birthdayEntries = buildBirthdayEntries(people, {
     includeAge: true,
     today: getTodayInSaoPaulo(),
   });
-
-  const adminPerson =
-    initialAdminPerson ??
-    (await ensurePersonForUser(organization.id, {
-      id: session.user.id,
-      name: session.user.name,
-      email: session.user.email,
-      image: session.user.image ?? null,
-      birthday: session.user.birthday ?? null,
-    }));
-
-  const adminTodayMood = adminPerson
-    ? await getTodayMoodForPerson(organization.id, adminPerson.id)
-    : null;
 
   const { upcoming } = splitEvents(events);
   const featuredEvent = upcoming[0] ?? null;
@@ -197,14 +191,16 @@ async function DashboardContent() {
             hoje.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <InviteDialog />
-        </div>
+        {isAdmin ? (
+          <div className="flex items-center gap-2">
+            <InviteDialog />
+          </div>
+        ) : null}
       </header>
 
       {/* 1. Atalhos Rápidos com Scroll Horizontal no Mobile */}
       <QuickActions
-        isAdmin
+        isAdmin={isAdmin}
         departments={departmentOptions}
         people={peopleOptions}
         isWhatsAppConfigured={isWhatsAppConfigured}
@@ -228,7 +224,7 @@ async function DashboardContent() {
             <ArrowRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
-        <FeaturedServiceCard event={featuredEvent} isAdmin />
+        <FeaturedServiceCard event={featuredEvent} isAdmin={isAdmin} />
       </section>
 
       {/* 3. Próximos Cultos e Eventos (Carrossel Horizontal) */}
@@ -237,7 +233,7 @@ async function DashboardContent() {
       )}
 
       {/* 4. Felicitômetro Pessoal do Líder */}
-      <FelicitometroCard initialMood={adminTodayMood} userName={firstName} />
+      <FelicitometroCard initialMood={todayMood} userName={firstName} />
 
       {/* 5. Resumo do Cuidado Pastoral & Felicitômetro da Igreja */}
       <PastoralCarePreview overview={moodOverview} />

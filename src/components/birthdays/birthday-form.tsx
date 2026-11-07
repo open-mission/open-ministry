@@ -12,7 +12,6 @@ import { FormAlert } from "@/components/auth/form-alert";
 import { SubmitButton } from "@/components/auth/submit-button";
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldLabel,
 } from "@/components/ui/field";
@@ -43,7 +42,7 @@ export function BirthdayForm({
           <CalendarDaysIcon className="size-4 text-muted-foreground" />
           Data de nascimento
         </FieldLabel>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             id="own-birthday"
             name="birthday"
@@ -55,17 +54,13 @@ export function BirthdayForm({
             required
           />
           <SubmitButton
-            className="h-10"
+            className="h-10 w-full sm:w-auto"
             pendingLabel="Salvando..."
             size="default"
           >
             Salvar
           </SubmitButton>
         </div>
-        <FieldDescription>
-          A equipe vê o dia e o mês para celebrar junto. O ano fica visível
-          apenas para administradores.
-        </FieldDescription>
         <FieldError
           errors={state?.fieldErrors?.birthday?.map((message) => ({
             message,

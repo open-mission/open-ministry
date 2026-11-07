@@ -6,7 +6,6 @@ import { ptBR } from "date-fns/locale";
 import {
   CalendarOffIcon,
   CalendarPlusIcon,
-  CalendarX2Icon,
   Loader2Icon,
   MoonIcon,
   PlusIcon,
@@ -161,14 +160,9 @@ export function UnavailabilitySection({
       <CardHeader>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                <CalendarX2Icon className="size-5" />
-              </div>
-              <CardTitle className="font-heading text-xl tracking-tight">
-                Datas Específicas de Indisponibilidade
-              </CardTitle>
-            </div>
+            <CardTitle className="font-heading text-xl tracking-tight">
+              Datas Específicas de Indisponibilidade
+            </CardTitle>
             <CardDescription>
               Marque dias pontuais em que você terá viagens, compromissos ou
               imprevistos e não poderá servir no ministério.

@@ -7,7 +7,6 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ChurchIcon,
-  CrownIcon,
   HardDriveIcon,
   MessageSquareIcon,
   PaletteIcon,
@@ -110,15 +109,6 @@ export function SettingsView({
           <h1 className="font-heading text-3xl sm:text-4xl leading-none tracking-tight">
             Configurações
           </h1>
-          <Badge variant="outline" className="text-xs font-normal">
-            {roleLabel(role)}
-          </Badge>
-          {isAdmin ? (
-            <Badge className="bg-primary text-primary-foreground gap-1 text-xs font-normal">
-              <CrownIcon className="size-3" />
-              Administração
-            </Badge>
-          ) : null}
         </div>
         <p className="max-w-2xl text-xs sm:text-sm leading-relaxed text-muted-foreground">
           Gerencie os dados da sua conta, chaves de acesso biométricas (passkeys),
