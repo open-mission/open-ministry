@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import {
+  ArrowRightIcon,
   LayersIcon,
   MailIcon,
   UsersIcon,
 } from "lucide-react";
 
 import { MemberDashboard } from "@/components/app/member-dashboard";
-import { StatCard } from "@/components/app/stat-card";
+import { StatStrip } from "@/components/app/stat-strip";
 import { BirthdaysCard } from "@/components/birthdays/birthdays-card";
 import { FeaturedServiceCard } from "@/components/dashboard/featured-service-card";
 import { PastoralCarePreview } from "@/components/dashboard/pastoral-care-preview";
@@ -180,14 +182,11 @@ async function DashboardContent() {
     .slice(0, 8);
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 pb-10">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 pb-4 sm:gap-12">
       {/* Cabeçalho da Home */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1.5">
-          <p className="text-xs font-medium tracking-[0.18em] text-primary uppercase">
-            Visão geral
-          </p>
-          <h1 className="font-heading text-4xl leading-none tracking-tight">
+        <div className="space-y-2">
+          <h1 className="font-heading text-[2.15rem] leading-none tracking-tight text-balance sm:text-4xl">
             Olá, {firstName}.
           </h1>
           <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
@@ -213,7 +212,24 @@ async function DashboardContent() {
       />
 
       {/* 2. Próximo Culto em Destaque */}
-      <FeaturedServiceCard event={featuredEvent} isAdmin />
+      <section aria-labelledby="next-service-heading" className="space-y-4">
+        <div className="flex items-end justify-between gap-3">
+          <h2
+            id="next-service-heading"
+            className="font-heading text-lg leading-none tracking-tight sm:text-xl"
+          >
+            Próximo encontro
+          </h2>
+          <Link
+            href="/dashboard/events"
+            className="group inline-flex items-center gap-1 pb-0.5 text-xs font-medium text-primary hover:underline"
+          >
+            Ver agenda
+            <ArrowRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </div>
+        <FeaturedServiceCard event={featuredEvent} isAdmin />
+      </section>
 
       {/* 3. Próximos Cultos e Eventos (Carrossel Horizontal) */}
       {otherUpcomingEvents.length > 0 && (
@@ -227,26 +243,28 @@ async function DashboardContent() {
       <PastoralCarePreview overview={moodOverview} />
 
       {/* 6. Indicadores Gerais da Igreja */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          icon={UsersIcon}
-          label="Pessoas"
-          value={people.length}
-          hint="fazem parte da igreja"
-        />
-        <StatCard
-          icon={LayersIcon}
-          label="Ministérios"
-          value={departments.length}
-          hint="departamentos ativos"
-        />
-        <StatCard
-          icon={MailIcon}
-          label="Convites pendentes"
-          value={pendingInvitations.length}
-          hint="aguardando resposta"
-        />
-      </div>
+      <StatStrip
+        items={[
+          {
+            icon: UsersIcon,
+            label: "Pessoas",
+            value: people.length,
+            hint: "fazem parte da igreja",
+          },
+          {
+            icon: LayersIcon,
+            label: "Ministérios",
+            value: departments.length,
+            hint: "departamentos ativos",
+          },
+          {
+            icon: MailIcon,
+            label: "Convites pendentes",
+            value: pendingInvitations.length,
+            hint: "aguardando resposta",
+          },
+        ]}
+      />
 
       {/* 7. Aniversariantes do Mês */}
       <BirthdaysCard entries={birthdayEntries} />
@@ -262,25 +280,27 @@ async function DashboardContent() {
 
 function DashboardSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8" aria-hidden>
+    <div className="mx-auto w-full max-w-6xl space-y-10" aria-hidden>
       <div className="space-y-2">
-        <Skeleton className="h-3 w-20" />
         <Skeleton className="h-10 w-56" />
         <Skeleton className="h-4 w-80" />
       </div>
-      <div className="grid grid-cols-4 gap-3 sm:grid-cols-7">
-        {Array.from({ length: 7 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 rounded-2xl" />
-        ))}
+      <div className="space-y-3">
+        <Skeleton className="h-5 w-32" />
+        <div className="grid grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-2xl" />
+          ))}
+        </div>
       </div>
-      <Skeleton className="h-56 rounded-2xl" />
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Skeleton className="h-28 rounded-xl" />
-        <Skeleton className="h-28 rounded-xl" />
-        <Skeleton className="h-28 rounded-xl" />
+      <div className="space-y-3">
+        <Skeleton className="h-5 w-28" />
+        <Skeleton className="h-56 rounded-2xl" />
       </div>
-      <Skeleton className="h-40 rounded-xl" />
-      <Skeleton className="h-64 rounded-xl" />
+      <Skeleton className="h-40 rounded-2xl" />
+      <Skeleton className="h-28 rounded-2xl" />
+      <Skeleton className="h-40 rounded-2xl" />
+      <Skeleton className="h-64 rounded-2xl" />
     </div>
   );
 }

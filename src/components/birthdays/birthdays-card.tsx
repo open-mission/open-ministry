@@ -32,15 +32,15 @@ export function BirthdaysCard({ entries }: { entries: BirthdayEntry[] }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3">
-        <div className="space-y-1.5">
-          <CardTitle className="font-heading text-xl tracking-tight">
+        <div className="space-y-1">
+          <CardTitle className="font-heading text-lg tracking-tight sm:text-xl">
             Aniversariantes
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-xs sm:text-sm">
             Quem faz festa nos próximos dias.
           </CardDescription>
         </div>
-        <Button asChild variant="ghost" size="sm">
+        <Button asChild variant="ghost" size="sm" className="h-9 shrink-0 text-xs">
           <Link href="/dashboard/birthdays">
             Ver todos
             <ArrowRightIcon data-icon="inline-end" />

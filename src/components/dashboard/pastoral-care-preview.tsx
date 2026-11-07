@@ -44,8 +44,8 @@ export function PastoralCarePreview({
             <span className="flex size-7 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
               <HeartHandshakeIcon className="size-4" />
             </span>
-            <CardTitle className="font-heading text-xl tracking-tight">
-              Cuidado Pastoral & Felicitômetro
+            <CardTitle className="font-heading text-lg tracking-tight sm:text-xl">
+              Cuidado pastoral & Felicitômetro
             </CardTitle>
           </div>
           <CardDescription className="text-xs">
@@ -53,9 +53,9 @@ export function PastoralCarePreview({
           </CardDescription>
         </div>
 
-        <Button asChild variant="ghost" size="sm" className="h-8 gap-1 text-xs self-start sm:self-auto">
+        <Button asChild variant="ghost" size="sm" className="h-8 gap-1 self-start text-xs sm:self-auto">
           <Link href="/dashboard/members?tab=felicitometro">
-            <span>Painel Completo</span>
+            <span>Painel completo</span>
             <ArrowRightIcon className="size-3.5" />
           </Link>
         </Button>
@@ -64,9 +64,9 @@ export function PastoralCarePreview({
       <CardContent className="space-y-5 p-5 sm:p-6">
         {/* Métricas rápidas */}
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-          <div className="rounded-xl border border-border/60 bg-muted/40 p-3 space-y-1">
-            <p className="text-[0.68rem] font-medium uppercase tracking-wider text-muted-foreground">
-              Média de Humor
+          <div className="space-y-1 rounded-xl border border-border/60 bg-muted/40 p-3.5">
+            <p className="text-[11px] font-medium text-muted-foreground">
+              Média de humor
             </p>
             <div className="flex items-center gap-1.5">
               <span className="text-xl" role="img" aria-label="Humor médio">
@@ -79,8 +79,8 @@ export function PastoralCarePreview({
             </div>
           </div>
 
-          <div className="rounded-xl border border-border/60 bg-muted/40 p-3 space-y-1">
-            <p className="text-[0.68rem] font-medium uppercase tracking-wider text-muted-foreground">
+          <div className="space-y-1 rounded-xl border border-border/60 bg-muted/40 p-3.5">
+            <p className="text-[11px] font-medium text-muted-foreground">
               Check-ins
             </p>
             <div className="flex items-baseline gap-1">
@@ -92,13 +92,13 @@ export function PastoralCarePreview({
           </div>
 
           <div className={cn(
-            "rounded-xl border p-3 space-y-1 transition-colors",
+            "space-y-1 rounded-xl border p-3.5 transition-colors",
             overview.prayerRequestsCount > 0
               ? "border-amber-500/30 bg-amber-500/5 text-amber-900 dark:text-amber-200"
               : "border-border/60 bg-muted/40",
           )}>
-            <p className="text-[0.68rem] font-medium uppercase tracking-wider text-muted-foreground">
-              Pedidos de Oração
+            <p className="text-[11px] font-medium text-muted-foreground">
+              Pedidos de oração
             </p>
             <div className="flex items-center gap-1.5">
               <span className="text-base">🙏</span>
@@ -112,13 +112,13 @@ export function PastoralCarePreview({
           </div>
 
           <div className={cn(
-            "rounded-xl border p-3 space-y-1 transition-colors",
+            "space-y-1 rounded-xl border p-3.5 transition-colors",
             overview.talkRequestsCount > 0
               ? "border-blue-500/30 bg-blue-500/5 text-blue-900 dark:text-blue-200"
               : "border-border/60 bg-muted/40",
           )}>
-            <p className="text-[0.68rem] font-medium uppercase tracking-wider text-muted-foreground">
-              Querem Conversar
+            <p className="text-[11px] font-medium text-muted-foreground">
+              Querem conversar
             </p>
             <div className="flex items-center gap-1.5">
               <span className="text-base">💬</span>
@@ -135,11 +135,11 @@ export function PastoralCarePreview({
         {/* Lista de pessoas precisando de apoio */}
         {hasRequests ? (
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold text-foreground">
                 Membros precisando de carinho & contato
               </h3>
-              <Badge variant="outline" className="text-[0.65rem] bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 font-normal">
+              <Badge variant="outline" className="border-rose-500/20 bg-rose-500/10 text-[0.65rem] font-normal text-rose-600 dark:text-rose-400">
                 {overview.recentCareRequests.length} no total
               </Badge>
             </div>

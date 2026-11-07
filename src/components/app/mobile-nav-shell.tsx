@@ -48,9 +48,9 @@ export function MobileNavShell({
   return (
     <nav
       aria-label="Navegação principal"
-      className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden shadow-lg"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_-18px_rgba(23,38,31,0.35)] backdrop-blur-xl md:hidden"
     >
-      <div className="grid grid-cols-5">
+      <div className="grid grid-cols-5 items-stretch px-1 pt-1 pb-1.5">
         {items.map((item) => {
           const isActive = activeHref
             ? item.exact
@@ -64,33 +64,62 @@ export function MobileNavShell({
               href={item.href}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 py-2 text-[0.62rem] font-medium transition-colors select-none",
+                "group flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[0.62rem] font-medium transition-[color,transform] duration-200 select-none active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100",
                 isActive
-                  ? "text-primary font-semibold"
+                  ? "text-primary"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
-              <item.icon className="size-5" />
-              <span>{item.label}</span>
+              <span
+                className={cn(
+                  "flex h-7 w-12 items-center justify-center rounded-full transition-[background-color,color,transform] duration-200 motion-reduce:transition-none",
+                  isActive
+                    ? "bg-primary/10 text-primary"
+                    : "bg-transparent group-hover:bg-muted/70",
+                )}
+              >
+                <item.icon
+                  className={cn(
+                    "size-5 transition-transform duration-200 motion-reduce:transition-none",
+                    isActive && "-translate-y-px",
+                  )}
+                />
+              </span>
+              <span className={cn(isActive && "font-semibold")}>
+                {item.label}
+              </span>
             </Link>
           );
         })}
 
-        {/* 5º Item: Menu / 3 riscos que abre o sidebar no mobile */}
         <button
           type="button"
           onClick={onMenuClick}
           aria-label="Abrir menu completo de navegação"
           aria-expanded={isMenuOpen}
           className={cn(
-            "flex flex-col items-center justify-center gap-1 py-2 text-[0.62rem] font-medium transition-colors select-none cursor-pointer",
+            "group flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[0.62rem] font-medium transition-[color,transform] duration-200 select-none active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100",
             isMenuOpen
-              ? "text-primary font-semibold"
+              ? "text-primary"
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          <MenuIcon className="size-5" />
-          <span>Menu</span>
+          <span
+            className={cn(
+              "flex h-7 w-12 items-center justify-center rounded-full transition-[background-color,color,transform] duration-200 motion-reduce:transition-none",
+              isMenuOpen
+                ? "bg-primary/10 text-primary"
+                : "bg-transparent group-hover:bg-muted/70",
+            )}
+          >
+            <MenuIcon
+              className={cn(
+                "size-5 transition-transform duration-200 motion-reduce:transition-none",
+                isMenuOpen && "-translate-y-px",
+              )}
+            />
+          </span>
+          <span className={cn(isMenuOpen && "font-semibold")}>Menu</span>
         </button>
       </div>
     </nav>

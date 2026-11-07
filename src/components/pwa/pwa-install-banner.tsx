@@ -43,14 +43,14 @@ export function PwaInstallBanner() {
       <div
         role="region"
         aria-label="Aviso de instalação do aplicativo"
-        className="fixed bottom-20 inset-x-3 z-30 mx-auto max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300 md:bottom-6 md:right-6 md:left-auto md:max-w-sm"
+        className="fixed right-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-30 animate-in fade-in slide-in-from-bottom-4 duration-300 md:right-6 md:bottom-6"
       >
-        <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-background/95 p-3.5 shadow-xl backdrop-blur-md dark:border-primary/30">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
+        <div className="flex items-center gap-1 rounded-full border border-primary/20 bg-background/95 p-1 pl-1.5 shadow-xl backdrop-blur-md dark:border-primary/30 md:max-w-sm md:gap-3 md:rounded-2xl md:p-3.5">
+          <div className="hidden size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs md:flex">
             <SmartphoneIcon className="size-5" />
           </div>
 
-          <div className="min-w-0 flex-1">
+          <div className="hidden min-w-0 flex-1 md:block">
             <p className="text-xs font-semibold text-foreground tracking-tight">
               Instale o OpenMinistry
             </p>
@@ -59,21 +59,22 @@ export function PwaInstallBanner() {
             </p>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-0.5 shrink-0 md:gap-1.5">
             <Button
               size="sm"
               variant="default"
               onClick={handleActionClick}
-              className="h-8 px-3 text-xs rounded-lg font-medium shadow-xs"
+              className="h-11 gap-1.5 rounded-full px-4 text-xs font-medium shadow-xs md:h-8 md:rounded-lg md:px-3"
             >
-              <DownloadIcon className="size-3.5" data-icon="inline-start" />
-              Instalar
+              <DownloadIcon className="size-4 md:size-3.5" data-icon="inline-start" />
+              <span className="md:hidden">Instalar app</span>
+              <span className="hidden md:inline">Instalar</span>
             </Button>
             <button
               type="button"
               onClick={() => dismiss(14)}
               aria-label="Dispensar aviso de instalação"
-              className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              className="flex size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors md:size-8 md:rounded-lg"
             >
               <XIcon className="size-4" />
             </button>

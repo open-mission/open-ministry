@@ -84,28 +84,25 @@ export function FeaturedServiceCard({
   const remainingAssignments = assignments.length - previewAssignments.length;
 
   return (
-    <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-card via-card to-primary/[0.03] shadow-sm transition-all hover:shadow-md">
-      {/* Indicador sutil de destaque no topo */}
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/80 via-primary to-amber-500/80" />
-
-      <CardContent className="p-5 sm:p-6 space-y-5">
+    <Card className="overflow-hidden border-primary/15 bg-card shadow-xs transition-[border-color,box-shadow] duration-200 hover:border-primary/25 hover:shadow-sm motion-reduce:transition-none">
+      <CardContent className="space-y-5 p-5 sm:space-y-6 sm:p-6">
         {/* Cabeçalho do Card */}
         <div className="flex flex-wrap items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge
               variant={isTodayEvent ? "default" : "secondary"}
-              className={cn(
-                "font-medium text-xs px-2.5 py-0.5",
-                isTodayEvent && "animate-pulse",
-              )}
+              className="px-2.5 py-0.5 text-xs font-medium"
             >
-              <SparklesIcon className="size-3 mr-1" />
-              {isTodayEvent ? "Acontecendo Hoje" : timingLabel}
+              <SparklesIcon className="mr-1 size-3" />
+              {isTodayEvent ? "Acontecendo hoje" : timingLabel}
             </Badge>
 
             {event.recurrence ? (
-              <Badge variant="outline" className="text-[0.68rem] text-muted-foreground font-normal">
-                Culto Recorrente
+              <Badge
+                variant="outline"
+                className="text-[0.68rem] font-normal text-muted-foreground"
+              >
+                Culto recorrente
               </Badge>
             ) : null}
           </div>
@@ -115,27 +112,27 @@ export function FeaturedServiceCard({
             <Badge
               variant="outline"
               className={cn(
-                "text-xs font-normal border",
+                "border text-xs font-normal",
                 progress.status === "complete"
-                  ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                   : progress.status === "partial"
-                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30"
-                    : "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30",
+                    ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                    : "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-400",
               )}
             >
               {progress.status === "complete" ? (
                 <>
-                  <CheckCircle2Icon className="size-3.5 mr-1" />
+                  <CheckCircle2Icon className="mr-1 size-3.5" />
                   Escala completa ({progress.assignmentsCount})
                 </>
               ) : progress.status === "partial" ? (
                 <>
-                  <UsersIcon className="size-3.5 mr-1" />
+                  <UsersIcon className="mr-1 size-3.5" />
                   {progress.filledFunctions} de {progress.totalFunctions} funções
                 </>
               ) : (
                 <>
-                  <AlertCircleIcon className="size-3.5 mr-1" />
+                  <AlertCircleIcon className="mr-1 size-3.5" />
                   Sem escala montada
                 </>
               )}
@@ -144,27 +141,22 @@ export function FeaturedServiceCard({
         </div>
 
         {/* Informações Principais do Culto */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="flex items-start gap-4">
           {/* Estampa da Data */}
-          <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/15 shadow-inner">
+          <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary shadow-inner">
             <span className="font-heading text-2xl font-bold leading-none tracking-tight">
               {parts.day}
             </span>
-            <span className="text-[0.65rem] font-semibold tracking-[0.14em] uppercase text-primary/80">
+            <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-primary/80">
               {parts.monthShort}
             </span>
           </div>
 
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-                Próximo Culto em Destaque
-              </span>
-            </div>
-            <h3 className="font-heading text-2xl sm:text-3xl font-medium tracking-tight text-foreground line-clamp-1">
+          <div className="min-w-0 flex-1 space-y-2">
+            <h3 className="line-clamp-2 font-heading text-2xl leading-tight font-medium tracking-tight text-foreground lg:line-clamp-1 lg:text-3xl">
               {event.title}
             </h3>
-            <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
               <span className="flex items-center gap-1 font-medium text-foreground/80">
                 <ClockIcon className="size-3.5 text-primary" />
                 {timeRange}
@@ -172,11 +164,11 @@ export function FeaturedServiceCard({
 
               {event.departments && event.departments.length > 0 ? (
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-muted-foreground/60">•</span>
+                  <span className="text-muted-foreground/50">•</span>
                   {event.departments.map(({ department }) => (
                     <span
                       key={department.id}
-                      className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[0.68rem] text-muted-foreground font-medium"
+                      className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[0.68rem] font-medium text-muted-foreground"
                     >
                       {department.name}
                     </span>
@@ -188,7 +180,7 @@ export function FeaturedServiceCard({
         </div>
 
         {/* Equipe escalada & Botões de ação */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 border-t border-border/60">
+        <div className="flex flex-col gap-4 border-t border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             {assignments.length > 0 ? (
               <div className="flex items-center gap-2">
@@ -201,11 +193,11 @@ export function FeaturedServiceCard({
                     return (
                       <Avatar
                         key={assignment.id}
-                        className="size-8 ring-2 ring-background border"
+                        className="size-8 border ring-2 ring-background"
                         title={`${name} (${assignment.function.name})`}
                       >
                         <AvatarImage src={image ?? undefined} alt={name} />
-                        <AvatarFallback className="text-[0.62rem] font-medium bg-primary/10 text-primary">
+                        <AvatarFallback className="bg-primary/10 text-[0.62rem] font-medium text-primary">
                           {getInitials(name)}
                         </AvatarFallback>
                       </Avatar>
@@ -219,21 +211,30 @@ export function FeaturedServiceCard({
                 </span>
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground italic">
+              <p className="text-xs italic text-muted-foreground">
                 Nenhum membro escalado ainda.
               </p>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm" className="h-9 flex-1 sm:flex-initial">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="h-10 flex-1 sm:h-9 sm:flex-initial"
+            >
               <Link href={`/dashboard/events/${event.id}`}>
-                Ver Detalhes
+                Ver detalhes
               </Link>
             </Button>
-            <Button asChild size="sm" className="h-9 flex-1 sm:flex-initial">
+            <Button
+              asChild
+              size="sm"
+              className="h-10 flex-1 sm:h-9 sm:flex-initial"
+            >
               <Link href={`/dashboard/events/${event.id}`}>
-                Ver Cronograma
+                Ver cronograma
                 <ArrowRightIcon data-icon="inline-end" />
               </Link>
             </Button>
