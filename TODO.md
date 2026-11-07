@@ -10,14 +10,98 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
-- [ ] Configurar deploy na Vercel (repositório GitHub, variáveis de ambiente e domínio).
-  - [x] Repositório público criado em `open-mission/open-ministry`
-  - [x] Variáveis de ambiente configuradas na Vercel (incluindo `DATABASE_AUTHENTICATED_URL`)
-  - [ ] Domínio configurado — pendente de acesso ao DNS/domínio
+Nenhum item pendente no backlog.
 
 ### Doing
 
+Nenhum item em andamento.
+
 ### Done
+
+- [x] Tela de Agenda e Calendário Completo (`/dashboard/calendar`).
+  - [x] Baseado no padrão de arquitetura headless do dninomiya/full-calendar-for-shadcn-ui integrado ao design system
+  - [x] Cinco modos de visualização totalmente responsivos: Mês (`month`), Semana (`week`), Dia (`day`), Ano (`year`) e Agenda linear (`agenda`)
+  - [x] Integração completa de dados: Cultos & Eventos da igreja, Minhas Escalas de serviço com função/departamento e Bloqueios de Indisponibilidade
+  - [x] Filtros interativos por chips: Todos, Cultos & Eventos, Minhas Escalas e Indisponibilidades
+  - [x] Navegação temporal fluida com botões Anterior/Próximo e atalho "Hoje"
+  - [x] Diálogo de detalhes ao clicar em qualquer item da agenda com ações rápidas (ir ao culto ou gerenciar ausências)
+  - [x] Configurações de início da semana (Domingo ou Segunda-feira) e fuso horário do usuário
+  - [x] Preferências de calendário configuráveis tanto pelo cabeçalho da agenda quanto pela tela de Configurações (`/dashboard/settings`), tanto no Desktop quanto no menu mobile estilo iOS
+  - [x] Item "Agenda" adicionado à barra de navegação lateral (Cultos & Escalas) e menu inferior mobile para acesso de administradores e membros
+
+- [x] Bloqueio pontual de datas de indisponibilidade com motivo/observação e períodos.
+  - [x] Modelo de dados `person_unavailability` no Drizzle ORM com RLS policies e migration aplicada ao NeonDB
+  - [x] Diálogo e formulário para marcar dia específico de ausência com data, motivo descritivo e seleção de dia todo ou períodos (Manhã, Tarde, Noite)
+  - [x] Card de gerenciamento de indisponibilidades pontuais integrado em `/dashboard/availability`
+  - [x] Detecção inteligente em tempo real e aviso visual na tela de escalas ao selecionar um membro indisponível para o culto (`AddAssignmentDialog`)
+  - [x] Server actions para listar, salvar e remover bloqueios pontuais com revalidação instantânea de rotas
+
+- [x] Disponibilidade dos usuários para servir nos cultos (dias da semana e períodos manhã, tarde e noite).
+  - [x] Modelo de dados `person_availability` no Drizzle ORM com RLS e migration aplicada
+  - [x] Rota `/dashboard/availability` com interface impecável e cartões responsivos por dia da semana
+  - [x] Seleção independente de períodos: Manhã (06h-12h), Tarde (12h-18h) e Noite (18h-23h)
+  - [x] Atalhos rápidos por dia (marcar dia todo ou limpar dia) e observações/restrições gerais
+  - [x] Server actions de consulta e persistência atômica da disponibilidade
+  - [x] Link direto "Disponibilidade" adicionado na navegação lateral (Cultos & Escalas)
+
+- [x] Integração com Evolution API Go (WhatsApp), Multi-canal de Notificações, Upstash Redis & QStash e Onboarding com Telefone.
+  - [x] Modelo de dados `organization_notification_channel` no Drizzle ORM com RLS e migration aplicada
+  - [x] Campo `phone` no usuário e sincronização com o modelo `person`
+  - [x] Coleta de WhatsApp/telefone no formulário de onboarding e edição na tela de Minha Conta
+  - [x] Cliente HTTP da Evolution API Go (`checkEvolutionConnection`, `sendEvolutionTextMessage` e sanitização de telefones E.164)
+  - [x] Card de configuração e testes da Evolution API em `/dashboard/settings` com status online em tempo real e envio de mensagem teste
+  - [x] Despachador de notificações multi-canal (`dispatchNotification`) com modelos formatados para WhatsApp (boas-vindas, escalas e avisos)
+  - [x] Notificação de boas-vindas disparada automaticamente ao criar a igreja/completar onboarding
+  - [x] Notificação de escala disparada via WhatsApp para a pessoa escalada ao adicionar na equipe do culto
+  - [x] Suporte à mensageria assíncrona com Upstash Redis & QStash (`enqueueNotificationJob` e rota de webhook `/api/webhooks/qstash/notification` com verificação de assinatura)
+  - [x] Endpoint de job agendado `/api/jobs/monthly-availability` para lembretes de disponibilidade mensal
+
+- [x] Salvar cronograma como modelo, importação, limpeza e exportação de cronogramas de culto.
+  - [x] Tabela `plan_template` no Drizzle ORM com RLS e migration aplicada
+  - [x] Salvar qualquer cronograma como modelo personalizado com nome, descrição e contagem de itens
+  - [x] Listagem e aplicação de modelos (modelo padrão do sistema e modelos da igreja)
+  - [x] Alerta de confirmação seguro ao aplicar modelo ou importar caso o evento já possua momentos cadastrados
+  - [x] Limpeza completa do cronograma com diálogo de confirmação
+  - [x] Exportação de cronograma para arquivo estruturado `.json`
+  - [x] Importação de cronograma via upload de arquivo `.json` com validação de esquema
+
+- [x] Drag and Drop nos cronogramas de cultos e eventos.
+  - [x] Integração completa com `@dnd-kit/core` e `@dnd-kit/sortable`
+  - [x] Handle de arraste tátil com `GripVerticalIcon`, cursor dinâmico e feedback visual de elevação
+  - [x] Reordenação em tempo real com atualização instantânea dos horários de início calculados
+  - [x] Suporte a acessibilidade via teclado (`sortableKeyboardCoordinates`) e sensores de toque/ponteiro
+  - [x] Persistência assíncrona com reversão otimista em caso de erro
+
+- [x] Implementação da Funcionalidade de Cronograma: a ideia poder cadastrar o cronograma de um culto e evento. Podendo Add secoes, item, Horario e Tempo estimado podendo registrar quem será responsavel por aquela area (seja um usuario, ou registro manual com o nome da pessoa).
+  - [x] Modelo de dados `event_plan_item` no Drizzle com RLS policies e migration aplicada
+  - [x] Abas "Cronograma do Culto" e "Escala &amp; Equipes" integradas na página do evento
+  - [x] Adicionar, editar e excluir seções (cabeçalhos) e momentos com descrição e louvores
+  - [x] Cálculo dinâmico do horário de início de cada item a partir do horário do culto
+  - [x] Duração estimada em MM:SS ou minutos, com totalizador e comparativo com o tempo previsto
+  - [x] Vínculo do responsável por pessoa cadastrada (com avatar) ou nome manual
+  - [x] Reordenação sequencial (subir / descer) dos momentos
+  - [x] Modelo padrão de culto (starter template) para início rápido
+
+- [x] Implementação da Tela de Configurações tanto para o admin como para o membro. O admin terá acesso a configurações mais avançadas. O membro terá acesso a configurações acerca do seu perfil, notificações, troca de senha,  passkey e etc.
+  - [x] Tela `/dashboard/settings` com abas responsivas e design impecável
+  - [x] Gestão de conta: nome, foto, aniversário e nome de usuário (@username)
+  - [x] Segurança: alteração de senha com opção de revogar outras sessões
+  - [x] Passkeys: cadastro de biometria/chave de segurança WebAuthn, listagem e remoção
+  - [x] Multi-session: visualização de dispositivos/sessões ativas e encerramento remoto
+  - [x] Preferências de notificações e atalho para a central
+  - [x] Seletor de tema visual (Claro, Escuro, Sistema)
+  - [x] Configurações avançadas para admin: identidade oficial da igreja e links de governança
+
+- [x] Configurar no Better Auth:  
+  - [x] [https://better-auth.com/docs/plugins/last-login-method](https://better-auth.com/docs/plugins/last-login-method)   
+  - [x] [https://better-auth.com/docs/plugins/passkey](https://better-auth.com/docs/plugins/passkey)  
+  - [x] [https://better-auth.com/docs/plugins/multi-session](https://better-auth.com/docs/plugins/multi-session)  
+  - [x] [https://better-auth.com/docs/plugins/username](https://better-auth.com/docs/plugins/username)
+
+- [x] Configurar deploy na Vercel (repositório GitHub, variáveis de ambiente e domínio).
+  - [x] Repositório público criado em `open-mission/open-ministry`
+  - [x] Variáveis de ambiente configuradas na Vercel (incluindo `DATABASE_AUTHENTICATED_URL`)
+  - [ ] Domínio configurado — pendente de acesso ao DNS/domínio
 
 - [x] Perfil, identidade da igreja, acesso como membro e tema.
   - [x] Perfil em modo somente leitura, com edição ao clicar em “Editar perfil”
@@ -112,3 +196,20 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 - **06/11/2026:** Mobile/PWA concluído. O app é instalável (manifest, ícones, service worker e página offline), tem navegação inferior no celular e uma home própria para membros com próximas escalas, agenda dos departamentos, aniversários e estatísticas pessoais. A aba Escalas mostra apenas as escalas do membro, com próximas e passadas. O perfil permite editar nome, aniversário e avatar, lista departamentos/funções e as próximas escalas. Tudo revisado em 390px e 1440px; atualização de perfil, service worker, cache offline e manifesto validados.
 - **06/11/2026:** Notificações concluído. A central in-app tem sino com badge, barra da notificação não lida, leitura individual e em lote. Escalar ou remover uma pessoa gera notificação para a pessoa vinculada; a administração pode enviar avisos para toda a igreja ou para um departamento. Contagem do sino é atualizada por polling. Testado com criação real de escala e aviso, leitura, marcar todas, barra e contador sumindo, API de contagem e RLS.
 - **06/11/2026:** Perfil, identidade da igreja, acesso como membro e tema concluídos. O perfil agora abre somente leitura e entra em edição por um botão; nome, aniversário e foto são salvos juntos, com upload pelo UploadThing. Admin/owner pode atualizar nome e logo da igreja em `/dashboard/church`, e o logo aparece no topo do painel. O plugin admin do Better Auth permite entrar como uma pessoa da igreja, com aviso fixo e retorno à conta original; a autorização é por igreja e os endpoints HTTP administrativos ficam bloqueados. O tema claro/escuro/sistema foi adicionado no painel, login e site. Fluxos de upload, edição de perfil, identidade da igreja, impersonação e alternância de tema validados no navegador em 1440px e 390px; schema e migration do admin plugin aplicados no Neon.
+- **06/11/2026:** Plugins do Better Auth concluídos. Foram ativados os plugins `last-login-method`, `passkey`, `multi-session` e `username` no servidor e no cliente, com schema gerado e migration aplicada no NeonDB. A tela de login passou a suportar autenticação com Passkey (WebAuthn/biometria), entrada com email ou @username, e badge indicador do último método de login utilizado; o cadastro permite registrar opcionalmente o nome de usuário.
+- **06/11/2026:** Tela de Configurações concluída. Foi implementada a rota `/dashboard/settings` com suporte completo para membros e administradores. O membro pode gerenciar seus dados de conta e @username, cadastrar chaves de acesso biométricas (passkeys), trocar de senha, inspecionar e revogar sessões e dispositivos ativos (multi-session), alternar temas e ajustar preferências de notificações. Administradores têm acesso adicional à identidade oficial da igreja e governança. O menu lateral e o perfil ganharam atalhos diretos.
+- **06/11/2026:** Cronograma de Culto e Evento concluído. O painel do evento ganhou visualização em abas com a Ordem do Culto (Cronograma) inspirada no Planning Center/Voluts e as Equipes/Escala. É possível criar seções em destaque, itens com duração estimada em MM:SS, notas e louvores, e definir o responsável (por membro com avatar ou texto livre). O sistema calcula os horários de início de cada momento em tempo real a partir do início do culto e compara o tempo total planejado com a duração prevista do evento. Permite carregar um modelo padrão de culto com 1 clique e reordenar qualquer momento.
+- **07/11/2026:** Ajustes de design e refinamentos de UI (Design Feedback) concluídos:
+  - Diálogo de momentos do cronograma atualizado: modal largo (`sm:max-w-2xl`) no desktop e `Drawer` (shadcn) em tela cheia no mobile para melhor ergonomia de toque.
+  - Formulários de criação e edição de eventos atualizados: substituição do campo numérico de duração por "Horário de término aproximado" (`type="time"`), com cálculo automático da duração para a API.
+  - Navegação lateral reestruturada por categorias semânticas (*Principal*, *Cultos &amp; Escalas*, *Pessoas &amp; Equipes*, *Configurações* no final).
+  - Rodapé da barra lateral atualizado com `NavUser` (dropdown shadcn contendo avatar, nome, email, papel, links para perfil, configurações, notificações e logout).
+  - Cabeçalho limpo: texto repetido "OpenMinistry" removido, separador vertical alinhado e substituído o texto estático "Painel" por `DashboardBreadcrumb` dinâmico integrado ao shadcn.
+  - Sino de notificações com Popover interativo: prévia das últimas notificações com indicador de não lida, botão de marcar todas como lidas e link direto para a central completa.
+  - Removidas bordas duplicadas nos avatares da igreja em `/dashboard/church` e no formulário de identidade visual.
+- **07/11/2026:** Drag and drop no cronograma concluído. Os momentos e seções do culto agora podem ser reordenados diretamente arrastando pelo handle vertical com animação suave, feedback de elevação e suporte tanto a mouse/toque quanto teclado. Os horários recalculam em tempo real e a persistência é sincronizada no banco com atualização otimista.
+- **07/11/2026:** Modelos e gestão de cronograma concluídos. Agora é possível salvar o cronograma de qualquer culto como modelo reutilizável da igreja, aplicar modelos salvos ou o modelo padrão do sistema (com alerta inteligente caso já existam itens para evitar perdas acidentais), limpar o cronograma por completo com confirmação e exportar/importar cronogramas em formato `.json`.
+- **07/11/2026:** Notificações via Evolution API Go (WhatsApp) e Upstash Redis/QStash concluídas. Cada igreja pode configurar sua própria instância da Evolution API em Configurações > Notificações, testar a conexão com status online e disparar mensagens de teste. O onboarding agora coleta WhatsApp/telefone do usuário, sincronizando com a pessoa e enviando notificação de boas-vindas. Ao escalar pessoas para eventos, notificações personalizadas são enviadas por WhatsApp além do in-app. Toda a mensageria suporta a fila assíncrona do Upstash Redis e QStash com fallback transparente.
+- **07/11/2026:** Disponibilidade para servir concluída. Foi criada a rota `/dashboard/availability` onde voluntários e membros podem definir seus dias e períodos disponíveis (manhã, tarde e noite) para servir nos cultos da igreja, além de registrar observações e preferências para a liderança. A navegação lateral agora conta com o atalho "Disponibilidade" e o modelo conta com RLS e persistência atômica.
+- **07/11/2026:** Design Feedback das Configurações no Mobile concluído. A tela `/dashboard/settings` ganhou layout inspirado nas configurações do iPhone/iOS em telas móveis: cabeçalho de perfil estilo Apple ID, seções agrupadas em cartões com cantos arredondados, ícones em squircle coloridos, navegação fluida em drill-down com botão de retorno ("‹ Configurações") e subtítulos informativos. No desktop, a navegação clássica por abas é mantida com total responsividade.
+

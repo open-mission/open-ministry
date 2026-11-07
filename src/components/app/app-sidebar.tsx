@@ -1,24 +1,19 @@
 import Link from "next/link";
-import { ChurchIcon, LogOutIcon } from "lucide-react";
+import { ChurchIcon } from "lucide-react";
 
-import { signOutAction } from "@/app/actions/auth";
+import { NavUser } from "@/components/app/nav-user";
 import { SidebarNav } from "@/components/app/sidebar-nav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { getInitials, roleLabel } from "@/lib/format";
 
 type AppSidebarProps = {
   organizationName: string;
@@ -45,7 +40,7 @@ export function AppSidebar({
             <SidebarMenuButton asChild size="lg" tooltip="OpenMinistry">
               <Link href="/dashboard">
                 {organizationLogo ? (
-                  <Avatar className="size-8 shrink-0 rounded-lg ring-1 ring-foreground/10">
+                  <Avatar className="size-8 shrink-0 rounded-lg">
                     <AvatarImage
                       src={organizationLogo}
                       alt={`Logo de ${organizationName}`}
@@ -74,47 +69,11 @@ export function AppSidebar({
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Sua igreja</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarNav />
-          </SidebarGroupContent>
-        </SidebarGroup>
+        <SidebarNav />
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="flex items-center gap-2 rounded-lg border bg-sidebar-accent/40 p-2">
-          <Link
-            href="/dashboard/profile"
-            className="flex min-w-0 flex-1 items-center gap-2 rounded-md outline-none transition-colors hover:bg-sidebar-accent/60 focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-            title="Abrir meu perfil"
-          >
-            <Avatar className="size-9">
-              <AvatarImage src={user.image ?? undefined} alt={user.name} />
-              <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
-                {getInitials(user.name)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{user.name}</p>
-              <p className="truncate text-xs text-muted-foreground">
-                {roleLabel(role)}
-              </p>
-            </div>
-          </Link>
-          <form action={signOutAction}>
-            <input type="hidden" name="redirectTo" value="/" />
-            <Button
-              type="submit"
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Sair da conta"
-              title="Sair da conta"
-            >
-              <LogOutIcon />
-            </Button>
-          </form>
-        </div>
+        <NavUser user={user} role={role} />
       </SidebarFooter>
 
       <SidebarRail />

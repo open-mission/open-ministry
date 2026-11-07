@@ -82,6 +82,27 @@ export function SignUpForm({ redirectTo }: SignUpFormProps) {
             />
           </Field>
 
+          <Field data-invalid={Boolean(state?.fieldErrors?.username)}>
+            <FieldLabel htmlFor="username">Nome de usuário (opcional)</FieldLabel>
+            <Input
+              id="username"
+              name="username"
+              type="text"
+              autoComplete="username"
+              placeholder="ex: pastorjoao"
+              className="h-10"
+              aria-invalid={Boolean(state?.fieldErrors?.username)}
+            />
+            <FieldDescription>
+              Identificador único para entrar no sistema.
+            </FieldDescription>
+            <FieldError
+              errors={state?.fieldErrors?.username?.map((message) => ({
+                message,
+              }))}
+            />
+          </Field>
+
           <Field data-invalid={Boolean(state?.fieldErrors?.email)}>
             <FieldLabel htmlFor="email">Email</FieldLabel>
             <Input

@@ -241,6 +241,7 @@ type UserInput = {
   email: string;
   image: string | null;
   birthday: string | null;
+  phone?: string | null;
 };
 
 export async function ensurePersonForUser(
@@ -250,6 +251,12 @@ export async function ensurePersonForUser(
   const existing = await findPersonByUserId(organizationId, user.id);
 
   if (existing) {
+    if (!existing.phone && user.phone) {
+      await db
+        .update(schema.person)
+        .set({ phone: user.phone })
+        .where(eq(schema.person.id, existing.id));
+    }
     return existing;
   }
 
@@ -263,6 +270,12 @@ export async function ensurePersonForUser(
     );
 
     if (linked.ok) {
+      if (!byEmail.phone && user.phone) {
+        await db
+          .update(schema.person)
+          .set({ phone: user.phone })
+          .where(eq(schema.person.id, byEmail.id));
+      }
       return getPerson(organizationId, byEmail.id);
     }
   }
@@ -277,6 +290,7 @@ export async function ensurePersonForUser(
     email: normalizeEmail(user.email),
     image: user.image,
     birthday: user.birthday,
+    phone: user.phone ?? null,
   });
 
   return getPerson(organizationId, id);
@@ -335,12 +349,14 @@ export async function syncPersonProfile(
     name?: string;
     image?: string | null;
     birthday?: string | null;
+    phone?: string | null;
   },
 ) {
   const update: {
     name?: string;
     image?: string | null;
     birthday?: string | null;
+    phone?: string | null;
   } = {};
 
   if (values.name !== undefined) {
@@ -353,6 +369,10 @@ export async function syncPersonProfile(
 
   if (values.birthday !== undefined) {
     update.birthday = values.birthday;
+  }
+
+  if (values.phone !== undefined) {
+    update.phone = values.phone;
   }
 
   if (Object.keys(update).length === 0) {

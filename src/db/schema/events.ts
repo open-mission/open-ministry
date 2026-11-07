@@ -3,6 +3,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -120,6 +121,7 @@ export const eventRelations = relations(event, ({ one, many }) => ({
   }),
   departments: many(eventDepartment),
   schedule: one(schedule),
+  planItems: many(eventPlanItem),
 }));
 
 export const eventDepartmentRelations = relations(
@@ -165,3 +167,81 @@ export const scheduleAssignmentRelations = relations(
     }),
   }),
 );
+
+export const eventPlanItem = pgTable(
+  "event_plan_item",
+  {
+    id: text("id").primaryKey(),
+    eventId: text("event_id")
+      .notNull()
+      .references(() => event.id, { onDelete: "cascade" }),
+    sectionId: text("section_id"),
+    type: text("type").notNull().default("item"),
+    title: text("title").notNull(),
+    description: text("description"),
+    durationSeconds: integer("duration_seconds").default(0).notNull(),
+    order: integer("order").default(0).notNull(),
+    personId: text("person_id")
+      .references(() => person.id, { onDelete: "set null" }),
+    customResponsible: text("custom_responsible"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("event_plan_item_eventId_idx").on(table.eventId),
+    index("event_plan_item_order_idx").on(table.eventId, table.order),
+    index("event_plan_item_sectionId_idx").on(table.sectionId),
+  ],
+);
+
+export const eventPlanItemRelations = relations(eventPlanItem, ({ one }) => ({
+  event: one(event, {
+    fields: [eventPlanItem.eventId],
+    references: [event.id],
+  }),
+  person: one(person, {
+    fields: [eventPlanItem.personId],
+    references: [person.id],
+  }),
+}));
+
+export type PlanTemplateItem = {
+  type: "header" | "item";
+  title: string;
+  description?: string | null;
+  durationSeconds: number;
+  order: number;
+  customResponsible?: string | null;
+};
+
+export const planTemplate = pgTable(
+  "plan_template",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    items: jsonb("items").$type<PlanTemplateItem[]>().notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("plan_template_organizationId_idx").on(table.organizationId),
+  ],
+);
+
+export const planTemplateRelations = relations(planTemplate, ({ one }) => ({
+  organization: one(organization, {
+    fields: [planTemplate.organizationId],
+    references: [organization.id],
+  }),
+}));
+

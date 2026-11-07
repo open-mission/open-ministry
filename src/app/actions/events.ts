@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -20,6 +20,7 @@ import {
   zonedDateTimeToUtc,
 } from "@/lib/events";
 import { createNotifications } from "@/lib/notifications";
+import { dispatchNotification } from "@/lib/notification-service";
 import { getOrganizationContext } from "@/lib/organizations";
 
 export type EventFormState =
@@ -708,19 +709,27 @@ export async function saveScheduleAssignmentAction(
     with: { user: true },
   });
 
-  if (
-    assignedPerson?.userId &&
-    assignedPerson.userId !== result.context.session.user.id
-  ) {
+  if (assignedPerson) {
     try {
-      await createNotifications({
+      await dispatchNotification({
         organizationId: result.context.organization.id,
-        userIds: [assignedPerson.userId],
-        actorId: result.context.session.user.id,
-        type: "schedule_assigned",
+        type: "assignment",
         title: `Você foi escalado em ${result.event.title}`,
         body: `${result.access.department.name} · ${targetFunction.name} · ${formatEventFullDate(result.event.startsAt)} às ${formatEventTime(result.event.startsAt)}`,
         href: `/dashboard/events/${result.event.id}`,
+        actorId: result.context.session.user.id,
+        userId: assignedPerson.userId ?? null,
+        personId: parsed.data.personId,
+        phone: assignedPerson.phone ?? assignedPerson.user?.phone ?? null,
+        name: assignedPerson.name,
+        metadata: {
+          churchName: result.context.organization.name,
+          eventTitle: result.event.title,
+          functionName: `${result.access.department.name} - ${targetFunction.name}`,
+          eventDate: formatEventFullDate(result.event.startsAt),
+          eventTime: formatEventTime(result.event.startsAt),
+          link: `/dashboard/events/${result.event.id}`,
+        },
       });
     } catch (error) {
       console.error("Erro ao notificar escala", error);
@@ -790,5 +799,593 @@ export async function removeScheduleAssignmentAction(
   }
 
   revalidateEvents(assignment.schedule.eventId);
+  return { ok: true };
+}
+
+async function canManageEventPlan(
+  organizationId: string,
+  eventId: string,
+  userId: string,
+  isAdmin: boolean,
+): Promise<boolean> {
+  if (isAdmin) {
+    return true;
+  }
+
+  const event = await getEvent(organizationId, eventId);
+  if (!event) {
+    return false;
+  }
+
+  for (const dep of event.departments) {
+    const access = await getDepartmentAccess(
+      organizationId,
+      dep.departmentId,
+      userId,
+      false,
+    );
+    if (access?.canManage) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+const planItemSchema = z.object({
+  eventId: z.string().min(1, "ID do evento é obrigatório."),
+  type: z.enum(["header", "item"]).default("item"),
+  title: z
+    .string()
+    .trim()
+    .min(1, "Informe o título do item ou seção.")
+    .max(120, "O título pode ter no máximo 120 caracteres."),
+  description: optionalText(500, "A descrição pode ter no máximo 500 caracteres."),
+  durationSeconds: z.coerce.number().min(0).default(0),
+  personId: z.string().optional().or(z.literal("")),
+  customResponsible: optionalText(120, "O responsável pode ter no máximo 120 caracteres."),
+  sectionId: z.string().optional().or(z.literal("")),
+});
+
+export type PlanItemFormState =
+  | {
+      error?: string;
+      fieldErrors?: {
+        title?: string[];
+        description?: string[];
+        durationSeconds?: string[];
+      };
+      success?: boolean;
+    }
+  | undefined;
+
+export async function createPlanItemAction(
+  _state: PlanItemFormState,
+  formData: FormData,
+): Promise<PlanItemFormState> {
+  const parsed = planItemSchema.safeParse({
+    eventId: formData.get("eventId"),
+    type: formData.get("type") ?? "item",
+    title: formData.get("title"),
+    description: formData.get("description"),
+    durationSeconds: formData.get("durationSeconds") ?? 0,
+    personId: formData.get("personId") ?? undefined,
+    customResponsible: formData.get("customResponsible") ?? undefined,
+    sectionId: formData.get("sectionId") ?? undefined,
+  });
+
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  const context = await getOrganizationContext();
+  if (!context) {
+    return { error: "Sua sessão expirou." };
+  }
+
+  const canManage = await canManageEventPlan(
+    context.organization.id,
+    parsed.data.eventId,
+    context.session.user.id,
+    context.isAdmin,
+  );
+
+  if (!canManage) {
+    return {
+      error: "Você não tem permissão para editar o cronograma deste evento.",
+    };
+  }
+
+  const existingItems = await db.query.eventPlanItem.findMany({
+    where: eq(schema.eventPlanItem.eventId, parsed.data.eventId),
+    columns: { order: true },
+  });
+
+  const nextOrder =
+    existingItems.reduce((max, item) => Math.max(max, item.order), -1) + 1;
+
+  try {
+    await db.insert(schema.eventPlanItem).values({
+      id: randomUUID(),
+      eventId: parsed.data.eventId,
+      type: parsed.data.type,
+      title: parsed.data.title,
+      description: parsed.data.description,
+      durationSeconds: parsed.data.durationSeconds,
+      order: nextOrder,
+      personId: parsed.data.personId || null,
+      customResponsible: parsed.data.customResponsible || null,
+      sectionId: parsed.data.sectionId || null,
+    });
+  } catch (error) {
+    console.error("Erro ao criar item do cronograma", error);
+    return { error: "Não foi possível adicionar o item ao cronograma." };
+  }
+
+  revalidateEvents(parsed.data.eventId);
+  return { success: true };
+}
+
+export async function updatePlanItemAction(
+  _state: PlanItemFormState,
+  formData: FormData,
+): Promise<PlanItemFormState> {
+  const itemId = formData.get("id")?.toString();
+  if (!itemId) {
+    return { error: "Item não informado." };
+  }
+
+  const parsed = planItemSchema.safeParse({
+    eventId: formData.get("eventId"),
+    type: formData.get("type") ?? "item",
+    title: formData.get("title"),
+    description: formData.get("description"),
+    durationSeconds: formData.get("durationSeconds") ?? 0,
+    personId: formData.get("personId") ?? undefined,
+    customResponsible: formData.get("customResponsible") ?? undefined,
+    sectionId: formData.get("sectionId") ?? undefined,
+  });
+
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  const context = await getOrganizationContext();
+  if (!context) {
+    return { error: "Sua sessão expirou." };
+  }
+
+  const canManage = await canManageEventPlan(
+    context.organization.id,
+    parsed.data.eventId,
+    context.session.user.id,
+    context.isAdmin,
+  );
+
+  if (!canManage) {
+    return {
+      error: "Você não tem permissão para editar o cronograma deste evento.",
+    };
+  }
+
+  try {
+    await db
+      .update(schema.eventPlanItem)
+      .set({
+        title: parsed.data.title,
+        description: parsed.data.description ?? null,
+        durationSeconds: parsed.data.durationSeconds,
+        personId: parsed.data.personId || null,
+        customResponsible: parsed.data.customResponsible || null,
+      })
+      .where(eq(schema.eventPlanItem.id, itemId));
+  } catch (error) {
+    console.error("Erro ao atualizar item do cronograma", error);
+    return { error: "Não foi possível salvar as alterações." };
+  }
+
+  revalidateEvents(parsed.data.eventId);
+  return { success: true };
+}
+
+export async function deletePlanItemAction(
+  itemId: string,
+  eventId: string,
+): Promise<EventActionResult> {
+  const context = await getOrganizationContext();
+  if (!context) {
+    return { ok: false, error: "Sua sessão expirou." };
+  }
+
+  const canManage = await canManageEventPlan(
+    context.organization.id,
+    eventId,
+    context.session.user.id,
+    context.isAdmin,
+  );
+
+  if (!canManage) {
+    return { ok: false, error: "Permissão insuficiente." };
+  }
+
+  try {
+    await db
+      .delete(schema.eventPlanItem)
+      .where(eq(schema.eventPlanItem.id, itemId));
+  } catch (error) {
+    console.error("Erro ao remover item do cronograma", error);
+    return { ok: false, error: "Não foi possível remover o item." };
+  }
+
+  revalidateEvents(eventId);
+  return { ok: true };
+}
+
+export async function reorderPlanItemsAction(
+  eventId: string,
+  orderedIds: string[],
+): Promise<EventActionResult> {
+  const context = await getOrganizationContext();
+  if (!context) {
+    return { ok: false, error: "Sua sessão expirou." };
+  }
+
+  const canManage = await canManageEventPlan(
+    context.organization.id,
+    eventId,
+    context.session.user.id,
+    context.isAdmin,
+  );
+
+  if (!canManage) {
+    return { ok: false, error: "Permissão insuficiente." };
+  }
+
+  try {
+    for (let index = 0; index < orderedIds.length; index++) {
+      await db
+        .update(schema.eventPlanItem)
+        .set({ order: index })
+        .where(
+          and(
+            eq(schema.eventPlanItem.id, orderedIds[index]),
+            eq(schema.eventPlanItem.eventId, eventId),
+          ),
+        );
+    }
+  } catch (error) {
+    console.error("Erro ao reordenar cronograma", error);
+    return { ok: false, error: "Não foi possível reordenar o cronograma." };
+  }
+
+  revalidateEvents(eventId);
+  return { ok: true };
+}
+
+export const STARTER_PLAN_TEMPLATE: schema.PlanTemplateItem[] = [
+  { type: "header", title: "INTRODUÇÃO & ABERTURA", durationSeconds: 0, order: 0 },
+  {
+    type: "item",
+    title: "Oração Inicial e Boas-Vindas",
+    durationSeconds: 300,
+    order: 1,
+    description: "Acolhimento da congregação e oração de abertura.",
+  },
+  { type: "header", title: "LOUVOR & ADORAÇÃO", durationSeconds: 0, order: 2 },
+  {
+    type: "item",
+    title: "Momento de Louvor Congregacional",
+    durationSeconds: 1200,
+    order: 3,
+    description: "Músicas e adoração com o ministério de louvor.",
+  },
+  { type: "header", title: "COMUNHÃO & AVISOS", durationSeconds: 0, order: 4 },
+  {
+    type: "item",
+    title: "Avisos e Recepção de Visitantes",
+    durationSeconds: 300,
+    order: 5,
+    description: "Avisos gerais e acolhimento dos que nos visitam pela primeira vez.",
+  },
+  {
+    type: "item",
+    title: "Dízimos e Ofertas",
+    durationSeconds: 420,
+    order: 6,
+    description: "Oração e cântico de gratidão pelas ofertas.",
+  },
+  { type: "header", title: "MINISTRAÇÃO DA PALAVRA", durationSeconds: 0, order: 7 },
+  {
+    type: "item",
+    title: "Pregação da Palavra",
+    durationSeconds: 2100,
+    order: 8,
+    description: "Ministração bíblica principal.",
+  },
+  { type: "header", title: "ENCERRAMENTO", durationSeconds: 0, order: 9 },
+  {
+    type: "item",
+    title: "Apelo / Oração Final e Bênção Apostólica",
+    durationSeconds: 480,
+    order: 10,
+    description: "Oração pastoral e encerramento.",
+  },
+];
+
+export async function savePlanAsTemplateAction(
+  eventId: string,
+  name: string,
+  description?: string,
+): Promise<{ ok: boolean; error?: string; templateId?: string }> {
+  const context = await getOrganizationContext();
+  if (!context) {
+    return { ok: false, error: "Sua sessão expirou." };
+  }
+
+  const canManage = await canManageEventPlan(
+    context.organization.id,
+    eventId,
+    context.session.user.id,
+    context.isAdmin,
+  );
+  if (!canManage) {
+    return { ok: false, error: "Permissão insuficiente para salvar modelo." };
+  }
+
+  if (!name || !name.trim()) {
+    return { ok: false, error: "Informe um nome para o modelo." };
+  }
+
+  try {
+    const rawItems = await db.query.eventPlanItem.findMany({
+      where: eq(schema.eventPlanItem.eventId, eventId),
+      orderBy: [asc(schema.eventPlanItem.order)],
+      with: {
+        person: {
+          columns: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (rawItems.length === 0) {
+      return {
+        ok: false,
+        error:
+          "O cronograma está vazio. Adicione momentos antes de salvar como modelo.",
+      };
+    }
+
+    const items: schema.PlanTemplateItem[] = rawItems.map((item, index) => ({
+      type: item.type as "header" | "item",
+      title: item.title,
+      description: item.description,
+      durationSeconds: item.durationSeconds,
+      order: index,
+      customResponsible: item.customResponsible ?? (item.person?.name || null),
+    }));
+
+    const id = randomUUID();
+    await db.insert(schema.planTemplate).values({
+      id,
+      organizationId: context.organization.id,
+      name: name.trim(),
+      description: description?.trim() || null,
+      items,
+    });
+
+    return { ok: true, templateId: id };
+  } catch (error) {
+    console.error("Erro ao salvar modelo de cronograma", error);
+    return { ok: false, error: "Não foi possível salvar o modelo." };
+  }
+}
+
+export type SavedPlanTemplate = {
+  id: string;
+  name: string;
+  description: string | null;
+  items: schema.PlanTemplateItem[];
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export async function listPlanTemplatesAction(): Promise<{
+  ok: boolean;
+  templates?: SavedPlanTemplate[];
+  error?: string;
+}> {
+  const context = await getOrganizationContext();
+  if (!context) {
+    return { ok: false, error: "Sua sessão expirou." };
+  }
+
+  try {
+    const templates = await db.query.planTemplate.findMany({
+      where: eq(schema.planTemplate.organizationId, context.organization.id),
+      orderBy: [desc(schema.planTemplate.createdAt)],
+    });
+
+    return { ok: true, templates };
+  } catch (error) {
+    console.error("Erro ao listar modelos de cronograma", error);
+    return { ok: false, error: "Não foi possível carregar os modelos." };
+  }
+}
+
+export async function applyPlanTemplateAction(
+  eventId: string,
+  templateId: string | "starter",
+): Promise<EventActionResult> {
+  const context = await getOrganizationContext();
+  if (!context) {
+    return { ok: false, error: "Sua sessão expirou." };
+  }
+
+  const canManage = await canManageEventPlan(
+    context.organization.id,
+    eventId,
+    context.session.user.id,
+    context.isAdmin,
+  );
+  if (!canManage) {
+    return { ok: false, error: "Permissão insuficiente." };
+  }
+
+  let itemsToApply: schema.PlanTemplateItem[] = [];
+
+  if (templateId === "starter") {
+    itemsToApply = STARTER_PLAN_TEMPLATE;
+  } else {
+    const template = await db.query.planTemplate.findFirst({
+      where: and(
+        eq(schema.planTemplate.id, templateId),
+        eq(schema.planTemplate.organizationId, context.organization.id),
+      ),
+    });
+
+    if (!template) {
+      return { ok: false, error: "Modelo não encontrado." };
+    }
+
+    itemsToApply = template.items;
+  }
+
+  try {
+    await db
+      .delete(schema.eventPlanItem)
+      .where(eq(schema.eventPlanItem.eventId, eventId));
+
+    for (let index = 0; index < itemsToApply.length; index++) {
+      const item = itemsToApply[index];
+      await db.insert(schema.eventPlanItem).values({
+        id: randomUUID(),
+        eventId,
+        type: item.type,
+        title: item.title,
+        description: item.description ?? null,
+        durationSeconds: item.durationSeconds ?? 0,
+        order: index,
+        customResponsible: item.customResponsible ?? null,
+      });
+    }
+  } catch (error) {
+    console.error("Erro ao aplicar modelo no cronograma", error);
+    return { ok: false, error: "Não foi possível aplicar o modelo." };
+  }
+
+  revalidateEvents(eventId);
+  return { ok: true };
+}
+
+export async function deletePlanTemplateAction(
+  templateId: string,
+): Promise<EventActionResult> {
+  const context = await getOrganizationContext();
+  if (!context) {
+    return { ok: false, error: "Sua sessão expirou." };
+  }
+
+  try {
+    await db
+      .delete(schema.planTemplate)
+      .where(
+        and(
+          eq(schema.planTemplate.id, templateId),
+          eq(schema.planTemplate.organizationId, context.organization.id),
+        ),
+      );
+    return { ok: true };
+  } catch (error) {
+    console.error("Erro ao excluir modelo de cronograma", error);
+    return { ok: false, error: "Não foi possível excluir o modelo." };
+  }
+}
+
+export async function clearEventPlanAction(
+  eventId: string,
+): Promise<EventActionResult> {
+  const context = await getOrganizationContext();
+  if (!context) {
+    return { ok: false, error: "Sua sessão expirou." };
+  }
+
+  const canManage = await canManageEventPlan(
+    context.organization.id,
+    eventId,
+    context.session.user.id,
+    context.isAdmin,
+  );
+  if (!canManage) {
+    return { ok: false, error: "Permissão insuficiente." };
+  }
+
+  try {
+    await db
+      .delete(schema.eventPlanItem)
+      .where(eq(schema.eventPlanItem.eventId, eventId));
+  } catch (error) {
+    console.error("Erro ao limpar cronograma", error);
+    return { ok: false, error: "Não foi possível limpar o cronograma." };
+  }
+
+  revalidateEvents(eventId);
+  return { ok: true };
+}
+
+export async function importPlanItemsAction(
+  eventId: string,
+  items: schema.PlanTemplateItem[],
+): Promise<EventActionResult> {
+  const context = await getOrganizationContext();
+  if (!context) {
+    return { ok: false, error: "Sua sessão expirou." };
+  }
+
+  const canManage = await canManageEventPlan(
+    context.organization.id,
+    eventId,
+    context.session.user.id,
+    context.isAdmin,
+  );
+  if (!canManage) {
+    return { ok: false, error: "Permissão insuficiente." };
+  }
+
+  if (!Array.isArray(items) || items.length === 0) {
+    return { ok: false, error: "Arquivo de cronograma vazio ou inválido." };
+  }
+
+  try {
+    await db
+      .delete(schema.eventPlanItem)
+      .where(eq(schema.eventPlanItem.eventId, eventId));
+
+    for (let index = 0; index < items.length; index++) {
+      const item = items[index];
+      if (!item.title) continue;
+      await db.insert(schema.eventPlanItem).values({
+        id: randomUUID(),
+        eventId,
+        type: item.type === "header" ? "header" : "item",
+        title: item.title.trim(),
+        description: item.description ? String(item.description).trim() : null,
+        durationSeconds:
+          typeof item.durationSeconds === "number" && item.durationSeconds >= 0
+            ? Math.round(item.durationSeconds)
+            : 0,
+        order: index,
+        customResponsible: item.customResponsible
+          ? String(item.customResponsible).trim()
+          : null,
+      });
+    }
+  } catch (error) {
+    console.error("Erro ao importar cronograma", error);
+    return { ok: false, error: "Não foi possível importar o cronograma." };
+  }
+
+  revalidateEvents(eventId);
   return { ok: true };
 }

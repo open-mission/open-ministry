@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState } from "react";
+import { FingerprintIcon, Loader2Icon } from "lucide-react";
 
 import {
   signInAction,
@@ -10,6 +12,8 @@ import {
 import { FormAlert } from "@/components/auth/form-alert";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { SubmitButton } from "@/components/auth/submit-button";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldDescription,
@@ -18,6 +22,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { authClient } from "@/lib/auth-client";
 import { withRedirect } from "@/lib/redirects";
 
 type LoginFormProps = {
@@ -26,10 +31,57 @@ type LoginFormProps = {
 };
 
 export function LoginForm({ redirectTo, initialError }: LoginFormProps) {
+  const router = useRouter();
   const [state, formAction] = useActionState<AuthFormState, FormData>(
     signInAction,
     initialError ? { error: initialError } : undefined,
   );
+  const [lastMethod, setLastMethod] = useState<string | null>(null);
+  const [passkeyPending, setPasskeyPending] = useState(false);
+  const [passkeyError, setPasskeyError] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const method = authClient.getLastUsedLoginMethod();
+      if (method) {
+        queueMicrotask(() => {
+          setLastMethod(method);
+        });
+      }
+    } catch {
+      // Ignora erro caso o cookie não esteja presente ou inválido
+    }
+  }, []);
+
+  async function handlePasskeySignIn() {
+    setPasskeyPending(true);
+    setPasskeyError(null);
+
+    try {
+      const res = await authClient.signIn.passkey({
+        autoFill: false,
+      });
+
+      if (res?.error) {
+        setPasskeyPending(false);
+        setPasskeyError(
+          res.error.message ||
+            "Não foi possível entrar com a chave de acesso. Verifique se o dispositivo possui uma passkey cadastrada.",
+        );
+        return;
+      }
+
+      router.push(redirectTo || "/dashboard");
+      router.refresh();
+    } catch (err: unknown) {
+      setPasskeyPending(false);
+      setPasskeyError(
+        err instanceof Error
+          ? err.message
+          : "Erro ao autenticar com chave de acesso.",
+      );
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -45,12 +97,46 @@ export function LoginForm({ redirectTo, initialError }: LoginFormProps) {
         </p>
       </div>
 
-      <div className="space-y-5">
-        <GoogleSignInButton redirectTo={redirectTo} />
-        <div className="flex items-center gap-3">
+      <div className="space-y-3">
+        <GoogleSignInButton
+          redirectTo={redirectTo}
+          isLastUsed={lastMethod === "google"}
+        />
+
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          className="relative h-10 w-full"
+          onClick={handlePasskeySignIn}
+          disabled={passkeyPending}
+        >
+          {passkeyPending ? (
+            <Loader2Icon className="animate-spin" data-icon="inline-start" />
+          ) : (
+            <FingerprintIcon className="size-4" data-icon="inline-start" />
+          )}
+          <span className="truncate">
+            {passkeyPending
+              ? "Autenticando chave..."
+              : "Entrar com chave de acesso (Passkey)"}
+          </span>
+          {lastMethod === "passkey" && !passkeyPending ? (
+            <Badge
+              variant="secondary"
+              className="ml-auto text-[10px] font-medium tracking-wide uppercase"
+            >
+              Último usado
+            </Badge>
+          ) : null}
+        </Button>
+
+        {passkeyError ? <FormAlert>{passkeyError}</FormAlert> : null}
+
+        <div className="flex items-center gap-3 pt-2">
           <span className="h-px flex-1 bg-border" />
           <span className="text-[0.7rem] tracking-[0.16em] text-muted-foreground uppercase">
-            ou
+            ou com email e senha
           </span>
           <span className="h-px flex-1 bg-border" />
         </div>
@@ -60,22 +146,34 @@ export function LoginForm({ redirectTo, initialError }: LoginFormProps) {
         <input type="hidden" name="redirectTo" value={redirectTo ?? ""} />
 
         <FieldGroup>
-          <Field data-invalid={Boolean(state?.fieldErrors?.email)}>
-            <FieldLabel htmlFor="email">Email</FieldLabel>
+          <Field data-invalid={Boolean(state?.fieldErrors?.identifier ?? state?.fieldErrors?.email)}>
+            <div className="flex items-center justify-between gap-3">
+              <FieldLabel htmlFor="identifier">Email ou nome de usuário</FieldLabel>
+              {lastMethod === "email" ? (
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] font-medium tracking-wide uppercase"
+                >
+                  Último usado
+                </Badge>
+              ) : null}
+            </div>
             <Input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              placeholder="voce@igreja.com"
+              id="identifier"
+              name="identifier"
+              type="text"
+              autoComplete="username"
+              placeholder="voce@igreja.com ou @usuario"
               className="h-10"
-              aria-invalid={Boolean(state?.fieldErrors?.email)}
+              aria-invalid={Boolean(state?.fieldErrors?.identifier ?? state?.fieldErrors?.email)}
               required
             />
             <FieldError
-              errors={state?.fieldErrors?.email?.map((message) => ({
-                message,
-              }))}
+              errors={(state?.fieldErrors?.identifier ?? state?.fieldErrors?.email)?.map(
+                (message) => ({
+                  message,
+                }),
+              )}
             />
           </Field>
 

@@ -50,7 +50,7 @@ async function ChurchContent() {
         <Card className="h-fit">
           <CardContent className="flex flex-col items-center gap-4 p-6 text-center">
             {organization.logo ? (
-              <Avatar className="size-24 rounded-2xl ring-1 ring-foreground/10">
+              <Avatar className="size-24 rounded-2xl">
                 <AvatarImage
                   src={organization.logo}
                   alt={`Logo de ${organization.name}`}
