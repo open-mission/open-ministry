@@ -16,6 +16,7 @@ import {
   isTenantDbEnabled,
   withTenantDb,
 } from "@/db/tenant";
+import { cacheInvalidateTags, remember } from "@/lib/cache";
 import { getOrganizationContext } from "@/lib/organizations";
 
 export type NotificationRecord =
@@ -27,69 +28,83 @@ export async function listNotifications(
   limit = 50,
   unreadOnly = false,
 ) {
-  const where = unreadOnly
-    ? and(
-        eq(schema.notification.organizationId, organizationId),
-        eq(schema.notification.userId, userId),
-        isNull(schema.notification.readAt),
-      )
-    : and(
-        eq(schema.notification.organizationId, organizationId),
-        eq(schema.notification.userId, userId),
-      );
+  return remember(
+    `notif:list:${organizationId}:${userId}:${limit}:${unreadOnly ? 1 : 0}`,
+    30,
+    async () => {
+      const where = unreadOnly
+        ? and(
+            eq(schema.notification.organizationId, organizationId),
+            eq(schema.notification.userId, userId),
+            isNull(schema.notification.readAt),
+          )
+        : and(
+            eq(schema.notification.organizationId, organizationId),
+            eq(schema.notification.userId, userId),
+          );
 
-  if (isTenantDbEnabled()) {
-    const rows = await withTenantDb((tx) =>
-      tx
+      if (isTenantDbEnabled()) {
+        const rows = await withTenantDb((tx) =>
+          tx
+            .select()
+            .from(schema.notification)
+            .where(where)
+            .orderBy(desc(schema.notification.createdAt))
+            .limit(limit),
+        );
+
+        if (rows) {
+          return rows;
+        }
+      }
+
+      return db
         .select()
         .from(schema.notification)
         .where(where)
         .orderBy(desc(schema.notification.createdAt))
-        .limit(limit),
-    );
-
-    if (rows) {
-      return rows;
-    }
-  }
-
-  return db
-    .select()
-    .from(schema.notification)
-    .where(where)
-    .orderBy(desc(schema.notification.createdAt))
-    .limit(limit);
+        .limit(limit);
+    },
+    [`notifications:${userId}`],
+  );
 }
 
 export async function countUnreadNotifications(
   organizationId: string,
   userId: string,
 ) {
-  const where = and(
-    eq(schema.notification.organizationId, organizationId),
-    eq(schema.notification.userId, userId),
-    isNull(schema.notification.readAt),
-  );
+  return remember(
+    `notif:unread:${organizationId}:${userId}`,
+    30,
+    async () => {
+      const where = and(
+        eq(schema.notification.organizationId, organizationId),
+        eq(schema.notification.userId, userId),
+        isNull(schema.notification.readAt),
+      );
 
-  if (isTenantDbEnabled()) {
-    const rows = await withTenantDb((tx) =>
-      tx
+      if (isTenantDbEnabled()) {
+        const rows = await withTenantDb((tx) =>
+          tx
+            .select({ value: count() })
+            .from(schema.notification)
+            .where(where),
+        );
+
+        if (rows) {
+          return Number(rows[0]?.value ?? 0);
+        }
+      }
+
+      const rows = await db
         .select({ value: count() })
         .from(schema.notification)
-        .where(where),
-    );
+        .where(where);
 
-    if (rows) {
       return Number(rows[0]?.value ?? 0);
-    }
-  }
-
-  const rows = await db
-    .select({ value: count() })
-    .from(schema.notification)
-    .where(where);
-
-  return Number(rows[0]?.value ?? 0);
+    },
+    [`notifications:${userId}`],
+  );
 }
 
 export const getUnreadNotificationSummary = cache(async () => {
@@ -138,6 +153,8 @@ export async function markNotificationRead(
       .update(schema.notification)
       .set({ readAt: new Date() })
       .where(eq(schema.notification.id, notificationId));
+
+    await cacheInvalidateTags(`notifications:${userId}`);
   }
 
   return true;
@@ -157,6 +174,8 @@ export async function markAllNotificationsRead(
         isNull(schema.notification.readAt),
       ),
     );
+
+  await cacheInvalidateTags(`notifications:${userId}`);
 }
 
 export async function createNotifications({
@@ -195,6 +214,10 @@ export async function createNotifications({
       body: body ?? null,
       href: href ?? null,
     })),
+  );
+
+  await Promise.all(
+    uniqueUserIds.map((id) => cacheInvalidateTags(`notifications:${id}`)),
   );
 }
 

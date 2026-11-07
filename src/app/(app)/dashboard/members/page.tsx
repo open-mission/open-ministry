@@ -34,19 +34,32 @@ async function MembersContent() {
 
   const { organization, isAdmin, session } =
     await requireOrganizationContext();
+
+  const moodOverviewPromise = isAdmin
+    ? getOrganizationMoodOverview({
+        organizationId: organization.id,
+        viewerUserId: session.user.id,
+        isAdmin: true,
+      })
+    : null;
+
   const [people, leaderDepartments] = await Promise.all([
     listPeople(organization.id),
-    listUserLeaderDepartments(organization.id, session.user.id),
+    isAdmin
+      ? Promise.resolve([])
+      : listUserLeaderDepartments(organization.id, session.user.id),
   ]);
 
   const canViewFelicitometro = isAdmin || leaderDepartments.length > 0;
-  const moodOverview = canViewFelicitometro
-    ? await getOrganizationMoodOverview({
-        organizationId: organization.id,
-        viewerUserId: session.user.id,
-        isAdmin,
-      })
-    : null;
+  const moodOverview = isAdmin
+    ? await moodOverviewPromise
+    : canViewFelicitometro
+      ? await getOrganizationMoodOverview({
+          organizationId: organization.id,
+          viewerUserId: session.user.id,
+          isAdmin: false,
+        })
+      : null;
 
   const roleByUserId = Object.fromEntries(
     organization.members.map((member) => [

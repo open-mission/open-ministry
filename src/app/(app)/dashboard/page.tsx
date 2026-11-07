@@ -28,7 +28,7 @@ import {
   getTodayInSaoPaulo,
 } from "@/lib/birthdays";
 import { listDepartments } from "@/lib/departments";
-import { listEvents, splitEvents, toInputDate } from "@/lib/events";
+import { listUpcomingEvents, splitEvents, toInputDate } from "@/lib/events";
 import {
   getOrganizationMoodOverview,
   getTodayMoodForPerson,
@@ -58,17 +58,16 @@ async function DashboardContent() {
   await connection();
 
   const { organization, session, isAdmin } = await requireOrganizationContext();
-
-  const people = await listPeople(organization.id);
   const firstName = session.user.name.trim().split(/\s+/)[0] ?? "líder";
-  const birthdayEntries = buildBirthdayEntries(people, {
-    includeAge: isAdmin,
-    today: getTodayInSaoPaulo(),
-  });
 
   if (!isAdmin) {
+    const [people, initialPerson] = await Promise.all([
+      listPeople(organization.id),
+      findPersonByUserId(organization.id, session.user.id),
+    ]);
+
     const person =
-      (await findPersonByUserId(organization.id, session.user.id)) ??
+      initialPerson ??
       (await ensurePersonForUser(organization.id, {
         id: session.user.id,
         name: session.user.name,
@@ -86,6 +85,11 @@ async function DashboardContent() {
         ])
       : [[], [], [], null];
 
+    const birthdayEntries = buildBirthdayEntries(people, {
+      includeAge: false,
+      today: getTodayInSaoPaulo(),
+    });
+
     return (
       <MemberDashboard
         firstName={firstName}
@@ -100,22 +104,35 @@ async function DashboardContent() {
     );
   }
 
-  // Dados exclusivos para administradores e líderes
-  const [events, departments, evolutionResult, moodOverview] =
-    await Promise.all([
-      listEvents(organization.id),
-      listDepartments(organization.id),
-      getOrganizationEvolutionConfig(organization.id),
-      getOrganizationMoodOverview({
-        organizationId: organization.id,
-        viewerUserId: session.user.id,
-        isAdmin: true,
-        days: 14,
-      }),
-    ]);
+  // Dados para administradores e líderes: carregamento 100% paralelo com caching de alta performance
+  const [
+    people,
+    events,
+    departments,
+    evolutionResult,
+    moodOverview,
+    initialAdminPerson,
+  ] = await Promise.all([
+    listPeople(organization.id),
+    listUpcomingEvents(organization.id, 8),
+    listDepartments(organization.id),
+    getOrganizationEvolutionConfig(organization.id),
+    getOrganizationMoodOverview({
+      organizationId: organization.id,
+      viewerUserId: session.user.id,
+      isAdmin: true,
+      days: 14,
+    }),
+    findPersonByUserId(organization.id, session.user.id),
+  ]);
+
+  const birthdayEntries = buildBirthdayEntries(people, {
+    includeAge: true,
+    today: getTodayInSaoPaulo(),
+  });
 
   const adminPerson =
-    (await findPersonByUserId(organization.id, session.user.id)) ??
+    initialAdminPerson ??
     (await ensurePersonForUser(organization.id, {
       id: session.user.id,
       name: session.user.name,

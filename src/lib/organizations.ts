@@ -11,6 +11,7 @@ import {
   type TenantTransaction,
 } from "@/db/tenant";
 import { auth } from "@/lib/auth";
+import { remember } from "@/lib/cache";
 import { isAdminRole } from "@/lib/format";
 import { getSession, requireSession, type AuthSession } from "@/lib/session";
 
@@ -65,11 +66,20 @@ async function getOrganizationContextFromOwner(): Promise<OrganizationContext | 
     return null;
   }
 
+  const organizationId = session.session.activeOrganizationId;
+
   try {
-    const organization = await auth.api.getFullOrganization({
-      query: { organizationId: session.session.activeOrganizationId },
-      headers: await headers(),
-    });
+    const organization = await remember(
+      `org:full:${organizationId}`,
+      60,
+      async () => {
+        return auth.api.getFullOrganization({
+          query: { organizationId },
+          headers: await headers(),
+        });
+      },
+      [`org:${organizationId}`],
+    );
 
     if (!organization) {
       return null;

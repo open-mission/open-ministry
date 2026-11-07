@@ -5,6 +5,7 @@ import { and, eq, inArray, ne } from "drizzle-orm";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { cacheInvalidateTags, remember } from "@/lib/cache";
 import {
   isPlaceholderName,
   nameFromEmail,
@@ -28,46 +29,53 @@ export type {
 } from "@/lib/person-format";
 
 export async function listPeople(organizationId: string) {
-  const people = await db.query.person.findMany({
-    where: eq(schema.person.organizationId, organizationId),
-    with: { user: true },
-  });
+  return remember(
+    `org:${organizationId}:people`,
+    180,
+    async () => {
+      const people = await db.query.person.findMany({
+        where: eq(schema.person.organizationId, organizationId),
+        with: { user: true },
+      });
 
-  if (people.length === 0) {
-    return [];
-  }
+      if (people.length === 0) {
+        return [];
+      }
 
-  const memberships = await db.query.departmentMember.findMany({
-    where: inArray(
-      schema.departmentMember.personId,
-      people.map((item) => item.id),
-    ),
-    with: {
-      department: true,
-      assignments: {
-        with: { function: true },
-      },
+      const memberships = await db.query.departmentMember.findMany({
+        where: inArray(
+          schema.departmentMember.personId,
+          people.map((item) => item.id),
+        ),
+        with: {
+          department: true,
+          assignments: {
+            with: { function: true },
+          },
+        },
+      });
+      const membershipsByPerson = new Map<
+        string,
+        typeof memberships
+      >();
+
+      for (const membership of memberships) {
+        const list = membershipsByPerson.get(membership.personId) ?? [];
+        list.push(membership);
+        membershipsByPerson.set(membership.personId, list);
+      }
+
+      return people
+        .map((item) => ({
+          ...item,
+          memberships: membershipsByPerson.get(item.id) ?? [],
+        }))
+        .sort((a, b) =>
+          personDisplayName(a).localeCompare(personDisplayName(b), "pt-BR"),
+        );
     },
-  });
-  const membershipsByPerson = new Map<
-    string,
-    typeof memberships
-  >();
-
-  for (const membership of memberships) {
-    const list = membershipsByPerson.get(membership.personId) ?? [];
-    list.push(membership);
-    membershipsByPerson.set(membership.personId, list);
-  }
-
-  return people
-    .map((item) => ({
-      ...item,
-      memberships: membershipsByPerson.get(item.id) ?? [],
-    }))
-    .sort((a, b) =>
-      personDisplayName(a).localeCompare(personDisplayName(b), "pt-BR"),
-    );
+    [`people:${organizationId}`],
+  );
 }
 
 export type PersonRecord = Awaited<ReturnType<typeof listPeople>>[number];
@@ -76,13 +84,21 @@ export async function getPerson(
   organizationId: string,
   personId: string,
 ) {
-  return db.query.person.findFirst({
-    where: and(
-      eq(schema.person.id, personId),
-      eq(schema.person.organizationId, organizationId),
-    ),
-    with: { user: true },
-  });
+  return remember(
+    `org:${organizationId}:person:${personId}`,
+    300,
+    async () => {
+      const row = await db.query.person.findFirst({
+        where: and(
+          eq(schema.person.id, personId),
+          eq(schema.person.organizationId, organizationId),
+        ),
+        with: { user: true },
+      });
+      return row ?? null;
+    },
+    [`people:${organizationId}`],
+  );
 }
 
 export async function findPersonByEmail(
@@ -108,13 +124,21 @@ export async function findPersonByUserId(
   organizationId: string,
   userId: string,
 ) {
-  return db.query.person.findFirst({
-    where: and(
-      eq(schema.person.organizationId, organizationId),
-      eq(schema.person.userId, userId),
-    ),
-    with: { user: true },
-  });
+  return remember(
+    `org:${organizationId}:person:user:${userId}`,
+    300,
+    async () => {
+      const row = await db.query.person.findFirst({
+        where: and(
+          eq(schema.person.organizationId, organizationId),
+          eq(schema.person.userId, userId),
+        ),
+        with: { user: true },
+      });
+      return row ?? null;
+    },
+    [`people:${organizationId}`],
+  );
 }
 
 export async function findOrganizationMemberByEmail(
@@ -232,6 +256,8 @@ export async function linkPersonToUser(
     })
     .where(eq(schema.person.id, personId));
 
+  await cacheInvalidateTags(`people:${organizationId}`);
+
   return { ok: true, personId };
 }
 
@@ -292,6 +318,8 @@ export async function ensurePersonForUser(
     birthday: user.birthday,
     phone: user.phone ?? null,
   });
+
+  await cacheInvalidateTags(`people:${organizationId}`);
 
   return getPerson(organizationId, id);
 }
