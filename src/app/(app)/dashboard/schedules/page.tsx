@@ -7,7 +7,6 @@ import { ClipboardListIcon } from "lucide-react";
 import { MemberSchedules } from "@/components/app/member-schedules";
 import { PageInfo } from "@/components/app/page-info";
 import { ScheduleList } from "@/components/events/schedule-list";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -73,9 +72,6 @@ async function SchedulesContent() {
           <h1 className="font-heading text-4xl leading-none tracking-tight">
             Escalas
           </h1>
-          <Badge variant="outline" className="font-normal">
-            {upcoming.length}
-          </Badge>
           <PageInfo
             title="Escalas"
             description={
