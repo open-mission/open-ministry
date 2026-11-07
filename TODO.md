@@ -12,15 +12,18 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Doing
 
-- [ ] Implementar funcionalidade offline inteligente por nível de acesso (Membro, Líder e Admin)
-  - [ ] Estratégia de cache offline no Service Worker (`public/sw.js`): páginas críticas, dados JSON e ativos estáticos
-  - [ ] Cache por nível de usuário:
-    - **Membro:** Minhas Escalas (`/dashboard/schedules`), agenda departamental e perfil pessoal
-    - **Líder e Pastor/Admin:** Cronogramas de culto (ordem do culto para uso no púlpito sem Wi-Fi) e escalas completas
-  - [ ] Tela e banner offline elegante: detecção de conexão (`navigator.onLine`), aviso discreto de modo offline e acesso aos dados em cache
-  - [ ] Sincronização e atualização transparente quando a conexão com a internet retornar
-
 ### Done
+
+- [x] Funcionalidade offline inteligente com segregação por nível de acesso (Membro, Líder e Admin)
+  - [x] Estratégia de cache avançada no Service Worker (`public/sw.js`): pre-caching de manifest e ícones, e interceptação de `/api/offline-data` com Network-First e Cache-Fallback
+  - [x] Bundle de dados offline inteligente por nível de usuário (`src/lib/offline-service.ts` e `/api/offline-data`):
+    - **Membro:** Minhas Escalas (`/dashboard/schedules`) com datas, funções e ministérios, próximos cultos e perfil pessoal
+    - **Líder de Ministério:** Escalas da equipe liderada, cronogramas de culto detalhados (ordem do culto com momentos e tempos para uso no templo sem Wi-Fi) e contatos rápidos
+    - **Pastor / Administrador:** Acesso irrestrito a todas as ordens de culto com minutagem, escalas completas de todos os ministérios e telefones de emergência de toda a liderança
+  - [x] Interface standalone interativa em `public/offline.html`: mesmo sem conexão inicial, permite navegar por abas (Minhas Escalas, Cronograma do Culto, Equipes e Contatos com links `tel:` diretos)
+  - [x] Banner discreto no topo do aplicativo (`OfflineBanner`) com detecção de queda e retomada de sinal com aviso de sincronização
+  - [x] Diálogo completo no app (`OfflineViewerDialog`) para consulta rápida de dados em cache
+  - [x] Card de gerenciamento e sincronização manual em Configurações (`OfflineCacheCard`), disponível tanto no desktop quanto no menu mobile estilo iOS
 
 - [x] Nova Home da Plataforma (Dashboard Admin e Membro) com Acessos Rápidos, Carrosséis Mobile e Navegação Nativa
   - [x] Seção de Acessos Rápidos no Dashboard com scroll horizontal e snap no mobile (Novo culto, Enviar aviso, Nova pessoa, Escala, Agenda, Ministérios e Cuidado pastoral)

@@ -1,4 +1,4 @@
-const CACHE_NAME = "openministry-offline-v1";
+const CACHE_NAME = "openministry-offline-v2";
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {
@@ -6,7 +6,12 @@ self.addEventListener("install", (event) => {
     caches
       .open(CACHE_NAME)
       .then((cache) =>
-        cache.addAll([OFFLINE_URL, "/icons/icon-192.png"]),
+        cache.addAll([
+          OFFLINE_URL,
+          "/icons/icon-192.png",
+          "/icons/icon-512.png",
+          "/manifest.webmanifest",
+        ]),
       )
       .then(() => self.skipWaiting()),
   );
@@ -30,7 +35,7 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
 
-  if (request.method !== "GET" || request.mode !== "navigate") {
+  if (request.method !== "GET") {
     return;
   }
 
@@ -40,9 +45,29 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  event.respondWith(
-    fetch(request).catch(() => caches.match(OFFLINE_URL)),
-  );
+  // Intercepta rota de dados offline para cachear respostas
+  if (url.pathname === "/api/offline-data") {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request)),
+    );
+    return;
+  }
+
+  // Intercepta navegações
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request).catch(() => caches.match(OFFLINE_URL)),
+    );
+    return;
+  }
 });
 
 // Push Notifications
