@@ -3,6 +3,7 @@ import "server-only";
 import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { remember } from "@/lib/cache";
 import {
   sendEvolutionTextMessage,
   type EvolutionConfig,
@@ -41,36 +42,43 @@ export type DispatchNotificationOptions = {
 export async function getOrganizationEvolutionConfig(
   organizationId: string,
 ): Promise<{ channel: typeof schema.organizationNotificationChannel.$inferSelect | null; config: EvolutionConfig | null }> {
-  try {
-    const channel = await db.query.organizationNotificationChannel.findFirst({
-      where: and(
-        eq(schema.organizationNotificationChannel.organizationId, organizationId),
-        eq(schema.organizationNotificationChannel.channel, "evolution_whatsapp"),
-      ),
-    });
+  return remember(
+    `org:${organizationId}:evolution-config`,
+    300,
+    async () => {
+      try {
+        const channel = await db.query.organizationNotificationChannel.findFirst({
+          where: and(
+            eq(schema.organizationNotificationChannel.organizationId, organizationId),
+            eq(schema.organizationNotificationChannel.channel, "evolution_whatsapp"),
+          ),
+        });
 
-    if (
-      channel &&
-      channel.isActive &&
-      channel.apiUrl &&
-      channel.apiKey &&
-      channel.instanceName
-    ) {
-      return {
-        channel,
-        config: {
-          apiUrl: channel.apiUrl,
-          apiKey: channel.apiKey,
-          instanceName: channel.instanceName,
-        },
-      };
-    }
+        if (
+          channel &&
+          channel.isActive &&
+          channel.apiUrl &&
+          channel.apiKey &&
+          channel.instanceName
+        ) {
+          return {
+            channel,
+            config: {
+              apiUrl: channel.apiUrl,
+              apiKey: channel.apiKey,
+              instanceName: channel.instanceName,
+            },
+          };
+        }
 
-    return { channel: channel ?? null, config: null };
-  } catch (error) {
-    console.error("Erro ao buscar canal de notificação da igreja:", error);
-    return { channel: null, config: null };
-  }
+        return { channel: channel ?? null, config: null };
+      } catch (error) {
+        console.error("Erro ao buscar canal de notificação da igreja:", error);
+        return { channel: null, config: null };
+      }
+    },
+    [`evolution:${organizationId}`],
+  );
 }
 
 export function buildWhatsAppMessageText(

@@ -1,9 +1,10 @@
 import { addDays, addMonths } from "date-fns";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
-import { eq } from "drizzle-orm";
+import { and, eq, gte } from "drizzle-orm";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { remember } from "@/lib/cache";
 import type { RecurrenceOption } from "@/lib/event-options";
 
 export const EVENT_TIME_ZONE = "America/Sao_Paulo";
@@ -91,71 +92,124 @@ export function generateOccurrences({
   }));
 }
 
-export async function listEvents(organizationId: string) {
-  return db.query.event.findMany({
-    where: eq(schema.event.organizationId, organizationId),
-    with: {
-      departments: {
+export async function listUpcomingEvents(organizationId: string, limit = 12) {
+  const cutoff = new Date(Date.now() - 4 * 60 * 60 * 1000);
+
+  return remember(
+    `org:${organizationId}:events:upcoming:${limit}`,
+    60,
+    async () => {
+      return db.query.event.findMany({
+        where: and(
+          eq(schema.event.organizationId, organizationId),
+          gte(schema.event.endsAt, cutoff),
+        ),
         with: {
-          department: {
-            with: { functions: true },
-          },
-        },
-      },
-      schedule: {
-        with: {
-          assignments: {
+          departments: {
             with: {
-              person: { with: { user: true } },
-              function: true,
+              department: {
+                with: { functions: true },
+              },
+            },
+          },
+          schedule: {
+            with: {
+              assignments: {
+                with: {
+                  person: { with: { user: true } },
+                  function: true,
+                },
+              },
             },
           },
         },
-      },
+        orderBy: (events, { asc }) => [asc(events.startsAt)],
+        limit,
+      });
     },
-    orderBy: (events, { asc }) => [asc(events.startsAt)],
-    limit: 500,
-  });
+    [`events:${organizationId}`],
+  );
+}
+
+export async function listEvents(organizationId: string) {
+  return remember(
+    `org:${organizationId}:events:all`,
+    60,
+    async () => {
+      return db.query.event.findMany({
+        where: eq(schema.event.organizationId, organizationId),
+        with: {
+          departments: {
+            with: {
+              department: {
+                with: { functions: true },
+              },
+            },
+          },
+          schedule: {
+            with: {
+              assignments: {
+                with: {
+                  person: { with: { user: true } },
+                  function: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: (events, { asc }) => [asc(events.startsAt)],
+        limit: 500,
+      });
+    },
+    [`events:${organizationId}`],
+  );
 }
 
 export async function getEvent(
   organizationId: string,
   eventId: string,
 ) {
-  const row = await db.query.event.findFirst({
-    where: (event, { and, eq }) =>
-      and(
-        eq(event.id, eventId),
-        eq(event.organizationId, organizationId),
-      ),
-    with: {
-      departments: {
+  return remember(
+    `org:${organizationId}:event:${eventId}`,
+    120,
+    async () => {
+      const row = await db.query.event.findFirst({
+        where: (event, { and, eq }) =>
+          and(
+            eq(event.id, eventId),
+            eq(event.organizationId, organizationId),
+          ),
         with: {
-          department: {
-            with: { functions: true },
-          },
-        },
-      },
-      schedule: {
-        with: {
-          assignments: {
+          departments: {
             with: {
-              person: { with: { user: true } },
-              function: true,
+              department: {
+                with: { functions: true },
+              },
             },
           },
+          schedule: {
+            with: {
+              assignments: {
+                with: {
+                  person: { with: { user: true } },
+                  function: true,
+                },
+              },
+            },
+          },
+          planItems: {
+            with: {
+              person: { with: { user: true } },
+            },
+            orderBy: (items, { asc }) => [asc(items.order), asc(items.createdAt)],
+          },
         },
-      },
-      planItems: {
-        with: {
-          person: { with: { user: true } },
-        },
-        orderBy: (items, { asc }) => [asc(items.order), asc(items.createdAt)],
-      },
-    },
-  });
+      });
 
-  return row ?? null;
+      return row ?? null;
+    },
+    [`events:${organizationId}`, `event:${eventId}`],
+  );
 }
 
 export type EventRecord = NonNullable<Awaited<ReturnType<typeof getEvent>>>;

@@ -6,6 +6,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import type { CalendarItem, CalendarPreferences } from "@/lib/calendar";
+import { listEvents } from "@/lib/events";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { ensurePersonForUser } from "@/lib/people";
 
@@ -46,27 +47,7 @@ export async function getCalendarDataAction(): Promise<{
   };
 
   const [events, unavailabilities] = await Promise.all([
-    db.query.event.findMany({
-      where: eq(schema.event.organizationId, organization.id),
-      with: {
-        departments: {
-          with: {
-            department: true,
-          },
-        },
-        schedule: {
-          with: {
-            assignments: {
-              with: {
-                function: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: (table, { asc }) => [asc(table.startsAt)],
-      limit: 1000,
-    }),
+    listEvents(organization.id),
     person
       ? db.query.personUnavailability.findMany({
           where: and(

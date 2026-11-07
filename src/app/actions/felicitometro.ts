@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { cacheInvalidateTags } from "@/lib/cache";
 import {
   getTodayDateString,
   getTodayMoodForPerson,
@@ -70,6 +71,7 @@ export async function submitDailyMoodAction(
       needsTalk: parsed.data.needsTalk,
       notes: parsed.data.notes,
     });
+    await cacheInvalidateTags(`mood:${context.organization.id}`);
   } catch (error) {
     console.error("Erro ao salvar sentimento diário:", error);
     return { error: "Não foi possível registrar seu sentimento. Tente novamente." };

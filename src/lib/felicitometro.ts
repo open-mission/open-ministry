@@ -6,6 +6,7 @@ import { format, subDays } from "date-fns";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { remember } from "@/lib/cache";
 import { listUserLeaderDepartments } from "@/lib/departments";
 import {
   getTodayDateString,
@@ -171,7 +172,11 @@ export async function getOrganizationMoodOverview({
   isAdmin: boolean;
   days?: number;
 }): Promise<MoodOverview> {
-  const cutoffDate = format(subDays(new Date(), days), "yyyy-MM-dd");
+  return remember(
+    `org:${organizationId}:mood-overview:${viewerUserId}:${isAdmin}:${days}`,
+    120,
+    async () => {
+      const cutoffDate = format(subDays(new Date(), days), "yyyy-MM-dd");
 
   let allowedPersonIds: string[] | null = null;
 
@@ -331,13 +336,16 @@ export async function getOrganizationMoodOverview({
       notes: m.notes,
     }));
 
-  return {
-    averageScore,
-    totalCheckIns,
-    prayerRequestsCount,
-    talkRequestsCount,
-    dailyTimeline,
-    scoreDistribution,
-    recentCareRequests,
-  };
+      return {
+        averageScore,
+        totalCheckIns,
+        prayerRequestsCount,
+        talkRequestsCount,
+        dailyTimeline,
+        scoreDistribution,
+        recentCareRequests,
+      };
+    },
+    [`mood:${organizationId}`],
+  );
 }

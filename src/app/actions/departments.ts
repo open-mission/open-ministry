@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { cacheInvalidateTags } from "@/lib/cache";
 import {
   getAssignmentWithDepartment,
   getDepartmentAccess,
@@ -200,10 +201,14 @@ async function getAdminContext() {
   return { context } as const;
 }
 
-function revalidateDepartment(departmentId: string) {
+async function revalidateDepartment(departmentId: string, organizationId?: string) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/departments");
   revalidatePath(`/dashboard/departments/${departmentId}`);
+
+  if (organizationId) {
+    await cacheInvalidateTags(`departments:${organizationId}`);
+  }
 }
 
 export async function createDepartmentAction(
@@ -247,7 +252,7 @@ export async function createDepartmentAction(
     return { error: "Não foi possível criar o departamento." };
   }
 
-  revalidateDepartment(departmentId);
+  await revalidateDepartment(departmentId, result.context.organization.id);
   redirect(`/dashboard/departments/${departmentId}`);
 }
 
@@ -329,6 +334,7 @@ export async function deleteDepartmentAction(
     return { ok: false, error: "Não foi possível excluir o departamento." };
   }
 
+  await cacheInvalidateTags(`departments:${result.context.organization.id}`);
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/departments");
 
