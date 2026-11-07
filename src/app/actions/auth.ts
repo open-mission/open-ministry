@@ -14,7 +14,9 @@ export type AuthFormState =
       error?: string;
       fieldErrors?: {
         name?: string[];
+        username?: string[];
         email?: string[];
+        identifier?: string[];
         password?: string[];
         birthday?: string[];
       };
@@ -27,6 +29,18 @@ const signUpSchema = z.object({
     .trim()
     .min(2, "Informe seu nome completo.")
     .max(80, "O nome pode ter no máximo 80 caracteres."),
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(3, "O nome de usuário precisa ter pelo menos 3 caracteres.")
+    .max(30, "O nome de usuário pode ter no máximo 30 caracteres.")
+    .regex(
+      /^@?[a-z0-9_.-]+$/,
+      "Use apenas letras minúsculas, números, pontos, hífens ou sublinhados.",
+    )
+    .optional()
+    .or(z.literal("")),
   email: z.email("Informe um email válido.").trim().toLowerCase(),
   password: z
     .string()
@@ -37,7 +51,10 @@ const signUpSchema = z.object({
 });
 
 const signInSchema = z.object({
-  email: z.email("Informe um email válido.").trim().toLowerCase(),
+  identifier: z
+    .string()
+    .trim()
+    .min(1, "Informe seu email ou nome de usuário."),
   password: z.string().min(1, "Informe sua senha."),
   redirectTo: z.string().optional(),
 });
@@ -48,6 +65,7 @@ export async function signUpAction(
 ): Promise<AuthFormState> {
   const parsed = signUpSchema.safeParse({
     name: formData.get("name"),
+    username: formData.get("username"),
     email: formData.get("email"),
     password: formData.get("password"),
     birthday: formData.get("birthday"),
@@ -59,12 +77,17 @@ export async function signUpAction(
   }
 
   try {
+    const cleanUsername = parsed.data.username
+      ? parsed.data.username.replace(/^@/, "").trim()
+      : undefined;
+
     await auth.api.signUpEmail({
       body: {
         name: parsed.data.name,
         email: parsed.data.email,
         password: parsed.data.password,
         birthday: parsed.data.birthday,
+        ...(cleanUsername ? { username: cleanUsername } : {}),
       },
       headers: await headers(),
     });
@@ -79,8 +102,15 @@ export async function signInAction(
   _state: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
+  const rawIdentifier = (
+    formData.get("identifier") ??
+    formData.get("login") ??
+    formData.get("email") ??
+    ""
+  ).toString();
+
   const parsed = signInSchema.safeParse({
-    email: formData.get("email"),
+    identifier: rawIdentifier,
     password: formData.get("password"),
     redirectTo: formData.get("redirectTo") ?? undefined,
   });
@@ -92,13 +122,24 @@ export async function signInAction(
   const requestHeaders = await headers();
 
   try {
-    await auth.api.signInEmail({
-      body: {
-        email: parsed.data.email,
-        password: parsed.data.password,
-      },
-      headers: requestHeaders,
-    });
+    const isEmail = parsed.data.identifier.includes("@");
+    if (isEmail) {
+      await auth.api.signInEmail({
+        body: {
+          email: parsed.data.identifier.toLowerCase(),
+          password: parsed.data.password,
+        },
+        headers: requestHeaders,
+      });
+    } else {
+      await auth.api.signInUsername({
+        body: {
+          username: parsed.data.identifier.toLowerCase().replace(/^@/, ""),
+          password: parsed.data.password,
+        },
+        headers: requestHeaders,
+      });
+    }
   } catch (error) {
     return { error: actionErrorMessage(error) };
   }
