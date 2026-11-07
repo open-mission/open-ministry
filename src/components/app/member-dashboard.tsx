@@ -9,7 +9,7 @@ import {
 
 import { AssignmentList } from "@/components/app/assignment-list";
 import { BirthdaysCard } from "@/components/birthdays/birthdays-card";
-import { StatCard } from "@/components/app/stat-card";
+import { StatStrip } from "@/components/app/stat-strip";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import {
   FelicitometroCard,
@@ -54,12 +54,9 @@ export function MemberDashboard({
   initialMood?: InitialMoodData;
 }) {
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 pb-4 sm:gap-12">
       <header className="space-y-2">
-        <p className="text-xs font-medium tracking-[0.18em] text-primary uppercase">
-          Visão geral
-        </p>
-        <h1 className="font-heading text-4xl leading-none tracking-tight">
+        <h1 className="font-heading text-[2.15rem] leading-none tracking-tight text-balance sm:text-4xl">
           Olá, {firstName}.
         </h1>
         <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
@@ -75,41 +72,43 @@ export function MemberDashboard({
 
       <FelicitometroCard initialMood={initialMood} userName={firstName} />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          icon={UsersIcon}
-          label="Pessoas"
-          value={peopleCount}
-          hint="fazem parte da igreja"
-        />
-        <StatCard
-          icon={ClipboardListIcon}
-          label="Minhas escalas"
-          value={assignments.length}
-          hint="encontros futuros"
-        />
-        <StatCard
-          icon={HandHeartIcon}
-          label="Meus departamentos"
-          value={memberships.length}
-          hint="onde você serve"
-        />
-      </div>
+      <StatStrip
+        items={[
+          {
+            icon: UsersIcon,
+            label: "Pessoas",
+            value: peopleCount,
+            hint: "fazem parte da igreja",
+          },
+          {
+            icon: ClipboardListIcon,
+            label: "Minhas escalas",
+            value: assignments.length,
+            hint: "encontros futuros",
+          },
+          {
+            icon: HandHeartIcon,
+            label: "Meus departamentos",
+            value: memberships.length,
+            hint: "onde você serve",
+          },
+        ]}
+      />
 
       <BirthdaysCard entries={birthdayEntries} />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-start justify-between gap-3">
             <div className="space-y-1.5">
-              <CardTitle className="font-heading text-xl tracking-tight">
+              <CardTitle className="font-heading text-lg tracking-tight sm:text-xl">
                 Minha escala
               </CardTitle>
               <CardDescription>
                 Os encontros em que você foi escalado.
               </CardDescription>
             </div>
-            <Button asChild variant="ghost" size="sm">
+            <Button asChild variant="ghost" size="sm" className="h-9 shrink-0 text-xs">
               <Link href="/dashboard/schedules">
                 Ver escalas
                 <ArrowRightIcon data-icon="inline-end" />
@@ -140,14 +139,14 @@ export function MemberDashboard({
         <Card>
           <CardHeader className="flex flex-row items-start justify-between gap-3">
             <div className="space-y-1.5">
-              <CardTitle className="font-heading text-xl tracking-tight">
+              <CardTitle className="font-heading text-lg tracking-tight sm:text-xl">
                 Agenda do departamento
               </CardTitle>
               <CardDescription>
                 Os encontros dos seus departamentos.
               </CardDescription>
             </div>
-            <Button asChild variant="ghost" size="sm">
+            <Button asChild variant="ghost" size="sm" className="h-9 shrink-0 text-xs">
               <Link href="/dashboard/events">
                 Ver agenda
                 <ArrowRightIcon data-icon="inline-end" />

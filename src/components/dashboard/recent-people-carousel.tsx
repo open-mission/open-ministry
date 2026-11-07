@@ -25,24 +25,24 @@ export function RecentPeopleCarousel({
   }
 
   return (
-    <section aria-labelledby="recent-people-heading" className="space-y-3">
-      <div className="flex items-center justify-between">
+    <section aria-labelledby="recent-people-heading" className="space-y-4">
+      <div className="flex items-end justify-between gap-3">
         <h2
           id="recent-people-heading"
-          className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground"
+          className="font-heading text-lg leading-none tracking-tight sm:text-xl"
         >
-          Pessoas Recentes
+          Pessoas recentes
         </h2>
         <Link
           href="/dashboard/members"
-          className="group inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+          className="group inline-flex items-center gap-1 pb-0.5 text-xs font-medium text-primary hover:underline"
         >
           Ver todas as pessoas
           <ArrowRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" />
         </Link>
       </div>
 
-      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory scrollbar-none sm:mx-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:px-0">
+      <div className="-mx-4 flex gap-3 overflow-x-auto overscroll-x-contain px-4 pb-1.5 pt-0.5 snap-x snap-mandatory scroll-pl-4 scrollbar-none sm:mx-0 sm:grid sm:grid-cols-2 sm:px-0 lg:grid-cols-4">
         {people.map((person) => {
           const name = personDisplayName(person);
           const email = personDisplayEmail(person);
@@ -54,8 +54,9 @@ export function RecentPeopleCarousel({
               key={person.id}
               href={`/dashboard/members/${person.id}`}
               className={cn(
-                "group min-w-[220px] shrink-0 snap-start rounded-2xl border border-border/70 bg-card p-4 transition-all duration-200",
-                "hover:border-primary/40 hover:shadow-sm sm:min-w-0 flex items-center gap-3.5",
+                "group flex min-w-[240px] shrink-0 snap-start items-center gap-3.5 rounded-2xl border border-border/60 bg-card p-4",
+                "transition-[transform,border-color,box-shadow] duration-150 active:scale-[0.99] hover:border-primary/35 hover:shadow-sm sm:min-w-0",
+                "motion-reduce:transition-none motion-reduce:active:scale-100",
               )}
             >
               <Avatar className="size-11 shrink-0 border">
@@ -66,7 +67,7 @@ export function RecentPeopleCarousel({
               </Avatar>
 
               <div className="min-w-0 flex-1 space-y-1">
-                <p className="truncate text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                <p className="truncate text-sm font-medium text-foreground transition-colors group-hover:text-primary">
                   {name}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
@@ -76,7 +77,7 @@ export function RecentPeopleCarousel({
                   {role ? (
                     <RoleBadge role={role} />
                   ) : (
-                    <Badge variant="outline" className="text-[0.65rem] font-normal py-0">
+                    <Badge variant="outline" className="py-0 text-[0.65rem] font-normal">
                       Membro
                     </Badge>
                   )}

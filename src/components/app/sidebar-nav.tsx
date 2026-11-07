@@ -2,19 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  CakeIcon,
-  CalendarCheckIcon,
-  CalendarDaysIcon,
-  CalendarRangeIcon,
-  ChurchIcon,
-  ClipboardListIcon,
-  HandHeartIcon,
-  LayoutDashboardIcon,
-  SettingsIcon,
-  UsersIcon,
-} from "lucide-react";
 
+import { isNavItemActive, navGroups } from "@/components/app/nav-config";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -23,89 +12,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-
-const navGroups = [
-  {
-    title: "Principal",
-    items: [
-      {
-        href: "/dashboard",
-        label: "Visão geral",
-        icon: LayoutDashboardIcon,
-        exact: true,
-      },
-    ],
-  },
-  {
-    title: "Cultos & Escalas",
-    items: [
-      {
-        href: "/dashboard/calendar",
-        label: "Agenda",
-        icon: CalendarRangeIcon,
-        exact: false,
-      },
-      {
-        href: "/dashboard/events",
-        label: "Cultos e eventos",
-        icon: CalendarDaysIcon,
-        exact: false,
-      },
-      {
-        href: "/dashboard/schedules",
-        label: "Escalas",
-        icon: ClipboardListIcon,
-        exact: false,
-      },
-      {
-        href: "/dashboard/availability",
-        label: "Disponibilidade",
-        icon: CalendarCheckIcon,
-        exact: false,
-      },
-    ],
-  },
-  {
-    title: "Pessoas & Equipes",
-    items: [
-      {
-        href: "/dashboard/members",
-        label: "Pessoas",
-        icon: UsersIcon,
-        exact: false,
-      },
-      {
-        href: "/dashboard/departments",
-        label: "Departamentos",
-        icon: HandHeartIcon,
-        exact: false,
-      },
-      {
-        href: "/dashboard/birthdays",
-        label: "Aniversariantes",
-        icon: CakeIcon,
-        exact: false,
-      },
-    ],
-  },
-  {
-    title: "Configurações",
-    items: [
-      {
-        href: "/dashboard/church",
-        label: "Igreja",
-        icon: ChurchIcon,
-        exact: false,
-      },
-      {
-        href: "/dashboard/settings",
-        label: "Configurações",
-        icon: SettingsIcon,
-        exact: false,
-      },
-    ],
-  },
-];
 
 export function SidebarNav() {
   const pathname = usePathname();
@@ -120,9 +26,7 @@ export function SidebarNav() {
           <SidebarGroupContent>
             <SidebarMenu>
               {group.items.map((item) => {
-                const isActive = item.exact
-                  ? pathname === item.href
-                  : pathname.startsWith(item.href);
+                const isActive = isNavItemActive(item, pathname);
 
                 return (
                   <SidebarMenuItem key={item.href}>

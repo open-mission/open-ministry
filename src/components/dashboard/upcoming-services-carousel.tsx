@@ -24,26 +24,24 @@ export function UpcomingServicesCarousel({
   }
 
   return (
-    <section aria-labelledby="upcoming-events-heading" className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="space-y-0.5">
-          <h2
-            id="upcoming-events-heading"
-            className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground"
-          >
-            Próximos Encontros
-          </h2>
-        </div>
+    <section aria-labelledby="upcoming-events-heading" className="space-y-4">
+      <div className="flex items-end justify-between gap-3">
+        <h2
+          id="upcoming-events-heading"
+          className="font-heading text-lg leading-none tracking-tight sm:text-xl"
+        >
+          Próximos encontros
+        </h2>
         <Link
           href="/dashboard/events"
-          className="group inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+          className="group inline-flex items-center gap-1 pb-0.5 text-xs font-medium text-primary hover:underline"
         >
           Ver todos na agenda
           <ArrowRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" />
         </Link>
       </div>
 
-      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory scrollbar-none sm:mx-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:px-0">
+      <div className="-mx-4 flex gap-3 overflow-x-auto overscroll-x-contain px-4 pb-1.5 pt-0.5 snap-x snap-mandatory scroll-pl-4 scrollbar-none sm:mx-0 sm:grid sm:grid-cols-2 sm:px-0 lg:grid-cols-3">
         {events.map((event) => {
           const parts = eventDateParts(event.startsAt);
           const time = formatEventTimeRange(event.startsAt, event.endsAt);
@@ -55,14 +53,15 @@ export function UpcomingServicesCarousel({
               key={event.id}
               href={`/dashboard/events/${event.id}`}
               className={cn(
-                "group min-w-[270px] shrink-0 snap-start rounded-2xl border border-border/70 bg-card p-4 transition-all duration-200",
-                "hover:border-primary/40 hover:shadow-sm sm:min-w-0 sm:p-5 flex flex-col justify-between gap-3",
+                "group flex min-w-[280px] shrink-0 snap-start flex-col justify-between gap-3 rounded-2xl border border-border/60 bg-card p-4",
+                "transition-[transform,border-color,box-shadow] duration-150 active:scale-[0.99] hover:border-primary/35 hover:shadow-sm sm:min-w-0 sm:p-5",
+                "motion-reduce:transition-none motion-reduce:active:scale-100",
               )}
             >
-              <div className="space-y-3">
+              <div className="space-y-3.5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex size-11 shrink-0 flex-col items-center justify-center rounded-xl bg-secondary text-secondary-foreground font-semibold">
+                    <div className="flex size-11 shrink-0 flex-col items-center justify-center rounded-xl bg-secondary font-semibold text-secondary-foreground">
                       <span className="font-heading text-lg leading-none">
                         {parts.day}
                       </span>
@@ -71,10 +70,10 @@ export function UpcomingServicesCarousel({
                       </span>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[0.7rem] text-muted-foreground font-medium">
+                      <p className="text-[0.7rem] font-medium text-muted-foreground">
                         {parts.weekday}
                       </p>
-                      <p className="flex items-center gap-1 text-xs text-foreground font-medium">
+                      <p className="flex items-center gap-1 text-xs font-medium text-foreground">
                         <ClockIcon className="size-3 text-muted-foreground" />
                         {time}
                       </p>
@@ -85,9 +84,9 @@ export function UpcomingServicesCarousel({
                     <Badge
                       variant="outline"
                       className={cn(
-                        "text-[0.65rem] font-normal px-1.5 py-0",
+                        "px-1.5 py-0 text-[0.65rem] font-normal",
                         progress.status === "complete"
-                          ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+                          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                           : "bg-muted text-muted-foreground",
                       )}
                     >
@@ -97,18 +96,18 @@ export function UpcomingServicesCarousel({
                 </div>
 
                 <div>
-                  <h3 className="font-heading text-base font-medium tracking-tight text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                  <h3 className="line-clamp-1 font-heading text-lg font-medium tracking-tight text-foreground transition-colors group-hover:text-primary">
                     {event.title}
                   </h3>
                   {event.description ? (
-                    <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                    <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
                       {event.description}
                     </p>
                   ) : null}
                 </div>
               </div>
 
-              <div className="flex items-center justify-between border-t border-border/50 pt-2.5 text-xs text-muted-foreground">
+              <div className="flex items-center justify-between border-t border-border/50 pt-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <UsersIcon className="size-3.5" />
                   <span>
@@ -116,7 +115,7 @@ export function UpcomingServicesCarousel({
                     {assignmentsCount === 1 ? "escalado" : "escalados"}
                   </span>
                 </div>
-                <span className="text-primary group-hover:translate-x-0.5 transition-transform inline-flex items-center gap-0.5 text-[0.72rem] font-medium">
+                <span className="inline-flex items-center gap-0.5 text-[0.72rem] font-medium text-primary transition-transform group-hover:translate-x-0.5">
                   Acessar
                   <ArrowRightIcon className="size-3" />
                 </span>
