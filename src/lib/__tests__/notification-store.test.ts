@@ -1,6 +1,9 @@
-import { beforeEach, describe, expect, it } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-import { notificationStore } from "@/lib/notification-store";
+mock.module("server-only", () => ({}));
+
+const { notificationStore } = await import("@/lib/notification-store");
+
 
 describe("Optimistic Notification Store", () => {
   beforeEach(() => {
