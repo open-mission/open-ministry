@@ -14,6 +14,27 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Done
 
+- [x] Design Feedback: Badge de Informações (`PageInfo`) com Drawer/Dialog e Ganho de Espaço nos Cabeçalhos
+  - [x] Criar componente reutilizável `PageInfo` (`src/components/app/page-info.tsx`) com disparador via badge/botão (`InfoIcon` + "Info"), renderizando Drawer responsivo no mobile e Dialog no desktop
+  - [x] Ocultar parágrafos extensos de descrição nos cabeçalhos das páginas para ganho de espaço vertical (~50px), concentrando as informações contextuais no `PageInfo`
+  - [x] Implementado em todas as páginas do painel com descrição:
+    - `/dashboard/events` (Cultos e eventos)
+    - `/dashboard/schedules` (Escalas)
+    - `/dashboard/members` (Sua equipe / Pessoas)
+    - `/dashboard/departments` (Departamentos)
+    - `/dashboard/birthdays` (Aniversariantes)
+    - `/dashboard/church` (Sua igreja)
+    - `/dashboard/notifications` (Notificações)
+    - `/dashboard/profile` (Seu perfil)
+    - `/dashboard/settings` (Configurações)
+
+- [x] PWA & Mobile UX: Ativação de Notificações Push para App Instalado e Identidade Visual no Cabeçalho
+  - [x] Verificação de notificações ativas ao instalar o PWA ou abrir em modo standalone (`PwaNotificationPrompt` e `push-client.ts`)
+  - [x] Prompt flutuante moderno acima da barra de navegação móvel solicitando ativação de notificações push com disparo de permissão nativa, registro VAPID e feedback visual
+  - [x] Substituição do botão hambúrguer no cabeçalho mobile (`header.sticky.top-0`) pela logo e nome da igreja (`MobileHeaderLeadingLoader`), evitando redundância com o botão "Mais" da barra de navegação inferior
+  - [x] Remoção da borda divisora (`border-b`) dos cabeçalhos mensais em listagens de cultos e escalas
+  - [x] Modo de segurança e confirmação de descarte de alterações não salvas no drawer de edição de cronograma
+
 - [x] Design Feedback: Refinamentos Mobile em Detalhes do Culto (`/dashboard/events/[id]`) e Agrupamento no Calendário (`/dashboard/calendar`)
   - [x] Ocultar bloco 80x80 de data no cabeçalho do culto em telas móveis (`hidden sm:flex`) para ganho de espaço vertical e horizontal
   - [x] Remover link redundante de retorno "Cultos e eventos" no corpo da página no mobile (`hidden sm:block`)

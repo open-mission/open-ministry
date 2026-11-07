@@ -40,7 +40,7 @@ export function ScheduleList({
     <div className="space-y-8">
       {groups.map((group) => (
         <section key={group.label} className="space-y-1">
-          <div className="flex items-baseline justify-between gap-2 border-b pb-2">
+          <div className="flex items-baseline justify-between gap-2 pb-1">
             <h2 className="font-heading text-xl tracking-tight">
               {group.label}
             </h2>
