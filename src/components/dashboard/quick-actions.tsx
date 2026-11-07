@@ -1,18 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
+import type { Icon } from "@tabler/icons-react";
 import {
-  CalendarDaysIcon,
-  CalendarPlusIcon,
-  ClipboardListIcon,
-  HeartHandshakeIcon,
-  LayersIcon,
-  MegaphoneIcon,
-  UserCheckIcon,
-  UserPlusIcon,
-  UserRoundIcon,
-} from "lucide-react";
+  IconCalendarEvent,
+  IconCalendarPlus,
+  IconClipboardList,
+  IconHeartHandshake,
+  IconSpeakerphone,
+  IconStack2,
+  IconUserCircle,
+  IconUserPlus,
+  IconUsers,
+} from "@tabler/icons-react";
 
 import { AnnouncementDialog } from "@/components/notifications/announcement-dialog";
 import { CreateEventDialog } from "@/components/events/create-event-dialog";
@@ -33,14 +33,14 @@ type PersonOption = {
 };
 
 const tileClassName = cn(
-  "group flex min-w-[112px] shrink-0 snap-start flex-col items-center justify-center gap-2.5 rounded-2xl border border-border/60 bg-card/80 p-3.5 text-center shadow-xs",
-  "transition-[transform,border-color,background-color,box-shadow] duration-150 active:scale-[0.97]",
-  "hover:border-primary/35 hover:bg-card hover:shadow-sm sm:min-w-0",
+  "group flex min-w-[196px] shrink-0 snap-start items-center gap-3 rounded-2xl border border-border/60 bg-card p-3.5 text-left shadow-xs",
+  "transition-[transform,border-color,box-shadow] duration-150 active:scale-[0.99]",
+  "hover:border-primary/35 hover:shadow-sm sm:min-w-0",
   "motion-reduce:transition-none motion-reduce:active:scale-100",
 );
 
 const iconClassName =
-  "flex size-12 items-center justify-center rounded-2xl transition-colors duration-200";
+  "flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors duration-200";
 
 function QuickActionContent({
   icon: Icon,
@@ -48,7 +48,7 @@ function QuickActionContent({
   hint,
   iconTone,
 }: {
-  icon: LucideIcon;
+  icon: Icon;
   label: string;
   hint: string;
   iconTone: string;
@@ -56,13 +56,13 @@ function QuickActionContent({
   return (
     <>
       <span className={cn(iconClassName, iconTone)}>
-        <Icon className="size-[22px]" />
+        <Icon className="size-5" stroke={1.5} />
       </span>
-      <span className="space-y-0.5">
-        <span className="block text-[0.72rem] font-medium leading-tight text-foreground">
+      <span className="min-w-0 space-y-0.5">
+        <span className="block truncate text-sm font-medium leading-tight text-foreground">
           {label}
         </span>
-        <span className="hidden text-[0.68rem] leading-tight text-muted-foreground sm:block">
+        <span className="block truncate text-xs leading-tight text-muted-foreground">
           {hint}
         </span>
       </span>
@@ -97,7 +97,7 @@ export function QuickActions({
         </span>
       </div>
 
-      <div className="-mx-4 flex gap-3 overflow-x-auto overscroll-x-contain px-4 pb-1.5 pt-0.5 snap-x snap-mandatory scroll-pl-4 scrollbar-none sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-3 sm:px-0 lg:grid-cols-7">
+      <div className="-mx-4 flex gap-3 overflow-x-auto overscroll-x-contain px-4 pb-1.5 pt-0.5 snap-x snap-mandatory scroll-pl-4 scrollbar-none sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-3 sm:px-0 lg:grid-cols-4">
         {isAdmin ? (
           <>
             <CreateEventDialog
@@ -110,7 +110,7 @@ export function QuickActions({
                   aria-label="Criar novo culto ou evento"
                 >
                   <QuickActionContent
-                    icon={CalendarPlusIcon}
+                    icon={IconCalendarPlus}
                     label="Novo culto"
                     hint="Criar evento"
                     iconTone="bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
@@ -131,7 +131,7 @@ export function QuickActions({
                   aria-label="Enviar aviso para a igreja ou departamentos"
                 >
                   <QuickActionContent
-                    icon={MegaphoneIcon}
+                    icon={IconSpeakerphone}
                     label="Enviar aviso"
                     hint="Multicanal"
                     iconTone="bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:bg-amber-500 group-hover:text-white"
@@ -148,7 +148,7 @@ export function QuickActions({
                   aria-label="Cadastrar nova pessoa"
                 >
                   <QuickActionContent
-                    icon={UserPlusIcon}
+                    icon={IconUserPlus}
                     label="Nova pessoa"
                     hint="Cadastrar"
                     iconTone="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white"
@@ -163,7 +163,7 @@ export function QuickActions({
               aria-label="Gerenciar escalas"
             >
               <QuickActionContent
-                icon={ClipboardListIcon}
+                icon={IconClipboardList}
                 label="Escalas"
                 hint="Gerenciar"
                 iconTone="bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:bg-blue-600 group-hover:text-white"
@@ -176,7 +176,7 @@ export function QuickActions({
               aria-label="Abrir agenda"
             >
               <QuickActionContent
-                icon={CalendarDaysIcon}
+                icon={IconCalendarEvent}
                 label="Agenda"
                 hint="Calendário"
                 iconTone="bg-violet-500/10 text-violet-600 dark:text-violet-400 group-hover:bg-violet-600 group-hover:text-white"
@@ -189,7 +189,7 @@ export function QuickActions({
               aria-label="Abrir ministérios"
             >
               <QuickActionContent
-                icon={LayersIcon}
+                icon={IconStack2}
                 label="Ministérios"
                 hint="Equipes"
                 iconTone="bg-orange-500/10 text-orange-600 dark:text-orange-400 group-hover:bg-orange-600 group-hover:text-white"
@@ -202,7 +202,7 @@ export function QuickActions({
               aria-label="Abrir cuidado pastoral"
             >
               <QuickActionContent
-                icon={HeartHandshakeIcon}
+                icon={IconHeartHandshake}
                 label="Cuidado"
                 hint="Pastoral"
                 iconTone="bg-rose-500/10 text-rose-600 dark:text-rose-400 group-hover:bg-rose-600 group-hover:text-white"
@@ -217,7 +217,7 @@ export function QuickActions({
               aria-label="Ver minhas escalas"
             >
               <QuickActionContent
-                icon={ClipboardListIcon}
+                icon={IconClipboardList}
                 label="Minhas escalas"
                 hint="Onde sirvo"
                 iconTone="bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
@@ -230,7 +230,7 @@ export function QuickActions({
               aria-label="Abrir agenda"
             >
               <QuickActionContent
-                icon={CalendarDaysIcon}
+                icon={IconCalendarEvent}
                 label="Agenda"
                 hint="Calendário"
                 iconTone="bg-violet-500/10 text-violet-600 dark:text-violet-400 group-hover:bg-violet-600 group-hover:text-white"
@@ -243,7 +243,7 @@ export function QuickActions({
               aria-label="Abrir departamentos"
             >
               <QuickActionContent
-                icon={LayersIcon}
+                icon={IconStack2}
                 label="Departamentos"
                 hint="Ministérios"
                 iconTone="bg-orange-500/10 text-orange-600 dark:text-orange-400 group-hover:bg-orange-600 group-hover:text-white"
@@ -256,7 +256,7 @@ export function QuickActions({
               aria-label="Ver pessoas"
             >
               <QuickActionContent
-                icon={UserCheckIcon}
+                icon={IconUsers}
                 label="Pessoas"
                 hint="Irmãos na fé"
                 iconTone="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white"
@@ -269,7 +269,7 @@ export function QuickActions({
               aria-label="Ver avisos"
             >
               <QuickActionContent
-                icon={MegaphoneIcon}
+                icon={IconSpeakerphone}
                 label="Avisos"
                 hint="Comunicados"
                 iconTone="bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:bg-amber-500 group-hover:text-white"
@@ -282,7 +282,7 @@ export function QuickActions({
               aria-label="Abrir meu perfil"
             >
               <QuickActionContent
-                icon={UserRoundIcon}
+                icon={IconUserCircle}
                 label="Meu perfil"
                 hint="Dados e senha"
                 iconTone="bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:bg-blue-600 group-hover:text-white"

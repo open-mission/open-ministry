@@ -77,34 +77,39 @@ async function SchedulesContent() {
           </Badge>
         </div>
         <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-          Quem atua em cada encontro de{" "}
+          Acompanhe quem serve em cada encontro de{" "}
           <span className="font-medium text-foreground">
             {organization.name}
-          </span>
-          . As escalas já passadas ficam no histórico.
+          </span>{" "}
+          e veja o que ainda falta montar. As escalas anteriores ficam no
+          histórico.
         </p>
-        {events.length > 0 ? (
+        {upcoming.length > 0 ? (
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
             <span>
               {upcoming.length === 1
-                ? "1 encontro futuro"
-                : `${upcoming.length} encontros futuros`}
+                ? "1 encontro pela frente"
+                : `${upcoming.length} encontros pela frente`}
             </span>
             <span aria-hidden className="text-border">
               ·
             </span>
             <span>
-              {complete === 1
-                ? "1 escala completa"
-                : `${complete} escalas completas`}
+              {complete === 0
+                ? "Nenhuma escala pronta"
+                : complete === 1
+                  ? "1 escala pronta"
+                  : `${complete} escalas prontas`}
             </span>
             <span aria-hidden className="text-border">
               ·
             </span>
             <span>
-              {attention === 1
-                ? "1 para montar"
-                : `${attention} para montar`}
+              {attention === 0
+                ? "Nada pendente"
+                : attention === 1
+                  ? "1 ainda sem escala"
+                  : `${attention} ainda sem escala`}
             </span>
           </p>
         ) : null}
@@ -120,8 +125,8 @@ async function SchedulesContent() {
               Nenhuma escala ainda
             </p>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Cadastre um culto ou evento e defina os departamentos que atuam.
-              A escala de cada ocorrência aparece aqui.
+              Crie um culto ou evento e selecione os departamentos que vão
+              atuar. A escala de cada encontro aparece aqui.
             </p>
           </div>
           <Button asChild variant="outline" size="sm">
@@ -137,21 +142,21 @@ async function SchedulesContent() {
               </h2>
               <span className="text-xs text-muted-foreground">
                 {upcoming.length === 0
-                  ? "nenhum encontro futuro"
+                  ? "nenhum encontro"
                   : upcoming.length === 1
-                    ? "1 encontro futuro"
-                    : `${upcoming.length} encontros futuros`}
+                    ? "1 encontro"
+                    : `${upcoming.length} encontros`}
               </span>
             </div>
 
             {upcoming.length === 0 ? (
               <div className="rounded-xl border border-dashed px-6 py-10 text-center">
                 <p className="text-sm font-medium">
-                  Nenhum encontro futuro
+                  Nenhum encontro marcado
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  As próximas escalas aparecem aqui assim que houver um culto
-                  ou evento marcado.
+                  Quando um culto ou evento for marcado, as próximas escalas
+                  aparecem aqui.
                 </p>
               </div>
             ) : (

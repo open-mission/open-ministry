@@ -107,6 +107,41 @@ export const navGroups: NavGroup[] = [
   },
 ];
 
+export const mobileNavItems: NavItem[] = [
+  {
+    href: "/dashboard",
+    label: "Início",
+    icon: LayoutDashboardIcon,
+    exact: true,
+  },
+  {
+    href: "/dashboard/schedules",
+    label: "Escalas",
+    icon: ClipboardListIcon,
+    exact: false,
+  },
+  {
+    href: "/dashboard/calendar",
+    label: "Agenda",
+    icon: CalendarDaysIcon,
+    exact: false,
+  },
+];
+
 export function isNavItemActive(item: NavItem, pathname: string) {
   return item.exact ? pathname === item.href : pathname.startsWith(item.href);
+}
+
+export function isMobileNavRoute(pathname: string) {
+  return mobileNavItems.some((item) => item.href === pathname);
+}
+
+export function getParentHref(pathname: string) {
+  const segments = pathname.split("/").filter(Boolean);
+
+  if (segments.length <= 2) {
+    return "/dashboard";
+  }
+
+  return `/${segments.slice(0, -1).join("/")}`;
 }

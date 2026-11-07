@@ -276,7 +276,7 @@ export function AvailabilityEditor({ initialData }: AvailabilityEditorProps) {
           </div>
 
           {/* Action Footer */}
-          <div className="flex items-center justify-between border-t pt-4">
+          <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <ClockIcon className="size-3.5" />
               Você pode alterar sua disponibilidade a qualquer momento.
@@ -284,7 +284,7 @@ export function AvailabilityEditor({ initialData }: AvailabilityEditorProps) {
             <Button
               onClick={handleSave}
               disabled={isPending}
-              className="gap-2"
+              className="w-full gap-2 sm:w-auto"
             >
               {isPending ? (
                 <Loader2Icon className="size-4 animate-spin" />

@@ -176,7 +176,7 @@ export function PeopleTable({
               </div>
             </div>
 
-            <ul className="divide-y md:hidden">
+            <ul className="space-y-2.5 p-3 md:hidden">
               {people.map((person) => {
                 const role = person.userId
                   ? roleByUserId[person.userId]
@@ -187,12 +187,15 @@ export function PeopleTable({
                 );
 
                 return (
-                  <li key={person.id} className="space-y-3 px-4 py-4">
+                  <li
+                    key={person.id}
+                    className="rounded-xl border border-border/60 bg-muted/15 p-3"
+                  >
                     <Link
                       href={`/dashboard/members/${person.id}`}
                       className="group flex items-start gap-3"
                     >
-                      <Avatar className="size-9 ring-1 ring-border group-hover:ring-primary transition-all">
+                      <Avatar className="size-10 shrink-0 ring-1 ring-border transition-all group-hover:ring-primary">
                         <AvatarImage
                           src={personDisplayImage(person) ?? undefined}
                           alt={personDisplayName(person)}
@@ -203,7 +206,7 @@ export function PeopleTable({
                       </Avatar>
                       <div className="min-w-0 flex-1 space-y-0.5">
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <p className="text-sm font-medium group-hover:text-primary group-hover:underline transition-colors">
+                          <p className="text-sm font-medium transition-colors group-hover:text-primary group-hover:underline">
                             {personDisplayName(person)}
                           </p>
                           {role ? (
@@ -229,20 +232,22 @@ export function PeopleTable({
                       </div>
                     </Link>
 
-                    <MembershipChips
-                      memberships={person.memberships}
-                      limit={3}
-                    />
+                    <div className="mt-2.5 flex flex-wrap items-center gap-2 border-t border-border/40 pt-2.5">
+                      <MembershipChips
+                        memberships={person.memberships}
+                        limit={3}
+                      />
 
-                    {isAdmin ? (
-                      <div className="flex items-center justify-end gap-1 border-t pt-2">
-                        <PersonActions
-                          person={person}
-                          linkableMembers={linkableMembers}
-                          currentUserId={currentUserId}
-                        />
-                      </div>
-                    ) : null}
+                      {isAdmin ? (
+                        <div className="ml-auto flex items-center gap-0.5">
+                          <PersonActions
+                            person={person}
+                            linkableMembers={linkableMembers}
+                            currentUserId={currentUserId}
+                          />
+                        </div>
+                      ) : null}
+                    </div>
                   </li>
                 );
               })}

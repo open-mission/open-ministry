@@ -85,11 +85,8 @@ async function ProfileContent() {
           Seu perfil
         </h1>
         <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-          Como você aparece em{" "}
-          <span className="font-medium text-foreground">
-            {organization.name}
-          </span>
-          , seus departamentos e as próximas escalas.
+          Atualize seus dados e acompanhe onde você serve e suas próximas
+          escalas.
         </p>
       </header>
 
@@ -137,12 +134,11 @@ async function ProfileContent() {
             <div className="w-full pt-1">
               <Button
                 variant="outline"
-                size="sm"
                 asChild
-                className="w-full gap-1.5"
+                className="h-10 w-full gap-1.5"
               >
                 <Link href="/dashboard/settings">
-                  <SettingsIcon className="size-3.5" />
+                  <SettingsIcon className="size-4" />
                   Configurações e Segurança
                 </Link>
               </Button>

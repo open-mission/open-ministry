@@ -1,40 +1,11 @@
 import Link from "next/link";
+import { MenuIcon } from "lucide-react";
+
 import {
-  CalendarDaysIcon,
-  ClipboardListIcon,
-  LayoutDashboardIcon,
-  MenuIcon,
-  UserRoundIcon,
-} from "lucide-react";
-
+  isNavItemActive,
+  mobileNavItems,
+} from "@/components/app/nav-config";
 import { cn } from "@/lib/utils";
-
-const items = [
-  {
-    href: "/dashboard",
-    label: "Início",
-    icon: LayoutDashboardIcon,
-    exact: true,
-  },
-  {
-    href: "/dashboard/schedules",
-    label: "Escalas",
-    icon: ClipboardListIcon,
-    exact: false,
-  },
-  {
-    href: "/dashboard/calendar",
-    label: "Agenda",
-    icon: CalendarDaysIcon,
-    exact: false,
-  },
-  {
-    href: "/dashboard/profile",
-    label: "Perfil",
-    icon: UserRoundIcon,
-    exact: false,
-  },
-];
 
 export function MobileNavShell({
   activeHref,
@@ -50,12 +21,10 @@ export function MobileNavShell({
       aria-label="Navegação principal"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_-18px_rgba(23,38,31,0.35)] backdrop-blur-xl md:hidden"
     >
-      <div className="grid grid-cols-5 items-stretch px-1 pt-1 pb-1.5">
-        {items.map((item) => {
+      <div className="grid grid-cols-4 items-stretch px-1 pt-1 pb-1.5">
+        {mobileNavItems.map((item) => {
           const isActive = activeHref
-            ? item.exact
-              ? activeHref === item.href
-              : activeHref.startsWith(item.href)
+            ? isNavItemActive(item, activeHref)
             : false;
 
           return (

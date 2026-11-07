@@ -3,18 +3,18 @@ import {
   ArrowRightIcon,
   CalendarDaysIcon,
   ClipboardListIcon,
+  CrownIcon,
   HandHeartIcon,
-  UsersIcon,
 } from "lucide-react";
 
 import { AssignmentList } from "@/components/app/assignment-list";
 import { BirthdaysCard } from "@/components/birthdays/birthdays-card";
-import { StatStrip } from "@/components/app/stat-strip";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import {
   FelicitometroCard,
   type InitialMoodData,
 } from "@/components/felicitometro/felicitometro-card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -37,7 +37,6 @@ import {
 export function MemberDashboard({
   firstName,
   organizationName,
-  peopleCount,
   birthdayEntries,
   memberships,
   assignments,
@@ -46,7 +45,6 @@ export function MemberDashboard({
 }: {
   firstName: string;
   organizationName: string;
-  peopleCount: number;
   birthdayEntries: BirthdayEntry[];
   memberships: PersonMembership[];
   assignments: UpcomingAssignment[];
@@ -72,28 +70,7 @@ export function MemberDashboard({
 
       <FelicitometroCard initialMood={initialMood} userName={firstName} />
 
-      <StatStrip
-        items={[
-          {
-            icon: UsersIcon,
-            label: "Pessoas",
-            value: peopleCount,
-            hint: "fazem parte da igreja",
-          },
-          {
-            icon: ClipboardListIcon,
-            label: "Minhas escalas",
-            value: assignments.length,
-            hint: "encontros futuros",
-          },
-          {
-            icon: HandHeartIcon,
-            label: "Meus departamentos",
-            value: memberships.length,
-            hint: "onde você serve",
-          },
-        ]}
-      />
+      <MemberDepartments memberships={memberships} />
 
       <BirthdaysCard entries={birthdayEntries} />
 
@@ -229,5 +206,103 @@ export function MemberDashboard({
         </Card>
       </div>
     </div>
+  );
+}
+
+function MemberDepartments({
+  memberships,
+}: {
+  memberships: PersonMembership[];
+}) {
+  return (
+    <section aria-labelledby="my-departments-heading" className="space-y-4">
+      <div className="flex items-end justify-between gap-3">
+        <div className="space-y-1">
+          <h2
+            id="my-departments-heading"
+            className="font-heading text-lg leading-none tracking-tight sm:text-xl"
+          >
+            Meus departamentos
+          </h2>
+          <p className="text-xs text-muted-foreground sm:text-sm">
+            Onde você serve e as funções que exerce.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/departments"
+          className="group inline-flex shrink-0 items-center gap-1 pb-0.5 text-xs font-medium text-primary hover:underline"
+        >
+          Ver todos
+          <ArrowRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      </div>
+
+      {memberships.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed px-4 py-8 text-center">
+          <span className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <HandHeartIcon className="size-5" />
+          </span>
+          <div className="space-y-1">
+            <p className="text-sm font-medium">
+              Você ainda não faz parte de um departamento
+            </p>
+            <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
+              Quando entrar em um departamento, ele aparece aqui com suas
+              funções e a agenda.
+            </p>
+          </div>
+          <Button asChild variant="outline" size="sm" className="h-10">
+            <Link href="/dashboard/departments">
+              Conhecer departamentos
+            </Link>
+          </Button>
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {memberships.map((membership) => {
+            const functions = membership.assignments
+              .map((assignment) => assignment.function.name)
+              .join(" · ");
+
+            return (
+              <Link
+                key={membership.id}
+                href={`/dashboard/departments/${membership.department.id}`}
+                className="group flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-4 transition-[transform,border-color,box-shadow] duration-150 active:scale-[0.99] hover:border-primary/35 hover:shadow-sm motion-reduce:transition-none motion-reduce:active:scale-100"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <HandHeartIcon className="size-5" />
+                  </span>
+                  {membership.isLeader ? (
+                    <Badge
+                      variant="secondary"
+                      className="gap-1 font-normal"
+                    >
+                      <CrownIcon className="size-3" />
+                      Líder
+                    </Badge>
+                  ) : null}
+                </div>
+
+                <div className="min-w-0 space-y-1">
+                  <p className="truncate font-heading text-base leading-tight tracking-tight">
+                    {membership.department.name}
+                  </p>
+                  <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                    {functions || "Nenhuma função atribuída ainda."}
+                  </p>
+                </div>
+
+                <span className="mt-auto inline-flex items-center gap-1 text-xs font-medium text-primary">
+                  Abrir departamento
+                  <ArrowRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </section>
   );
 }

@@ -267,14 +267,14 @@ export function FelicitometroCard({
 
             {state?.error ? <FormAlert>{state.error}</FormAlert> : null}
 
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
               {initialMood ? (
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setIsEditing(false)}
-                  className="h-10 text-sm sm:h-9 sm:text-xs"
+                  className="h-10 w-full text-sm sm:h-9 sm:w-auto sm:text-xs"
                 >
                   Cancelar
                 </Button>
@@ -282,7 +282,7 @@ export function FelicitometroCard({
               <SubmitButton
                 size="sm"
                 pendingLabel="Salvando..."
-                className="h-10 px-4 text-sm sm:h-9 sm:text-xs"
+                className="h-10 w-full px-4 text-sm sm:h-9 sm:w-auto sm:text-xs"
               >
                 Registrar sentimento
               </SubmitButton>
