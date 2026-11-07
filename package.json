@@ -1,6 +1,6 @@
 {
   "name": "open-ministry",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "private": true,
   "license": "SEE LICENSE IN LICENSE",
   "scripts": {
@@ -10,6 +10,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
+    "test": "bun test --preload ./src/test/setup.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
@@ -62,6 +63,7 @@
   "devDependencies": {
     "@better-auth/cli": "^1.4.21",
     "@tailwindcss/turbopack": "^4",
+    "@types/bun": "^1.4.4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

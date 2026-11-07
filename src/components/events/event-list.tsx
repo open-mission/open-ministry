@@ -112,7 +112,11 @@ function EventRow({
           {event.recurrence ? (
             <Badge variant="outline" className="gap-1 font-normal">
               <RepeatIcon className="size-3" />
-              {recurrenceLabel(event.recurrence, event.recurrenceInterval)}
+              {recurrenceLabel(
+                event.recurrence,
+                event.recurrenceInterval,
+                event.startsAt,
+              )}
             </Badge>
           ) : null}
         </div>
