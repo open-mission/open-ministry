@@ -6,6 +6,7 @@ import {
   ArrowDownIcon,
   ArrowUpIcon,
   ClockIcon,
+  GripVerticalIcon,
   ListOrderedIcon,
   Loader2Icon,
   PencilIcon,
@@ -14,6 +15,23 @@ import {
   Trash2Icon,
   UserIcon,
 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 import {
   createPlanItemAction,
@@ -41,8 +59,10 @@ import {
 } from "@/components/ui/card";
 import {
   computePlanItemTimes,
+  type ComputedPlanItem,
 } from "@/lib/plan-utils";
 import { getInitials } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 type PersonOption = {
   id: string;
@@ -88,13 +108,31 @@ export function PlanEditor({
   canManage,
 }: PlanEditorProps) {
   const [isPending, startTransition] = useTransition();
+  const [items, setItems] = useState<RawPlanItem[]>(planItems);
+  const [prevPlanItems, setPrevPlanItems] = useState(planItems);
   const [editingItem, setEditingItem] = useState<RawPlanItem | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  if (prevPlanItems !== planItems) {
+    setPrevPlanItems(planItems);
+    setItems(planItems);
+  }
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
   const { computedItems, totalPlanSeconds } = computePlanItemTimes(
     startsAt,
-    planItems,
+    items,
   );
 
   const eventDurationSeconds = Math.max(
@@ -113,21 +151,41 @@ export function PlanEditor({
     return `${minutes} min`;
   }
 
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = items.findIndex((i) => i.id === active.id);
+    const newIndex = items.findIndex((i) => i.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newItems = arrayMove(items, oldIndex, newIndex);
+    setItems(newItems);
+
+    const orderedIds = newItems.map((item) => item.id);
+    startTransition(async () => {
+      const res = await reorderPlanItemsAction(eventId, orderedIds);
+      if (!res.ok) {
+        toast.error(res.error || "Erro ao reordenar cronograma.");
+        setItems(planItems);
+      }
+    });
+  }
+
   function handleMove(index: number, direction: "up" | "down") {
     const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= computedItems.length) return;
+    if (targetIndex < 0 || targetIndex >= items.length) return;
 
-    const newOrder = [...computedItems];
-    const temp = newOrder[index];
-    newOrder[index] = newOrder[targetIndex];
-    newOrder[targetIndex] = temp;
+    const newItems = arrayMove(items, index, targetIndex);
+    setItems(newItems);
 
-    const orderedIds = newOrder.map((item) => item.id);
+    const orderedIds = newItems.map((item) => item.id);
 
     startTransition(async () => {
       const res = await reorderPlanItemsAction(eventId, orderedIds);
       if (!res.ok) {
         toast.error(res.error || "Erro ao reordenar.");
+        setItems(planItems);
       }
     });
   }
@@ -302,7 +360,8 @@ export function PlanEditor({
       ) : (
         <div className="divide-y rounded-xl border bg-card overflow-hidden shadow-xs">
           {/* Table Header on Desktop */}
-          <div className="hidden grid-cols-[80px_90px_1fr_220px_100px] items-center gap-3 bg-muted/40 px-4 py-2.5 text-[0.7rem] font-semibold tracking-wider text-muted-foreground uppercase sm:grid">
+          <div className="hidden grid-cols-[36px_80px_90px_1fr_220px_100px] items-center gap-3 bg-muted/40 px-4 py-2.5 text-[0.7rem] font-semibold tracking-wider text-muted-foreground uppercase sm:grid">
+            <span />
             <span>Início</span>
             <span>Duração</span>
             <span>Momento / Detalhes</span>
@@ -310,226 +369,34 @@ export function PlanEditor({
             <span className="text-right">Ações</span>
           </div>
 
-          {computedItems.map((item, index) => {
-            if (item.type === "header") {
-              return (
-                <div
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={computedItems.map((item) => item.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {computedItems.map((item, index) => (
+                <SortablePlanRow
                   key={item.id}
-                  className="group flex items-center justify-between bg-muted/50 px-4 py-2.5 transition-colors hover:bg-muted/70"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">:::</span>
-                    <span className="font-heading text-xs font-semibold tracking-wider text-foreground uppercase">
-                      {item.title}
-                    </span>
-                  </div>
-
-                  {canManage ? (
-                    <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100">
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        disabled={index === 0 || isPending}
-                        onClick={() => handleMove(index, "up")}
-                        title="Mover para cima"
-                      >
-                        <ArrowUpIcon className="size-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        disabled={index === computedItems.length - 1 || isPending}
-                        onClick={() => handleMove(index, "down")}
-                        title="Mover para baixo"
-                      >
-                        <ArrowDownIcon className="size-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={() => {
-                          setEditingItem({
-                            id: item.id,
-                            eventId: item.eventId,
-                            sectionId: item.sectionId,
-                            type: item.type,
-                            title: item.title,
-                            description: item.description,
-                            durationSeconds: item.durationSeconds,
-                            order: item.order,
-                            personId: item.personId,
-                            customResponsible: item.customResponsible,
-                          });
-                          setEditDialogOpen(true);
-                        }}
-                        title="Editar seção"
-                      >
-                        <PencilIcon className="size-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        className="text-muted-foreground hover:text-destructive"
-                        disabled={deletingId === item.id || isPending}
-                        onClick={() => handleDelete(item.id)}
-                        title="Excluir seção"
-                      >
-                        <Trash2Icon className="size-3.5" />
-                      </Button>
-                    </div>
-                  ) : null}
-                </div>
-              );
-            }
-
-            return (
-              <div
-                key={item.id}
-                className="group flex flex-col gap-2 p-3.5 transition-colors hover:bg-muted/20 sm:grid sm:grid-cols-[80px_90px_1fr_220px_100px] sm:items-center sm:gap-3 sm:px-4 sm:py-3"
-              >
-                {/* Horário */}
-                <div className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground">
-                  <span className="font-semibold text-foreground">
-                    {item.timeLabel}
-                  </span>
-                </div>
-
-                {/* Duração LEN */}
-                <div>
-                  <Badge
-                    variant="secondary"
-                    className="font-mono text-xs font-normal"
-                  >
-                    {item.durationLabel}
-                  </Badge>
-                </div>
-
-                {/* Título e Detalhes */}
-                <div className="min-w-0 space-y-0.5">
-                  <p className="font-medium text-sm text-foreground">
-                    {item.title}
-                  </p>
-                  {item.description ? (
-                    <p className="line-clamp-2 text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
-                      {item.description}
-                    </p>
-                  ) : null}
-                </div>
-
-                {/* Responsável */}
-                <div className="flex items-center gap-2">
-                  {item.person ? (
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Avatar className="size-6 shrink-0 ring-1 ring-border">
-                        <AvatarImage src={item.person.avatarUrl ?? undefined} />
-                        <AvatarFallback className="text-[10px]">
-                          {getInitials(item.person.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="truncate text-xs font-medium text-foreground">
-                        {item.person.name}
-                      </span>
-                    </div>
-                  ) : item.customResponsible ? (
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                        <UserIcon className="size-3" />
-                      </span>
-                      <span className="truncate text-xs text-foreground">
-                        {item.customResponsible}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-muted-foreground/60 italic">
-                      A definir
-                    </span>
-                  )}
-                </div>
-
-                {/* Ações */}
-                <div className="flex items-center justify-end gap-1">
-                  {canManage ? (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        disabled={index === 0 || isPending}
-                        onClick={() => handleMove(index, "up")}
-                        title="Subir"
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <ArrowUpIcon className="size-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        disabled={
-                          index === computedItems.length - 1 || isPending
-                        }
-                        onClick={() => handleMove(index, "down")}
-                        title="Descer"
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <ArrowDownIcon className="size-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={() => {
-                          setEditingItem({
-                            id: item.id,
-                            eventId: item.eventId,
-                            sectionId: item.sectionId,
-                            type: item.type,
-                            title: item.title,
-                            description: item.description,
-                            durationSeconds: item.durationSeconds,
-                            order: item.order,
-                            personId: item.personId,
-                            customResponsible: item.customResponsible,
-                          });
-                          setEditDialogOpen(true);
-                        }}
-                        title="Editar"
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <PencilIcon className="size-3.5" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon-xs"
-                            className="text-muted-foreground hover:text-destructive"
-                            title="Remover"
-                          >
-                            <Trash2Icon className="size-3.5" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Remover momento?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Tem certeza que deseja remover &ldquo;{item.title}&rdquo; do cronograma?
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(item.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Remover
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </>
-                  ) : null}
-                </div>
-              </div>
-            );
-          })}
+                  item={item}
+                  index={index}
+                  totalCount={computedItems.length}
+                  canManage={canManage}
+                  isPending={isPending}
+                  deletingId={deletingId}
+                  onMove={handleMove}
+                  onEdit={(raw) => {
+                    setEditingItem(raw);
+                    setEditDialogOpen(true);
+                  }}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         </div>
       )}
 
@@ -555,6 +422,280 @@ export function PlanEditor({
           }}
         />
       ) : null}
+    </div>
+  );
+}
+
+type SortablePlanRowProps = {
+  item: ComputedPlanItem;
+  index: number;
+  totalCount: number;
+  canManage: boolean;
+  isPending: boolean;
+  deletingId: string | null;
+  onMove: (index: number, direction: "up" | "down") => void;
+  onEdit: (item: RawPlanItem) => void;
+  onDelete: (id: string) => void;
+};
+
+function SortablePlanRow({
+  item,
+  index,
+  totalCount,
+  canManage,
+  isPending,
+  deletingId,
+  onMove,
+  onEdit,
+  onDelete,
+}: SortablePlanRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id, disabled: !canManage });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const rawItem: RawPlanItem = {
+    id: item.id,
+    eventId: item.eventId,
+    sectionId: item.sectionId,
+    type: item.type,
+    title: item.title,
+    description: item.description,
+    durationSeconds: item.durationSeconds,
+    order: item.order,
+    personId: item.personId,
+    customResponsible: item.customResponsible,
+    person: item.person,
+  };
+
+  if (item.type === "header") {
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={cn(
+          "group flex items-center justify-between bg-muted/40 px-4 py-2.5 transition-colors hover:bg-muted/60",
+          isDragging &&
+            "relative z-30 bg-muted/90 shadow-md ring-2 ring-primary/40 rounded-lg opacity-95",
+        )}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          {canManage ? (
+            <button
+              type="button"
+              {...attributes}
+              {...listeners}
+              className="touch-none cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-foreground p-1 rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+              title="Arrastar para reordenar"
+              aria-label="Arrastar para reordenar"
+            >
+              <GripVerticalIcon className="size-4" />
+            </button>
+          ) : null}
+          <span className="font-heading text-xs font-semibold tracking-wider text-foreground uppercase truncate">
+            {item.title}
+          </span>
+        </div>
+
+        {canManage ? (
+          <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100">
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              disabled={index === 0 || isPending}
+              onClick={() => onMove(index, "up")}
+              title="Mover para cima"
+            >
+              <ArrowUpIcon className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              disabled={index === totalCount - 1 || isPending}
+              onClick={() => onMove(index, "down")}
+              title="Mover para baixo"
+            >
+              <ArrowDownIcon className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => onEdit(rawItem)}
+              title="Editar seção"
+            >
+              <PencilIcon className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              className="text-muted-foreground hover:text-destructive"
+              disabled={deletingId === item.id || isPending}
+              onClick={() => onDelete(item.id)}
+              title="Excluir seção"
+            >
+              <Trash2Icon className="size-3.5" />
+            </Button>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "group flex flex-col gap-2 p-3.5 transition-colors hover:bg-muted/20 sm:grid sm:grid-cols-[36px_80px_90px_1fr_220px_100px] sm:items-center sm:gap-3 sm:px-4 sm:py-3",
+        isDragging &&
+          "relative z-30 bg-card shadow-lg ring-2 ring-primary/40 rounded-lg opacity-95",
+      )}
+    >
+      {/* Drag Handle */}
+      <div className="flex items-center">
+        {canManage ? (
+          <button
+            type="button"
+            {...attributes}
+            {...listeners}
+            className="touch-none cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-foreground p-1 rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+            title="Arrastar para reordenar"
+            aria-label="Arrastar para reordenar"
+          >
+            <GripVerticalIcon className="size-4" />
+          </button>
+        ) : (
+          <span className="size-4" />
+        )}
+      </div>
+
+      {/* Horário */}
+      <div className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground">
+        <span className="font-semibold text-foreground">{item.timeLabel}</span>
+      </div>
+
+      {/* Duração */}
+      <div>
+        <Badge variant="secondary" className="font-mono text-xs font-normal">
+          {item.durationLabel}
+        </Badge>
+      </div>
+
+      {/* Título e Detalhes */}
+      <div className="min-w-0 space-y-0.5">
+        <p className="font-medium text-sm text-foreground">{item.title}</p>
+        {item.description ? (
+          <p className="line-clamp-2 text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
+            {item.description}
+          </p>
+        ) : null}
+      </div>
+
+      {/* Responsável */}
+      <div className="flex items-center gap-2">
+        {item.person ? (
+          <div className="flex items-center gap-2 min-w-0">
+            <Avatar className="size-6 shrink-0 ring-1 ring-border">
+              <AvatarImage src={item.person.avatarUrl ?? undefined} />
+              <AvatarFallback className="text-[10px]">
+                {getInitials(item.person.name)}
+              </AvatarFallback>
+            </Avatar>
+            <span className="truncate text-xs font-medium text-foreground">
+              {item.person.name}
+            </span>
+          </div>
+        ) : item.customResponsible ? (
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <UserIcon className="size-3" />
+            </span>
+            <span className="truncate text-xs text-foreground">
+              {item.customResponsible}
+            </span>
+          </div>
+        ) : (
+          <span className="text-xs text-muted-foreground/60 italic">
+            A definir
+          </span>
+        )}
+      </div>
+
+      {/* Ações */}
+      <div className="flex items-center justify-end gap-1">
+        {canManage ? (
+          <>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              disabled={index === 0 || isPending}
+              onClick={() => onMove(index, "up")}
+              title="Subir"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <ArrowUpIcon className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              disabled={index === totalCount - 1 || isPending}
+              onClick={() => onMove(index, "down")}
+              title="Descer"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <ArrowDownIcon className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => onEdit(rawItem)}
+              title="Editar"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <PencilIcon className="size-3.5" />
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="text-muted-foreground hover:text-destructive"
+                  title="Remover"
+                >
+                  <Trash2Icon className="size-3.5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Remover momento?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tem certeza que deseja remover &ldquo;{item.title}&rdquo; do
+                    cronograma?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => onDelete(item.id)}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Remover
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }
