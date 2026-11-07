@@ -25,10 +25,10 @@ export function MobileHeaderLeading() {
       size="icon-sm"
       aria-label="Voltar"
       title="Voltar"
-      className="md:hidden"
+      className="-ml-1 size-9 shrink-0 md:hidden"
     >
       <Link href={getParentHref(pathname)}>
-        <ArrowLeftIcon />
+        <ArrowLeftIcon className="size-5" />
       </Link>
     </Button>
   );
