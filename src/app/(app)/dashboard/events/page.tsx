@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { CalendarDaysIcon } from "lucide-react";
 
+import { PageInfo } from "@/components/app/page-info";
 import { CreateEventDialog } from "@/components/events/create-event-dialog";
 import { EventList } from "@/components/events/event-list";
 import { Badge } from "@/components/ui/badge";
@@ -45,22 +46,25 @@ async function EventsContent() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <h1 className="font-heading text-4xl leading-none tracking-tight">
-              Cultos e eventos
-            </h1>
-            <Badge variant="outline" className="font-normal">
-              {upcoming.length}
-            </Badge>
-          </div>
-          <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-            A agenda de{" "}
-            <span className="font-medium text-foreground">
-              {organization.name}
-            </span>
-            , com os departamentos e a escala de cada ocorrência.
-          </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="font-heading text-4xl leading-none tracking-tight">
+            Cultos e eventos
+          </h1>
+          <Badge variant="outline" className="font-normal">
+            {upcoming.length}
+          </Badge>
+          <PageInfo
+            title="Cultos e eventos"
+            description={
+              <>
+                A agenda de{" "}
+                <span className="font-medium text-foreground">
+                  {organization.name}
+                </span>
+                , com os departamentos e a escala de cada ocorrência.
+              </>
+            }
+          />
         </div>
         {isAdmin ? (
           <CreateEventDialog

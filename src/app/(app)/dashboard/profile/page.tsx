@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 
 import { AssignmentList } from "@/components/app/assignment-list";
+import { PageInfo } from "@/components/app/page-info";
 import { RoleBadge } from "@/components/members/role-badge";
 import { ProfileEditor } from "@/components/profile/profile-editor";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -80,14 +81,14 @@ async function ProfileContent() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-      <header className="space-y-2">
+      <header className="flex flex-wrap items-center gap-2">
         <h1 className="font-heading text-4xl leading-none tracking-tight">
           Seu perfil
         </h1>
-        <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-          Atualize seus dados e acompanhe onde você serve e suas próximas
-          escalas.
-        </p>
+        <PageInfo
+          title="Seu perfil"
+          description="Atualize seus dados e acompanhe onde você serve e suas próximas escalas."
+        />
       </header>
 
       <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">

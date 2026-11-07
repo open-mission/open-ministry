@@ -6,6 +6,7 @@ import {
   ArrowDownIcon,
   ArrowUpIcon,
   BookmarkPlusIcon,
+  CheckIcon,
   ClockIcon,
   DownloadIcon,
   GripVerticalIcon,
@@ -18,6 +19,7 @@ import {
   Trash2Icon,
   UploadIcon,
   UserIcon,
+  XIcon,
 } from "lucide-react";
 import {
   DndContext,
@@ -69,9 +71,9 @@ import {
 } from "@/components/ui/card";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
+  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
@@ -140,6 +142,48 @@ export function PlanEditor({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [mobileEditDrawerOpen, setMobileEditDrawerOpen] = useState(false);
+  const [hasUnsavedReorder, setHasUnsavedReorder] = useState(false);
+  const [drawerSnapshot, setDrawerSnapshot] = useState<RawPlanItem[]>([]);
+  const [showDiscardAlert, setShowDiscardAlert] = useState(false);
+
+  function openMobileDrawer() {
+    setDrawerSnapshot(items);
+    setHasUnsavedReorder(false);
+    setMobileEditDrawerOpen(true);
+  }
+
+  function handleCloseDrawerRequest() {
+    if (hasUnsavedReorder) {
+      setShowDiscardAlert(true);
+    } else {
+      setMobileEditDrawerOpen(false);
+    }
+  }
+
+  function handleDiscardChanges() {
+    if (drawerSnapshot.length > 0) {
+      setItems(drawerSnapshot);
+    }
+    setHasUnsavedReorder(false);
+    setShowDiscardAlert(false);
+    setMobileEditDrawerOpen(false);
+    toast.info("Alterações na ordem descartadas.");
+  }
+
+  function handleSaveDrawer() {
+    const orderedIds = items.map((item) => item.id);
+    startTransition(async () => {
+      const res = await reorderPlanItemsAction(eventId, orderedIds);
+      if (res.ok) {
+        toast.success("Cronograma salvo com sucesso!");
+        setHasUnsavedReorder(false);
+        setMobileEditDrawerOpen(false);
+        setShowDiscardAlert(false);
+      } else {
+        toast.error(res.error || "Erro ao salvar cronograma.");
+      }
+    });
+  }
 
   // Template and action dialog states
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -195,14 +239,18 @@ export function PlanEditor({
     const newItems = arrayMove(items, oldIndex, newIndex);
     setItems(newItems);
 
-    const orderedIds = newItems.map((item) => item.id);
-    startTransition(async () => {
-      const res = await reorderPlanItemsAction(eventId, orderedIds);
-      if (!res.ok) {
-        toast.error(res.error || "Erro ao reordenar cronograma.");
-        setItems(planItems);
-      }
-    });
+    if (mobileEditDrawerOpen) {
+      setHasUnsavedReorder(true);
+    } else {
+      const orderedIds = newItems.map((item) => item.id);
+      startTransition(async () => {
+        const res = await reorderPlanItemsAction(eventId, orderedIds);
+        if (!res.ok) {
+          toast.error(res.error || "Erro ao reordenar cronograma.");
+          setItems(planItems);
+        }
+      });
+    }
   }
 
   function handleMove(index: number, direction: "up" | "down") {
@@ -212,15 +260,18 @@ export function PlanEditor({
     const newItems = arrayMove(items, index, targetIndex);
     setItems(newItems);
 
-    const orderedIds = newItems.map((item) => item.id);
-
-    startTransition(async () => {
-      const res = await reorderPlanItemsAction(eventId, orderedIds);
-      if (!res.ok) {
-        toast.error(res.error || "Erro ao reordenar.");
-        setItems(planItems);
-      }
-    });
+    if (mobileEditDrawerOpen) {
+      setHasUnsavedReorder(true);
+    } else {
+      const orderedIds = newItems.map((item) => item.id);
+      startTransition(async () => {
+        const res = await reorderPlanItemsAction(eventId, orderedIds);
+        if (!res.ok) {
+          toast.error(res.error || "Erro ao reordenar.");
+          setItems(planItems);
+        }
+      });
+    }
   }
 
   function handleDelete(id: string) {
@@ -338,7 +389,7 @@ export function PlanEditor({
         {canManage && computedItems.length > 0 ? (
           <div className="sm:hidden pt-1">
             <Button
-              onClick={() => setMobileEditDrawerOpen(true)}
+              onClick={openMobileDrawer}
               className="w-full gap-2 rounded-xl h-9 font-medium"
               size="sm"
             >
@@ -454,26 +505,42 @@ export function PlanEditor({
       {canManage ? (
         <Drawer
           open={mobileEditDrawerOpen}
-          onOpenChange={setMobileEditDrawerOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              handleCloseDrawerRequest();
+            } else {
+              openMobileDrawer();
+            }
+          }}
         >
           <DrawerContent className="h-[92dvh] max-h-[92dvh] flex flex-col gap-0 rounded-t-[28px] border-x-0 border-b-0 bg-background p-0">
-            <DrawerHeader className="px-4 pt-3 pb-2 shrink-0 border-b flex flex-row items-center justify-between text-left">
-              <div>
-                <DrawerTitle className="font-heading text-lg">Editar Cronograma</DrawerTitle>
-                <DrawerDescription className="text-xs">
-                  Reordene e gerencie os momentos do culto.
+            {/* Header: Title, Description e Close Button */}
+            <div className="relative px-5 pt-3.5 pb-3 border-b text-left">
+              <DrawerHeader className="p-0 text-left">
+                <div className="flex items-center gap-2">
+                  <DrawerTitle className="font-heading text-lg tracking-tight">
+                    Editar Cronograma
+                  </DrawerTitle>
+                  {hasUnsavedReorder ? (
+                    <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                      Alterações pendentes
+                    </span>
+                  ) : null}
+                </div>
+                <DrawerDescription className="text-xs text-muted-foreground mt-0.5">
+                  Arraste ou use as setas para reordenar os momentos e seções do culto.
                 </DrawerDescription>
-              </div>
-              <DrawerClose asChild>
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="h-8 rounded-lg px-3 text-xs font-medium"
-                >
-                  Concluir
-                </Button>
-              </DrawerClose>
-            </DrawerHeader>
+              </DrawerHeader>
+
+              <button
+                type="button"
+                onClick={handleCloseDrawerRequest}
+                className="absolute right-4 top-3.5 flex size-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                aria-label="Fechar"
+              >
+                <XIcon className="size-4" />
+              </button>
+            </div>
 
             {/* Quick Actions Toolbar */}
             <div className="flex items-center gap-2 px-4 py-2.5 border-b bg-muted/20 shrink-0 overflow-x-auto no-scrollbar">
@@ -561,7 +628,7 @@ export function PlanEditor({
             </div>
 
             {/* Sortable List inside Drawer */}
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5 pb-20">
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5">
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -591,9 +658,56 @@ export function PlanEditor({
                 </SortableContext>
               </DndContext>
             </div>
+
+            {/* Dedicated Drawer Footer */}
+            <DrawerFooter className="p-3 sm:p-4 border-t bg-background shrink-0 flex flex-row gap-2.5 items-center">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCloseDrawerRequest}
+                className="flex-1 h-10 rounded-xl text-xs sm:text-sm font-medium"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="default"
+                disabled={isPending}
+                onClick={handleSaveDrawer}
+                className="flex-1 h-10 rounded-xl text-xs sm:text-sm font-medium gap-1.5"
+              >
+                <CheckIcon className="size-4" />
+                {hasUnsavedReorder ? "Salvar e Concluir" : "Concluir"}
+              </Button>
+            </DrawerFooter>
           </DrawerContent>
         </Drawer>
       ) : null}
+
+      {/* Discard confirmation dialog */}
+      <AlertDialog open={showDiscardAlert} onOpenChange={setShowDiscardAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Descartar alterações?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você possui alterações na ordem dos momentos do cronograma que ainda não foram salvas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel>Continuar editando</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={handleDiscardChanges}
+              className="text-destructive hover:bg-destructive/10"
+            >
+              Descartar alterações
+            </Button>
+            <AlertDialogAction onClick={handleSaveDrawer} disabled={isPending}>
+              Salvar agora
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Edit Dialog */}
       {editingItem ? (

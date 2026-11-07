@@ -20,6 +20,7 @@ import type {
   PasskeyViewItem,
   SessionItem,
 } from "@/app/actions/settings";
+import { PageInfo } from "@/components/app/page-info";
 import { AccountProfileCard } from "@/components/settings/account-profile-card";
 import { ActiveSessionsCard } from "@/components/settings/active-sessions-card";
 import { AdminChurchSettingsCard } from "@/components/settings/admin-church-settings-card";
@@ -104,16 +105,14 @@ export function SettingsView({
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 sm:gap-8">
       {/* Page Header */}
-      <header className="space-y-1.5">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="font-heading text-3xl sm:text-4xl leading-none tracking-tight">
-            Configurações
-          </h1>
-        </div>
-        <p className="max-w-2xl text-xs sm:text-sm leading-relaxed text-muted-foreground">
-          Gerencie os dados da sua conta, chaves de acesso biométricas (passkeys),
-          sessões ativas, preferências e recursos da sua igreja.
-        </p>
+      <header className="flex flex-wrap items-center gap-2">
+        <h1 className="font-heading text-3xl sm:text-4xl leading-none tracking-tight">
+          Configurações
+        </h1>
+        <PageInfo
+          title="Configurações"
+          description="Gerencie os dados da sua conta, chaves de acesso biométricas (passkeys), sessões ativas, preferências e recursos da sua igreja."
+        />
       </header>
 
       {/* ------------------------------------------------------------------ */}

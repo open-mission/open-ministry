@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { ChurchIcon, UsersIcon } from "lucide-react";
 
+import { PageInfo } from "@/components/app/page-info";
 import { ChurchBrandingForm } from "@/components/church/church-branding-form";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -36,14 +37,14 @@ async function ChurchContent() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-      <header className="space-y-2">
+      <header className="flex flex-wrap items-center gap-2">
         <h1 className="font-heading text-4xl leading-none tracking-tight">
           Sua igreja
         </h1>
-        <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-          O nome e o logo que a equipe vê no painel, nos convites e no
-          diretório.
-        </p>
+        <PageInfo
+          title="Sua igreja"
+          description="O nome e o logo que a equipe vê no painel, nos convites e no diretório."
+        />
       </header>
 
       <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">

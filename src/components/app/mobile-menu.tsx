@@ -11,7 +11,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ChevronRightIcon,
-  ChurchIcon,
   LogOutIcon,
   MenuIcon,
   MoonIcon,
@@ -86,12 +85,11 @@ export function MobileMenuTrigger({ className }: { className?: string }) {
 
 export function MobileMenu({
   organizationName,
-  organizationLogo,
   role,
   user,
 }: {
   organizationName: string;
-  organizationLogo: string | null;
+  organizationLogo?: string | null;
   role: string;
   user: {
     name: string;
@@ -121,75 +119,54 @@ export function MobileMenu({
           </DrawerDescription>
         </DrawerHeader>
 
-        <div className="flex items-center justify-between gap-4 px-5 pt-1 pb-4">
-          <div className="flex min-w-0 items-center gap-3">
-            {organizationLogo ? (
-              <Avatar className="size-10 shrink-0 rounded-xl">
-                <AvatarImage
-                  src={organizationLogo}
-                  alt={`Logo de ${organizationName}`}
-                />
-                <AvatarFallback className="rounded-xl bg-primary text-primary-foreground">
-                  <ChurchIcon className="size-4" />
-                </AvatarFallback>
-              </Avatar>
-            ) : (
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                <ChurchIcon className="size-4" />
-              </span>
-            )}
-            <div className="min-w-0">
-              <p className="truncate font-heading text-lg leading-tight tracking-tight">
-                OpenMinistry
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {organizationName}
-              </p>
-            </div>
-          </div>
-
-          <DrawerClose asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Fechar menu"
-              className="shrink-0 text-muted-foreground"
-            >
-              <XIcon />
-            </Button>
-          </DrawerClose>
-        </div>
-
         <div className="relative min-h-0 flex-1">
-          <div className="h-full overflow-y-auto overscroll-contain px-4 pb-6">
-            <Link
-              href="/dashboard/profile"
-              onClick={() => setOpen(false)}
-              className="mb-5 flex items-center gap-3.5 rounded-2xl border border-border/70 bg-card px-4 py-3.5 transition-colors active:bg-muted/60"
-            >
-              <Avatar className="size-12 shrink-0 border">
-                <AvatarImage src={user.image ?? undefined} alt={user.name} />
-                <AvatarFallback className="bg-primary/10 font-heading text-base text-primary">
-                  {getInitials(user.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-heading text-base leading-tight tracking-tight">
-                  {user.name}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {user.email}
-                </p>
-                <Badge
-                  variant="secondary"
-                  className="mt-1.5 h-5 px-2 text-[10px] font-medium"
+          <div className="h-full overflow-y-auto overscroll-contain px-4 pt-3 pb-6">
+            <div className="mb-5 flex items-center justify-between gap-2">
+              <Link
+                href="/dashboard/profile"
+                onClick={() => setOpen(false)}
+                className="flex min-w-0 flex-1 items-center gap-3.5 rounded-2xl border border-border/70 bg-card px-4 py-3.5 transition-colors active:bg-muted/60"
+              >
+                <Avatar className="size-12 shrink-0 border">
+                  <AvatarImage src={user.image ?? undefined} alt={user.name} />
+                  <AvatarFallback className="bg-primary/10 font-heading text-base text-primary">
+                    {getInitials(user.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-heading text-base leading-tight tracking-tight">
+                    {user.name}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {user.email}
+                  </p>
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    <Badge
+                      variant="secondary"
+                      className="h-5 px-2 text-[10px] font-medium"
+                    >
+                      {roleLabel(role)}
+                    </Badge>
+                    <span className="truncate text-[11px] text-muted-foreground">
+                      {organizationName}
+                    </span>
+                  </div>
+                </div>
+                <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/50" />
+              </Link>
+
+              <DrawerClose asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Fechar menu"
+                  className="size-9 shrink-0 rounded-full text-muted-foreground"
                 >
-                  {roleLabel(role)}
-                </Badge>
-              </div>
-              <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/50" />
-            </Link>
+                  <XIcon className="size-5" />
+                </Button>
+              </DrawerClose>
+            </div>
   
             <nav aria-label="Menu principal" className="space-y-5">
               {navGroups.map((group) => (

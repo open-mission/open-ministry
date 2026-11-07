@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { BellIcon } from "lucide-react";
 
+import { PageInfo } from "@/components/app/page-info";
 import { AnnouncementDialog } from "@/components/notifications/announcement-dialog";
 import { MarkAllReadButton } from "@/components/notifications/mark-all-read-button";
 import { NotificationRow } from "@/components/notifications/notification-row";
@@ -90,22 +91,25 @@ async function NotificationsContent() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <h1 className="font-heading text-4xl leading-none tracking-tight">
-              Notificações
-            </h1>
-            <Badge variant="outline" className="font-normal">
-              {unreadCount}
-            </Badge>
-          </div>
-          <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-            Avisos de escalas e mensagens da liderança de{" "}
-            <span className="font-medium text-foreground">
-              {organization.name}
-            </span>
-            .
-          </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="font-heading text-4xl leading-none tracking-tight">
+            Notificações
+          </h1>
+          <Badge variant="outline" className="font-normal">
+            {unreadCount}
+          </Badge>
+          <PageInfo
+            title="Notificações"
+            description={
+              <>
+                Avisos de escalas e mensagens da liderança de{" "}
+                <span className="font-medium text-foreground">
+                  {organization.name}
+                </span>
+                .
+              </>
+            }
+          />
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
