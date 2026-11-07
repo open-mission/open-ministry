@@ -201,14 +201,15 @@ async function getAdminContext() {
   return { context } as const;
 }
 
-async function revalidateDepartment(departmentId: string, organizationId?: string) {
+async function revalidateDepartment(
+  departmentId: string,
+  organizationId: string,
+) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/departments");
   revalidatePath(`/dashboard/departments/${departmentId}`);
 
-  if (organizationId) {
-    await cacheInvalidateTags(`departments:${organizationId}`);
-  }
+  await cacheInvalidateTags(`departments:${organizationId}`);
 }
 
 export async function createDepartmentAction(
@@ -297,7 +298,10 @@ export async function updateDepartmentAction(
     return { error: "Não foi possível salvar o departamento." };
   }
 
-  revalidateDepartment(parsed.data.departmentId);
+  await revalidateDepartment(
+    parsed.data.departmentId,
+    result.context.organization.id,
+  );
   return { success: true };
 }
 
@@ -379,7 +383,10 @@ export async function createFunctionAction(
     return { error: "Não foi possível criar a função." };
   }
 
-  revalidateDepartment(parsed.data.departmentId);
+  await revalidateDepartment(
+    parsed.data.departmentId,
+    result.context.organization.id,
+  );
   return { success: true };
 }
 
@@ -433,7 +440,10 @@ export async function updateFunctionAction(
     return { error: "Não foi possível salvar a função." };
   }
 
-  revalidateDepartment(parsed.data.departmentId);
+  await revalidateDepartment(
+    parsed.data.departmentId,
+    result.context.organization.id,
+  );
   return { success: true };
 }
 
@@ -469,7 +479,10 @@ export async function deleteFunctionAction(
     return { ok: false, error: "Não foi possível excluir a função." };
   }
 
-  revalidateDepartment(target.departmentId);
+  await revalidateDepartment(
+    target.departmentId,
+    result.context.organization.id,
+  );
   return { ok: true };
 }
 
@@ -520,7 +533,10 @@ export async function addDepartmentMemberAction(
     return { error: "Não foi possível adicionar a pessoa." };
   }
 
-  revalidateDepartment(parsed.data.departmentId);
+  await revalidateDepartment(
+    parsed.data.departmentId,
+    result.context.organization.id,
+  );
   return { success: true };
 }
 
@@ -556,7 +572,10 @@ export async function removeDepartmentMemberAction(
     return { ok: false, error: "Não foi possível remover a pessoa." };
   }
 
-  revalidateDepartment(target.departmentId);
+  await revalidateDepartment(
+    target.departmentId,
+    result.context.organization.id,
+  );
   return { ok: true };
 }
 
@@ -594,7 +613,10 @@ export async function setDepartmentLeaderAction(
     return { ok: false, error: "Não foi possível atualizar a liderança." };
   }
 
-  revalidateDepartment(target.departmentId);
+  await revalidateDepartment(
+    target.departmentId,
+    result.context.organization.id,
+  );
   return { ok: true };
 }
 
@@ -659,7 +681,10 @@ export async function addMemberFunctionAction(
     return { error: "Não foi possível atribuir a função." };
   }
 
-  revalidateDepartment(member.departmentId);
+  await revalidateDepartment(
+    member.departmentId,
+    result.context.organization.id,
+  );
   return { success: true };
 }
 
@@ -708,7 +733,10 @@ export async function updateExperienceAction(
     return { ok: false, error: "Não foi possível atualizar a experiência." };
   }
 
-  revalidateDepartment(assignment.member.departmentId);
+  await revalidateDepartment(
+    assignment.member.departmentId,
+    result.context.organization.id,
+  );
   return { ok: true };
 }
 
@@ -747,6 +775,9 @@ export async function removeMemberFunctionAction(
     return { ok: false, error: "Não foi possível remover a função." };
   }
 
-  revalidateDepartment(assignment.member.departmentId);
+  await revalidateDepartment(
+    assignment.member.departmentId,
+    result.context.organization.id,
+  );
   return { ok: true };
 }
