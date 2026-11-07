@@ -36,6 +36,7 @@ import {
   buildBirthdayEntries,
   getTodayInSaoPaulo,
 } from "@/lib/birthdays";
+import { getTodayMoodForPerson } from "@/lib/felicitometro";
 import { getInitials, isAdminRole } from "@/lib/format";
 import { requireOrganizationContext } from "@/lib/organizations";
 import {
@@ -82,13 +83,14 @@ async function DashboardContent() {
         birthday: session.user.birthday ?? null,
       }));
 
-    const [memberships, assignments, agenda] = person
+    const [memberships, assignments, agenda, todayMood] = person
       ? await Promise.all([
           getPersonMemberships(person.id),
           getUpcomingAssignments(organization.id, person.id),
           getDepartmentAgenda(organization.id, person.id),
+          getTodayMoodForPerson(organization.id, person.id),
         ])
-      : [[], [], []];
+      : [[], [], [], null];
 
     return (
       <MemberDashboard
@@ -99,6 +101,7 @@ async function DashboardContent() {
         memberships={memberships}
         assignments={assignments}
         agenda={agenda}
+        initialMood={todayMood}
       />
     );
   }

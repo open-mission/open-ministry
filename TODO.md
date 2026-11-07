@@ -10,7 +10,6 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
-- [ ] Funcionalidade de Felicitometro aonde o usuario pode falar como está hoje e se precisa de alguma oracao ou precisa conversar, a ideia que ele possa preenhcer a cada dia, esses dados serao visivel apenas pelo lider do departamento ou administrador. imporrtante usarmos os graficos do shadnui para exibir os relatorios dos usuarios sobre os seus sentimentos. Implementar uma pagina de usuario aonde o o lider e ou admin pode ver a pessoa, as informacoes dele, o historico de felicitometros, dias que foram escalados, os cultos e eventos que eles serviram e etc.
 - [ ] Desenvolver uma nova pagina home da plataforma (Dashboard) a ideia é que quando o usuario admin entrar ele veja os principais informacoes dele, tenha uma secao de acesso rapidos que no mobile tera um scroll horizontal em cada secao. No mobile a ideia é ter uma cara real de app, entao teria o sidebar mais o ultimo item com 3 risco e acessamos os items do menu. 
 - [ ] implementar a funcionalidade de offiline vericar quais infomrmcoes podemos manter offiline para o usuarios de acordo com cada nivel.
 
@@ -19,6 +18,14 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 Nenhum item em andamento.
 
 ### Done
+
+- [x] Funcionalidade de Felicitômetro (check-in diário de sentimentos, oração e conversa) e Página Completa do Membro.
+  - [x] Modelo de dados `person_mood` no Drizzle/Neon com score (1-5), pedidos de oração, necessidade de conversa com liderança, notas e unicidade por dia
+  - [x] Card interativo do Felicitômetro com 5 níveis ilustrados, feedback de estado, edição diária e integração na home do membro
+  - [x] Painel de Cuidado Pastoral com gráficos shadcn/ui (`ChartContainer`, `AreaChart`, `BarChart`) exibindo evolução temporal e distribuição de sentimentos
+  - [x] Página completa de perfil do membro (`/dashboard/members/[personId]`) com dados cadastrais, cultos servidos, próximas escalas, histórico de sentimentos e indisponibilidades
+  - [x] Controle de acesso e confidencialidade: visível apenas por líderes dos departamentos do membro ou administradores da igreja
+  - [x] Links integrados na tabela de pessoas (`PeopleTable`) e atalhos diretos para WhatsApp e avisos direcionados
 
 - [x] PWA notificações com push usando nativo (VAPID / Web Push) e suporte a OneSignal.
   - [x] Schema `push_subscription` para armazenar endpoints, chaves VAPID (`p256dh`, `auth`) e metadados de dispositivo
@@ -239,4 +246,5 @@ Nenhum item em andamento.
 - **07/11/2026:** Notificações multicanal e avisos para líderes de departamento concluídos. Líderes de departamentos agora podem enviar avisos para suas equipes e membros de forma direcionada, enquanto administradores podem notificar toda a igreja, departamentos ou membros individuais. O novo modal de avisos conta com seleção de canais (App, WhatsApp via Evolution API, além de slots para Email e Push), feedback em tempo real e integração direta na central de notificações e na página de detalhes do departamento.
 - **07/11/2026:** Tutorial e pop-up de instalação PWA concluídos. Foi desenvolvido um sistema completo de instalação como aplicativo com detecção automática de sistema operacional (iOS e Android), suporte ao prompt nativo do navegador para instalação em um toque no Chromium/Android, guia passo a passo ilustrado com ícones para Safari no iOS (Compartilhar > Adicionar à Tela de Início), banner flutuante no mobile com descarte persistente (`localStorage`) e card dedicado nas Configurações (`/dashboard/settings`).
 - **07/11/2026:** PWA Push Notifications concluído. Foi implementado o suporte a notificações push nativas via VAPID/Web Push e OneSignal com persistência de subscrições (`push_subscription` no Drizzle/NeonDB), eventos de recebimento e clique no Service Worker (`public/sw.js`), card de ativação e disparo de teste em `/dashboard/settings` e integração direta com o canal push em avisos e escalas.
+- **07/11/2026:** Felicitômetro e Página do Membro concluídos. Os membros agora podem registrar diariamente seu estado emocional em uma escala de 5 níveis ilustrados, com opção de solicitar oração e conversa com a liderança. A central de pessoas ganhou uma nova aba de Cuidado Pastoral com gráficos shadcn/ui (`AreaChart` de evolução temporal e `BarChart` de distribuição), além de alertas de solicitações de oração. Foi criada a página dedicada do membro (`/dashboard/members/[personId]`) exibindo histórico completo de escalas, cultos servidos, gráficos do felicitômetro, indisponibilidades e atalhos rápidos de contato.
 

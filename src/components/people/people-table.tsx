@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CrownIcon } from "lucide-react";
 
 import { RoleBadge } from "@/components/members/role-badge";
@@ -103,8 +104,11 @@ export function PeopleTable({
                       return (
                         <TableRow key={person.id}>
                           <TableCell>
-                            <div className="flex min-w-56 items-center gap-3">
-                              <Avatar className="size-9">
+                            <Link
+                              href={`/dashboard/members/${person.id}`}
+                              className="group flex min-w-56 items-center gap-3"
+                            >
+                              <Avatar className="size-9 ring-1 ring-border group-hover:ring-primary transition-all">
                                 <AvatarImage
                                   src={
                                     personDisplayImage(person) ?? undefined
@@ -116,7 +120,7 @@ export function PeopleTable({
                                 </AvatarFallback>
                               </Avatar>
                               <div className="min-w-0 space-y-0.5">
-                                <p className="truncate text-sm font-medium">
+                                <p className="truncate text-sm font-medium group-hover:text-primary group-hover:underline transition-colors">
                                   {personDisplayName(person)}
                                 </p>
                                 <p className="truncate text-xs text-muted-foreground">
@@ -129,7 +133,7 @@ export function PeopleTable({
                                   </p>
                                 ) : null}
                               </div>
-                            </div>
+                            </Link>
                           </TableCell>
 
                           <TableCell>
@@ -184,8 +188,11 @@ export function PeopleTable({
 
                 return (
                   <li key={person.id} className="space-y-3 px-4 py-4">
-                    <div className="flex items-start gap-3">
-                      <Avatar className="size-9">
+                    <Link
+                      href={`/dashboard/members/${person.id}`}
+                      className="group flex items-start gap-3"
+                    >
+                      <Avatar className="size-9 ring-1 ring-border group-hover:ring-primary transition-all">
                         <AvatarImage
                           src={personDisplayImage(person) ?? undefined}
                           alt={personDisplayName(person)}
@@ -196,7 +203,7 @@ export function PeopleTable({
                       </Avatar>
                       <div className="min-w-0 flex-1 space-y-0.5">
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <p className="text-sm font-medium">
+                          <p className="text-sm font-medium group-hover:text-primary group-hover:underline transition-colors">
                             {personDisplayName(person)}
                           </p>
                           {role ? (
@@ -220,7 +227,7 @@ export function PeopleTable({
                           </p>
                         ) : null}
                       </div>
-                    </div>
+                    </Link>
 
                     <MembershipChips
                       memberships={person.memberships}
