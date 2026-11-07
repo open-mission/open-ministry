@@ -26,11 +26,13 @@ import { COMMON_TIMEZONES, type CalendarPreferences } from "@/lib/calendar";
 type CalendarPreferencesDialogProps = {
   preferences: CalendarPreferences;
   onPreferencesChange?: (preferences: CalendarPreferences) => void;
+  trigger?: React.ReactNode;
 };
 
 export function CalendarPreferencesDialog({
   preferences,
   onPreferencesChange,
+  trigger,
 }: CalendarPreferencesDialogProps) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -60,15 +62,18 @@ export function CalendarPreferencesDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5 h-8 text-xs font-medium"
-        >
-          <Settings2Icon className="size-3.5" />
-          <span className="hidden sm:inline">Configurações da Agenda</span>
-          <span className="sm:hidden">Ajustes</span>
-        </Button>
+        {trigger ?? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="size-7 p-0 sm:h-7 sm:w-auto sm:px-2.5 gap-1.5 text-xs font-medium shrink-0"
+            title="Configurações da Agenda"
+            aria-label="Configurações da Agenda"
+          >
+            <Settings2Icon className="size-3.5" />
+            <span className="hidden sm:inline">Configurações</span>
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

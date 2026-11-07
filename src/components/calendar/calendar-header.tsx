@@ -92,33 +92,40 @@ export function CalendarHeader({
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         {/* Navigation Controls */}
         <div className="flex w-full flex-wrap items-center justify-between gap-2 lg:w-auto lg:flex-nowrap lg:justify-start lg:gap-3">
-          <div className="order-last flex shrink-0 items-center gap-1 rounded-lg border bg-card p-0.5 shadow-2xs lg:order-first">
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              onClick={onPrev}
-              title="Período anterior"
-              className="size-7"
-            >
-              <ChevronLeftIcon className="size-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={onToday}
-              className="h-7 px-2 text-xs font-medium"
-            >
-              Hoje
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              onClick={onNext}
-              title="Próximo período"
-              className="size-7"
-            >
-              <ChevronRightIcon className="size-4" />
-            </Button>
+          <div className="order-last flex shrink-0 items-center gap-1.5 lg:order-first">
+            <div className="flex shrink-0 items-center gap-1 rounded-lg border bg-card p-0.5 shadow-2xs">
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={onPrev}
+                title="Período anterior"
+                className="size-7"
+              >
+                <ChevronLeftIcon className="size-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={onToday}
+                className="h-7 px-2 text-xs font-medium"
+              >
+                Hoje
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={onNext}
+                title="Próximo período"
+                className="size-7"
+              >
+                <ChevronRightIcon className="size-4" />
+              </Button>
+            </div>
+
+            <CalendarPreferencesDialog
+              preferences={preferences}
+              onPreferencesChange={onPreferencesChange}
+            />
           </div>
 
           <h2 className="order-first min-w-0 font-heading text-lg font-bold capitalize tracking-tight text-foreground sm:text-2xl lg:order-none">
@@ -126,8 +133,8 @@ export function CalendarHeader({
           </h2>
         </div>
 
-        {/* View Switcher & Settings */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none lg:pb-0">
+        {/* View Switcher */}
+        <div className="flex items-center overflow-x-auto pb-1 scrollbar-none lg:pb-0">
           <Tabs
             value={viewMode}
             onValueChange={(val) => onViewChange(val as CalendarViewMode)}
@@ -164,11 +171,6 @@ export function CalendarHeader({
               </TabsTrigger>
             </TabsList>
           </Tabs>
-
-          <CalendarPreferencesDialog
-            preferences={preferences}
-            onPreferencesChange={onPreferencesChange}
-          />
         </div>
       </div>
 
