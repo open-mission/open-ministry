@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -56,6 +57,7 @@ export const personRelations = relations(person, ({ one, many }) => ({
     references: [user.id],
   }),
   availabilities: many(personAvailability),
+  unavailabilities: many(personUnavailability),
 }));
 
 export type AvailabilityPeriod = "morning" | "afternoon" | "evening";
@@ -105,3 +107,55 @@ export const personAvailabilityRelations = relations(
     }),
   }),
 );
+
+export const personUnavailability = pgTable(
+  "person_unavailability",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    personId: text("person_id")
+      .notNull()
+      .references(() => person.id, { onDelete: "cascade" }),
+    date: text("date").notNull(), // Format "YYYY-MM-DD"
+    reason: text("reason"),
+    allDay: boolean("all_day").default(true).notNull(),
+    periods: jsonb("periods").$type<AvailabilityPeriod[]>().notNull().default([]),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("person_unavailability_org_person_idx").on(
+      table.organizationId,
+      table.personId,
+    ),
+    index("person_unavailability_date_idx").on(
+      table.organizationId,
+      table.date,
+    ),
+    uniqueIndex("person_unavailability_person_date_uidx").on(
+      table.organizationId,
+      table.personId,
+      table.date,
+    ),
+  ],
+);
+
+export const personUnavailabilityRelations = relations(
+  personUnavailability,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [personUnavailability.organizationId],
+      references: [organization.id],
+    }),
+    person: one(person, {
+      fields: [personUnavailability.personId],
+      references: [person.id],
+    }),
+  }),
+);
+

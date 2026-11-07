@@ -35,12 +35,14 @@ export function ScheduleEditor({
   assignments,
   currentUserId,
   isAdmin,
+  unavailablePeopleMap,
 }: {
   eventId: string;
   departments: DepartmentRecord[];
   assignments: Assignment[];
   currentUserId: string;
   isAdmin: boolean;
+  unavailablePeopleMap?: Record<string, { isBlocked: boolean; reason?: string | null }>;
 }) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -117,6 +119,7 @@ export function ScheduleEditor({
                     functionId: assignment.functionId,
                     personId: assignment.personId,
                   }))}
+                  unavailablePeopleMap={unavailablePeopleMap}
                 />
               ) : null}
             </CardHeader>

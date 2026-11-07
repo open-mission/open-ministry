@@ -12,6 +12,18 @@ export type MyAvailabilityResult = {
   notes?: string | null;
 };
 
+export type PersonUnavailabilityItem = {
+  id: string;
+  organizationId: string;
+  personId: string;
+  date: string; // Format "YYYY-MM-DD"
+  reason: string | null;
+  allDay: boolean;
+  periods: AvailabilityPeriod[];
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export const DAYS_OF_WEEK = [
   { index: 0, label: "Domingo", shortLabel: "Dom" },
   { index: 1, label: "Segunda-feira", shortLabel: "Seg" },
@@ -28,3 +40,17 @@ export function getPeriodFromDate(date: Date): AvailabilityPeriod {
   if (hours < 18) return "afternoon";
   return "evening";
 }
+
+export function formatDateToYYYYMMDD(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function formatYYYYMMDDToDisplay(dateStr: string): string {
+  if (!dateStr || !dateStr.includes("-")) return dateStr;
+  const [year, month, day] = dateStr.split("-");
+  return `${day}/${month}/${year}`;
+}
+
