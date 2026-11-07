@@ -10,12 +10,19 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
-- [ ] Implementação da Funcionalidade de Cronograma: a ideia poder cadastrar o cronograma de um culto e evento. Podendo Add secoes, item, Horario e Tempo estimado podendo registrar quem será responsavel por aquela area (seja um usuario, ou registro manual com o nome da pessoa) Abaixo tem uma imagem de exemplo (mas nao commit ela, depois de desenvolver remover essa imagem abaixo)  
-![](orca-paste-1794017331643-b814f027-0f8e-44e7-ab28-46e89d5b35c3.png)
-
 ### Doing
 
 ### Done
+
+- [x] Implementação da Funcionalidade de Cronograma: a ideia poder cadastrar o cronograma de um culto e evento. Podendo Add secoes, item, Horario e Tempo estimado podendo registrar quem será responsavel por aquela area (seja um usuario, ou registro manual com o nome da pessoa).
+  - [x] Modelo de dados `event_plan_item` no Drizzle com RLS policies e migration aplicada
+  - [x] Abas "Cronograma do Culto" e "Escala & Equipes" integradas na página do evento
+  - [x] Adicionar, editar e excluir seções (cabeçalhos) e momentos com descrição e louvores
+  - [x] Cálculo dinâmico do horário de início de cada item a partir do horário do culto
+  - [x] Duração estimada em MM:SS ou minutos, com totalizador e comparativo com o tempo previsto
+  - [x] Vínculo do responsável por pessoa cadastrada (com avatar) ou nome manual
+  - [x] Reordenação sequencial (subir / descer) dos momentos
+  - [x] Modelo padrão de culto (starter template) para início rápido
 
 - [x] Implementação da Tela de Configurações tanto para o admin como para o membro. O admin terá acesso a configurações mais avançadas. O membro terá acesso a configurações acerca do seu perfil, notificações, troca de senha,  passkey e etc.
   - [x] Tela `/dashboard/settings` com abas responsivas e design impecável
@@ -133,4 +140,6 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 - **06/11/2026:** Perfil, identidade da igreja, acesso como membro e tema concluídos. O perfil agora abre somente leitura e entra em edição por um botão; nome, aniversário e foto são salvos juntos, com upload pelo UploadThing. Admin/owner pode atualizar nome e logo da igreja em `/dashboard/church`, e o logo aparece no topo do painel. O plugin admin do Better Auth permite entrar como uma pessoa da igreja, com aviso fixo e retorno à conta original; a autorização é por igreja e os endpoints HTTP administrativos ficam bloqueados. O tema claro/escuro/sistema foi adicionado no painel, login e site. Fluxos de upload, edição de perfil, identidade da igreja, impersonação e alternância de tema validados no navegador em 1440px e 390px; schema e migration do admin plugin aplicados no Neon.
 - **06/11/2026:** Plugins do Better Auth concluídos. Foram ativados os plugins `last-login-method`, `passkey`, `multi-session` e `username` no servidor e no cliente, com schema gerado e migration aplicada no NeonDB. A tela de login passou a suportar autenticação com Passkey (WebAuthn/biometria), entrada com email ou @username, e badge indicador do último método de login utilizado; o cadastro permite registrar opcionalmente o nome de usuário.
 - **06/11/2026:** Tela de Configurações concluída. Foi implementada a rota `/dashboard/settings` com suporte completo para membros e administradores. O membro pode gerenciar seus dados de conta e @username, cadastrar chaves de acesso biométricas (passkeys), trocar de senha, inspecionar e revogar sessões e dispositivos ativos (multi-session), alternar temas e ajustar preferências de notificações. Administradores têm acesso adicional à identidade oficial da igreja e governança. O menu lateral e o perfil ganharam atalhos diretos.
+- **06/11/2026:** Cronograma de Culto e Evento concluído. O painel do evento ganhou visualização em abas com a Ordem do Culto (Cronograma) inspirada no Planning Center/Voluts e as Equipes/Escala. É possível criar seções em destaque, itens com duração estimada em MM:SS, notas e louvores, e definir o responsável (por membro com avatar ou texto livre). O sistema calcula os horários de início de cada momento em tempo real a partir do início do culto e compara o tempo total planejado com a duração prevista do evento. Permite carregar um modelo padrão de culto com 1 clique e reordenar qualquer momento.
+
 
