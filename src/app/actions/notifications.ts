@@ -17,6 +17,7 @@ import {
   dispatchNotification,
   getOrganizationEvolutionConfig,
 } from "@/lib/notification-service";
+import { sendWebPushToUser } from "@/lib/push-notifications";
 import { getOrganizationContext } from "@/lib/organizations";
 
 export type AnnouncementFormState =
@@ -58,9 +59,11 @@ const announcementSchema = z
     personId: z.string().trim().optional().nullable(),
     sendInApp: z.boolean(),
     sendWhatsApp: z.boolean(),
+    sendPush: z.boolean().default(false),
   })
-  .refine((data) => data.sendInApp || data.sendWhatsApp, {
-    message: "Selecione ao menos um canal ativo (Aplicativo ou WhatsApp).",
+  .refine((data) => data.sendInApp || data.sendWhatsApp || data.sendPush, {
+    message:
+      "Selecione ao menos um canal ativo (Aplicativo, WhatsApp ou Push).",
     path: ["channels"],
   })
   .refine(
@@ -100,6 +103,7 @@ export async function sendAnnouncementAction(
   const channelsValues = formData.getAll("channels").map(String);
   const sendInAppParam = formData.get("sendInApp");
   const sendWhatsAppParam = formData.get("sendWhatsApp");
+  const sendPushParam = formData.get("sendPush");
 
   const sendInApp =
     channelsValues.includes("in_app") ||
@@ -109,6 +113,10 @@ export async function sendAnnouncementAction(
     channelsValues.includes("whatsapp") ||
     sendWhatsAppParam === "on" ||
     sendWhatsAppParam === "true";
+  const sendPush =
+    channelsValues.includes("push") ||
+    sendPushParam === "on" ||
+    sendPushParam === "true";
 
   const rawAudienceType = formData.get("audienceType");
   const rawAudience = formData.get("audience"); // fallback for legacy select
@@ -143,6 +151,7 @@ export async function sendAnnouncementAction(
     personId,
     sendInApp,
     sendWhatsApp,
+    sendPush,
   });
 
   if (!parsed.success) {
@@ -331,6 +340,27 @@ export async function sendAnnouncementAction(
             },
           });
         }
+      }
+    }
+
+    // 3. Send Web Push notifications
+    if (data.sendPush) {
+      const userIds = [
+        ...new Set(
+          recipients
+            .map((r) => r.userId)
+            .filter((uid): uid is string => Boolean(uid)),
+        ),
+      ];
+
+      for (const userId of userIds) {
+        sendWebPushToUser(userId, {
+          title: data.title,
+          body: data.body,
+          url: "/dashboard/notifications",
+        }).catch((err) =>
+          console.warn("Falha no disparo de push notification:", err),
+        );
       }
     }
   } catch (error) {

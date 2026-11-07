@@ -10,7 +10,6 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
-- [ ] PWA implementar notificaoes com push usando nativo quando possivel ou onesignal. Se precisar de tokens ou algo de credencial colocar as variaveis em .env
 - [ ] Funcionalidade de Felicitometro aonde o usuario pode falar como está hoje e se precisa de alguma oracao ou precisa conversar, a ideia que ele possa preenhcer a cada dia, esses dados serao visivel apenas pelo lider do departamento ou administrador. imporrtante usarmos os graficos do shadnui para exibir os relatorios dos usuarios sobre os seus sentimentos. Implementar uma pagina de usuario aonde o o lider e ou admin pode ver a pessoa, as informacoes dele, o historico de felicitometros, dias que foram escalados, os cultos e eventos que eles serviram e etc.
 - [ ] Desenvolver uma nova pagina home da plataforma (Dashboard) a ideia é que quando o usuario admin entrar ele veja os principais informacoes dele, tenha uma secao de acesso rapidos que no mobile tera um scroll horizontal em cada secao. No mobile a ideia é ter uma cara real de app, entao teria o sidebar mais o ultimo item com 3 risco e acessamos os items do menu. 
 - [ ] implementar a funcionalidade de offiline vericar quais infomrmcoes podemos manter offiline para o usuarios de acordo com cada nivel.
@@ -20,6 +19,14 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 Nenhum item em andamento.
 
 ### Done
+
+- [x] PWA notificações com push usando nativo (VAPID / Web Push) e suporte a OneSignal.
+  - [x] Schema `push_subscription` para armazenar endpoints, chaves VAPID (`p256dh`, `auth`) e metadados de dispositivo
+  - [x] Listeners de evento `push` e `notificationclick` no Service Worker (`public/sw.js`) com foco em janela aberta ou abertura de URL
+  - [x] Serviço de envio de Web Push nativo (`src/lib/push-notifications.ts`) com fallback transparente para OneSignal
+  - [x] Card de gerenciamento de Push Notifications em Configurações (`/dashboard/settings`), solicitação de permissão do navegador e botão de disparo de teste
+  - [x] Integração ativa do canal "push" no despachador unificado `dispatchNotification` e no diálogo de avisos multicanal (`AnnouncementDialog`)
+  - [x] Configurações de credenciais e tokens VAPID/OneSignal documentadas em `.env.example`
 
 - [x] Popup e tutorial de instalação como PWA no celular (iOS / Android).
   - [x] Detecção inteligente de ambiente (iOS Safari, Android Chromium, modo standalone instalado)
@@ -231,4 +238,5 @@ Nenhum item em andamento.
 - **07/11/2026:** Design Feedback das Configurações no Mobile concluído. A tela `/dashboard/settings` ganhou layout inspirado nas configurações do iPhone/iOS em telas móveis: cabeçalho de perfil estilo Apple ID, seções agrupadas em cartões com cantos arredondados, ícones em squircle coloridos, navegação fluida em drill-down com botão de retorno ("‹ Configurações") e subtítulos informativos. No desktop, a navegação clássica por abas é mantida com total responsividade.
 - **07/11/2026:** Notificações multicanal e avisos para líderes de departamento concluídos. Líderes de departamentos agora podem enviar avisos para suas equipes e membros de forma direcionada, enquanto administradores podem notificar toda a igreja, departamentos ou membros individuais. O novo modal de avisos conta com seleção de canais (App, WhatsApp via Evolution API, além de slots para Email e Push), feedback em tempo real e integração direta na central de notificações e na página de detalhes do departamento.
 - **07/11/2026:** Tutorial e pop-up de instalação PWA concluídos. Foi desenvolvido um sistema completo de instalação como aplicativo com detecção automática de sistema operacional (iOS e Android), suporte ao prompt nativo do navegador para instalação em um toque no Chromium/Android, guia passo a passo ilustrado com ícones para Safari no iOS (Compartilhar > Adicionar à Tela de Início), banner flutuante no mobile com descarte persistente (`localStorage`) e card dedicado nas Configurações (`/dashboard/settings`).
+- **07/11/2026:** PWA Push Notifications concluído. Foi implementado o suporte a notificações push nativas via VAPID/Web Push e OneSignal com persistência de subscrições (`push_subscription` no Drizzle/NeonDB), eventos de recebimento e clique no Service Worker (`public/sw.js`), card de ativação e disparo de teste em `/dashboard/settings` e integração direta com o canal push em avisos e escalas.
 
