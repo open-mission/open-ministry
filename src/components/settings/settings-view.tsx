@@ -8,6 +8,7 @@ import {
   ChevronRightIcon,
   ChurchIcon,
   CrownIcon,
+  HardDriveIcon,
   MessageSquareIcon,
   PaletteIcon,
   ShieldCheckIcon,
@@ -27,6 +28,7 @@ import { AdminEvolutionApiCard } from "@/components/settings/admin-evolution-api
 import { CalendarPreferencesCard } from "@/components/settings/calendar-preferences-card";
 import { ChangePasswordCard } from "@/components/settings/change-password-card";
 import { NotificationPreferencesCard } from "@/components/settings/notification-preferences-card";
+import { OfflineCacheCard } from "@/components/settings/offline-cache-card";
 import { PasskeysCard } from "@/components/settings/passkeys-card";
 import { PwaInstallCard } from "@/components/settings/pwa-install-card";
 import { ThemePreferenceCard } from "@/components/settings/theme-preference-card";
@@ -74,6 +76,7 @@ type MobileSection =
   | "calendar"
   | "theme"
   | "pwa"
+  | "offline"
   | "security"
   | "notifications"
   | "church"
@@ -160,6 +163,7 @@ export function SettingsView({
             <AccountProfileCard initialData={userData} />
             <CalendarPreferencesCard initialPreferences={calendarPreferences} />
             <ThemePreferenceCard />
+            <OfflineCacheCard />
             <PwaInstallCard />
           </TabsContent>
 
@@ -258,6 +262,13 @@ export function SettingsView({
                   title="Instalar no Celular"
                   subtitle="Aplicativo na tela inicial (PWA)"
                   onClick={() => setActiveMobileSection("pwa")}
+                />
+                <IosSettingsRow
+                  icon={HardDriveIcon}
+                  iconBg="bg-indigo-600 text-white"
+                  title="Modo Offline &amp; Cache"
+                  subtitle="Escalas e liturgia salvas no aparelho"
+                  onClick={() => setActiveMobileSection("offline")}
                 />
               </div>
             </div>
@@ -381,6 +392,12 @@ export function SettingsView({
             {activeMobileSection === "pwa" && (
               <div className="space-y-6">
                 <PwaInstallCard />
+              </div>
+            )}
+
+            {activeMobileSection === "offline" && (
+              <div className="space-y-6">
+                <OfflineCacheCard />
               </div>
             )}
 

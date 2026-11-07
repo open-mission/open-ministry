@@ -4,104 +4,343 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#264a3a" />
-    <title>Offline | OpenMinistry</title>
+    <title>Acesso Offline | OpenMinistry</title>
     <style>
       :root {
         color-scheme: light;
       }
-
       * {
         box-sizing: border-box;
       }
-
       body {
         margin: 0;
         min-height: 100svh;
-        display: grid;
-        place-items: center;
-        padding: 24px;
+        padding: 16px;
         background: #fbf7ef;
         color: #233a2e;
-        font-family:
-          ui-sans-serif,
-          system-ui,
-          -apple-system,
-          "Segoe UI",
-          sans-serif;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       }
-
-      main {
+      .container {
         width: 100%;
-        max-width: 28rem;
-        text-align: center;
+        max-width: 42rem;
+        margin: 0 auto;
       }
-
+      .header {
+        text-align: center;
+        margin-bottom: 24px;
+        padding-top: 12px;
+      }
       .mark {
-        width: 72px;
-        height: 72px;
-        margin: 0 auto 24px;
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 16px;
         display: grid;
         place-items: center;
-        border-radius: 20px;
+        border-radius: 16px;
         background: #264a3a;
+        color: #f6f1e4;
       }
-
       h1 {
-        margin: 0 0 10px;
+        margin: 0 0 6px;
         font-family: Georgia, "Times New Roman", serif;
-        font-size: 2rem;
-        line-height: 1.05;
+        font-size: 1.85rem;
+        line-height: 1.1;
         letter-spacing: -0.02em;
+        color: #1a3025;
       }
-
-      p {
-        margin: 0 0 24px;
+      .subtitle {
+        margin: 0 0 16px;
         color: #5a6b60;
-        font-size: 0.95rem;
-        line-height: 1.6;
+        font-size: 0.9rem;
+        line-height: 1.5;
       }
-
-      a {
+      .badge-offline {
         display: inline-flex;
-        min-height: 44px;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 9999px;
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .tabs {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 6px;
+        margin-bottom: 16px;
+      }
+      .tab-btn {
+        padding: 8px 14px;
+        border-radius: 10px;
+        background: #ede6d6;
+        color: #4a5c50;
+        border: none;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s ease;
+      }
+      .tab-btn.active {
+        background: #264a3a;
+        color: #f6f1e4;
+      }
+      .tab-content {
+        display: none;
+        background: #ffffff;
+        border: 1px solid #e7decb;
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      }
+      .tab-content.active {
+        display: block;
+      }
+      .item-card {
+        padding: 12px;
+        border-radius: 12px;
+        background: #faf7f0;
+        border: 1px solid #eee5d4;
+        margin-bottom: 10px;
+      }
+      .item-card:last-child {
+        margin-bottom: 0;
+      }
+      .item-title {
+        font-weight: 600;
+        font-size: 0.92rem;
+        color: #1a3025;
+        margin-bottom: 4px;
+      }
+      .item-meta {
+        font-size: 0.8rem;
+        color: #66786e;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+      .tag {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 6px;
+        background: #e4dccc;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #264a3a;
+      }
+      .btn {
+        display: inline-flex;
+        min-height: 40px;
         align-items: center;
         justify-content: center;
         border-radius: 10px;
-        padding: 0 20px;
+        padding: 0 18px;
         background: #264a3a;
         color: #f6f1e4;
-        font-size: 0.9rem;
+        font-size: 0.88rem;
         font-weight: 600;
         text-decoration: none;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 16px;
+      }
+      .btn-phone {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 8px;
+        background: #ecfdf5;
+        color: #047857;
+        border: 1px solid #a7f3d0;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .empty-state {
+        text-align: center;
+        padding: 32px 16px;
+        color: #66786e;
+        font-size: 0.88rem;
+      }
+      .hidden {
+        display: none !important;
       }
     </style>
   </head>
   <body>
-    <main>
-      <div class="mark" aria-hidden="true">
-        <svg
-          width="40"
-          height="40"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#f6f1e4"
-          stroke-width="1.8"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M10 9h4" />
-          <path d="M12 7v5" />
-          <path d="M14 21v-3a2 2 0 0 0-4 0v3" />
-          <path d="m18 9 3.52 2.147a1 1 0 0 1 .48.854V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6.999a1 1 0 0 1 .48-.854L6 9" />
-          <path d="M6 21V7a1 1 0 0 1 .376-.782l5-3.999a1 1 0 0 1 1.249.001l5 4A1 1 0 0 1 18 7v14" />
-        </svg>
+    <div class="container">
+      <header class="header">
+        <div class="mark" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <h1>Você está offline</h1>
+        <p class="subtitle" id="subtitle-text">
+          Conexão não detectada. Exibindo dados locais sincronizados.
+        </p>
+        <span class="badge-offline">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          Modo Offline Ativo
+        </span>
+      </header>
+
+      <!-- SEÇÃO QUANDO POSSUI DADOS SALVOS -->
+      <main id="cached-section" class="hidden">
+        <div class="tabs" id="tabs-container">
+          <button class="tab-btn active" onclick="switchTab('assignments')">Minhas Escalas</button>
+          <button class="tab-btn" onclick="switchTab('orders')">Cronograma do Culto</button>
+          <button class="tab-btn" onclick="switchTab('schedules')">Equipes</button>
+          <button class="tab-btn" onclick="switchTab('contacts')">Contatos</button>
+        </div>
+
+        <div id="tab-assignments" class="tab-content active">
+          <div id="assignments-list"></div>
+        </div>
+
+        <div id="tab-orders" class="tab-content">
+          <div id="orders-list"></div>
+        </div>
+
+        <div id="tab-schedules" class="tab-content">
+          <div id="schedules-list"></div>
+        </div>
+
+        <div id="tab-contacts" class="tab-content">
+          <div id="contacts-list"></div>
+        </div>
+
+        <button class="btn" onclick="window.location.reload()">
+          Tentar Reconectar
+        </button>
+      </main>
+
+      <!-- SEÇÃO QUANDO NÃO POSSUI DADOS SALVOS -->
+      <div id="no-cache-section" class="item-card hidden" style="text-align: center; padding: 32px 16px;">
+        <p style="font-weight: 600; margin-bottom: 8px;">Nenhum dado salvo no aparelho</p>
+        <p style="font-size: 0.85rem; color: #5a6b60; margin-bottom: 16px;">
+          Conecte-se à internet pelo menos uma vez no app para baixar suas escalas e o cronograma dos cultos.
+        </p>
+        <button class="btn" onclick="window.location.reload()">
+          Tentar Novamente
+        </button>
       </div>
-      <h1>Você está offline</h1>
-      <p>
-        O OpenMinistry precisa de conexão para mostrar a agenda e as escalas
-        atualizadas. Verifique sua internet e tente de novo.
-      </p>
-      <a href="/dashboard">Tentar novamente</a>
-    </main>
+    </div>
+
+    <script>
+      function switchTab(tabName) {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.getAttribute('onclick').includes(tabName));
+        });
+        document.querySelectorAll('.tab-content').forEach(content => {
+          content.classList.toggle('active', content.id === 'tab-' + tabName);
+        });
+      }
+
+      try {
+        const raw = localStorage.getItem('openministry_offline_bundle');
+        if (raw) {
+          const bundle = JSON.parse(raw);
+          document.getElementById('cached-section').classList.remove('hidden');
+          document.getElementById('subtitle-text').textContent = 
+            'Igreja: ' + (bundle.user?.organizationName || 'OpenMinistry') + ' • ' + (bundle.user?.name || 'Membro');
+
+          // 1. Minhas Escalas
+          const aList = document.getElementById('assignments-list');
+          if (!bundle.myAssignments || bundle.myAssignments.length === 0) {
+            aList.innerHTML = '<div class="empty-state">Nenhuma escala salva no dispositivo.</div>';
+          } else {
+            aList.innerHTML = bundle.myAssignments.map(a => `
+              <div class="item-card">
+                <div class="item-title">${a.eventTitle}</div>
+                <div class="item-meta">
+                  <span class="tag">${a.departmentName}</span>
+                  <strong>${a.functionName}</strong>
+                  <span>•</span>
+                  <span>${a.formattedDate}</span>
+                  <span>•</span>
+                  <span>${a.formattedTime}</span>
+                </div>
+              </div>
+            `).join('');
+          }
+
+          // 2. Cronogramas do Culto
+          const oList = document.getElementById('orders-list');
+          if (!bundle.ordersOfService || bundle.ordersOfService.length === 0) {
+            oList.innerHTML = '<div class="empty-state">Nenhum cronograma de culto salvo para este nível de usuário.</div>';
+          } else {
+            oList.innerHTML = bundle.ordersOfService.map(ord => `
+              <div style="margin-bottom: 20px;">
+                <h3 style="font-size: 1rem; margin: 0 0 4px; color: #1a3025;">${ord.eventTitle}</h3>
+                <p style="font-size: 0.78rem; color: #66786e; margin: 0 0 10px;">${ord.formattedDate} • ${ord.formattedTime}</p>
+                ${ord.items.map(it => `
+                  <div style="display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f0eae0; font-size: 0.8rem;">
+                    <span style="font-family: monospace; font-weight: bold; width: 44px; shrink: 0;">${it.startTime}</span>
+                    <div style="flex: 1;">
+                      <div style="font-weight: 500;">${it.title}</div>
+                      ${it.description ? '<div style="font-size: 0.72rem; color: #66786e;">' + it.description + '</div>' : ''}
+                    </div>
+                    ${it.responsibleName ? '<div style="font-size: 0.72rem; color: #264a3a; font-weight: 600;">' + it.responsibleName + '</div>' : ''}
+                  </div>
+                `).join('')}
+              </div>
+            `).join('');
+          }
+
+          // 3. Equipes
+          const sList = document.getElementById('schedules-list');
+          if (!bundle.fullSchedules || bundle.fullSchedules.length === 0) {
+            sList.innerHTML = '<div class="empty-state">Nenhuma escala de equipe cadastrada.</div>';
+          } else {
+            sList.innerHTML = bundle.fullSchedules.map(sch => `
+              <div style="margin-bottom: 16px;">
+                <h3 style="font-size: 0.95rem; margin: 0 0 8px; color: #1a3025;">${sch.eventTitle} (${sch.formattedDate})</h3>
+                ${sch.roster.map(r => `
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #f0eae0; font-size: 0.8rem;">
+                    <div>
+                      <div style="font-weight: 500;">${r.personName}</div>
+                      <div style="font-size: 0.72rem; color: #66786e;">${r.departmentName} • ${r.functionName}</div>
+                    </div>
+                    ${r.personPhone ? '<a class="btn-phone" href="tel:' + r.personPhone + '">Ligar</a>' : ''}
+                  </div>
+                `).join('')}
+              </div>
+            `).join('');
+          }
+
+          // 4. Contatos
+          const cList = document.getElementById('contacts-list');
+          if (!bundle.emergencyContacts || bundle.emergencyContacts.length === 0) {
+            cList.innerHTML = '<div class="empty-state">Nenhum contato salvo.</div>';
+          } else {
+            cList.innerHTML = bundle.emergencyContacts.map(c => `
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0eae0; font-size: 0.82rem;">
+                <div>
+                  <div style="font-weight: 600;">${c.name}</div>
+                  <div style="font-size: 0.72rem; color: #66786e;">${c.departmentName || c.role}</div>
+                </div>
+                ${c.phone ? '<a class="btn-phone" href="tel:' + c.phone + '">📞 ' + c.phone + '</a>' : '<span style="font-size: 0.72rem; color: #999;">Sem telefone</span>'}
+              </div>
+            `).join('');
+          }
+
+        } else {
+          document.getElementById('no-cache-section').classList.remove('hidden');
+        }
+      } catch (err) {
+        document.getElementById('no-cache-section').classList.remove('hidden');
+      }
+    </script>
   </body>
 </html>
