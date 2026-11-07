@@ -11,6 +11,7 @@ import {
   MessageSquareIcon,
   PaletteIcon,
   ShieldCheckIcon,
+  SmartphoneIcon,
   UserIcon,
 } from "lucide-react";
 
@@ -27,6 +28,7 @@ import { CalendarPreferencesCard } from "@/components/settings/calendar-preferen
 import { ChangePasswordCard } from "@/components/settings/change-password-card";
 import { NotificationPreferencesCard } from "@/components/settings/notification-preferences-card";
 import { PasskeysCard } from "@/components/settings/passkeys-card";
+import { PwaInstallCard } from "@/components/settings/pwa-install-card";
 import { ThemePreferenceCard } from "@/components/settings/theme-preference-card";
 import type { CalendarPreferences } from "@/lib/calendar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -71,6 +73,7 @@ type MobileSection =
   | "account"
   | "calendar"
   | "theme"
+  | "pwa"
   | "security"
   | "notifications"
   | "church"
@@ -157,6 +160,7 @@ export function SettingsView({
             <AccountProfileCard initialData={userData} />
             <CalendarPreferencesCard initialPreferences={calendarPreferences} />
             <ThemePreferenceCard />
+            <PwaInstallCard />
           </TabsContent>
 
           <TabsContent value="security" className="space-y-6">
@@ -247,6 +251,13 @@ export function SettingsView({
                   title="Aparência &amp; Tema"
                   subtitle="Claro, Escuro ou Sistema"
                   onClick={() => setActiveMobileSection("theme")}
+                />
+                <IosSettingsRow
+                  icon={SmartphoneIcon}
+                  iconBg="bg-teal-600 text-white"
+                  title="Instalar no Celular"
+                  subtitle="Aplicativo na tela inicial (PWA)"
+                  onClick={() => setActiveMobileSection("pwa")}
                 />
               </div>
             </div>
@@ -364,6 +375,12 @@ export function SettingsView({
             {activeMobileSection === "theme" && (
               <div className="space-y-6">
                 <ThemePreferenceCard />
+              </div>
+            )}
+
+            {activeMobileSection === "pwa" && (
+              <div className="space-y-6">
+                <PwaInstallCard />
               </div>
             )}
 
