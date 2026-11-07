@@ -14,6 +14,15 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Done
 
+- [x] Recorrência de eventos e cultos por dia da semana no mês (ex: todo 2º domingo do mês, toda 3ª segunda-feira, último domingo).
+  - [x] Adicionar opção `monthly_nth_weekday` em `RECURRENCE_OPTIONS` com cálculo dinâmico da posição (1º, 2º, 3º, 4º e último) e do dia da semana
+  - [x] Criar módulo de utilitários isolado (`src/lib/recurrence-utils.ts`) com funções puras para geração e cálculo das ocorrências mensais
+  - [x] Atualizar schema de validação (`createEventSchema`) para suportar `recurrenceInterval` entre -1 (último) e 12
+  - [x] No diálogo de criação de cultos/eventos (`CreateEventDialog`), exibir rótulo contextual no dropdown de acordo com a data selecionada (ex: "Todo 2º domingo do mês")
+  - [x] Painel de configuração com seletor de semana do mês e prévia visual das próximas 4 datas geradas com badges informativas
+  - [x] Atualizar formatação de rótulos de recorrência com respeito ao gênero gramatical em português e suporte a `startsAt` na lista e detalhes de eventos
+  - [x] Cobertura de testes unitários automatizados para cálculos de dia da semana, labels e geração de ocorrências
+
 - [x] Otimização de Performance, Redução do Tempo de Skeleton e Cache Multi-Camadas (Redis + Memória)
   - [x] Implementar camada de cache de alta performance (`src/lib/cache.ts`) com Upstash Redis e fallback em memória LRU L1/L2
   - [x] Caching inteligente com TTL e tags de invalidação nas consultas mais pesadas: departamentos, pessoas, cultos, visão geral do felicitômetro e contagem de notificações
@@ -272,4 +281,5 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 - **07/11/2026:** Tutorial e pop-up de instalação PWA concluídos. Foi desenvolvido um sistema completo de instalação como aplicativo com detecção automática de sistema operacional (iOS e Android), suporte ao prompt nativo do navegador para instalação em um toque no Chromium/Android, guia passo a passo ilustrado com ícones para Safari no iOS (Compartilhar > Adicionar à Tela de Início), banner flutuante no mobile com descarte persistente (`localStorage`) e card dedicado nas Configurações (`/dashboard/settings`).
 - **07/11/2026:** PWA Push Notifications concluído. Foi implementado o suporte a notificações push nativas via VAPID/Web Push e OneSignal com persistência de subscrições (`push_subscription` no Drizzle/NeonDB), eventos de recebimento e clique no Service Worker (`public/sw.js`), card de ativação e disparo de teste em `/dashboard/settings` e integração direta com o canal push em avisos e escalas.
 - **07/11/2026:** Felicitômetro e Página do Membro concluídos. Os membros agora podem registrar diariamente seu estado emocional em uma escala de 5 níveis ilustrados, com opção de solicitar oração e conversa com a liderança. A central de pessoas ganhou uma nova aba de Cuidado Pastoral com gráficos shadcn/ui (`AreaChart` de evolução temporal e `BarChart` de distribuição), além de alertas de solicitações de oração. Foi criada a página dedicada do membro (`/dashboard/members/[personId]`) exibindo histórico completo de escalas, cultos servidos, gráficos do felicitômetro, indisponibilidades e atalhos rápidos de contato.
+- **07/11/2026:** Recorrência por dia da semana no mês concluída. Foi implementada a opção de recorrência mensal baseada no dia da semana (ex: "Todo 2º domingo do mês", "Toda 3ª segunda-feira do mês", "Todo último domingo do mês"). No formulário de criação de cultos/eventos (`CreateEventDialog`), o select adapta dinamicamente seu rótulo de acordo com a data escolhida. O usuário tem à disposição um seletor para ajustar a semana (1ª, 2ª, 3ª, 4ª ou última) e um card com feedback imediato das próximas ocorrências estimadas. A geração no banco e os rótulos respeitam o gênero gramatical e o fuso horário da igreja, com suite completa de testes unitários.
 

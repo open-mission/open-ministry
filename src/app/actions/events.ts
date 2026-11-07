@@ -18,6 +18,7 @@ import {
   formatEventTime,
   generateOccurrences,
   getEvent,
+  getNthWeekdayInfo,
   zonedDateTimeToUtc,
 } from "@/lib/events";
 import { createNotifications } from "@/lib/notifications";
@@ -156,7 +157,7 @@ const createEventSchema = baseEventSchema.extend({
       const number = Number(value);
       return Number.isFinite(number) ? number : undefined;
     },
-    z.number().int().min(1).max(12).optional(),
+    z.number().int().min(-1).max(12).optional(),
   ),
 });
 
@@ -363,11 +364,19 @@ export async function createEventAction(
     };
   }
 
+  const nthFromDate = getNthWeekdayInfo(startsAt).nth;
+  const recurrenceInterval =
+    recurrence === "custom"
+      ? (parsed.data.recurrenceInterval ?? null)
+      : recurrence === "monthly_nth_weekday"
+        ? (parsed.data.recurrenceInterval ?? nthFromDate)
+        : null;
+
   const occurrences = generateOccurrences({
     startsAt,
     endsAt,
     recurrence,
-    recurrenceInterval: parsed.data.recurrenceInterval ?? null,
+    recurrenceInterval,
     recurrenceEndsAt,
   });
   const seriesId = recurrence === "none" ? null : randomUUID();
@@ -386,10 +395,7 @@ export async function createEventAction(
         startsAt: occurrence.startsAt,
         endsAt: occurrence.endsAt,
         recurrence: recurrence === "none" ? null : recurrence,
-        recurrenceInterval:
-          recurrence === "custom"
-            ? (parsed.data.recurrenceInterval ?? null)
-            : null,
+        recurrenceInterval,
         recurrenceEndsAt,
       })),
     );

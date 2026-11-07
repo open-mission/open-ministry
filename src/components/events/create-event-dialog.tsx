@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { CalendarPlusIcon } from "lucide-react";
+import { useActionState, useMemo, useState } from "react";
+import { CalendarPlusIcon, RepeatIcon } from "lucide-react";
 
 import {
   createEventAction,
@@ -38,7 +38,13 @@ import {
   RECURRENCE_OPTIONS,
   recurrenceLabels,
 } from "@/lib/event-options";
+import {
+  findNthWeekdayOfMonth,
+  formatNthWeekdayLabel,
+  getNthWeekdayInfo,
+} from "@/lib/recurrence-utils";
 import { computeDurationMinutes, computeEndTime } from "@/lib/plan-utils";
+import { cn } from "@/lib/utils";
 
 type DepartmentOption = {
   id: string;
@@ -98,10 +104,69 @@ function CreateEventForm({
     createEventAction,
     undefined,
   );
+  const [selectedDate, setSelectedDate] = useState(defaultDate);
   const [recurrence, setRecurrence] = useState("none");
   const [startTime, setStartTime] = useState("19:00");
   const [endTime, setEndTime] = useState("20:30");
   const durationMinutes = computeDurationMinutes(startTime, endTime);
+
+  const weekdayInfo = useMemo(
+    () => getNthWeekdayInfo(selectedDate || defaultDate),
+    [selectedDate, defaultDate],
+  );
+
+  const [customNthPosition, setCustomNthPosition] = useState<number | null>(
+    null,
+  );
+  const nthPosition = customNthPosition ?? weekdayInfo.nth;
+
+  const handleDateChange = (newDate: string) => {
+    setSelectedDate(newDate);
+    setCustomNthPosition(null);
+  };
+
+  const defaultEndDate = useMemo(() => {
+    try {
+      const [y, m, d] = (selectedDate || defaultDate).split("-").map(Number);
+      const future = new Date(y, m - 1 + 6, d);
+      const fy = future.getFullYear();
+      const fm = String(future.getMonth() + 1).padStart(2, "0");
+      const fd = String(future.getDate()).padStart(2, "0");
+      return `${fy}-${fm}-${fd}`;
+    } catch {
+      return defaultDate;
+    }
+  }, [selectedDate, defaultDate]);
+
+  const previewDates = useMemo(() => {
+    if (recurrence !== "monthly_nth_weekday" || !selectedDate) return [];
+    try {
+      const [y, m, d] = selectedDate.split("-").map(Number);
+      const targetWeekday = weekdayInfo.weekday;
+      const nth = nthPosition;
+      const results: string[] = [];
+
+      for (let offset = 0; offset < 12; offset++) {
+        const dObj = new Date(y, m - 1 + offset, 1);
+        const year = dObj.getFullYear();
+        const month = dObj.getMonth();
+        const day = findNthWeekdayOfMonth(year, month, targetWeekday, nth);
+        if (!day) continue;
+
+        const dateObj = new Date(year, month, day);
+        const selObj = new Date(y, m - 1, d);
+        if (dateObj.getTime() < selObj.getTime()) continue;
+
+        const formatted = `${String(day).padStart(2, "0")}/${String(month + 1).padStart(2, "0")}/${year}`;
+        results.push(formatted);
+        if (results.length >= 4) break;
+      }
+
+      return results;
+    } catch {
+      return [];
+    }
+  }, [recurrence, selectedDate, weekdayInfo.weekday, nthPosition]);
 
   const handleStartTimeChange = (newStartTime: string) => {
     setStartTime(newStartTime);
@@ -174,7 +239,8 @@ function CreateEventForm({
               id="event-date"
               name="date"
               type="date"
-              defaultValue={defaultDate}
+              value={selectedDate}
+              onChange={(e) => handleDateChange(e.target.value)}
               className="h-10"
               aria-invalid={Boolean(state?.fieldErrors?.date)}
               required
@@ -241,7 +307,9 @@ function CreateEventForm({
             >
               {RECURRENCE_OPTIONS.map((option) => (
                 <NativeSelectOption key={option} value={option}>
-                  {recurrenceLabels[option]}
+                  {option === "monthly_nth_weekday"
+                    ? (weekdayInfo?.label ?? recurrenceLabels[option])
+                    : recurrenceLabels[option]}
                 </NativeSelectOption>
               ))}
             </NativeSelect>
@@ -254,7 +322,7 @@ function CreateEventForm({
         </div>
 
         {recurrence !== "none" ? (
-          <div className="grid gap-4 rounded-lg bg-muted/50 p-3 sm:grid-cols-2">
+          <div className="grid gap-4 rounded-lg bg-muted/50 p-3.5 sm:grid-cols-2">
             <Field data-invalid={Boolean(state?.fieldErrors?.recurrenceEndsAt)}>
               <FieldLabel htmlFor="event-recurrence-end">
                 Repetir até
@@ -263,7 +331,7 @@ function CreateEventForm({
                 id="event-recurrence-end"
                 name="recurrenceEndsAt"
                 type="date"
-                defaultValue={defaultDate}
+                defaultValue={defaultEndDate}
                 className="h-10"
                 aria-invalid={Boolean(state?.fieldErrors?.recurrenceEndsAt)}
                 required
@@ -304,6 +372,86 @@ function CreateEventForm({
                   )}
                 />
               </Field>
+            ) : null}
+
+            {recurrence === "monthly_nth_weekday" ? (
+              <Field
+                data-invalid={Boolean(state?.fieldErrors?.recurrenceInterval)}
+              >
+                <FieldLabel htmlFor="event-recurrence-nth">
+                  Qual semana do mês?
+                </FieldLabel>
+                <NativeSelect
+                  id="event-recurrence-nth"
+                  name="recurrenceInterval"
+                  value={String(nthPosition)}
+                  onChange={(e) => setCustomNthPosition(Number(e.target.value))}
+                  className="w-full [&_select]:h-10"
+                  aria-invalid={Boolean(
+                    state?.fieldErrors?.recurrenceInterval,
+                  )}
+                >
+                  <NativeSelectOption value="1">
+                    1ª semana (1º {weekdayInfo.shortName})
+                  </NativeSelectOption>
+                  <NativeSelectOption value="2">
+                    2ª semana (2º {weekdayInfo.shortName})
+                  </NativeSelectOption>
+                  <NativeSelectOption value="3">
+                    3ª semana (3º {weekdayInfo.shortName})
+                  </NativeSelectOption>
+                  <NativeSelectOption value="4">
+                    4ª semana (4º {weekdayInfo.shortName})
+                  </NativeSelectOption>
+                  {weekdayInfo.nth === 5 ? (
+                    <NativeSelectOption value="5">
+                      5ª semana (5º {weekdayInfo.shortName})
+                    </NativeSelectOption>
+                  ) : null}
+                  <NativeSelectOption value="-1">
+                    Última semana (último(a) {weekdayInfo.shortName})
+                  </NativeSelectOption>
+                </NativeSelect>
+                <FieldError
+                  errors={state?.fieldErrors?.recurrenceInterval?.map(
+                    (message) => ({ message }),
+                  )}
+                />
+              </Field>
+            ) : null}
+
+            {recurrence === "monthly_nth_weekday" ? (
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs space-y-2 sm:col-span-2">
+                <div className="flex items-center gap-1.5 font-medium text-foreground">
+                  <RepeatIcon className="size-3.5 text-primary" />
+                  <span>
+                    {formatNthWeekdayLabel(nthPosition, weekdayInfo.weekday)}
+                  </span>
+                </div>
+                {previewDates.length > 0 ? (
+                  <div className="space-y-1">
+                    <p className="text-[0.72rem] text-muted-foreground">
+                      Próximas ocorrências estimadas:
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {previewDates.map((pDate, idx) => (
+                        <span
+                          key={pDate}
+                          className={cn(
+                            "inline-flex items-center rounded-md px-2 py-0.5 text-[0.7rem] font-medium border shadow-2xs",
+                            idx === 0
+                              ? "bg-primary/15 text-primary border-primary/30"
+                              : "bg-background text-foreground border-border",
+                          )}
+                        >
+                          {pDate}
+                          {idx === 0 ? " (primeiro)" : ""}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
             ) : null}
           </div>
         ) : null}
