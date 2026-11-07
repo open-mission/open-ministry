@@ -10,24 +10,73 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
-Nenhum item pendente no backlog.
-
 ### Doing
 
-Nenhum item em andamento.
-
 ### Done
+
+- [x] Corrigir erro de exportação de objeto em Server Action (`src/app/actions/events.ts`): removido `export` de `const STARTER_PLAN_TEMPLATE` que violava a diretiva `"use server"` causando `Error: A "use server" file can only export async functions, found object` ao escalar pessoas em produção.
+
+- [x] Funcionalidade offline inteligente com segregação por nível de acesso (Membro, Líder e Admin)
+  - [x] Estratégia de cache avançada no Service Worker (`public/sw.js`): pre-caching de manifest e ícones, e interceptação de `/api/offline-data` com Network-First e Cache-Fallback
+  - [x] Bundle de dados offline inteligente por nível de usuário (`src/lib/offline-service.ts` e `/api/offline-data`):
+    - **Membro:** Minhas Escalas (`/dashboard/schedules`) com datas, funções e ministérios, próximos cultos e perfil pessoal
+    - **Líder de Ministério:** Escalas da equipe liderada, cronogramas de culto detalhados (ordem do culto com momentos e tempos para uso no templo sem Wi-Fi) e contatos rápidos
+    - **Pastor / Administrador:** Acesso irrestrito a todas as ordens de culto com minutagem, escalas completas de todos os ministérios e telefones de emergência de toda a liderança
+  - [x] Interface standalone interativa em `public/offline.html`: mesmo sem conexão inicial, permite navegar por abas (Minhas Escalas, Cronograma do Culto, Equipes e Contatos com links `tel:` diretos)
+  - [x] Banner discreto no topo do aplicativo (`OfflineBanner`) com detecção de queda e retomada de sinal com aviso de sincronização
+  - [x] Diálogo completo no app (`OfflineViewerDialog`) para consulta rápida de dados em cache
+  - [x] Card de gerenciamento e sincronização manual em Configurações (`OfflineCacheCard`), disponível tanto no desktop quanto no menu mobile estilo iOS
+
+- [x] Nova Home da Plataforma (Dashboard Admin e Membro) com Acessos Rápidos, Carrosséis Mobile e Navegação Nativa
+  - [x] Seção de Acessos Rápidos no Dashboard com scroll horizontal e snap no mobile (Novo culto, Enviar aviso, Nova pessoa, Escala, Agenda, Ministérios e Cuidado pastoral)
+  - [x] Próximo Culto em Destaque com contagem regressiva/proximidade (Hoje, Amanhã, Em X dias), horário, ministérios e status de preenchimento da escala com avatares
+  - [x] Carrossel horizontal de Próximos Cultos e Eventos com snap touch para experiência nativa de app móvel
+  - [x] Integração completa com Felicitômetro: check-in pessoal diário do líder e resumo de Cuidado Pastoral com média de sentimentos e lista de pedidos de oração/conversa com atalho direto de WhatsApp
+  - [x] Carrossel horizontal de Pessoas Recentes cadastradas com acesso direto ao perfil do membro
+  - [x] Barra inferior mobile (Bottom Navigation) com botão "Menu" (3 barras horizontais / `MenuIcon`) acionando o Drawer/Sidebar completo de navegação do sistema
+  - [x] Quick Actions adaptadas para visão de membros (Minhas Escalas, Agenda, Ministérios, Pessoas, Avisos e Meu Perfil)
+  - [x] Interface com shape impecável: Fraunces, cartões com bordas suaves, visual acolhedor e alta ergonomia de toque
+
+- [x] Funcionalidade de Felicitômetro (check-in diário de sentimentos, oração e conversa) e Página Completa do Membro.
+  - [x] Modelo de dados `person_mood` no Drizzle/Neon com score (1-5), pedidos de oração, necessidade de conversa com liderança, notas e unicidade por dia
+  - [x] Card interativo do Felicitômetro com 5 níveis ilustrados, feedback de estado, edição diária e integração na home do membro
+  - [x] Painel de Cuidado Pastoral com gráficos shadcn/ui (`ChartContainer`, `AreaChart`, `BarChart`) exibindo evolução temporal e distribuição de sentimentos
+  - [x] Página completa de perfil do membro (`/dashboard/members/[personId]`) com dados cadastrais, cultos servidos, próximas escalas, histórico de sentimentos e indisponibilidades
+  - [x] Controle de acesso e confidencialidade: visível apenas por líderes dos departamentos do membro ou administradores da igreja
+  - [x] Links integrados na tabela de pessoas (`PeopleTable`) e atalhos diretos para WhatsApp e avisos direcionados
+
+- [x] PWA notificações com push usando nativo (VAPID / Web Push) e suporte a OneSignal.
+  - [x] Schema `push_subscription` para armazenar endpoints, chaves VAPID (`p256dh`, `auth`) e metadados de dispositivo
+  - [x] Listeners de evento `push` e `notificationclick` no Service Worker (`public/sw.js`) com foco em janela aberta ou abertura de URL
+  - [x] Serviço de envio de Web Push nativo (`src/lib/push-notifications.ts`) com fallback transparente para OneSignal
+  - [x] Card de gerenciamento de Push Notifications em Configurações (`/dashboard/settings`), solicitação de permissão do navegador e botão de disparo de teste
+  - [x] Integração ativa do canal "push" no despachador unificado `dispatchNotification` e no diálogo de avisos multicanal (`AnnouncementDialog`)
+  - [x] Configurações de credenciais e tokens VAPID/OneSignal documentadas em `.env.example`
+
+- [x] Popup e tutorial de instalação como PWA no celular (iOS / Android).
+  - [x] Detecção inteligente de ambiente (iOS Safari, Android Chromium, modo standalone instalado)
+  - [x] Suporte ao evento nativo `beforeinstallprompt` para instalação com 1 toque no Android/Chrome
+  - [x] Tutorial passo a passo ilustrado para iOS (Compartilhar &gt; Adicionar à Tela de Início) e Android
+  - [x] Banner flutuante no mobile com animação fluida e descarte persistente (`localStorage`)
+  - [x] Card dedicado de PWA nas Configurações (`/dashboard/settings`), disponível tanto no desktop quanto no menu mobile estilo iOS
+
+- [x] Possibilidade de notificar (via sistema e WhatsApp) um usuário do departamento que sou líder, ou usuário da igreja se for admin ou owner, com seleção multicanal.
+  - [x] Suporte a líderes de departamento enviarem avisos para seus departamentos e membros liderados com autorização estrita
+  - [x] Seleção ergonômica de destinatário: Toda a igreja (admin/owner), Por Departamento, ou Pessoa específica
+  - [x] Painel de seleção de canais: No aplicativo (ativo por padrão), WhatsApp (disparo direto via Evolution API), E-mail (reserva futura), Push (reserva futura)
+  - [x] Envio multicanal inteligente: disparo em lote in-app e despacho assíncrono para WhatsApp dos membros com telefone cadastrado
+  - [x] Atalho de envio de avisos integrado diretamente na página do departamento (`/dashboard/departments/[id]`) e na central (`/dashboard/notifications`)
 
 - [x] Tela de Agenda e Calendário Completo (`/dashboard/calendar`).
   - [x] Baseado no padrão de arquitetura headless do dninomiya/full-calendar-for-shadcn-ui integrado ao design system
   - [x] Cinco modos de visualização totalmente responsivos: Mês (`month`), Semana (`week`), Dia (`day`), Ano (`year`) e Agenda linear (`agenda`)
-  - [x] Integração completa de dados: Cultos & Eventos da igreja, Minhas Escalas de serviço com função/departamento e Bloqueios de Indisponibilidade
-  - [x] Filtros interativos por chips: Todos, Cultos & Eventos, Minhas Escalas e Indisponibilidades
+  - [x] Integração completa de dados: Cultos &amp; Eventos da igreja, Minhas Escalas de serviço com função/departamento e Bloqueios de Indisponibilidade
+  - [x] Filtros interativos por chips: Todos, Cultos &amp; Eventos, Minhas Escalas e Indisponibilidades
   - [x] Navegação temporal fluida com botões Anterior/Próximo e atalho "Hoje"
   - [x] Diálogo de detalhes ao clicar em qualquer item da agenda com ações rápidas (ir ao culto ou gerenciar ausências)
   - [x] Configurações de início da semana (Domingo ou Segunda-feira) e fuso horário do usuário
   - [x] Preferências de calendário configuráveis tanto pelo cabeçalho da agenda quanto pela tela de Configurações (`/dashboard/settings`), tanto no Desktop quanto no menu mobile estilo iOS
-  - [x] Item "Agenda" adicionado à barra de navegação lateral (Cultos & Escalas) e menu inferior mobile para acesso de administradores e membros
+  - [x] Item "Agenda" adicionado à barra de navegação lateral (Cultos &amp; Escalas) e menu inferior mobile para acesso de administradores e membros
 
 - [x] Bloqueio pontual de datas de indisponibilidade com motivo/observação e períodos.
   - [x] Modelo de dados `person_unavailability` no Drizzle ORM com RLS policies e migration aplicada ao NeonDB
@@ -42,9 +91,9 @@ Nenhum item em andamento.
   - [x] Seleção independente de períodos: Manhã (06h-12h), Tarde (12h-18h) e Noite (18h-23h)
   - [x] Atalhos rápidos por dia (marcar dia todo ou limpar dia) e observações/restrições gerais
   - [x] Server actions de consulta e persistência atômica da disponibilidade
-  - [x] Link direto "Disponibilidade" adicionado na navegação lateral (Cultos & Escalas)
+  - [x] Link direto "Disponibilidade" adicionado na navegação lateral (Cultos &amp; Escalas)
 
-- [x] Integração com Evolution API Go (WhatsApp), Multi-canal de Notificações, Upstash Redis & QStash e Onboarding com Telefone.
+- [x] Integração com Evolution API Go (WhatsApp), Multi-canal de Notificações, Upstash Redis &amp; QStash e Onboarding com Telefone.
   - [x] Modelo de dados `organization_notification_channel` no Drizzle ORM com RLS e migration aplicada
   - [x] Campo `phone` no usuário e sincronização com o modelo `person`
   - [x] Coleta de WhatsApp/telefone no formulário de onboarding e edição na tela de Minha Conta
@@ -53,7 +102,7 @@ Nenhum item em andamento.
   - [x] Despachador de notificações multi-canal (`dispatchNotification`) com modelos formatados para WhatsApp (boas-vindas, escalas e avisos)
   - [x] Notificação de boas-vindas disparada automaticamente ao criar a igreja/completar onboarding
   - [x] Notificação de escala disparada via WhatsApp para a pessoa escalada ao adicionar na equipe do culto
-  - [x] Suporte à mensageria assíncrona com Upstash Redis & QStash (`enqueueNotificationJob` e rota de webhook `/api/webhooks/qstash/notification` com verificação de assinatura)
+  - [x] Suporte à mensageria assíncrona com Upstash Redis &amp; QStash (`enqueueNotificationJob` e rota de webhook `/api/webhooks/qstash/notification` com verificação de assinatura)
   - [x] Endpoint de job agendado `/api/jobs/monthly-availability` para lembretes de disponibilidade mensal
 
 - [x] Salvar cronograma como modelo, importação, limpeza e exportação de cronogramas de culto.
@@ -209,7 +258,11 @@ Nenhum item em andamento.
   - Removidas bordas duplicadas nos avatares da igreja em `/dashboard/church` e no formulário de identidade visual.
 - **07/11/2026:** Drag and drop no cronograma concluído. Os momentos e seções do culto agora podem ser reordenados diretamente arrastando pelo handle vertical com animação suave, feedback de elevação e suporte tanto a mouse/toque quanto teclado. Os horários recalculam em tempo real e a persistência é sincronizada no banco com atualização otimista.
 - **07/11/2026:** Modelos e gestão de cronograma concluídos. Agora é possível salvar o cronograma de qualquer culto como modelo reutilizável da igreja, aplicar modelos salvos ou o modelo padrão do sistema (com alerta inteligente caso já existam itens para evitar perdas acidentais), limpar o cronograma por completo com confirmação e exportar/importar cronogramas em formato `.json`.
-- **07/11/2026:** Notificações via Evolution API Go (WhatsApp) e Upstash Redis/QStash concluídas. Cada igreja pode configurar sua própria instância da Evolution API em Configurações > Notificações, testar a conexão com status online e disparar mensagens de teste. O onboarding agora coleta WhatsApp/telefone do usuário, sincronizando com a pessoa e enviando notificação de boas-vindas. Ao escalar pessoas para eventos, notificações personalizadas são enviadas por WhatsApp além do in-app. Toda a mensageria suporta a fila assíncrona do Upstash Redis e QStash com fallback transparente.
+- **07/11/2026:** Notificações via Evolution API Go (WhatsApp) e Upstash Redis/QStash concluídas. Cada igreja pode configurar sua própria instância da Evolution API em Configurações &gt; Notificações, testar a conexão com status online e disparar mensagens de teste. O onboarding agora coleta WhatsApp/telefone do usuário, sincronizando com a pessoa e enviando notificação de boas-vindas. Ao escalar pessoas para eventos, notificações personalizadas são enviadas por WhatsApp além do in-app. Toda a mensageria suporta a fila assíncrona do Upstash Redis e QStash com fallback transparente.
 - **07/11/2026:** Disponibilidade para servir concluída. Foi criada a rota `/dashboard/availability` onde voluntários e membros podem definir seus dias e períodos disponíveis (manhã, tarde e noite) para servir nos cultos da igreja, além de registrar observações e preferências para a liderança. A navegação lateral agora conta com o atalho "Disponibilidade" e o modelo conta com RLS e persistência atômica.
 - **07/11/2026:** Design Feedback das Configurações no Mobile concluído. A tela `/dashboard/settings` ganhou layout inspirado nas configurações do iPhone/iOS em telas móveis: cabeçalho de perfil estilo Apple ID, seções agrupadas em cartões com cantos arredondados, ícones em squircle coloridos, navegação fluida em drill-down com botão de retorno ("‹ Configurações") e subtítulos informativos. No desktop, a navegação clássica por abas é mantida com total responsividade.
+- **07/11/2026:** Notificações multicanal e avisos para líderes de departamento concluídos. Líderes de departamentos agora podem enviar avisos para suas equipes e membros de forma direcionada, enquanto administradores podem notificar toda a igreja, departamentos ou membros individuais. O novo modal de avisos conta com seleção de canais (App, WhatsApp via Evolution API, além de slots para Email e Push), feedback em tempo real e integração direta na central de notificações e na página de detalhes do departamento.
+- **07/11/2026:** Tutorial e pop-up de instalação PWA concluídos. Foi desenvolvido um sistema completo de instalação como aplicativo com detecção automática de sistema operacional (iOS e Android), suporte ao prompt nativo do navegador para instalação em um toque no Chromium/Android, guia passo a passo ilustrado com ícones para Safari no iOS (Compartilhar > Adicionar à Tela de Início), banner flutuante no mobile com descarte persistente (`localStorage`) e card dedicado nas Configurações (`/dashboard/settings`).
+- **07/11/2026:** PWA Push Notifications concluído. Foi implementado o suporte a notificações push nativas via VAPID/Web Push e OneSignal com persistência de subscrições (`push_subscription` no Drizzle/NeonDB), eventos de recebimento e clique no Service Worker (`public/sw.js`), card de ativação e disparo de teste em `/dashboard/settings` e integração direta com o canal push em avisos e escalas.
+- **07/11/2026:** Felicitômetro e Página do Membro concluídos. Os membros agora podem registrar diariamente seu estado emocional em uma escala de 5 níveis ilustrados, com opção de solicitar oração e conversa com a liderança. A central de pessoas ganhou uma nova aba de Cuidado Pastoral com gráficos shadcn/ui (`AreaChart` de evolução temporal e `BarChart` de distribuição), além de alertas de solicitações de oração. Foi criada a página dedicada do membro (`/dashboard/members/[personId]`) exibindo histórico completo de escalas, cultos servidos, gráficos do felicitômetro, indisponibilidades e atalhos rápidos de contato.
 

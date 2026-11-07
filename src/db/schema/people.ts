@@ -58,6 +58,7 @@ export const personRelations = relations(person, ({ one, many }) => ({
   }),
   availabilities: many(personAvailability),
   unavailabilities: many(personUnavailability),
+  moods: many(personMood),
 }));
 
 export type AvailabilityPeriod = "morning" | "afternoon" | "evening";
@@ -158,4 +159,60 @@ export const personUnavailabilityRelations = relations(
     }),
   }),
 );
+
+export const personMood = pgTable(
+  "person_mood",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    personId: text("person_id")
+      .notNull()
+      .references(() => person.id, { onDelete: "cascade" }),
+    userId: text("user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    date: text("date").notNull(), // Format "YYYY-MM-DD"
+    score: integer("score").notNull(), // 1 a 5
+    needsPrayer: boolean("needs_prayer").default(false).notNull(),
+    needsTalk: boolean("needs_talk").default(false).notNull(),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("person_mood_org_person_idx").on(
+      table.organizationId,
+      table.personId,
+    ),
+    index("person_mood_org_date_idx").on(
+      table.organizationId,
+      table.date,
+    ),
+    uniqueIndex("person_mood_person_date_uidx").on(
+      table.organizationId,
+      table.personId,
+      table.date,
+    ),
+  ],
+);
+
+export const personMoodRelations = relations(personMood, ({ one }) => ({
+  organization: one(organization, {
+    fields: [personMood.organizationId],
+    references: [organization.id],
+  }),
+  person: one(person, {
+    fields: [personMood.personId],
+    references: [person.id],
+  }),
+  user: one(user, {
+    fields: [personMood.userId],
+    references: [user.id],
+  }),
+}));
 

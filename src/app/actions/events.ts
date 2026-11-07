@@ -1062,7 +1062,7 @@ export async function reorderPlanItemsAction(
   return { ok: true };
 }
 
-export const STARTER_PLAN_TEMPLATE: schema.PlanTemplateItem[] = [
+const STARTER_PLAN_TEMPLATE: schema.PlanTemplateItem[] = [
   { type: "header", title: "INTRODUÇÃO & ABERTURA", durationSeconds: 0, order: 0 },
   {
     type: "item",

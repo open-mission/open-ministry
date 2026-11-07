@@ -23,6 +23,29 @@ export async function listDepartments(organizationId: string) {
   });
 }
 
+export async function listUserLeaderDepartments(
+  organizationId: string,
+  userId: string,
+) {
+  const departments = await db.query.department.findMany({
+    where: eq(schema.department.organizationId, organizationId),
+    with: {
+      members: {
+        with: {
+          person: true,
+        },
+      },
+    },
+    orderBy: (departments, { asc }) => [asc(departments.name)],
+  });
+
+  return departments.filter((department) =>
+    department.members.some(
+      (member) => member.person?.userId === userId && member.isLeader,
+    ),
+  );
+}
+
 export async function getDepartment(
   organizationId: string,
   departmentId: string,

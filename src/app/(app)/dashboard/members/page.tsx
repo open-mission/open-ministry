@@ -2,12 +2,18 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
+import { SparklesIcon, UsersIcon } from "lucide-react";
+
+import { FelicitometroDashboard } from "@/components/felicitometro/felicitometro-dashboard";
 import { InviteDialog } from "@/components/members/invite-dialog";
 import { PendingInvitations } from "@/components/members/pending-invitations";
 import { CreatePersonDialog } from "@/components/people/create-person-dialog";
 import { PeopleTable } from "@/components/people/people-table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { listUserLeaderDepartments } from "@/lib/departments";
+import { getOrganizationMoodOverview } from "@/lib/felicitometro";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { listPeople } from "@/lib/people";
 
@@ -28,7 +34,20 @@ async function MembersContent() {
 
   const { organization, isAdmin, session } =
     await requireOrganizationContext();
-  const people = await listPeople(organization.id);
+  const [people, leaderDepartments] = await Promise.all([
+    listPeople(organization.id),
+    listUserLeaderDepartments(organization.id, session.user.id),
+  ]);
+
+  const canViewFelicitometro = isAdmin || leaderDepartments.length > 0;
+  const moodOverview = canViewFelicitometro
+    ? await getOrganizationMoodOverview({
+        organizationId: organization.id,
+        viewerUserId: session.user.id,
+        isAdmin,
+      })
+    : null;
+
   const roleByUserId = Object.fromEntries(
     organization.members.map((member) => [
       member.userId,
@@ -81,17 +100,59 @@ async function MembersContent() {
         ) : null}
       </header>
 
-      <PeopleTable
-        people={people}
-        roleByUserId={roleByUserId}
-        linkableMembers={linkableMembers}
-        isAdmin={isAdmin}
-        currentUserId={session.user.id}
-      />
+      {canViewFelicitometro && moodOverview ? (
+        <Tabs defaultValue="list" className="w-full space-y-6">
+          <TabsList className="grid grid-cols-2 max-w-xs h-11 bg-muted/60 p-1">
+            <TabsTrigger value="list" className="text-xs font-medium gap-2">
+              <UsersIcon className="size-4" />
+              Pessoas ({people.length})
+            </TabsTrigger>
+            <TabsTrigger
+              value="felicitometro"
+              className="text-xs font-medium gap-2 relative"
+            >
+              <SparklesIcon className="size-4" />
+              Felicitômetro
+              {moodOverview.prayerRequestsCount > 0 ||
+              moodOverview.talkRequestsCount > 0 ? (
+                <span className="flex size-2 rounded-full bg-amber-500 animate-pulse" />
+              ) : null}
+            </TabsTrigger>
+          </TabsList>
 
-      {isAdmin ? (
-        <PendingInvitations invitations={organization.invitations} />
-      ) : null}
+          <TabsContent value="list" className="space-y-8">
+            <PeopleTable
+              people={people}
+              roleByUserId={roleByUserId}
+              linkableMembers={linkableMembers}
+              isAdmin={isAdmin}
+              currentUserId={session.user.id}
+            />
+
+            {isAdmin ? (
+              <PendingInvitations invitations={organization.invitations} />
+            ) : null}
+          </TabsContent>
+
+          <TabsContent value="felicitometro" className="space-y-6">
+            <FelicitometroDashboard overview={moodOverview} />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <>
+          <PeopleTable
+            people={people}
+            roleByUserId={roleByUserId}
+            linkableMembers={linkableMembers}
+            isAdmin={isAdmin}
+            currentUserId={session.user.id}
+          />
+
+          {isAdmin ? (
+            <PendingInvitations invitations={organization.invitations} />
+          ) : null}
+        </>
+      )}
     </div>
   );
 }

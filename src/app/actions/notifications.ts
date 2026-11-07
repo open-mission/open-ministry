@@ -1,15 +1,23 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
+import { db } from "@/db";
+import * as schema from "@/db/schema";
+import { listUserLeaderDepartments } from "@/lib/departments";
 import {
   createNotifications,
-  getNotificationRecipients,
   listNotifications,
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/lib/notifications";
+import {
+  dispatchNotification,
+  getOrganizationEvolutionConfig,
+} from "@/lib/notification-service";
+import { sendWebPushToUser } from "@/lib/push-notifications";
 import { getOrganizationContext } from "@/lib/organizations";
 
 export type AnnouncementFormState =
@@ -18,7 +26,10 @@ export type AnnouncementFormState =
       fieldErrors?: {
         title?: string[];
         body?: string[];
-        audience?: string[];
+        audienceType?: string[];
+        departmentId?: string[];
+        personId?: string[];
+        channels?: string[];
       };
       success?: boolean;
     }
@@ -29,19 +40,56 @@ export type NotificationActionResult = {
   error?: string;
 };
 
-const announcementSchema = z.object({
-  title: z
-    .string()
-    .trim()
-    .min(2, "Informe o título do aviso.")
-    .max(80, "O título pode ter no máximo 80 caracteres."),
-  body: z
-    .string()
-    .trim()
-    .min(2, "Escreva a mensagem do aviso.")
-    .max(500, "A mensagem pode ter no máximo 500 caracteres."),
-  audience: z.string().trim().min(1, "Escolha quem vai receber."),
-});
+const announcementSchema = z
+  .object({
+    title: z
+      .string()
+      .trim()
+      .min(2, "Informe o título do aviso.")
+      .max(80, "O título pode ter no máximo 80 caracteres."),
+    body: z
+      .string()
+      .trim()
+      .min(2, "Escreva a mensagem do aviso.")
+      .max(500, "A mensagem pode ter no máximo 500 caracteres."),
+    audienceType: z.enum(["all", "department", "person"], {
+      message: "Selecione o tipo de destinatário.",
+    }),
+    departmentId: z.string().trim().optional().nullable(),
+    personId: z.string().trim().optional().nullable(),
+    sendInApp: z.boolean(),
+    sendWhatsApp: z.boolean(),
+    sendPush: z.boolean().default(false),
+  })
+  .refine((data) => data.sendInApp || data.sendWhatsApp || data.sendPush, {
+    message:
+      "Selecione ao menos um canal ativo (Aplicativo, WhatsApp ou Push).",
+    path: ["channels"],
+  })
+  .refine(
+    (data) => {
+      if (data.audienceType === "department") {
+        return Boolean(data.departmentId && data.departmentId.length > 0);
+      }
+      return true;
+    },
+    {
+      message: "Selecione o departamento que receberá o aviso.",
+      path: ["departmentId"],
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.audienceType === "person") {
+        return Boolean(data.personId && data.personId.length > 0);
+      }
+      return true;
+    },
+    {
+      message: "Selecione a pessoa que receberá o aviso.",
+      path: ["personId"],
+    },
+  );
 
 function revalidateNotifications() {
   revalidatePath("/dashboard");
@@ -52,10 +100,58 @@ export async function sendAnnouncementAction(
   _state: AnnouncementFormState,
   formData: FormData,
 ): Promise<AnnouncementFormState> {
+  const channelsValues = formData.getAll("channels").map(String);
+  const sendInAppParam = formData.get("sendInApp");
+  const sendWhatsAppParam = formData.get("sendWhatsApp");
+  const sendPushParam = formData.get("sendPush");
+
+  const sendInApp =
+    channelsValues.includes("in_app") ||
+    sendInAppParam === "on" ||
+    sendInAppParam === "true";
+  const sendWhatsApp =
+    channelsValues.includes("whatsapp") ||
+    sendWhatsAppParam === "on" ||
+    sendWhatsAppParam === "true";
+  const sendPush =
+    channelsValues.includes("push") ||
+    sendPushParam === "on" ||
+    sendPushParam === "true";
+
+  const rawAudienceType = formData.get("audienceType");
+  const rawAudience = formData.get("audience"); // fallback for legacy select
+
+  let audienceType = rawAudienceType ? String(rawAudienceType) : "all";
+  let departmentId = formData.get("departmentId")
+    ? String(formData.get("departmentId"))
+    : undefined;
+  let personId = formData.get("personId")
+    ? String(formData.get("personId"))
+    : undefined;
+
+  // Backwards compatibility with single select "all" or "<departmentId>"
+  if (!rawAudienceType && rawAudience) {
+    const val = String(rawAudience);
+    if (val === "all") {
+      audienceType = "all";
+    } else if (val.startsWith("person:")) {
+      audienceType = "person";
+      personId = val.replace("person:", "");
+    } else {
+      audienceType = "department";
+      departmentId = val;
+    }
+  }
+
   const parsed = announcementSchema.safeParse({
     title: formData.get("title"),
     body: formData.get("body"),
-    audience: formData.get("audience"),
+    audienceType,
+    departmentId,
+    personId,
+    sendInApp,
+    sendWhatsApp,
+    sendPush,
   });
 
   if (!parsed.success) {
@@ -70,43 +166,206 @@ export async function sendAnnouncementAction(
     };
   }
 
-  if (!context.isAdmin) {
+  const isChurchAdmin = context.isAdmin;
+  const userLeaderDepartments = await listUserLeaderDepartments(
+    context.organization.id,
+    context.session.user.id,
+  );
+  const isLeader = userLeaderDepartments.length > 0;
+
+  if (!isChurchAdmin && !isLeader) {
     return {
-      error: "Só administradores podem enviar avisos para a equipe.",
+      error:
+        "Você precisa ser administrador ou líder de departamento para enviar avisos.",
     };
   }
 
-  const departmentId =
-    parsed.data.audience === "all" ? null : parsed.data.audience;
-  const recipients = await getNotificationRecipients(
-    context.organization.id,
-    departmentId,
-  );
-  const userIds = recipients.filter(
-    (userId) => userId !== context.session.user.id,
-  );
+  // Permission checks by audience type
+  const { data } = parsed;
 
-  if (userIds.length === 0) {
+  if (data.audienceType === "all") {
+    if (!isChurchAdmin) {
+      return {
+        error:
+          "Apenas administradores da igreja podem enviar avisos para toda a comunidade.",
+      };
+    }
+  } else if (data.audienceType === "department") {
+    const targetDeptId = data.departmentId!;
+    const isLeaderOfTarget = userLeaderDepartments.some(
+      (dept) => dept.id === targetDeptId,
+    );
+    if (!isChurchAdmin && !isLeaderOfTarget) {
+      return {
+        error:
+          "Você só pode enviar avisos para os departamentos que você lidera.",
+      };
+    }
+  } else if (data.audienceType === "person") {
+    const targetPersonId = data.personId!;
+    if (!isChurchAdmin) {
+      // Must be a member of one of the departments led by current user
+      const isMemberOfLedDept = userLeaderDepartments.some((dept) =>
+        dept.members.some((m) => m.personId === targetPersonId),
+      );
+      if (!isMemberOfLedDept) {
+        return {
+          error:
+            "Você só pode enviar avisos para membros dos departamentos que você lidera.",
+        };
+      }
+    }
+  }
+
+  // Check WhatsApp channel configuration if WhatsApp is selected
+  if (data.sendWhatsApp) {
+    const { config } = await getOrganizationEvolutionConfig(
+      context.organization.id,
+    );
+    if (!config) {
+      if (!data.sendInApp) {
+        return {
+          error:
+            "O canal de WhatsApp não está ativo nesta igreja. Conecte sua instância em Configurações > Notificações.",
+        };
+      }
+    }
+  }
+
+  // Resolve recipients
+  type Recipient = {
+    id: string;
+    userId: string | null;
+    phone: string | null;
+    name: string | null;
+  };
+
+  let recipients: Recipient[] = [];
+
+  if (data.audienceType === "person") {
+    const target = await db.query.person.findFirst({
+      where: and(
+        eq(schema.person.id, data.personId!),
+        eq(schema.person.organizationId, context.organization.id),
+      ),
+      columns: { id: true, userId: true, phone: true, name: true },
+    });
+
+    if (!target) {
+      return { error: "Pessoa destinatária não foi encontrada." };
+    }
+
+    recipients = [target];
+  } else if (data.audienceType === "department") {
+    const members = await db.query.departmentMember.findMany({
+      where: eq(schema.departmentMember.departmentId, data.departmentId!),
+      with: {
+        person: {
+          columns: { id: true, userId: true, phone: true, name: true },
+        },
+      },
+    });
+
+    recipients = members
+      .map((m) => m.person)
+      .filter((p) => p.userId !== context.session.user.id);
+  } else {
+    // all church members
+    const allPeople = await db.query.person.findMany({
+      where: eq(schema.person.organizationId, context.organization.id),
+      columns: { id: true, userId: true, phone: true, name: true },
+    });
+
+    recipients = allPeople.filter(
+      (p) => p.userId !== context.session.user.id,
+    );
+  }
+
+  if (recipients.length === 0) {
     return {
-      error: departmentId
-        ? "Esse departamento não tem pessoas com conta para notificar."
-        : "Nenhuma outra pessoa com conta para notificar.",
+      error: "Nenhum destinatário encontrado para o envio.",
     };
   }
 
   try {
-    await createNotifications({
-      organizationId: context.organization.id,
-      userIds,
-      actorId: context.session.user.id,
-      type: "announcement",
-      title: parsed.data.title,
-      body: parsed.data.body,
-      href: null,
-    });
+    // 1. Send in-app notifications
+    if (data.sendInApp) {
+      const userIds = [
+        ...new Set(
+          recipients
+            .map((r) => r.userId)
+            .filter((uid): uid is string => Boolean(uid)),
+        ),
+      ];
+
+      if (userIds.length > 0) {
+        await createNotifications({
+          organizationId: context.organization.id,
+          userIds,
+          actorId: context.session.user.id,
+          type: "announcement",
+          title: data.title,
+          body: data.body,
+          href: "/dashboard/notifications",
+        });
+      }
+    }
+
+    // 2. Send WhatsApp notifications
+    if (data.sendWhatsApp) {
+      const { config } = await getOrganizationEvolutionConfig(
+        context.organization.id,
+      );
+
+      if (config) {
+        const recipientsWithPhone = recipients.filter((r) =>
+          Boolean(r.phone),
+        );
+
+        for (const recipient of recipientsWithPhone) {
+          await dispatchNotification({
+            organizationId: context.organization.id,
+            type: "announcement",
+            title: data.title,
+            body: data.body,
+            href: "/dashboard/notifications",
+            actorId: context.session.user.id,
+            userId: recipient.userId,
+            personId: recipient.id,
+            phone: recipient.phone,
+            name: recipient.name,
+            channels: ["whatsapp"],
+            metadata: {
+              churchName: context.organization.name,
+            },
+          });
+        }
+      }
+    }
+
+    // 3. Send Web Push notifications
+    if (data.sendPush) {
+      const userIds = [
+        ...new Set(
+          recipients
+            .map((r) => r.userId)
+            .filter((uid): uid is string => Boolean(uid)),
+        ),
+      ];
+
+      for (const userId of userIds) {
+        sendWebPushToUser(userId, {
+          title: data.title,
+          body: data.body,
+          url: "/dashboard/notifications",
+        }).catch((err) =>
+          console.warn("Falha no disparo de push notification:", err),
+        );
+      }
+    }
   } catch (error) {
-    console.error("Erro ao enviar aviso", error);
-    return { error: "Não foi possível enviar o aviso." };
+    console.error("Erro ao enviar aviso multicanal:", error);
+    return { error: "Não foi possível enviar o aviso. Tente novamente." };
   }
 
   revalidateNotifications();

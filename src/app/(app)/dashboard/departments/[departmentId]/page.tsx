@@ -3,15 +3,18 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { ArrowLeftIcon, CrownIcon } from "lucide-react";
+import { ArrowLeftIcon, CrownIcon, MegaphoneIcon } from "lucide-react";
 
 import { DeleteDepartmentButton } from "@/components/departments/delete-department-button";
 import { EditDepartmentDialog } from "@/components/departments/edit-department-dialog";
 import { FunctionsSection } from "@/components/departments/functions-section";
 import { PeopleSection } from "@/components/departments/people-section";
+import { AnnouncementDialog } from "@/components/notifications/announcement-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getDepartmentAccess } from "@/lib/departments";
+import { getOrganizationEvolutionConfig } from "@/lib/notification-service";
 import { requireOrganizationContext } from "@/lib/organizations";
 import {
   listPeople,
@@ -44,7 +47,7 @@ async function DepartmentContent({
 
   const { departmentId } = await params;
   const context = await requireOrganizationContext();
-  const [access, people] = await Promise.all([
+  const [access, people, evolutionResult] = await Promise.all([
     getDepartmentAccess(
       context.organization.id,
       departmentId,
@@ -52,6 +55,7 @@ async function DepartmentContent({
       context.isAdmin,
     ),
     listPeople(context.organization.id),
+    getOrganizationEvolutionConfig(context.organization.id),
   ]);
 
   if (!access) {
@@ -139,6 +143,26 @@ async function DepartmentContent({
 
         {access.canManage ? (
           <div className="flex shrink-0 items-center gap-1.5">
+            <AnnouncementDialog
+              departments={[{ id: department.id, name: department.name }]}
+              people={department.members
+                .filter((m) => m.person?.userId !== context.session.user.id)
+                .map((m) => ({
+                  id: m.person.id,
+                  name: personDisplayName(m.person),
+                  phone: m.person.phone,
+                  hasAccount: Boolean(m.person.userId),
+                  departmentNames: [department.name],
+                }))}
+              defaultDepartmentId={department.id}
+              isWhatsAppConfigured={Boolean(evolutionResult.config)}
+              trigger={
+                <Button variant="outline" size="sm" className="h-9">
+                  <MegaphoneIcon data-icon="inline-start" />
+                  Enviar aviso
+                </Button>
+              }
+            />
             <EditDepartmentDialog department={department} />
             {access.canManageLeaders ? (
               <DeleteDepartmentButton

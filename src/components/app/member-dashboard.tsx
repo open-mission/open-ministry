@@ -10,6 +10,11 @@ import {
 import { AssignmentList } from "@/components/app/assignment-list";
 import { BirthdaysCard } from "@/components/birthdays/birthdays-card";
 import { StatCard } from "@/components/app/stat-card";
+import { QuickActions } from "@/components/dashboard/quick-actions";
+import {
+  FelicitometroCard,
+  type InitialMoodData,
+} from "@/components/felicitometro/felicitometro-card";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -37,6 +42,7 @@ export function MemberDashboard({
   memberships,
   assignments,
   agenda,
+  initialMood,
 }: {
   firstName: string;
   organizationName: string;
@@ -45,6 +51,7 @@ export function MemberDashboard({
   memberships: PersonMembership[];
   assignments: UpcomingAssignment[];
   agenda: AgendaEvent[];
+  initialMood?: InitialMoodData;
 }) {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
@@ -63,6 +70,10 @@ export function MemberDashboard({
           .
         </p>
       </header>
+
+      <QuickActions isAdmin={false} />
+
+      <FelicitometroCard initialMood={initialMood} userName={firstName} />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard

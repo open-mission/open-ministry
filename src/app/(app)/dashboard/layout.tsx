@@ -9,10 +9,9 @@ import { ImpersonationBannerLoader } from "@/components/app/impersonation-banner
 import { MobileNav } from "@/components/app/mobile-nav";
 import { MobileNavShell } from "@/components/app/mobile-nav-shell";
 import { NotificationBarLoader } from "@/components/app/notification-bar-loader";
-import {
-  NotificationBellFallback,
-  NotificationBellLoader,
-} from "@/components/app/notification-bell-loader";
+import { NotificationBellFallback, NotificationBellLoader } from "@/components/app/notification-bell-loader";
+import { OfflineBanner } from "@/components/offline/offline-banner";
+import { PwaInstallBanner } from "@/components/pwa/pwa-install-banner";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -45,6 +44,7 @@ export default function DashboardLayout({
             <ThemeToggle />
           </div>
         </header>
+        <OfflineBanner />
         <Suspense fallback={null}>
           <ImpersonationBannerLoader />
         </Suspense>
@@ -57,6 +57,7 @@ export default function DashboardLayout({
         <Suspense fallback={<MobileNavShell />}>
           <MobileNav />
         </Suspense>
+        <PwaInstallBanner />
       </SidebarInset>
     </SidebarProvider>
   );
