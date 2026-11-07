@@ -207,6 +207,9 @@ export function PeopleSection({
                             memberName={personDisplayName(member.person)}
                             isLeader={member.isLeader}
                             canManageLeaders={canManageLeaders}
+                            departmentId={department.id}
+                            departmentName={department.name}
+                            personId={member.personId}
                           />
                         </div>
                       </TableCell>

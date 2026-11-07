@@ -28,11 +28,13 @@ import { AdminEvolutionApiCard } from "@/components/settings/admin-evolution-api
 import { CalendarPreferencesCard } from "@/components/settings/calendar-preferences-card";
 import { ChangePasswordCard } from "@/components/settings/change-password-card";
 import { NotificationPreferencesCard } from "@/components/settings/notification-preferences-card";
+import { MessageTemplatesCard } from "@/components/settings/message-templates-card";
 import { OfflineCacheCard } from "@/components/settings/offline-cache-card";
 import { PasskeysCard } from "@/components/settings/passkeys-card";
 import { PwaInstallCard } from "@/components/settings/pwa-install-card";
 import { ThemePreferenceCard } from "@/components/settings/theme-preference-card";
 import type { CalendarPreferences } from "@/lib/calendar";
+import type { ResolvedTemplate } from "@/lib/message-templates";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -69,6 +71,7 @@ type SettingsViewProps = {
   peopleCount: number;
   departmentsCount: number;
   evolutionSettings: EvolutionSettingsView | null;
+  messageTemplates: ResolvedTemplate[];
 };
 
 type MobileSection =
@@ -81,6 +84,7 @@ type MobileSection =
   | "notifications"
   | "church"
   | "whatsapp"
+  | "templates"
   | null;
 
 export function SettingsView({
@@ -94,6 +98,7 @@ export function SettingsView({
   peopleCount,
   departmentsCount,
   evolutionSettings,
+  messageTemplates,
 }: SettingsViewProps) {
   // Mobile active section for iOS style drill-down
   const [activeMobileSection, setActiveMobileSection] =
@@ -164,6 +169,12 @@ export function SettingsView({
 
           <TabsContent value="notifications" className="space-y-6">
             <NotificationPreferencesCard />
+            {isAdmin ? (
+              <MessageTemplatesCard
+                initialTemplates={messageTemplates}
+                churchName={organization.name}
+              />
+            ) : null}
             {isAdmin && evolutionSettings ? (
               <AdminEvolutionApiCard initialSettings={evolutionSettings} />
             ) : null}
@@ -329,6 +340,13 @@ export function SettingsView({
                       onClick={() => setActiveMobileSection("whatsapp")}
                     />
                   ) : null}
+                  <IosSettingsRow
+                    icon={MessageSquareIcon}
+                    iconBg="bg-primary text-white"
+                    title="Modelos de Mensagens (WhatsApp)"
+                    subtitle="Personalize convites, escalas e avisos"
+                    onClick={() => setActiveMobileSection("templates")}
+                  />
                 </div>
               </div>
             ) : null}
@@ -356,6 +374,7 @@ export function SettingsView({
                 {activeMobileSection === "notifications" && "Notificações"}
                 {activeMobileSection === "church" && "Identidade da Igreja"}
                 {activeMobileSection === "whatsapp" && "WhatsApp (Evolution)"}
+                {activeMobileSection === "templates" && "Modelos do WhatsApp"}
               </span>
             </div>
 
@@ -417,6 +436,15 @@ export function SettingsView({
             {activeMobileSection === "whatsapp" && isAdmin && evolutionSettings && (
               <div className="space-y-6">
                 <AdminEvolutionApiCard initialSettings={evolutionSettings} />
+              </div>
+            )}
+
+            {activeMobileSection === "templates" && isAdmin && (
+              <div className="space-y-6">
+                <MessageTemplatesCard
+                  initialTemplates={messageTemplates}
+                  churchName={organization.name}
+                />
               </div>
             )}
           </div>

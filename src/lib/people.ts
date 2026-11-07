@@ -328,10 +328,12 @@ export async function ensurePersonForEmail({
   organizationId,
   email,
   name,
+  phone,
 }: {
   organizationId: string;
   email: string;
   name?: string | null;
+  phone?: string | null;
 }) {
   const normalized = normalizeEmail(email);
 
@@ -347,10 +349,14 @@ export async function ensurePersonForEmail({
       (!existing.userId ||
         isPlaceholderName(existing.name, existing.email));
 
-    if (shouldUseName) {
+    const updates: { name?: string; phone?: string } = {};
+    if (shouldUseName) updates.name = name!.trim();
+    if (phone?.trim() && !existing.phone) updates.phone = phone.trim();
+
+    if (Object.keys(updates).length > 0) {
       await db
         .update(schema.person)
-        .set({ name: name!.trim() })
+        .set(updates)
         .where(eq(schema.person.id, existing.id));
 
       return getPerson(organizationId, existing.id);
@@ -366,6 +372,7 @@ export async function ensurePersonForEmail({
     organizationId,
     name: name?.trim() || nameFromEmail(normalized),
     email: normalized,
+    phone: phone?.trim() || null,
   });
 
   return getPerson(organizationId, id);
