@@ -28,16 +28,24 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
-export function CreatePersonDialog() {
+export function CreatePersonDialog({
+  trigger,
+}: {
+  trigger?: React.ReactNode;
+} = {}) {
   const [open, setOpen] = useState(false);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="lg" className="h-9">
-          <UserPlusIcon data-icon="inline-start" />
-          Nova pessoa
-        </Button>
+        {trigger ? (
+          trigger
+        ) : (
+          <Button size="lg" className="h-9">
+            <UserPlusIcon data-icon="inline-start" />
+            Nova pessoa
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>

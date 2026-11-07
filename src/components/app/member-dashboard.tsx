@@ -10,6 +10,7 @@ import {
 import { AssignmentList } from "@/components/app/assignment-list";
 import { BirthdaysCard } from "@/components/birthdays/birthdays-card";
 import { StatCard } from "@/components/app/stat-card";
+import { QuickActions } from "@/components/dashboard/quick-actions";
 import {
   FelicitometroCard,
   type InitialMoodData,
@@ -69,6 +70,8 @@ export function MemberDashboard({
           .
         </p>
       </header>
+
+      <QuickActions isAdmin={false} />
 
       <FelicitometroCard initialMood={initialMood} userName={firstName} />
 

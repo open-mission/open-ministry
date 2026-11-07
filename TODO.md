@@ -10,14 +10,27 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
-- [ ] Desenvolver uma nova pagina home da plataforma (Dashboard) a ideia é que quando o usuario admin entrar ele veja os principais informacoes dele, tenha uma secao de acesso rapidos que no mobile tera um scroll horizontal em cada secao. No mobile a ideia é ter uma cara real de app, entao teria o sidebar mais o ultimo item com 3 risco e acessamos os items do menu. 
-- [ ] implementar a funcionalidade de offiline vericar quais infomrmcoes podemos manter offiline para o usuarios de acordo com cada nivel.
-
 ### Doing
 
-Nenhum item em andamento.
+- [ ] Implementar funcionalidade offline inteligente por nível de acesso (Membro, Líder e Admin)
+  - [ ] Estratégia de cache offline no Service Worker (`public/sw.js`): páginas críticas, dados JSON e ativos estáticos
+  - [ ] Cache por nível de usuário:
+    - **Membro:** Minhas Escalas (`/dashboard/schedules`), agenda departamental e perfil pessoal
+    - **Líder e Pastor/Admin:** Cronogramas de culto (ordem do culto para uso no púlpito sem Wi-Fi) e escalas completas
+  - [ ] Tela e banner offline elegante: detecção de conexão (`navigator.onLine`), aviso discreto de modo offline e acesso aos dados em cache
+  - [ ] Sincronização e atualização transparente quando a conexão com a internet retornar
 
 ### Done
+
+- [x] Nova Home da Plataforma (Dashboard Admin e Membro) com Acessos Rápidos, Carrosséis Mobile e Navegação Nativa
+  - [x] Seção de Acessos Rápidos no Dashboard com scroll horizontal e snap no mobile (Novo culto, Enviar aviso, Nova pessoa, Escala, Agenda, Ministérios e Cuidado pastoral)
+  - [x] Próximo Culto em Destaque com contagem regressiva/proximidade (Hoje, Amanhã, Em X dias), horário, ministérios e status de preenchimento da escala com avatares
+  - [x] Carrossel horizontal de Próximos Cultos e Eventos com snap touch para experiência nativa de app móvel
+  - [x] Integração completa com Felicitômetro: check-in pessoal diário do líder e resumo de Cuidado Pastoral com média de sentimentos e lista de pedidos de oração/conversa com atalho direto de WhatsApp
+  - [x] Carrossel horizontal de Pessoas Recentes cadastradas com acesso direto ao perfil do membro
+  - [x] Barra inferior mobile (Bottom Navigation) com botão "Menu" (3 barras horizontais / `MenuIcon`) acionando o Drawer/Sidebar completo de navegação do sistema
+  - [x] Quick Actions adaptadas para visão de membros (Minhas Escalas, Agenda, Ministérios, Pessoas, Avisos e Meu Perfil)
+  - [x] Interface com shape impecável: Fraunces, cartões com bordas suaves, visual acolhedor e alta ergonomia de toque
 
 - [x] Funcionalidade de Felicitômetro (check-in diário de sentimentos, oração e conversa) e Página Completa do Membro.
   - [x] Modelo de dados `person_mood` no Drizzle/Neon com score (1-5), pedidos de oração, necessidade de conversa com liderança, notas e unicidade por dia
