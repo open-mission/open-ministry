@@ -10,7 +10,11 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
-Nenhum item pendente no backlog.
+- [ ] Desenvolver popup de Tutorial de como instalar como pwa no celular (ios/ android) 
+- [ ] PWA implementar notificaoes com push usando nativo quando possivel ou onesignal. Se precisar de tokens ou algo de credencial colocar as variaveis em .env
+- [ ] Funcionalidade de Felicitometro aonde o usuario pode falar como está hoje e se precisa de alguma oracao ou precisa conversar, a ideia que ele possa preenhcer a cada dia, esses dados serao visivel apenas pelo lider do departamento ou administrador. imporrtante usarmos os graficos do shadnui para exibir os relatorios dos usuarios sobre os seus sentimentos. Implementar uma pagina de usuario aonde o o lider e ou admin pode ver a pessoa, as informacoes dele, o historico de felicitometros, dias que foram escalados, os cultos e eventos que eles serviram e etc.
+- [ ] Desenvolver uma nova pagina home da plataforma (Dashboard) a ideia é que quando o usuario admin entrar ele veja os principais informacoes dele, tenha uma secao de acesso rapidos que no mobile tera um scroll horizontal em cada secao. No mobile a ideia é ter uma cara real de app, entao teria o sidebar mais o ultimo item com 3 risco e acessamos os items do menu. 
+- [ ] implementar a funcionalidade de offiline vericar quais infomrmcoes podemos manter offiline para o usuarios de acordo com cada nivel.
 
 ### Doing
 
@@ -18,16 +22,23 @@ Nenhum item em andamento.
 
 ### Done
 
+- [x] Possibilidade de notificar (via sistema e WhatsApp) um usuário do departamento que sou líder, ou usuário da igreja se for admin ou owner, com seleção multicanal.
+  - [x] Suporte a líderes de departamento enviarem avisos para seus departamentos e membros liderados com autorização estrita
+  - [x] Seleção ergonômica de destinatário: Toda a igreja (admin/owner), Por Departamento, ou Pessoa específica
+  - [x] Painel de seleção de canais: No aplicativo (ativo por padrão), WhatsApp (disparo direto via Evolution API), E-mail (reserva futura), Push (reserva futura)
+  - [x] Envio multicanal inteligente: disparo em lote in-app e despacho assíncrono para WhatsApp dos membros com telefone cadastrado
+  - [x] Atalho de envio de avisos integrado diretamente na página do departamento (`/dashboard/departments/[id]`) e na central (`/dashboard/notifications`)
+
 - [x] Tela de Agenda e Calendário Completo (`/dashboard/calendar`).
   - [x] Baseado no padrão de arquitetura headless do dninomiya/full-calendar-for-shadcn-ui integrado ao design system
   - [x] Cinco modos de visualização totalmente responsivos: Mês (`month`), Semana (`week`), Dia (`day`), Ano (`year`) e Agenda linear (`agenda`)
-  - [x] Integração completa de dados: Cultos & Eventos da igreja, Minhas Escalas de serviço com função/departamento e Bloqueios de Indisponibilidade
-  - [x] Filtros interativos por chips: Todos, Cultos & Eventos, Minhas Escalas e Indisponibilidades
+  - [x] Integração completa de dados: Cultos &amp; Eventos da igreja, Minhas Escalas de serviço com função/departamento e Bloqueios de Indisponibilidade
+  - [x] Filtros interativos por chips: Todos, Cultos &amp; Eventos, Minhas Escalas e Indisponibilidades
   - [x] Navegação temporal fluida com botões Anterior/Próximo e atalho "Hoje"
   - [x] Diálogo de detalhes ao clicar em qualquer item da agenda com ações rápidas (ir ao culto ou gerenciar ausências)
   - [x] Configurações de início da semana (Domingo ou Segunda-feira) e fuso horário do usuário
   - [x] Preferências de calendário configuráveis tanto pelo cabeçalho da agenda quanto pela tela de Configurações (`/dashboard/settings`), tanto no Desktop quanto no menu mobile estilo iOS
-  - [x] Item "Agenda" adicionado à barra de navegação lateral (Cultos & Escalas) e menu inferior mobile para acesso de administradores e membros
+  - [x] Item "Agenda" adicionado à barra de navegação lateral (Cultos &amp; Escalas) e menu inferior mobile para acesso de administradores e membros
 
 - [x] Bloqueio pontual de datas de indisponibilidade com motivo/observação e períodos.
   - [x] Modelo de dados `person_unavailability` no Drizzle ORM com RLS policies e migration aplicada ao NeonDB
@@ -42,9 +53,9 @@ Nenhum item em andamento.
   - [x] Seleção independente de períodos: Manhã (06h-12h), Tarde (12h-18h) e Noite (18h-23h)
   - [x] Atalhos rápidos por dia (marcar dia todo ou limpar dia) e observações/restrições gerais
   - [x] Server actions de consulta e persistência atômica da disponibilidade
-  - [x] Link direto "Disponibilidade" adicionado na navegação lateral (Cultos & Escalas)
+  - [x] Link direto "Disponibilidade" adicionado na navegação lateral (Cultos &amp; Escalas)
 
-- [x] Integração com Evolution API Go (WhatsApp), Multi-canal de Notificações, Upstash Redis & QStash e Onboarding com Telefone.
+- [x] Integração com Evolution API Go (WhatsApp), Multi-canal de Notificações, Upstash Redis &amp; QStash e Onboarding com Telefone.
   - [x] Modelo de dados `organization_notification_channel` no Drizzle ORM com RLS e migration aplicada
   - [x] Campo `phone` no usuário e sincronização com o modelo `person`
   - [x] Coleta de WhatsApp/telefone no formulário de onboarding e edição na tela de Minha Conta
@@ -53,7 +64,7 @@ Nenhum item em andamento.
   - [x] Despachador de notificações multi-canal (`dispatchNotification`) com modelos formatados para WhatsApp (boas-vindas, escalas e avisos)
   - [x] Notificação de boas-vindas disparada automaticamente ao criar a igreja/completar onboarding
   - [x] Notificação de escala disparada via WhatsApp para a pessoa escalada ao adicionar na equipe do culto
-  - [x] Suporte à mensageria assíncrona com Upstash Redis & QStash (`enqueueNotificationJob` e rota de webhook `/api/webhooks/qstash/notification` com verificação de assinatura)
+  - [x] Suporte à mensageria assíncrona com Upstash Redis &amp; QStash (`enqueueNotificationJob` e rota de webhook `/api/webhooks/qstash/notification` com verificação de assinatura)
   - [x] Endpoint de job agendado `/api/jobs/monthly-availability` para lembretes de disponibilidade mensal
 
 - [x] Salvar cronograma como modelo, importação, limpeza e exportação de cronogramas de culto.
@@ -209,7 +220,8 @@ Nenhum item em andamento.
   - Removidas bordas duplicadas nos avatares da igreja em `/dashboard/church` e no formulário de identidade visual.
 - **07/11/2026:** Drag and drop no cronograma concluído. Os momentos e seções do culto agora podem ser reordenados diretamente arrastando pelo handle vertical com animação suave, feedback de elevação e suporte tanto a mouse/toque quanto teclado. Os horários recalculam em tempo real e a persistência é sincronizada no banco com atualização otimista.
 - **07/11/2026:** Modelos e gestão de cronograma concluídos. Agora é possível salvar o cronograma de qualquer culto como modelo reutilizável da igreja, aplicar modelos salvos ou o modelo padrão do sistema (com alerta inteligente caso já existam itens para evitar perdas acidentais), limpar o cronograma por completo com confirmação e exportar/importar cronogramas em formato `.json`.
-- **07/11/2026:** Notificações via Evolution API Go (WhatsApp) e Upstash Redis/QStash concluídas. Cada igreja pode configurar sua própria instância da Evolution API em Configurações > Notificações, testar a conexão com status online e disparar mensagens de teste. O onboarding agora coleta WhatsApp/telefone do usuário, sincronizando com a pessoa e enviando notificação de boas-vindas. Ao escalar pessoas para eventos, notificações personalizadas são enviadas por WhatsApp além do in-app. Toda a mensageria suporta a fila assíncrona do Upstash Redis e QStash com fallback transparente.
+- **07/11/2026:** Notificações via Evolution API Go (WhatsApp) e Upstash Redis/QStash concluídas. Cada igreja pode configurar sua própria instância da Evolution API em Configurações &gt; Notificações, testar a conexão com status online e disparar mensagens de teste. O onboarding agora coleta WhatsApp/telefone do usuário, sincronizando com a pessoa e enviando notificação de boas-vindas. Ao escalar pessoas para eventos, notificações personalizadas são enviadas por WhatsApp além do in-app. Toda a mensageria suporta a fila assíncrona do Upstash Redis e QStash com fallback transparente.
 - **07/11/2026:** Disponibilidade para servir concluída. Foi criada a rota `/dashboard/availability` onde voluntários e membros podem definir seus dias e períodos disponíveis (manhã, tarde e noite) para servir nos cultos da igreja, além de registrar observações e preferências para a liderança. A navegação lateral agora conta com o atalho "Disponibilidade" e o modelo conta com RLS e persistência atômica.
 - **07/11/2026:** Design Feedback das Configurações no Mobile concluído. A tela `/dashboard/settings` ganhou layout inspirado nas configurações do iPhone/iOS em telas móveis: cabeçalho de perfil estilo Apple ID, seções agrupadas em cartões com cantos arredondados, ícones em squircle coloridos, navegação fluida em drill-down com botão de retorno ("‹ Configurações") e subtítulos informativos. No desktop, a navegação clássica por abas é mantida com total responsividade.
+- **07/11/2026:** Notificações multicanal e avisos para líderes de departamento concluídos. Líderes de departamentos agora podem enviar avisos para suas equipes e membros de forma direcionada, enquanto administradores podem notificar toda a igreja, departamentos ou membros individuais. O novo modal de avisos conta com seleção de canais (App, WhatsApp via Evolution API, além de slots para Email e Push), feedback em tempo real e integração direta na central de notificações e na página de detalhes do departamento.
 
