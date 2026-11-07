@@ -53,6 +53,27 @@ export function OnboardingForm({
           />
         </Field>
 
+        <Field data-invalid={Boolean(state?.fieldErrors?.phone)}>
+          <FieldLabel htmlFor="phone">WhatsApp / Celular</FieldLabel>
+          <Input
+            id="phone"
+            name="phone"
+            type="tel"
+            autoComplete="tel"
+            placeholder="Ex.: (11) 99999-8888"
+            className="h-10"
+            aria-invalid={Boolean(state?.fieldErrors?.phone)}
+          />
+          <FieldDescription>
+            Usado para receber escalas dos cultos e avisos importantes via WhatsApp.
+          </FieldDescription>
+          <FieldError
+            errors={state?.fieldErrors?.phone?.map((message) => ({
+              message,
+            }))}
+          />
+        </Field>
+
         {needsBirthday ? (
           <Field data-invalid={Boolean(state?.fieldErrors?.birthday)}>
             <FieldLabel htmlFor="birthday">Data de aniversário</FieldLabel>

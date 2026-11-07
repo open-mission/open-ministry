@@ -1,8 +1,11 @@
+import { relations } from "drizzle-orm";
 import {
+  boolean,
   index,
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 import { organization, user } from "./auth";
@@ -38,4 +41,56 @@ export const notification = pgTable(
     ),
     index("notification_createdAt_idx").on(table.createdAt),
   ],
+);
+
+export const notificationRelations = relations(notification, ({ one }) => ({
+  organization: one(organization, {
+    fields: [notification.organizationId],
+    references: [organization.id],
+  }),
+  user: one(user, {
+    fields: [notification.userId],
+    references: [user.id],
+  }),
+  actor: one(user, {
+    fields: [notification.actorId],
+    references: [user.id],
+  }),
+}));
+
+export const organizationNotificationChannel = pgTable(
+  "organization_notification_channel",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    channel: text("channel").notNull().default("evolution_whatsapp"),
+    apiUrl: text("api_url"),
+    apiKey: text("api_key"),
+    instanceName: text("instance_name"),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("org_notif_channel_org_idx").on(table.organizationId),
+    uniqueIndex("org_notif_channel_org_channel_uidx").on(
+      table.organizationId,
+      table.channel,
+    ),
+  ],
+);
+
+export const organizationNotificationChannelRelations = relations(
+  organizationNotificationChannel,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [organizationNotificationChannel.organizationId],
+      references: [organization.id],
+    }),
+  }),
 );

@@ -1,0 +1,356 @@
+"use client";
+
+import { useState, useTransition, useActionState } from "react";
+import { toast } from "sonner";
+import {
+  CheckCircle2Icon,
+  CheckIcon,
+  ExternalLinkIcon,
+  Loader2Icon,
+  MessageSquareIcon,
+  SendIcon,
+  ServerIcon,
+  WifiIcon,
+  XCircleIcon,
+} from "lucide-react";
+
+import {
+  saveEvolutionSettingsAction,
+  sendTestEvolutionMessageAction,
+  testEvolutionConnectionAction,
+  type EvolutionSettingsFormState,
+  type EvolutionSettingsView,
+} from "@/app/actions/settings";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+
+type AdminEvolutionApiCardProps = {
+  initialSettings: EvolutionSettingsView;
+};
+
+export function AdminEvolutionApiCard({
+  initialSettings,
+}: AdminEvolutionApiCardProps) {
+  const [isActive, setIsActive] = useState(initialSettings.isActive);
+  const [apiUrl, setApiUrl] = useState(initialSettings.apiUrl);
+  const [apiKey, setApiKey] = useState(initialSettings.apiKey);
+  const [instanceName, setInstanceName] = useState(
+    initialSettings.instanceName,
+  );
+
+  // Connection testing state
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<{
+    tested: boolean;
+    ok: boolean;
+    state?: string;
+    error?: string;
+  } | null>(null);
+
+  // Test message state
+  const [testPhone, setTestPhone] = useState("");
+  const [isSendingTest, startSendingTest] = useTransition();
+
+  const [state, formAction, isSaving] = useActionState<
+    EvolutionSettingsFormState,
+    FormData
+  >(async (prevState, formData) => {
+    formData.set("isActive", String(isActive));
+    const res = await saveEvolutionSettingsAction(prevState, formData);
+    if (res?.success) {
+      toast.success("Configurações da Evolution API salvas com sucesso!");
+    } else if (res?.error) {
+      toast.error(res.error);
+    }
+    return res;
+  }, undefined);
+
+  async function handleTestConnection() {
+    if (!apiUrl.trim() || !apiKey.trim() || !instanceName.trim()) {
+      toast.error("Preencha a URL, chave de API e nome da instância para testar.");
+      return;
+    }
+
+    setTestingConnection(true);
+    setConnectionStatus(null);
+
+    const res = await testEvolutionConnectionAction(
+      apiUrl.trim(),
+      apiKey.trim(),
+      instanceName.trim(),
+    );
+
+    setConnectionStatus({
+      tested: true,
+      ok: res.ok,
+      state: res.state,
+      error: res.error,
+    });
+
+    if (res.ok) {
+      toast.success(
+        `Conexão estabelecida com sucesso! Estado da instância: ${res.state || "conectado"}.`,
+      );
+    } else {
+      toast.error(res.error || "Não foi possível conectar à Evolution API.");
+    }
+
+    setTestingConnection(false);
+  }
+
+  function handleSendTestMessage() {
+    if (!testPhone.trim()) {
+      toast.error("Informe um número de telefone com DDD para testar o envio.");
+      return;
+    }
+
+    startSendingTest(async () => {
+      const res = await sendTestEvolutionMessageAction(testPhone.trim());
+      if (res.ok) {
+        toast.success("Mensagem de teste enviada com sucesso no WhatsApp!");
+      } else {
+        toast.error(res.error || "Erro ao enviar mensagem de teste.");
+      }
+    });
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <MessageSquareIcon className="size-4" />
+              </div>
+              <CardTitle className="font-heading text-xl tracking-tight">
+                WhatsApp (Evolution API Go)
+              </CardTitle>
+            </div>
+            <CardDescription>
+              Conecte a instância da Evolution API da sua igreja para notificar
+              membros quando forem escalados, avisos e lembretes no WhatsApp.
+            </CardDescription>
+          </div>
+
+          <div className="flex items-center gap-2 pt-1 sm:pt-0">
+            <span className="text-xs font-medium text-muted-foreground">
+              Canal ativo
+            </span>
+            <Switch
+              checked={isActive}
+              onCheckedChange={setIsActive}
+              aria-label="Ativar canal do WhatsApp"
+            />
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-6">
+        <form action={formAction} className="space-y-6">
+          <FieldGroup className="grid gap-4 sm:grid-cols-2">
+            <Field
+              data-invalid={Boolean(state?.fieldErrors?.apiUrl)}
+              className="sm:col-span-2"
+            >
+              <FieldLabel htmlFor="apiUrl">URL da Evolution API Go *</FieldLabel>
+              <Input
+                id="apiUrl"
+                name="apiUrl"
+                placeholder="https://api.evolution.sua-igreja.com.br"
+                value={apiUrl}
+                onChange={(e) => {
+                  setApiUrl(e.target.value);
+                  setConnectionStatus(null);
+                }}
+                required
+                className="h-10 font-mono text-xs sm:text-sm"
+                aria-invalid={Boolean(state?.fieldErrors?.apiUrl)}
+              />
+              <FieldDescription>
+                Endereço base do seu servidor Evolution API Go sem barra no final.
+              </FieldDescription>
+              <FieldError
+                errors={state?.fieldErrors?.apiUrl?.map((m) => ({ message: m }))}
+              />
+            </Field>
+
+            <Field data-invalid={Boolean(state?.fieldErrors?.apiKey)}>
+              <FieldLabel htmlFor="apiKey">Chave de API (apikey) *</FieldLabel>
+              <Input
+                id="apiKey"
+                name="apiKey"
+                type="password"
+                placeholder="Ex.: 4296084a-38bb-4b68-b807-..."
+                value={apiKey}
+                onChange={(e) => {
+                  setApiKey(e.target.value);
+                  setConnectionStatus(null);
+                }}
+                required
+                className="h-10 font-mono text-xs"
+                aria-invalid={Boolean(state?.fieldErrors?.apiKey)}
+              />
+              <FieldDescription>
+                Chave de autenticação global ou da instância configurada no seu
+                servidor.
+              </FieldDescription>
+              <FieldError
+                errors={state?.fieldErrors?.apiKey?.map((m) => ({ message: m }))}
+              />
+            </Field>
+
+            <Field data-invalid={Boolean(state?.fieldErrors?.instanceName)}>
+              <FieldLabel htmlFor="instanceName">Nome da Instância *</FieldLabel>
+              <Input
+                id="instanceName"
+                name="instanceName"
+                placeholder="Ex.: igreja-sede"
+                value={instanceName}
+                onChange={(e) => {
+                  setInstanceName(e.target.value);
+                  setConnectionStatus(null);
+                }}
+                required
+                className="h-10 font-mono text-xs"
+                aria-invalid={Boolean(state?.fieldErrors?.instanceName)}
+              />
+              <FieldDescription>
+                Nome exato da instância criada no Evolution API.
+              </FieldDescription>
+              <FieldError
+                errors={state?.fieldErrors?.instanceName?.map((m) => ({
+                  message: m,
+                }))}
+              />
+            </Field>
+          </FieldGroup>
+
+          {/* Test connection row */}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/30 p-3.5">
+            <div className="flex items-center gap-2">
+              <ServerIcon className="size-4 text-muted-foreground" />
+              <span className="text-xs font-medium text-foreground">
+                Status da Conexão:
+              </span>
+              {connectionStatus ? (
+                connectionStatus.ok ? (
+                  <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 gap-1 font-mono text-xs font-normal">
+                    <CheckCircle2Icon className="size-3.5" />
+                    Online ({connectionStatus.state || "conectado"})
+                  </Badge>
+                ) : (
+                  <Badge variant="destructive" className="gap-1 font-mono text-xs font-normal">
+                    <XCircleIcon className="size-3.5" />
+                    Falha na conexão
+                  </Badge>
+                )
+              ) : (
+                <span className="text-xs text-muted-foreground italic">
+                  Não testada recentemente
+                </span>
+              )}
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={testingConnection}
+              onClick={handleTestConnection}
+              className="gap-1.5 h-8"
+            >
+              {testingConnection ? (
+                <Loader2Icon className="size-3.5 animate-spin" />
+              ) : (
+                <WifiIcon className="size-3.5" />
+              )}
+              Testar conexão
+            </Button>
+          </div>
+
+          <div className="flex justify-end pt-1">
+            <Button type="submit" disabled={isSaving} className="gap-2">
+              {isSaving ? (
+                <Loader2Icon className="size-4 animate-spin" />
+              ) : (
+                <CheckIcon className="size-4" />
+              )}
+              Salvar configurações
+            </Button>
+          </div>
+        </form>
+
+        {/* Test sending message section */}
+        <div className="border-t pt-5 space-y-3">
+          <div className="space-y-0.5">
+            <h4 className="text-sm font-semibold text-foreground">
+              Enviar mensagem de teste
+            </h4>
+            <p className="text-xs text-muted-foreground">
+              Envie um WhatsApp de teste para o seu próprio número para certificar
+              que a entrega está 100% operacional.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Input
+              type="tel"
+              placeholder="Ex.: (11) 99999-8888"
+              value={testPhone}
+              onChange={(e) => setTestPhone(e.target.value)}
+              className="h-9 max-w-xs text-xs font-mono"
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={isSendingTest || !testPhone.trim()}
+              onClick={handleSendTestMessage}
+              className="gap-1.5 h-9"
+            >
+              {isSendingTest ? (
+                <Loader2Icon className="size-3.5 animate-spin" />
+              ) : (
+                <SendIcon className="size-3.5" />
+              )}
+              Enviar teste agora
+            </Button>
+          </div>
+        </div>
+
+        {/* Helpful docs link and Upstash Queue Info */}
+        <div className="rounded-lg border border-dashed bg-muted/20 p-3 text-xs text-muted-foreground flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            Documentação da Evolution API Go: instâncias, QR Code e Webhooks.
+          </span>
+          <a
+            href="https://docs.evolutionfoundation.com.br/evolution-go/get-all-instances"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+          >
+            Abrir documentação oficial
+            <ExternalLinkIcon className="size-3" />
+          </a>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

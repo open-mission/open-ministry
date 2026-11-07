@@ -11,12 +11,14 @@ import {
 } from "lucide-react";
 
 import {
+  getEvolutionSettingsAction,
   getUserPasskeysAction,
   getUserSessionsAction,
 } from "@/app/actions/settings";
 import { AccountProfileCard } from "@/components/settings/account-profile-card";
 import { ActiveSessionsCard } from "@/components/settings/active-sessions-card";
 import { AdminChurchSettingsCard } from "@/components/settings/admin-church-settings-card";
+import { AdminEvolutionApiCard } from "@/components/settings/admin-evolution-api-card";
 import { ChangePasswordCard } from "@/components/settings/change-password-card";
 import { NotificationPreferencesCard } from "@/components/settings/notification-preferences-card";
 import { PasskeysCard } from "@/components/settings/passkeys-card";
@@ -58,18 +60,20 @@ async function SettingsContent() {
     getUserPasskeysAction(),
   ]);
 
-  const [people, departments] = isAdmin
+  const [people, departments, evolutionSettings] = isAdmin
     ? await Promise.all([
         listPeople(organization.id),
         listDepartments(organization.id),
+        getEvolutionSettingsAction(),
       ])
-    : [[], []];
+    : [[], [], null];
 
   const userData = {
     name: userRecord?.name ?? session.user.name,
     username: userRecord?.username ?? null,
     email: userRecord?.email ?? session.user.email,
     birthday: userRecord?.birthday ?? session.user.birthday ?? null,
+    phone: userRecord?.phone ?? null,
     image: userRecord?.image ?? session.user.image ?? null,
   };
 
@@ -134,6 +138,9 @@ async function SettingsContent() {
 
         <TabsContent value="notifications" className="space-y-6">
           <NotificationPreferencesCard />
+          {isAdmin && evolutionSettings ? (
+            <AdminEvolutionApiCard initialSettings={evolutionSettings} />
+          ) : null}
         </TabsContent>
 
         {isAdmin ? (

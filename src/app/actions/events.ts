@@ -20,6 +20,7 @@ import {
   zonedDateTimeToUtc,
 } from "@/lib/events";
 import { createNotifications } from "@/lib/notifications";
+import { dispatchNotification } from "@/lib/notification-service";
 import { getOrganizationContext } from "@/lib/organizations";
 
 export type EventFormState =
@@ -708,19 +709,27 @@ export async function saveScheduleAssignmentAction(
     with: { user: true },
   });
 
-  if (
-    assignedPerson?.userId &&
-    assignedPerson.userId !== result.context.session.user.id
-  ) {
+  if (assignedPerson) {
     try {
-      await createNotifications({
+      await dispatchNotification({
         organizationId: result.context.organization.id,
-        userIds: [assignedPerson.userId],
-        actorId: result.context.session.user.id,
-        type: "schedule_assigned",
+        type: "assignment",
         title: `Você foi escalado em ${result.event.title}`,
         body: `${result.access.department.name} · ${targetFunction.name} · ${formatEventFullDate(result.event.startsAt)} às ${formatEventTime(result.event.startsAt)}`,
         href: `/dashboard/events/${result.event.id}`,
+        actorId: result.context.session.user.id,
+        userId: assignedPerson.userId ?? null,
+        personId: parsed.data.personId,
+        phone: assignedPerson.phone ?? assignedPerson.user?.phone ?? null,
+        name: assignedPerson.name,
+        metadata: {
+          churchName: result.context.organization.name,
+          eventTitle: result.event.title,
+          functionName: `${result.access.department.name} - ${targetFunction.name}`,
+          eventDate: formatEventFullDate(result.event.startsAt),
+          eventTime: formatEventTime(result.event.startsAt),
+          link: `/dashboard/events/${result.event.id}`,
+        },
       });
     } catch (error) {
       console.error("Erro ao notificar escala", error);

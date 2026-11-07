@@ -2,12 +2,16 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 
+import { db } from "@/db";
+import * as schema from "@/db/schema";
 import { actionErrorMessage } from "@/lib/auth-errors";
 import { auth } from "@/lib/auth";
 import { syncUserAdminRole } from "@/lib/admin-role";
 import { buildOrganizationSlug } from "@/lib/format";
+import { dispatchNotification } from "@/lib/notification-service";
 import { ensurePersonForUser } from "@/lib/people";
 import { birthdayFieldSchema, updateBirthday } from "@/lib/profile";
 import { getSession } from "@/lib/session";
@@ -18,6 +22,7 @@ export type ChurchFormState =
       fieldErrors?: {
         name?: string[];
         birthday?: string[];
+        phone?: string[];
       };
     }
   | undefined;
@@ -29,6 +34,7 @@ const churchSchema = z.object({
     .min(2, "Informe o nome da igreja.")
     .max(80, "O nome pode ter no máximo 80 caracteres."),
   birthday: birthdayFieldSchema,
+  phone: z.string().trim().optional().or(z.literal("")),
 });
 
 export async function createChurchAction(
@@ -38,6 +44,7 @@ export async function createChurchAction(
   const parsed = churchSchema.safeParse({
     name: formData.get("name"),
     birthday: formData.get("birthday"),
+    phone: formData.get("phone"),
   });
 
   if (!parsed.success) {
@@ -52,6 +59,15 @@ export async function createChurchAction(
 
   try {
     await updateBirthday(parsed.data.birthday);
+
+    const cleanPhone = parsed.data.phone ? parsed.data.phone.trim() : null;
+    if (cleanPhone) {
+      await db
+        .update(schema.user)
+        .set({ phone: cleanPhone })
+        .where(eq(schema.user.id, session.user.id));
+    }
+
     const organization = await auth.api.createOrganization({
       body: {
         name: parsed.data.name,
@@ -67,8 +83,23 @@ export async function createChurchAction(
         email: session.user.email,
         image: session.user.image ?? null,
         birthday: parsed.data.birthday ?? session.user.birthday ?? null,
+        phone: cleanPhone,
       });
       await syncUserAdminRole(session.user.id);
+
+      // Dispatch welcome notification
+      await dispatchNotification({
+        organizationId: organization.id,
+        type: "welcome",
+        title: "Boas-vindas ao OpenMinistry",
+        body: `Seja muito bem-vindo(a) à administração da ${organization.name}!`,
+        userId: session.user.id,
+        name: session.user.name,
+        phone: cleanPhone,
+        metadata: {
+          churchName: organization.name,
+        },
+      });
     }
   } catch (error) {
     return { error: actionErrorMessage(error) };

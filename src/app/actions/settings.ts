@@ -1,11 +1,18 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { and, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import {
+  checkEvolutionConnection,
+  formatPhoneNumberForEvolution,
+  sendEvolutionTextMessage,
+} from "@/lib/evolution-api";
+import { getOrganizationContext } from "@/lib/organizations";
 import { syncPersonProfile } from "@/lib/people";
 import { birthdayFieldSchema, updateBirthday } from "@/lib/profile";
 import { getSession } from "@/lib/session";
@@ -182,6 +189,11 @@ const accountSettingsSchema = z.object({
     .optional()
     .or(z.literal("")),
   birthday: birthdayFieldSchema,
+  phone: z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal("")),
   image: optionalImage,
 });
 
@@ -192,6 +204,7 @@ export type AccountSettingsFormState =
         name?: string[];
         username?: string[];
         birthday?: string[];
+        phone?: string[];
         image?: string[];
       };
       success?: boolean;
@@ -206,6 +219,7 @@ export async function updateAccountSettingsAction(
     name: formData.get("name"),
     username: formData.get("username"),
     birthday: formData.get("birthday"),
+    phone: formData.get("phone"),
     image: formData.get("image"),
   });
 
@@ -241,6 +255,8 @@ export async function updateAccountSettingsAction(
     }
   }
 
+  const cleanPhone = parsed.data.phone ? parsed.data.phone.trim() : null;
+
   try {
     await db
       .update(schema.user)
@@ -248,6 +264,7 @@ export async function updateAccountSettingsAction(
         name: parsed.data.name,
         username: cleanUsername,
         displayUsername: cleanUsername,
+        phone: cleanPhone,
         image: parsed.data.image ?? null,
       })
       .where(eq(schema.user.id, session.user.id));
@@ -260,6 +277,7 @@ export async function updateAccountSettingsAction(
       ...(parsed.data.birthday !== undefined
         ? { birthday: parsed.data.birthday }
         : {}),
+      phone: cleanPhone,
     });
   } catch (error) {
     console.error("Erro ao atualizar configurações da conta", error);
@@ -274,3 +292,180 @@ export async function updateAccountSettingsAction(
 
   return { success: true };
 }
+
+export type EvolutionSettingsView = {
+  id: string | null;
+  apiUrl: string;
+  apiKey: string;
+  instanceName: string;
+  isActive: boolean;
+};
+
+export async function getEvolutionSettingsAction(): Promise<EvolutionSettingsView> {
+  const context = await getOrganizationContext();
+  if (!context) {
+    return {
+      id: null,
+      apiUrl: "",
+      apiKey: "",
+      instanceName: "",
+      isActive: false,
+    };
+  }
+
+  const channel = await db.query.organizationNotificationChannel.findFirst({
+    where: and(
+      eq(schema.organizationNotificationChannel.organizationId, context.organization.id),
+      eq(schema.organizationNotificationChannel.channel, "evolution_whatsapp"),
+    ),
+  });
+
+  return {
+    id: channel?.id ?? null,
+    apiUrl: channel?.apiUrl ?? "",
+    apiKey: channel?.apiKey ?? "",
+    instanceName: channel?.instanceName ?? "",
+    isActive: channel?.isActive ?? true,
+  };
+}
+
+const evolutionSettingsSchema = z.object({
+  apiUrl: z.string().trim().url("Informe uma URL válida (ex.: https://api.evolution.exemplo.com)"),
+  apiKey: z.string().trim().min(1, "Informe a chave de API (apikey)"),
+  instanceName: z.string().trim().min(1, "Informe o nome da instância"),
+  isActive: z.boolean(),
+});
+
+export type EvolutionSettingsFormState =
+  | {
+      error?: string;
+      fieldErrors?: {
+        apiUrl?: string[];
+        apiKey?: string[];
+        instanceName?: string[];
+      };
+      success?: boolean;
+    }
+  | undefined;
+
+export async function saveEvolutionSettingsAction(
+  _state: EvolutionSettingsFormState,
+  formData: FormData,
+): Promise<EvolutionSettingsFormState> {
+  const context = await getOrganizationContext();
+  if (!context) {
+    return { error: "Sua sessão expirou." };
+  }
+
+  if (!context.isAdmin) {
+    return { error: "Apenas administradores podem configurar canais de notificação." };
+  }
+
+  const parsed = evolutionSettingsSchema.safeParse({
+    apiUrl: formData.get("apiUrl"),
+    apiKey: formData.get("apiKey"),
+    instanceName: formData.get("instanceName"),
+    isActive: formData.get("isActive") === "on" || formData.get("isActive") === "true",
+  });
+
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  try {
+    const existing = await db.query.organizationNotificationChannel.findFirst({
+      where: and(
+        eq(schema.organizationNotificationChannel.organizationId, context.organization.id),
+        eq(schema.organizationNotificationChannel.channel, "evolution_whatsapp"),
+      ),
+    });
+
+    if (existing) {
+      await db
+        .update(schema.organizationNotificationChannel)
+        .set({
+          apiUrl: parsed.data.apiUrl,
+          apiKey: parsed.data.apiKey,
+          instanceName: parsed.data.instanceName,
+          isActive: parsed.data.isActive,
+        })
+        .where(eq(schema.organizationNotificationChannel.id, existing.id));
+    } else {
+      await db.insert(schema.organizationNotificationChannel).values({
+        id: randomUUID(),
+        organizationId: context.organization.id,
+        channel: "evolution_whatsapp",
+        apiUrl: parsed.data.apiUrl,
+        apiKey: parsed.data.apiKey,
+        instanceName: parsed.data.instanceName,
+        isActive: parsed.data.isActive,
+      });
+    }
+
+    revalidatePath("/dashboard/settings");
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao salvar configurações da Evolution API", error);
+    return { error: "Não foi possível salvar as configurações da Evolution API." };
+  }
+}
+
+export async function testEvolutionConnectionAction(
+  apiUrl: string,
+  apiKey: string,
+  instanceName: string,
+): Promise<{ ok: boolean; state?: string; error?: string }> {
+  const context = await getOrganizationContext();
+  if (!context || !context.isAdmin) {
+    return { ok: false, error: "Apenas administradores podem testar a conexão." };
+  }
+
+  return checkEvolutionConnection({
+    apiUrl,
+    apiKey,
+    instanceName,
+  });
+}
+
+export async function sendTestEvolutionMessageAction(
+  recipientPhone: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const context = await getOrganizationContext();
+  if (!context || !context.isAdmin) {
+    return { ok: false, error: "Apenas administradores podem enviar mensagens de teste." };
+  }
+
+  const channel = await db.query.organizationNotificationChannel.findFirst({
+    where: and(
+      eq(schema.organizationNotificationChannel.organizationId, context.organization.id),
+      eq(schema.organizationNotificationChannel.channel, "evolution_whatsapp"),
+    ),
+  });
+
+  if (!channel || !channel.apiUrl || !channel.apiKey || !channel.instanceName) {
+    return { ok: false, error: "Configure e salve as credenciais da Evolution API primeiro." };
+  }
+
+  const formatted = formatPhoneNumberForEvolution(recipientPhone);
+  if (!formatted) {
+    return { ok: false, error: "Número de WhatsApp inválido." };
+  }
+
+  const messageText =
+    `✅ *Teste de Conexão - OpenMinistry*\n\n` +
+    `Parabéns! Sua integração da igreja *${context.organization.name}* com a *Evolution API Go* está conectada e funcionando com sucesso!\n\n` +
+    `Enviado em: ${new Date().toLocaleString("pt-BR")}`;
+
+  const result = await sendEvolutionTextMessage({
+    config: {
+      apiUrl: channel.apiUrl,
+      apiKey: channel.apiKey,
+      instanceName: channel.instanceName,
+    },
+    to: formatted,
+    text: messageText,
+  });
+
+  return result;
+}
+
