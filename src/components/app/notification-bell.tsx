@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   ArrowRightIcon,
   BellIcon,
@@ -307,6 +308,7 @@ export function NotificationBell({
 
   const handleMarkAllRead = () => {
     markAllAsRead();
+    toast.success("Notificações marcadas como lidas.");
   };
 
   const handleItemClick = (item: NotificationItem) => {

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { signOutAction } from "@/app/actions/auth";
+import { useSettingsModal } from "@/components/settings/settings-modal-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -40,6 +41,7 @@ export function NavUser({
   role: string;
 }) {
   const { isMobile } = useSidebar();
+  const { openSettings } = useSettingsModal();
 
   return (
     <SidebarMenu>
@@ -98,11 +100,12 @@ export function NavUser({
                   <span>Meu perfil</span>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/settings" className="cursor-pointer gap-2">
-                  <SettingsIcon className="size-4" />
-                  <span>Configurações</span>
-                </Link>
+              <DropdownMenuItem
+                onClick={openSettings}
+                className="cursor-pointer gap-2"
+              >
+                <SettingsIcon className="size-4" />
+                <span>Configurações</span>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link

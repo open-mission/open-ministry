@@ -4,11 +4,10 @@ import {
   CalendarCheckIcon,
   CalendarDaysIcon,
   CalendarRangeIcon,
-  ChurchIcon,
   ClipboardListIcon,
   HandHeartIcon,
   LayoutDashboardIcon,
-  SettingsIcon,
+  MegaphoneIcon,
   UsersIcon,
 } from "lucide-react";
 
@@ -89,18 +88,12 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: "Configurações",
+    title: "Comunicação",
     items: [
       {
-        href: "/dashboard/church",
-        label: "Igreja",
-        icon: ChurchIcon,
-        exact: false,
-      },
-      {
-        href: "/dashboard/settings",
-        label: "Configurações",
-        icon: SettingsIcon,
+        href: "/dashboard/announcements",
+        label: "Avisos",
+        icon: MegaphoneIcon,
         exact: false,
       },
     ],
