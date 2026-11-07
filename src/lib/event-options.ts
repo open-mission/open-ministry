@@ -12,6 +12,7 @@ export const RECURRENCE_OPTIONS = [
   "weekly",
   "biweekly",
   "monthly",
+  "monthly_nth_weekday",
   "custom",
 ] as const;
 
@@ -21,7 +22,8 @@ export const recurrenceLabels: Record<RecurrenceOption, string> = {
   none: "Não repete",
   weekly: "Toda semana",
   biweekly: "A cada duas semanas",
-  monthly: "Todo mês",
+  monthly: "Todo mês (mesmo dia do mês)",
+  monthly_nth_weekday: "Dia da semana no mês (ex: todo 2º domingo)",
   custom: "Personalizado",
 };
 

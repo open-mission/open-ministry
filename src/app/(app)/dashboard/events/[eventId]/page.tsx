@@ -135,6 +135,7 @@ async function EventContent({
                     {recurrenceLabel(
                       event.recurrence,
                       event.recurrenceInterval,
+                      event.startsAt,
                     ) ?? "Série"}
                   </Badge>
                 ) : null}

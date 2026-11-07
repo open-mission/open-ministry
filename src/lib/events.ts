@@ -1,96 +1,11 @@
-import { addDays, addMonths } from "date-fns";
-import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { and, eq, gte } from "drizzle-orm";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { remember } from "@/lib/cache";
-import type { RecurrenceOption } from "@/lib/event-options";
+import { EVENT_TIME_ZONE } from "./plan-utils";
 
-export const EVENT_TIME_ZONE = "America/Sao_Paulo";
-export const MAX_RECURRENCE_INSTANCES = 104;
-
-export function zonedDateTimeToUtc(date: string, time: string): Date {
-  return fromZonedTime(`${date} ${time}:00`, EVENT_TIME_ZONE);
-}
-
-export function endOfDayInZone(date: string): Date {
-  return fromZonedTime(`${date} 23:59:59`, EVENT_TIME_ZONE);
-}
-
-export function applyTimeOfDay(
-  date: Date,
-  time: string,
-  durationMs: number,
-): { startsAt: Date; endsAt: Date } {
-  const zoned = toZonedTime(date, EVENT_TIME_ZONE);
-  const [hour, minute] = time.split(":").map(Number);
-  zoned.setHours(hour, minute, 0, 0);
-
-  const startsAt = fromZonedTime(zoned, EVENT_TIME_ZONE);
-
-  return {
-    startsAt,
-    endsAt: new Date(startsAt.getTime() + durationMs),
-  };
-}
-
-function addInZone(date: Date, amount: number, unit: "days" | "months") {
-  const zoned = toZonedTime(date, EVENT_TIME_ZONE);
-  const next =
-    unit === "months" ? addMonths(zoned, amount) : addDays(zoned, amount);
-
-  return fromZonedTime(next, EVENT_TIME_ZONE);
-}
-
-export function generateOccurrences({
-  startsAt,
-  endsAt,
-  recurrence,
-  recurrenceInterval,
-  recurrenceEndsAt,
-}: {
-  startsAt: Date;
-  endsAt: Date;
-  recurrence: RecurrenceOption;
-  recurrenceInterval: number | null;
-  recurrenceEndsAt: Date | null;
-}): { startsAt: Date; endsAt: Date }[] {
-  const duration = endsAt.getTime() - startsAt.getTime();
-  const occurrences = [startsAt];
-
-  if (recurrence === "none" || !recurrenceEndsAt) {
-    return [{ startsAt, endsAt }];
-  }
-
-  const stepDays =
-    recurrence === "weekly"
-      ? 7
-      : recurrence === "biweekly"
-        ? 14
-        : (recurrenceInterval ?? 1) * 7;
-
-  let index = 1;
-
-  while (occurrences.length < MAX_RECURRENCE_INSTANCES) {
-    const current =
-      recurrence === "monthly"
-        ? addInZone(startsAt, index, "months")
-        : addInZone(startsAt, stepDays * index, "days");
-
-    if (current.getTime() > recurrenceEndsAt.getTime()) {
-      break;
-    }
-
-    occurrences.push(current);
-    index += 1;
-  }
-
-  return occurrences.map((occurrence) => ({
-    startsAt: occurrence,
-    endsAt: new Date(occurrence.getTime() + duration),
-  }));
-}
+export * from "./recurrence-utils";
 
 export async function listUpcomingEvents(organizationId: string, limit = 12) {
   const cutoff = new Date(Date.now() - 4 * 60 * 60 * 1000);
@@ -347,32 +262,6 @@ export function splitEvents<T extends { startsAt: Date; endsAt: Date }>(
     .sort((a, b) => b.startsAt.getTime() - a.startsAt.getTime());
 
   return { upcoming, past };
-}
-
-export function recurrenceLabel(
-  recurrence: string | null,
-  interval: number | null,
-) {
-  if (!recurrence) {
-    return null;
-  }
-
-  if (recurrence === "weekly") {
-    return "Toda semana";
-  }
-
-  if (recurrence === "biweekly") {
-    return "A cada duas semanas";
-  }
-
-  if (recurrence === "monthly") {
-    return "Todo mês";
-  }
-
-  const weeks = interval ?? 1;
-  return weeks === 1
-    ? "Toda semana"
-    : `A cada ${weeks} semanas`;
 }
 
 export * from "./plan-utils";
