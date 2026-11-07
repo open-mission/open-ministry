@@ -9,6 +9,7 @@ import {
   ClipboardListIcon,
   HandHeartIcon,
   LayoutDashboardIcon,
+  SettingsIcon,
   UsersIcon,
 } from "lucide-react";
 
@@ -59,6 +60,12 @@ const items = [
     href: "/dashboard/birthdays",
     label: "Aniversariantes",
     icon: CakeIcon,
+    exact: false,
+  },
+  {
+    href: "/dashboard/settings",
+    label: "Configurações",
+    icon: SettingsIcon,
     exact: false,
   },
 ];

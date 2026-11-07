@@ -10,13 +10,22 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
-- [ ] Implementação da Tela de Configurações tanto para o admin como para o membro. O admin terá acesso a configurações mais avançadas. O membro terá acesso a configurações acerca do seu perfil, notificações, troca de senha,  passkey e etc.
 - [ ] Implementação da Funcionalidade de Cronograma: a ideia poder cadastrar o cronograma de um culto e evento. Podendo Add secoes, item, Horario e Tempo estimado podendo registrar quem será responsavel por aquela area (seja um usuario, ou registro manual com o nome da pessoa) Abaixo tem uma imagem de exemplo (mas nao commit ela, depois de desenvolver remover essa imagem abaixo)  
 ![](orca-paste-1794017331643-b814f027-0f8e-44e7-ab28-46e89d5b35c3.png)
 
 ### Doing
 
 ### Done
+
+- [x] Implementação da Tela de Configurações tanto para o admin como para o membro. O admin terá acesso a configurações mais avançadas. O membro terá acesso a configurações acerca do seu perfil, notificações, troca de senha,  passkey e etc.
+  - [x] Tela `/dashboard/settings` com abas responsivas e design impecável
+  - [x] Gestão de conta: nome, foto, aniversário e nome de usuário (@username)
+  - [x] Segurança: alteração de senha com opção de revogar outras sessões
+  - [x] Passkeys: cadastro de biometria/chave de segurança WebAuthn, listagem e remoção
+  - [x] Multi-session: visualização de dispositivos/sessões ativas e encerramento remoto
+  - [x] Preferências de notificações e atalho para a central
+  - [x] Seletor de tema visual (Claro, Escuro, Sistema)
+  - [x] Configurações avançadas para admin: identidade oficial da igreja e links de governança
 
 - [x] Configurar no Better Auth:  
   - [x] [https://better-auth.com/docs/plugins/last-login-method](https://better-auth.com/docs/plugins/last-login-method)   
@@ -123,3 +132,5 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 - **06/11/2026:** Notificações concluído. A central in-app tem sino com badge, barra da notificação não lida, leitura individual e em lote. Escalar ou remover uma pessoa gera notificação para a pessoa vinculada; a administração pode enviar avisos para toda a igreja ou para um departamento. Contagem do sino é atualizada por polling. Testado com criação real de escala e aviso, leitura, marcar todas, barra e contador sumindo, API de contagem e RLS.
 - **06/11/2026:** Perfil, identidade da igreja, acesso como membro e tema concluídos. O perfil agora abre somente leitura e entra em edição por um botão; nome, aniversário e foto são salvos juntos, com upload pelo UploadThing. Admin/owner pode atualizar nome e logo da igreja em `/dashboard/church`, e o logo aparece no topo do painel. O plugin admin do Better Auth permite entrar como uma pessoa da igreja, com aviso fixo e retorno à conta original; a autorização é por igreja e os endpoints HTTP administrativos ficam bloqueados. O tema claro/escuro/sistema foi adicionado no painel, login e site. Fluxos de upload, edição de perfil, identidade da igreja, impersonação e alternância de tema validados no navegador em 1440px e 390px; schema e migration do admin plugin aplicados no Neon.
 - **06/11/2026:** Plugins do Better Auth concluídos. Foram ativados os plugins `last-login-method`, `passkey`, `multi-session` e `username` no servidor e no cliente, com schema gerado e migration aplicada no NeonDB. A tela de login passou a suportar autenticação com Passkey (WebAuthn/biometria), entrada com email ou @username, e badge indicador do último método de login utilizado; o cadastro permite registrar opcionalmente o nome de usuário.
+- **06/11/2026:** Tela de Configurações concluída. Foi implementada a rota `/dashboard/settings` com suporte completo para membros e administradores. O membro pode gerenciar seus dados de conta e @username, cadastrar chaves de acesso biométricas (passkeys), trocar de senha, inspecionar e revogar sessões e dispositivos ativos (multi-session), alternar temas e ajustar preferências de notificações. Administradores têm acesso adicional à identidade oficial da igreja e governança. O menu lateral e o perfil ganharam atalhos diretos.
+
