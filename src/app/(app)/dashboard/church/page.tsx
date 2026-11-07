@@ -1,19 +1,14 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { ChurchIcon, UsersIcon } from "lucide-react";
+import Link from "next/link";
+import { SettingsIcon } from "lucide-react";
 
 import { PageInfo } from "@/components/app/page-info";
-import { ChurchBrandingForm } from "@/components/church/church-branding-form";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { ChurchInfoCard } from "@/components/settings/church-info-card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { listDepartments } from "@/lib/departments";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { listPeople } from "@/lib/people";
 
@@ -33,95 +28,53 @@ async function ChurchContent() {
   await connection();
 
   const { organization, isAdmin } = await requireOrganizationContext();
-  const people = await listPeople(organization.id);
+  const [people, departments] = await Promise.all([
+    listPeople(organization.id),
+    listDepartments(organization.id),
+  ]);
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-      <header className="flex flex-wrap items-center gap-2">
-        <h1 className="font-heading text-4xl leading-none tracking-tight">
-          Sua igreja
-        </h1>
-        <PageInfo
-          title="Sua igreja"
-          description="O nome e o logo que a equipe vê no painel, nos convites e no diretório."
-        />
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 sm:gap-8">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="font-heading text-3xl sm:text-4xl leading-none tracking-tight">
+            Informações da Igreja
+          </h1>
+          <PageInfo
+            title="Informações da Igreja"
+            description="Identidade, endereço e canais oficiais da comunidade."
+          />
+        </div>
+
+        {isAdmin ? (
+          <Button variant="outline" size="sm" asChild className="gap-2">
+            <Link href="/dashboard/settings">
+              <SettingsIcon className="size-4" />
+              Painel de Configurações
+            </Link>
+          </Button>
+        ) : null}
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-        <Card className="h-fit">
-          <CardContent className="flex flex-col items-center gap-4 p-6 text-center">
-            {organization.logo ? (
-              <Avatar className="size-24 rounded-2xl">
-                <AvatarImage
-                  src={organization.logo}
-                  alt={`Logo de ${organization.name}`}
-                />
-                <AvatarFallback className="rounded-2xl bg-primary/10 text-primary">
-                  <ChurchIcon className="size-10" />
-                </AvatarFallback>
-              </Avatar>
-            ) : (
-              <span className="flex size-24 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <ChurchIcon className="size-10" />
-              </span>
-            )}
-            <div className="space-y-1">
-              <p className="font-heading text-2xl leading-tight tracking-tight">
-                {organization.name}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {people.length === 1
-                  ? "1 pessoa na igreja"
-                  : `${people.length} pessoas na igreja`}
-              </p>
-            </div>
-            <p className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
-              <UsersIcon className="size-3.5" />
-              OpenMinistry
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-heading text-xl tracking-tight">
-              Identidade
-            </CardTitle>
-            <CardDescription>
-              {isAdmin
-                ? "Atualize o nome e o logo da igreja."
-                : "Apenas administradores podem alterar o nome e o logo."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isAdmin ? (
-              <ChurchBrandingForm
-                name={organization.name}
-                logo={organization.logo}
-              />
-            ) : (
-              <div className="rounded-lg border border-dashed px-4 py-6 text-sm leading-relaxed text-muted-foreground">
-                O nome e o logo são definidos pela administração da igreja.
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <ChurchInfoCard
+        organization={organization}
+        isAdmin={isAdmin}
+        peopleCount={people.length}
+        departmentsCount={departments.length}
+      />
     </div>
   );
 }
 
 function ChurchSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8" aria-hidden>
+    <div className="mx-auto w-full max-w-5xl space-y-6" aria-hidden>
       <div className="space-y-2">
-        <Skeleton className="h-10 w-56" />
-        <Skeleton className="h-4 w-96 max-w-full" />
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-4 w-72" />
       </div>
-      <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-        <Skeleton className="h-72 rounded-xl" />
-        <Skeleton className="h-72 rounded-xl" />
-      </div>
+      <Skeleton className="h-64 rounded-xl" />
+      <Skeleton className="h-80 rounded-xl" />
     </div>
   );
 }

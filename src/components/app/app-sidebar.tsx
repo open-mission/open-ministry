@@ -3,6 +3,7 @@ import { OpenMinistrySymbol } from "@/components/brand/openministry-logo";
 
 import { NavUser } from "@/components/app/nav-user";
 import { SidebarNav } from "@/components/app/sidebar-nav";
+import { SidebarSettingsButton } from "@/components/app/sidebar-settings-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Sidebar,
@@ -73,6 +74,7 @@ export function AppSidebar({
       </SidebarContent>
 
       <SidebarFooter>
+        <SidebarSettingsButton />
         <NavUser user={user} role={role} />
       </SidebarFooter>
 

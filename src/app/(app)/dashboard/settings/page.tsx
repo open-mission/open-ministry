@@ -39,19 +39,20 @@ async function SettingsContent() {
     where: eq(schema.user.id, session.user.id),
   });
 
-  const [initialSessions, initialPasskeys] = await Promise.all([
-    getUserSessionsAction(),
-    getUserPasskeysAction(),
-  ]);
+  const [initialSessions, initialPasskeys, people, departments] =
+    await Promise.all([
+      getUserSessionsAction(),
+      getUserPasskeysAction(),
+      listPeople(organization.id),
+      listDepartments(organization.id),
+    ]);
 
-  const [people, departments, evolutionSettings, messageTemplates] = isAdmin
+  const [evolutionSettings, messageTemplates] = isAdmin
     ? await Promise.all([
-        listPeople(organization.id),
-        listDepartments(organization.id),
         getEvolutionSettingsAction(),
         getOrganizationMessageTemplates(organization.id),
       ])
-    : [[], [], null, []];
+    : [null, []];
 
   const userData = {
     name: userRecord?.name ?? session.user.name,
