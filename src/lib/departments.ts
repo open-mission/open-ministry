@@ -2,42 +2,40 @@ import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { remember } from "@/lib/cache";
 
 export async function listDepartments(organizationId: string) {
-  return db.query.department.findMany({
-    where: eq(schema.department.organizationId, organizationId),
-    with: {
-      functions: {
-        orderBy: (functions, { asc }) => [asc(functions.createdAt)],
-      },
-      members: {
+  return remember(
+    `org:${organizationId}:departments`,
+    300,
+    async () => {
+      return db.query.department.findMany({
+        where: eq(schema.department.organizationId, organizationId),
         with: {
-          person: { with: { user: true } },
-          assignments: {
-            with: { function: true },
+          functions: {
+            orderBy: (functions, { asc }) => [asc(functions.createdAt)],
+          },
+          members: {
+            with: {
+              person: { with: { user: true } },
+              assignments: {
+                with: { function: true },
+              },
+            },
           },
         },
-      },
+        orderBy: (departments, { asc }) => [asc(departments.name)],
+      });
     },
-    orderBy: (departments, { asc }) => [asc(departments.name)],
-  });
+    [`departments:${organizationId}`],
+  );
 }
 
 export async function listUserLeaderDepartments(
   organizationId: string,
   userId: string,
 ) {
-  const departments = await db.query.department.findMany({
-    where: eq(schema.department.organizationId, organizationId),
-    with: {
-      members: {
-        with: {
-          person: true,
-        },
-      },
-    },
-    orderBy: (departments, { asc }) => [asc(departments.name)],
-  });
+  const departments = await listDepartments(organizationId);
 
   return departments.filter((department) =>
     department.members.some(
@@ -50,25 +48,32 @@ export async function getDepartment(
   organizationId: string,
   departmentId: string,
 ) {
-  return db.query.department.findFirst({
-    where: and(
-      eq(schema.department.id, departmentId),
-      eq(schema.department.organizationId, organizationId),
-    ),
-    with: {
-      functions: {
-        orderBy: (functions, { asc }) => [asc(functions.createdAt)],
-      },
-      members: {
+  return remember(
+    `org:${organizationId}:department:${departmentId}`,
+    300,
+    async () => {
+      return db.query.department.findFirst({
+        where: and(
+          eq(schema.department.id, departmentId),
+          eq(schema.department.organizationId, organizationId),
+        ),
         with: {
-          person: { with: { user: true } },
-          assignments: {
-            with: { function: true },
+          functions: {
+            orderBy: (functions, { asc }) => [asc(functions.createdAt)],
+          },
+          members: {
+            with: {
+              person: { with: { user: true } },
+              assignments: {
+                with: { function: true },
+              },
+            },
           },
         },
-      },
+      });
     },
-  });
+    [`departments:${organizationId}`, `department:${departmentId}`],
+  );
 }
 
 export type DepartmentRecord = NonNullable<

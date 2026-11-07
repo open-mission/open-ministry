@@ -14,6 +14,13 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Done
 
+- [x] Otimização de Performance, Redução do Tempo de Skeleton e Cache Multi-Camadas (Redis + Memória)
+  - [x] Implementar camada de cache de alta performance (`src/lib/cache.ts`) com Upstash Redis e fallback em memória LRU L1/L2
+  - [x] Caching inteligente com TTL e tags de invalidação nas consultas mais pesadas: departamentos, pessoas, cultos, visão geral do felicitômetro e contagem de notificações
+  - [x] Otimizar consultas do Dashboard: substituir carga de 500 eventos por busca eficiente de próximos cultos (`listUpcomingEvents`)
+  - [x] Eliminar cascatas (waterfalls) em Server Components rodando consultas paralelas via `Promise.all`
+  - [x] Invalidação atômica de cache nas Server Actions ao criar, editar ou excluir registros
+
 - [x] Corrigir erro de exportação de objeto em Server Action (`src/app/actions/events.ts`): removido `export` de `const STARTER_PLAN_TEMPLATE` que violava a diretiva `"use server"` causando `Error: A "use server" file can only export async functions, found object` ao escalar pessoas em produção.
 
 - [x] Funcionalidade offline inteligente com segregação por nível de acesso (Membro, Líder e Admin)

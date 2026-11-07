@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { cacheInvalidateTags } from "@/lib/cache";
 import { getDepartmentAccess } from "@/lib/departments";
 import { EVENT_KINDS, RECURRENCE_OPTIONS } from "@/lib/event-options";
 import {
@@ -240,13 +241,18 @@ async function validateDepartments(
   return rows.map((row) => row.id);
 }
 
-function revalidateEvents(eventId?: string) {
+async function revalidateEvents(eventId?: string, organizationId?: string) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/events");
   revalidatePath("/dashboard/schedules");
+  revalidatePath("/dashboard/calendar");
 
   if (eventId) {
     revalidatePath(`/dashboard/events/${eventId}`);
+  }
+
+  if (organizationId) {
+    await cacheInvalidateTags(`events:${organizationId}`);
   }
 }
 
@@ -408,7 +414,7 @@ export async function createEventAction(
     return { error: "Não foi possível criar o evento." };
   }
 
-  revalidateEvents(eventIds[0]);
+  await revalidateEvents(eventIds[0], organizationId);
   redirect(`/dashboard/events/${eventIds[0]}`);
 }
 
@@ -521,7 +527,7 @@ export async function updateEventAction(
     return { error: "Não foi possível salvar o evento." };
   }
 
-  revalidateEvents(event.id);
+  await revalidateEvents(event.id, organizationId);
   return { success: true };
 }
 
@@ -563,7 +569,7 @@ export async function deleteEventAction(
     return { ok: false, error: "Não foi possível excluir o evento." };
   }
 
-  revalidateEvents(event.id);
+  await revalidateEvents(event.id, result.context.organization.id);
   return { ok: true };
 }
 
@@ -736,7 +742,7 @@ export async function saveScheduleAssignmentAction(
     }
   }
 
-  revalidateEvents(parsed.data.eventId);
+  await revalidateEvents(parsed.data.eventId, result.context.organization.id);
   return { success: true };
 }
 
@@ -798,7 +804,10 @@ export async function removeScheduleAssignmentAction(
     }
   }
 
-  revalidateEvents(assignment.schedule.eventId);
+  await revalidateEvents(
+    assignment.schedule.eventId,
+    assignment.schedule.event.organizationId,
+  );
   return { ok: true };
 }
 
@@ -922,7 +931,7 @@ export async function createPlanItemAction(
     return { error: "Não foi possível adicionar o item ao cronograma." };
   }
 
-  revalidateEvents(parsed.data.eventId);
+  await revalidateEvents(parsed.data.eventId, context.organization.id);
   return { success: true };
 }
 
@@ -984,7 +993,7 @@ export async function updatePlanItemAction(
     return { error: "Não foi possível salvar as alterações." };
   }
 
-  revalidateEvents(parsed.data.eventId);
+  await revalidateEvents(parsed.data.eventId, context.organization.id);
   return { success: true };
 }
 
@@ -1017,7 +1026,7 @@ export async function deletePlanItemAction(
     return { ok: false, error: "Não foi possível remover o item." };
   }
 
-  revalidateEvents(eventId);
+  await revalidateEvents(eventId, context.organization.id);
   return { ok: true };
 }
 
@@ -1058,7 +1067,7 @@ export async function reorderPlanItemsAction(
     return { ok: false, error: "Não foi possível reordenar o cronograma." };
   }
 
-  revalidateEvents(eventId);
+  await revalidateEvents(eventId, context.organization.id);
   return { ok: true };
 }
 
@@ -1275,7 +1284,7 @@ export async function applyPlanTemplateAction(
     return { ok: false, error: "Não foi possível aplicar o modelo." };
   }
 
-  revalidateEvents(eventId);
+  await revalidateEvents(eventId, context.organization.id);
   return { ok: true };
 }
 
@@ -1330,7 +1339,7 @@ export async function clearEventPlanAction(
     return { ok: false, error: "Não foi possível limpar o cronograma." };
   }
 
-  revalidateEvents(eventId);
+  await revalidateEvents(eventId, context.organization.id);
   return { ok: true };
 }
 
@@ -1386,6 +1395,6 @@ export async function importPlanItemsAction(
     return { ok: false, error: "Não foi possível importar o cronograma." };
   }
 
-  revalidateEvents(eventId);
+  await revalidateEvents(eventId, context.organization.id);
   return { ok: true };
 }

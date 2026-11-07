@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { cacheInvalidateTags } from "@/lib/cache";
 import { listUserLeaderDepartments } from "@/lib/departments";
 import {
   createNotifications,
@@ -91,9 +92,13 @@ const announcementSchema = z
     },
   );
 
-function revalidateNotifications() {
+async function revalidateNotifications(userId?: string) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/notifications");
+
+  if (userId) {
+    await cacheInvalidateTags(`notifications:${userId}`);
+  }
 }
 
 export async function sendAnnouncementAction(
@@ -398,7 +403,7 @@ export async function markNotificationReadAction(
     return { ok: false, error: "Notificação não encontrada." };
   }
 
-  revalidateNotifications();
+  await revalidateNotifications(context.session.user.id);
   return { ok: true };
 }
 
@@ -417,7 +422,7 @@ export async function markAllNotificationsReadAction(): Promise<NotificationActi
     context.session.user.id,
   );
 
-  revalidateNotifications();
+  await revalidateNotifications(context.session.user.id);
   return { ok: true };
 }
 

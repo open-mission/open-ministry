@@ -10,6 +10,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { actionErrorMessage } from "@/lib/auth-errors";
 import { auth } from "@/lib/auth";
+import { cacheInvalidateTags } from "@/lib/cache";
 import { getOrganizationContext } from "@/lib/organizations";
 import {
   findOrganizationMemberByEmail,
@@ -100,13 +101,17 @@ async function getAdminContext() {
   return { context } as const;
 }
 
-function revalidatePeople() {
+async function revalidatePeople(organizationId?: string) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/members");
   revalidatePath("/dashboard/departments");
   revalidatePath("/dashboard/birthdays");
   revalidatePath("/dashboard/events");
   revalidatePath("/dashboard/schedules");
+
+  if (organizationId) {
+    await cacheInvalidateTags(`people:${organizationId}`);
+  }
 }
 
 export async function createPersonAction(
@@ -181,7 +186,7 @@ export async function createPersonAction(
     }
   }
 
-  revalidatePeople();
+  await revalidatePeople(organizationId);
   return { success: true };
 }
 
@@ -259,7 +264,7 @@ export async function updatePersonAction(
     return { error: "Não foi possível salvar a pessoa." };
   }
 
-  revalidatePeople();
+  await revalidatePeople(organizationId);
   return { success: true };
 }
 
@@ -300,7 +305,7 @@ export async function deletePersonAction(
     return { ok: false, error: "Não foi possível excluir a pessoa." };
   }
 
-  revalidatePeople();
+  await revalidatePeople(result.context.organization.id);
   return { ok: true };
 }
 
@@ -328,7 +333,7 @@ export async function linkPersonAction(
     return { ok: false, error: linked.error };
   }
 
-  revalidatePeople();
+  await revalidatePeople(result.context.organization.id);
   return { ok: true };
 }
 

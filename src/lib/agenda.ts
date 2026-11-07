@@ -4,6 +4,7 @@ import { eq, inArray } from "drizzle-orm";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { remember } from "@/lib/cache";
 
 export async function getPersonMemberships(personId: string) {
   return db.query.departmentMember.findMany({
@@ -26,27 +27,34 @@ export async function getPersonAssignments(
   organizationId: string,
   personId: string,
 ) {
-  const rows = await db.query.scheduleAssignment.findMany({
-    where: eq(schema.scheduleAssignment.personId, personId),
-    with: {
-      schedule: {
-        with: { event: true },
-      },
-      function: true,
-      department: true,
-    },
-  });
+  return remember(
+    `org:${organizationId}:person:${personId}:assignments`,
+    120,
+    async () => {
+      const rows = await db.query.scheduleAssignment.findMany({
+        where: eq(schema.scheduleAssignment.personId, personId),
+        with: {
+          schedule: {
+            with: { event: true },
+          },
+          function: true,
+          department: true,
+        },
+      });
 
-  return rows
-    .filter(
-      (assignment) =>
-        assignment.schedule.event.organizationId === organizationId,
-    )
-    .sort(
-      (a, b) =>
-        a.schedule.event.startsAt.getTime() -
-        b.schedule.event.startsAt.getTime(),
-    );
+      return rows
+        .filter(
+          (assignment) =>
+            assignment.schedule.event.organizationId === organizationId,
+        )
+        .sort(
+          (a, b) =>
+            a.schedule.event.startsAt.getTime() -
+            b.schedule.event.startsAt.getTime(),
+        );
+    },
+    [`events:${organizationId}`, `people:${organizationId}`],
+  );
 }
 
 export type UpcomingAssignment = Awaited<
