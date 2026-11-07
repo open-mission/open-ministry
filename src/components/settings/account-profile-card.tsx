@@ -33,6 +33,7 @@ type AccountProfileCardProps = {
     name: string;
     username: string | null;
     email: string;
+    phone: string | null;
     birthday: string | null;
     image: string | null;
   };
@@ -151,6 +152,29 @@ export function AccountProfileCard({ initialData }: AccountProfileCardProps) {
               <FieldDescription>
                 O email da conta não pode ser alterado diretamente por aqui.
               </FieldDescription>
+            </Field>
+
+            <Field data-invalid={Boolean(state?.fieldErrors?.phone)}>
+              <div className="flex items-center justify-between">
+                <FieldLabel htmlFor="phone">WhatsApp / Celular</FieldLabel>
+                <span className="text-xs text-muted-foreground">Opcional</span>
+              </div>
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                autoComplete="tel"
+                defaultValue={initialData.phone ?? ""}
+                placeholder="(11) 99999-8888"
+                className="h-10"
+                aria-invalid={Boolean(state?.fieldErrors?.phone)}
+              />
+              <FieldDescription>
+                Receba escalas dos cultos e avisos importantes pelo WhatsApp.
+              </FieldDescription>
+              <FieldError
+                errors={state?.fieldErrors?.phone?.map((m) => ({ message: m }))}
+              />
             </Field>
 
             <Field data-invalid={Boolean(state?.fieldErrors?.birthday)} className="sm:col-span-2">

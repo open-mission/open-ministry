@@ -10,12 +10,23 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
-- [ ] Implementar uma integracao com a evolution api go ([https://docs.evolutionfoundation.com.br/evolution-go/get-all-instances)](https://docs.evolutionfoundation.com.br/evolution-go/get-all-instances) para notificarmos integrantes quando for escalado, avisos do lider, entre outras coisas, a ideia é que cada igreja possa configurar uma conexao com sua propria instancia da evolution go, a ideia é tenhamos isso como canais de notificacao, tbm teremos o email futuramente. entao seria interessante desenvoler uma api de notificacao dos itens e ai só mudaria o canal e modelos de mensagem a ser enviado. Vamos iniciar com a notificacao de bem vindo quando a pessoa cria a conta e preenche os dados de telefone (whatsapp) pedir no onboarding do usuario., tbm iremos notificar quando a pessoa for escalada para um evento. Usar o queue com Upstash Redis e QStash. Assim podemos ter notificacoes agendadas por exemplo todo comeco do mes pedir para os usuarios preencher a disponibilidade de dias para servir nos cultos por exemplo. Use o Qstash localmente (npx @upstash/qstash-cli@latest dev) e,development
 - [ ] Implementar a funcionalidade dos usuarios preencher a disponibilidade de dias para servir nos cultos e quais dias tem disponivel. E se tem disponibilidade de manha, tarde e noite e o dias da semana.
 
 ### Doing
 
 ### Done
+
+- [x] Integração com Evolution API Go (WhatsApp), Multi-canal de Notificações, Upstash Redis & QStash e Onboarding com Telefone.
+  - [x] Modelo de dados `organization_notification_channel` no Drizzle ORM com RLS e migration aplicada
+  - [x] Campo `phone` no usuário e sincronização com o modelo `person`
+  - [x] Coleta de WhatsApp/telefone no formulário de onboarding e edição na tela de Minha Conta
+  - [x] Cliente HTTP da Evolution API Go (`checkEvolutionConnection`, `sendEvolutionTextMessage` e sanitização de telefones E.164)
+  - [x] Card de configuração e testes da Evolution API em `/dashboard/settings` com status online em tempo real e envio de mensagem teste
+  - [x] Despachador de notificações multi-canal (`dispatchNotification`) com modelos formatados para WhatsApp (boas-vindas, escalas e avisos)
+  - [x] Notificação de boas-vindas disparada automaticamente ao criar a igreja/completar onboarding
+  - [x] Notificação de escala disparada via WhatsApp para a pessoa escalada ao adicionar na equipe do culto
+  - [x] Suporte à mensageria assíncrona com Upstash Redis & QStash (`enqueueNotificationJob` e rota de webhook `/api/webhooks/qstash/notification` com verificação de assinatura)
+  - [x] Endpoint de job agendado `/api/jobs/monthly-availability` para lembretes de disponibilidade mensal
 
 - [x] Salvar cronograma como modelo, importação, limpeza e exportação de cronogramas de culto.
   - [x] Tabela `plan_template` no Drizzle ORM com RLS e migration aplicada
@@ -170,4 +181,5 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - Removidas bordas duplicadas nos avatares da igreja em `/dashboard/church` e no formulário de identidade visual.
 - **07/11/2026:** Drag and drop no cronograma concluído. Os momentos e seções do culto agora podem ser reordenados diretamente arrastando pelo handle vertical com animação suave, feedback de elevação e suporte tanto a mouse/toque quanto teclado. Os horários recalculam em tempo real e a persistência é sincronizada no banco com atualização otimista.
 - **07/11/2026:** Modelos e gestão de cronograma concluídos. Agora é possível salvar o cronograma de qualquer culto como modelo reutilizável da igreja, aplicar modelos salvos ou o modelo padrão do sistema (com alerta inteligente caso já existam itens para evitar perdas acidentais), limpar o cronograma por completo com confirmação e exportar/importar cronogramas em formato `.json`.
+- **07/11/2026:** Notificações via Evolution API Go (WhatsApp) e Upstash Redis/QStash concluídas. Cada igreja pode configurar sua própria instância da Evolution API em Configurações > Notificações, testar a conexão com status online e disparar mensagens de teste. O onboarding agora coleta WhatsApp/telefone do usuário, sincronizando com a pessoa e enviando notificação de boas-vindas. Ao escalar pessoas para eventos, notificações personalizadas são enviadas por WhatsApp além do in-app. Toda a mensageria suporta a fila assíncrona do Upstash Redis e QStash com fallback transparente.
 
