@@ -18,6 +18,10 @@ import {
 import { EXPERIENCE_LEVELS } from "@/lib/experience";
 import { getOrganizationContext } from "@/lib/organizations";
 import { getPerson } from "@/lib/people";
+import { buildWhatsAppShareUrl } from "@/lib/message-templates";
+import { renderOrganizationMessageText } from "@/lib/message-templates-server";
+import { getOrganizationEvolutionConfig } from "@/lib/notification-service";
+import { getAppBaseUrl } from "@/lib/app-url";
 
 export type DepartmentFormState =
   | {
@@ -780,4 +784,69 @@ export async function removeMemberFunctionAction(
     result.context.organization.id,
   );
   return { ok: true };
+}
+
+export async function getDepartmentWhatsAppInviteMessageAction(
+  departmentId: string,
+  personId?: string,
+): Promise<{
+  ok: boolean;
+  message?: string;
+  whatsappUrl?: string;
+  phone?: string | null;
+  error?: string;
+}> {
+  const result = await getManagementContext(departmentId);
+  if ("error" in result) {
+    return { ok: false, error: result.error };
+  }
+
+  const dept = await db.query.department.findFirst({
+    where: eq(schema.department.id, departmentId),
+  });
+  if (!dept) {
+    return { ok: false, error: "Departamento não encontrado." };
+  }
+
+  let personName = "Voluntário(a)";
+  let personPhone: string | null = null;
+  if (personId) {
+    const person = await getPerson(result.context.organization.id, personId);
+    if (person) {
+      personName = person.name;
+      personPhone = person.phone;
+    }
+  }
+
+  const { config: evolutionConfig } = await getOrganizationEvolutionConfig(
+    result.context.organization.id,
+  );
+
+  const baseUrl = getAppBaseUrl();
+  const link = `${baseUrl}/dashboard/departments/${dept.id}`;
+
+  const message = await renderOrganizationMessageText({
+    organizationId: result.context.organization.id,
+    type: "invite_department",
+    variables: {
+      name: personName,
+      church_name: result.context.organization.name,
+      department_name: dept.name,
+      link,
+      role: "Membro da Equipe",
+      church_phone: evolutionConfig?.instanceName || "",
+    },
+  });
+
+  const whatsappUrl = buildWhatsAppShareUrl({
+    phone: personPhone,
+    text: message,
+  });
+
+  return {
+    ok: true,
+    message,
+    whatsappUrl,
+    phone: personPhone,
+  };
 }

@@ -2,6 +2,7 @@ import { ClockIcon, MailIcon } from "lucide-react";
 
 import { CancelInvitationButton } from "@/components/members/cancel-invitation-button";
 import { CopyInvitationLink } from "@/components/members/copy-invitation-link";
+import { WhatsAppInvitationDialog } from "@/components/members/whatsapp-invitation-dialog";
 import { RoleBadge } from "@/components/members/role-badge";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -95,7 +96,11 @@ export function PendingInvitations({
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center justify-end gap-1">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <WhatsAppInvitationDialog
+                            invitationId={invitation.id}
+                            email={invitation.email}
+                          />
                           <CopyInvitationLink invitationId={invitation.id} />
                           <CancelInvitationButton
                             invitationId={invitation.id}
