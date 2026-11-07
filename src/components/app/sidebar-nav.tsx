@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CakeIcon,
+  CalendarCheckIcon,
   CalendarDaysIcon,
   ChurchIcon,
   ClipboardListIcon,
@@ -47,6 +48,12 @@ const navGroups = [
         href: "/dashboard/schedules",
         label: "Escalas",
         icon: ClipboardListIcon,
+        exact: false,
+      },
+      {
+        href: "/dashboard/availability",
+        label: "Disponibilidade",
+        icon: CalendarCheckIcon,
         exact: false,
       },
     ],

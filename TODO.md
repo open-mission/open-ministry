@@ -10,11 +10,17 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
-- [ ] Implementar a funcionalidade dos usuarios preencher a disponibilidade de dias para servir nos cultos e quais dias tem disponivel. E se tem disponibilidade de manha, tarde e noite e o dias da semana.
-
 ### Doing
 
 ### Done
+
+- [x] Disponibilidade dos usuários para servir nos cultos (dias da semana e períodos manhã, tarde e noite).
+  - [x] Modelo de dados `person_availability` no Drizzle ORM com RLS e migration aplicada
+  - [x] Rota `/dashboard/availability` com interface impecável e cartões responsivos por dia da semana
+  - [x] Seleção independente de períodos: Manhã (06h-12h), Tarde (12h-18h) e Noite (18h-23h)
+  - [x] Atalhos rápidos por dia (marcar dia todo ou limpar dia) e observações/restrições gerais
+  - [x] Server actions de consulta e persistência atômica da disponibilidade
+  - [x] Link direto "Disponibilidade" adicionado na navegação lateral (Cultos & Escalas)
 
 - [x] Integração com Evolution API Go (WhatsApp), Multi-canal de Notificações, Upstash Redis & QStash e Onboarding com Telefone.
   - [x] Modelo de dados `organization_notification_channel` no Drizzle ORM com RLS e migration aplicada
@@ -182,4 +188,5 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 - **07/11/2026:** Drag and drop no cronograma concluído. Os momentos e seções do culto agora podem ser reordenados diretamente arrastando pelo handle vertical com animação suave, feedback de elevação e suporte tanto a mouse/toque quanto teclado. Os horários recalculam em tempo real e a persistência é sincronizada no banco com atualização otimista.
 - **07/11/2026:** Modelos e gestão de cronograma concluídos. Agora é possível salvar o cronograma de qualquer culto como modelo reutilizável da igreja, aplicar modelos salvos ou o modelo padrão do sistema (com alerta inteligente caso já existam itens para evitar perdas acidentais), limpar o cronograma por completo com confirmação e exportar/importar cronogramas em formato `.json`.
 - **07/11/2026:** Notificações via Evolution API Go (WhatsApp) e Upstash Redis/QStash concluídas. Cada igreja pode configurar sua própria instância da Evolution API em Configurações > Notificações, testar a conexão com status online e disparar mensagens de teste. O onboarding agora coleta WhatsApp/telefone do usuário, sincronizando com a pessoa e enviando notificação de boas-vindas. Ao escalar pessoas para eventos, notificações personalizadas são enviadas por WhatsApp além do in-app. Toda a mensageria suporta a fila assíncrona do Upstash Redis e QStash com fallback transparente.
+- **07/11/2026:** Disponibilidade para servir concluída. Foi criada a rota `/dashboard/availability` onde voluntários e membros podem definir seus dias e períodos disponíveis (manhã, tarde e noite) para servir nos cultos da igreja, além de registrar observações e preferências para a liderança. A navegação lateral agora conta com o atalho "Disponibilidade" e o modelo conta com RLS e persistência atômica.
 
