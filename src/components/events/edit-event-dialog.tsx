@@ -35,6 +35,7 @@ import {
   NativeSelectOption,
 } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import { computeDurationMinutes, computeEndTime } from "@/lib/plan-utils";
 
 type DepartmentOption = {
   id: string;
@@ -127,7 +128,17 @@ function EditEventForm({
     undefined,
   );
   const [scope, setScope] = useState("single");
+  const [startTime, setStartTime] = useState(defaultTime);
+  const [endTime, setEndTime] = useState(() =>
+    computeEndTime(defaultTime, defaultDuration),
+  );
+  const durationMinutes = computeDurationMinutes(startTime, endTime);
   const handled = useRef(false);
+
+  const handleStartTimeChange = (newStartTime: string) => {
+    setStartTime(newStartTime);
+    setEndTime(computeEndTime(newStartTime, durationMinutes || 90));
+  };
 
   useEffect(() => {
     if (state?.success && !handled.current) {
@@ -209,28 +220,40 @@ function EditEventForm({
               id="edit-event-time"
               name="startTime"
               type="time"
-              defaultValue={defaultTime}
+              value={startTime}
+              onChange={(e) => handleStartTimeChange(e.target.value)}
               className="h-10"
               aria-invalid={Boolean(state?.fieldErrors?.startTime)}
               required
             />
+            <FieldError
+              errors={state?.fieldErrors?.startTime?.map((message) => ({
+                message,
+              }))}
+            />
           </Field>
 
           <Field data-invalid={Boolean(state?.fieldErrors?.durationMinutes)}>
-            <FieldLabel htmlFor="edit-event-duration">
-              Duração em minutos
+            <FieldLabel htmlFor="edit-event-end-time">
+              Horário de término aproximado
             </FieldLabel>
             <Input
-              id="edit-event-duration"
-              name="durationMinutes"
-              type="number"
-              min={15}
-              max={1440}
-              step={15}
-              defaultValue={defaultDuration}
+              id="edit-event-end-time"
+              type="time"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
               className="h-10"
-              aria-invalid={Boolean(state?.fieldErrors?.durationMinutes)}
               required
+            />
+            <input
+              type="hidden"
+              name="durationMinutes"
+              value={durationMinutes}
+            />
+            <FieldError
+              errors={state?.fieldErrors?.durationMinutes?.map((message) => ({
+                message,
+              }))}
             />
           </Field>
 

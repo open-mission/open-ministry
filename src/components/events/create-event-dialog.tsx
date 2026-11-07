@@ -38,6 +38,7 @@ import {
   RECURRENCE_OPTIONS,
   recurrenceLabels,
 } from "@/lib/event-options";
+import { computeDurationMinutes, computeEndTime } from "@/lib/plan-utils";
 
 type DepartmentOption = {
   id: string;
@@ -92,6 +93,14 @@ function CreateEventForm({
     undefined,
   );
   const [recurrence, setRecurrence] = useState("none");
+  const [startTime, setStartTime] = useState("19:00");
+  const [endTime, setEndTime] = useState("20:30");
+  const durationMinutes = computeDurationMinutes(startTime, endTime);
+
+  const handleStartTimeChange = (newStartTime: string) => {
+    setStartTime(newStartTime);
+    setEndTime(computeEndTime(newStartTime, durationMinutes || 90));
+  };
 
   return (
     <form action={formAction} className="space-y-5">
@@ -177,7 +186,8 @@ function CreateEventForm({
               id="event-time"
               name="startTime"
               type="time"
-              defaultValue="19:00"
+              value={startTime}
+              onChange={(e) => handleStartTimeChange(e.target.value)}
               className="h-10"
               aria-invalid={Boolean(state?.fieldErrors?.startTime)}
               required
@@ -190,20 +200,21 @@ function CreateEventForm({
           </Field>
 
           <Field data-invalid={Boolean(state?.fieldErrors?.durationMinutes)}>
-            <FieldLabel htmlFor="event-duration">
-              Duração em minutos
+            <FieldLabel htmlFor="event-end-time">
+              Horário de término aproximado
             </FieldLabel>
             <Input
-              id="event-duration"
-              name="durationMinutes"
-              type="number"
-              min={15}
-              max={1440}
-              step={15}
-              defaultValue={90}
+              id="event-end-time"
+              type="time"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
               className="h-10"
-              aria-invalid={Boolean(state?.fieldErrors?.durationMinutes)}
               required
+            />
+            <input
+              type="hidden"
+              name="durationMinutes"
+              value={durationMinutes}
             />
             <FieldError
               errors={state?.fieldErrors?.durationMinutes?.map((message) => ({

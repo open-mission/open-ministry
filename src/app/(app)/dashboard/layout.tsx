@@ -1,6 +1,10 @@
 import { Suspense } from "react";
 
 import { AppSidebarLoader } from "@/components/app/app-sidebar-loader";
+import {
+  DashboardBreadcrumb,
+  DashboardBreadcrumbFallback,
+} from "@/components/app/dashboard-breadcrumb";
 import { ImpersonationBannerLoader } from "@/components/app/impersonation-banner-loader";
 import { MobileNav } from "@/components/app/mobile-nav";
 import { MobileNavShell } from "@/components/app/mobile-nav-shell";
@@ -30,16 +34,15 @@ export default function DashboardLayout({
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 border-b bg-background/85 px-4 backdrop-blur-sm sm:px-6">
           <SidebarTrigger />
-          <Separator orientation="vertical" className="h-4" />
-          <span className="text-sm font-medium">Painel</span>
+          <Separator orientation="vertical" className="mr-1 h-4 self-center" />
+          <Suspense fallback={<DashboardBreadcrumbFallback />}>
+            <DashboardBreadcrumb />
+          </Suspense>
           <div className="ml-auto flex items-center gap-1">
             <Suspense fallback={<NotificationBellFallback />}>
               <NotificationBellLoader />
             </Suspense>
             <ThemeToggle />
-            <span className="hidden text-xs tracking-[0.16em] text-muted-foreground uppercase sm:block">
-              OpenMinistry
-            </span>
           </div>
         </header>
         <Suspense fallback={null}>
