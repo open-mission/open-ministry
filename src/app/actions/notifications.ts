@@ -6,6 +6,7 @@ import { z } from "zod";
 import {
   createNotifications,
   getNotificationRecipients,
+  listNotifications,
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/lib/notifications";
@@ -159,4 +160,40 @@ export async function markAllNotificationsReadAction(): Promise<NotificationActi
 
   revalidateNotifications();
   return { ok: true };
+}
+
+export type NotificationPreviewItem = {
+  id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  href: string | null;
+  read: boolean;
+  createdAt: string;
+};
+
+export async function getRecentNotificationsAction(
+  limit = 5,
+): Promise<NotificationPreviewItem[]> {
+  const context = await getOrganizationContext();
+
+  if (!context) {
+    return [];
+  }
+
+  const rows = await listNotifications(
+    context.organization.id,
+    context.session.user.id,
+    limit,
+  );
+
+  return rows.map((n) => ({
+    id: n.id,
+    type: n.type,
+    title: n.title,
+    body: n.body,
+    href: n.href,
+    read: Boolean(n.readAt),
+    createdAt: n.createdAt.toISOString(),
+  }));
 }

@@ -52,7 +52,7 @@ export function ChurchBrandingForm({
     <form action={handleSubmit} className="space-y-5">
       <div className="flex flex-wrap items-center gap-4 rounded-xl border bg-muted/30 p-4">
         {logoUrl ? (
-          <Avatar className="size-16 shrink-0 rounded-xl ring-1 ring-foreground/10">
+          <Avatar className="size-16 shrink-0 rounded-xl">
             <AvatarImage src={logoUrl} alt={`Logo de ${name}`} />
             <AvatarFallback className="rounded-xl bg-primary/10 text-primary">
               <ChurchIcon className="size-7" />

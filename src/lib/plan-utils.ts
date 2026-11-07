@@ -114,3 +114,31 @@ export function computePlanItemTimes(
 
   return { computedItems, totalPlanSeconds };
 }
+
+export function computeDurationMinutes(
+  startTime: string,
+  endTime: string,
+): number {
+  if (!startTime || !endTime) return 90;
+  const [sh, sm] = startTime.split(":").map(Number);
+  const [eh, em] = endTime.split(":").map(Number);
+  if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em)) return 90;
+  let diff = eh * 60 + em - (sh * 60 + sm);
+  if (diff <= 0) {
+    diff += 24 * 60;
+  }
+  return diff;
+}
+
+export function computeEndTime(
+  startTime: string,
+  durationMinutes: number,
+): string {
+  if (!startTime) return "20:30";
+  const [sh, sm] = startTime.split(":").map(Number);
+  if (isNaN(sh) || isNaN(sm)) return "20:30";
+  const total = (sh * 60 + sm + (durationMinutes || 90)) % (24 * 60);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
