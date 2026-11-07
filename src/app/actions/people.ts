@@ -22,6 +22,9 @@ import {
 } from "@/lib/people";
 import { birthdayFieldSchema } from "@/lib/profile";
 import { getRequestOrigin } from "@/lib/request-origin";
+import { buildWhatsAppShareUrl } from "@/lib/message-templates";
+import { renderOrganizationMessageText } from "@/lib/message-templates-server";
+import { getOrganizationEvolutionConfig } from "@/lib/notification-service";
 
 export type PersonFormState =
   | {
@@ -41,6 +44,9 @@ export type PersonActionResult = {
   error?: string;
   link?: string;
   expiresAt?: string;
+  whatsappMessage?: string;
+  saveContactMessage?: string;
+  whatsappShareUrl?: string;
 };
 
 const optionalText = (max: number, message: string) =>
@@ -381,14 +387,53 @@ export async function invitePersonAction(
     });
 
     const origin = await getRequestOrigin(requestHeaders);
+    const link = `${origin}/accept-invitation/${invitation.id}`;
+
+    const orgRecord = await db.query.organization.findFirst({
+      where: eq(schema.organization.id, organizationId),
+    });
+    const churchName = orgRecord?.name || "Igreja";
+
+    const { config: evolutionConfig } = await getOrganizationEvolutionConfig(organizationId);
+
+    const whatsappMessage = await renderOrganizationMessageText({
+      organizationId,
+      type: "invite_church",
+      variables: {
+        name: person.name || person.email.split("@")[0],
+        church_name: churchName,
+        link,
+        role: "Membro",
+        church_phone: evolutionConfig?.instanceName || "",
+      },
+    });
+
+    const saveContactMessage = await renderOrganizationMessageText({
+      organizationId,
+      type: "save_contact",
+      variables: {
+        name: person.name || person.email.split("@")[0],
+        church_name: churchName,
+        church_phone: evolutionConfig?.instanceName || "",
+        whatsapp_name: evolutionConfig?.instanceName || churchName,
+      },
+    });
+
+    const whatsappShareUrl = buildWhatsAppShareUrl({
+      phone: person.phone,
+      text: whatsappMessage,
+    });
 
     revalidatePath("/dashboard/members");
     revalidatePath("/dashboard");
 
     return {
       ok: true,
-      link: `${origin}/accept-invitation/${invitation.id}`,
+      link,
       expiresAt: new Date(invitation.expiresAt).toISOString(),
+      whatsappMessage,
+      saveContactMessage,
+      whatsappShareUrl,
     };
   } catch (error) {
     return { ok: false, error: actionErrorMessage(error) };

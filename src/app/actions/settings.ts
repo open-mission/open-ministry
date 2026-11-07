@@ -12,8 +12,10 @@ import {
   formatPhoneNumberForEvolution,
   sendEvolutionTextMessage,
 } from "@/lib/evolution-api";
-import { getOrganizationContext } from "@/lib/organizations";
-import { syncPersonProfile } from "@/lib/people";
+import { getOrganizationContext, requireOrganizationContext } from "@/lib/organizations";
+import { syncPersonProfile, listPeople } from "@/lib/people";
+import { listDepartments } from "@/lib/departments";
+import { getOrganizationMessageTemplates } from "@/lib/message-templates-server";
 import { birthdayFieldSchema, updateBirthday } from "@/lib/profile";
 import { getSession } from "@/lib/session";
 
@@ -477,5 +479,60 @@ export async function sendTestEvolutionMessageAction(
   });
 
   return result;
+}
+
+export async function getSettingsDialogDataAction() {
+  const { organization, session, role, isAdmin } =
+    await requireOrganizationContext();
+
+  const userRecord = await db.query.user.findFirst({
+    where: eq(schema.user.id, session.user.id),
+  });
+
+  const [initialSessions, initialPasskeys, people, departments] =
+    await Promise.all([
+      getUserSessionsAction(),
+      getUserPasskeysAction(),
+      listPeople(organization.id),
+      listDepartments(organization.id),
+    ]);
+
+  const [evolutionSettings, messageTemplates] = isAdmin
+    ? await Promise.all([
+        getEvolutionSettingsAction(),
+        getOrganizationMessageTemplates(organization.id),
+      ])
+    : [null, []];
+
+  return {
+    organization: {
+      id: organization.id,
+      name: organization.name,
+      slug: organization.slug,
+      logo: organization.logo,
+      createdAt: organization.createdAt,
+      metadata: organization.metadata,
+    },
+    role,
+    isAdmin,
+    userData: {
+      name: userRecord?.name ?? session.user.name,
+      username: userRecord?.username ?? null,
+      email: userRecord?.email ?? session.user.email,
+      birthday: userRecord?.birthday ?? session.user.birthday ?? null,
+      phone: userRecord?.phone ?? null,
+      image: userRecord?.image ?? session.user.image ?? null,
+    },
+    calendarPreferences: {
+      weekStartsOn: (userRecord?.weekStartsOn === 1 ? 1 : 0) as 0 | 1,
+      timezone: userRecord?.timezone || "America/Sao_Paulo",
+    },
+    initialSessions,
+    initialPasskeys,
+    peopleCount: people.length,
+    departmentsCount: departments.length,
+    evolutionSettings,
+    messageTemplates,
+  };
 }
 

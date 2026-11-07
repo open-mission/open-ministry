@@ -164,7 +164,9 @@ function AnnouncementForm({
   useEffect(() => {
     if (state?.success && !handled.current) {
       handled.current = true;
-      toast.success("Aviso enviado com sucesso!");
+      toast.success("Aviso enviado com sucesso!", {
+        description: "Comunicado entregue nos canais selecionados.",
+      });
       onDone();
     }
   }, [state, onDone]);

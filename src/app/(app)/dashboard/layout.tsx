@@ -12,11 +12,13 @@ import {
 } from "@/components/app/mobile-header-leading-loader";
 import { MobileMenuLoader } from "@/components/app/mobile-menu-loader";
 import { MobileMenuProvider } from "@/components/app/mobile-menu";
+import { SettingsModalProvider } from "@/components/settings/settings-modal-provider";
 import { MobileNav } from "@/components/app/mobile-nav";
 import { MobileNavShell } from "@/components/app/mobile-nav-shell";
 import { NotificationBarLoader } from "@/components/app/notification-bar-loader";
 import { NotificationBellFallback, NotificationBellLoader } from "@/components/app/notification-bell-loader";
 import { OfflineBanner } from "@/components/offline/offline-banner";
+import { OpenMinistryRealtimeProvider } from "@/lib/realtime/client";
 import { PwaInstallBanner } from "@/components/pwa/pwa-install-banner";
 import { PwaNotificationPrompt } from "@/components/pwa/pwa-notification-prompt";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -33,52 +35,56 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SidebarProvider>
-      <MobileMenuProvider>
-        <Suspense fallback={<SidebarSkeleton />}>
-          <AppSidebarLoader />
-        </Suspense>
-        <SidebarInset>
-          <header className="sticky top-0 z-20 flex min-h-[calc(3.5rem+env(safe-area-inset-top))] shrink-0 items-center gap-2 border-b bg-background/85 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-xl sm:gap-3 sm:px-6">
-            <SidebarTrigger className="hidden md:inline-flex" />
-            <Suspense fallback={<MobileHeaderLeadingFallback />}>
-              <MobileHeaderLeadingLoader />
+    <OpenMinistryRealtimeProvider>
+      <SidebarProvider>
+        <MobileMenuProvider>
+          <SettingsModalProvider>
+            <Suspense fallback={<SidebarSkeleton />}>
+              <AppSidebarLoader />
             </Suspense>
-            <Separator
-              orientation="vertical"
-              className="mr-1 hidden h-4 self-center md:block"
-            />
-            <Suspense fallback={<DashboardBreadcrumbFallback />}>
-              <DashboardBreadcrumb />
-            </Suspense>
-            <div className="ml-auto flex items-center gap-1">
-              <Suspense fallback={<NotificationBellFallback />}>
-                <NotificationBellLoader />
+            <SidebarInset>
+              <header className="sticky top-0 z-20 flex min-h-[calc(3.5rem+env(safe-area-inset-top))] shrink-0 items-center gap-2 border-b bg-background/85 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-xl sm:gap-3 sm:px-6">
+                <SidebarTrigger className="hidden md:inline-flex" />
+                <Suspense fallback={<MobileHeaderLeadingFallback />}>
+                  <MobileHeaderLeadingLoader />
+                </Suspense>
+                <Separator
+                  orientation="vertical"
+                  className="mr-1 hidden h-4 self-center md:block"
+                />
+                <Suspense fallback={<DashboardBreadcrumbFallback />}>
+                  <DashboardBreadcrumb />
+                </Suspense>
+                <div className="ml-auto flex items-center gap-1">
+                  <Suspense fallback={<NotificationBellFallback />}>
+                    <NotificationBellLoader />
+                  </Suspense>
+                  <ThemeToggle />
+                </div>
+              </header>
+              <OfflineBanner />
+              <Suspense fallback={null}>
+                <ImpersonationBannerLoader />
               </Suspense>
-              <ThemeToggle />
-            </div>
-          </header>
-          <OfflineBanner />
-          <Suspense fallback={null}>
-            <ImpersonationBannerLoader />
-          </Suspense>
-          <Suspense fallback={null}>
-            <NotificationBarLoader />
-          </Suspense>
-          <div className="flex flex-1 flex-col px-4 pt-5 pb-28 sm:px-6 sm:pt-6 sm:pb-28 md:pb-8 lg:px-8 lg:pt-8">
-            {children}
-          </div>
-          <Suspense fallback={<MobileNavShell />}>
-            <MobileNav />
-          </Suspense>
-          <Suspense fallback={null}>
-            <MobileMenuLoader />
-          </Suspense>
-          <PwaInstallBanner />
-          <PwaNotificationPrompt />
-        </SidebarInset>
-      </MobileMenuProvider>
-    </SidebarProvider>
+              <Suspense fallback={null}>
+                <NotificationBarLoader />
+              </Suspense>
+              <div className="flex flex-1 flex-col px-4 pt-5 pb-28 sm:px-6 sm:pt-6 sm:pb-28 md:pb-8 lg:px-8 lg:pt-8">
+                {children}
+              </div>
+              <Suspense fallback={<MobileNavShell />}>
+                <MobileNav />
+              </Suspense>
+              <Suspense fallback={null}>
+                <MobileMenuLoader />
+              </Suspense>
+              <PwaInstallBanner />
+              <PwaNotificationPrompt />
+            </SidebarInset>
+          </SettingsModalProvider>
+        </MobileMenuProvider>
+      </SidebarProvider>
+    </OpenMinistryRealtimeProvider>
   );
 }
 

@@ -349,6 +349,7 @@ function PersonActions({
             id: person.id,
             name: displayName,
             email: displayEmail,
+            phone: person.phone,
           }}
         />
       ) : null}

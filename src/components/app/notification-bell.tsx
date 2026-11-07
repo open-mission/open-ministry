@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   ArrowRightIcon,
   BellIcon,
@@ -33,7 +34,57 @@ import {
   type NotificationItem,
   useNotificationStore,
 } from "@/lib/notification-store";
+import { useIsRealtimeActive } from "@/lib/realtime/client";
+import {
+  getLiveUnreadNotificationsQuery,
+  type LiveNotificationRow,
+} from "@/app/actions/realtime-notifications";
+import type { SealedLiveQuery } from "@neon/realtime/client";
+import { useLiveQuery } from "@neon/realtime-react";
 import { cn } from "@/lib/utils";
+
+function LiveNotificationsSubscriber({
+  query,
+}: {
+  query: SealedLiveQuery<LiveNotificationRow>;
+}) {
+  const { data: liveRows } = useLiveQuery(query, {
+    refreshQuery: async () => {
+      const refreshed = await getLiveUnreadNotificationsQuery();
+      if (!refreshed) {
+        throw new Error("Não foi possível renovar a consulta em tempo real");
+      }
+      return refreshed;
+    },
+  });
+
+  const { init } = useNotificationStore();
+
+  useEffect(() => {
+    if (liveRows) {
+      const items: NotificationItem[] = liveRows.map((n) => ({
+        id: n.id,
+        type: n.type,
+        title: n.title,
+        body: n.body,
+        href: n.href,
+        read: Boolean(n.readAt),
+        createdAt:
+          n.createdAt instanceof Date
+            ? n.createdAt.toISOString()
+            : String(n.createdAt),
+      }));
+
+      init({
+        count: items.filter((i) => !i.read).length,
+        items,
+      });
+    }
+  }, [liveRows, init]);
+
+  return null;
+}
+
 
 function TypeIcon({ type }: { type: string }) {
   if (type === "schedule_assigned" || type === "schedule_removed") {
@@ -246,12 +297,15 @@ function NotificationPanel({
 export function NotificationBell({
   initialCount,
   initialItems,
+  sealedQuery,
 }: {
   initialCount: number;
   initialItems?: NotificationItem[];
+  sealedQuery?: SealedLiveQuery<LiveNotificationRow> | null;
 }) {
   const router = useRouter();
   const isMobile = useIsMobile();
+  const isRealtimeActive = useIsRealtimeActive();
   const [open, setOpen] = useState(false);
 
   const {
@@ -269,8 +323,12 @@ export function NotificationBell({
     init({ count: initialCount, items: initialItems });
   }, [init, initialCount, initialItems]);
 
-  // Periodically refresh unread count
+  // Periodically refresh unread count (skipped when Realtime WebSocket is active)
   useEffect(() => {
+    if (isRealtimeActive && sealedQuery) {
+      return;
+    }
+
     let active = true;
 
     async function loadCount() {
@@ -295,7 +353,7 @@ export function NotificationBell({
       active = false;
       window.clearInterval(interval);
     };
-  }, [setCount]);
+  }, [setCount, isRealtimeActive, sealedQuery]);
 
   // Fetch recent notifications when the panel opens (stale-while-revalidate cached)
   const handleOpenChange = (nextOpen: boolean) => {
@@ -307,6 +365,7 @@ export function NotificationBell({
 
   const handleMarkAllRead = () => {
     markAllAsRead();
+    toast.success("Notificações marcadas como lidas.");
   };
 
   const handleItemClick = (item: NotificationItem) => {
@@ -341,50 +400,54 @@ export function NotificationBell({
     </Button>
   );
 
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={handleOpenChange}>
-        <DrawerTrigger asChild>{trigger}</DrawerTrigger>
-        <DrawerContent className="gap-0 rounded-t-[28px] border-x-0 border-b-0 bg-background p-0 data-[vaul-drawer-direction=bottom]:max-h-[85dvh]">
-          <DrawerHeader className="sr-only">
-            <DrawerTitle>Notificações</DrawerTitle>
-            <DrawerDescription>
-              Suas notificações recentes e avisos da igreja.
-            </DrawerDescription>
-          </DrawerHeader>
-          <NotificationPanel
-            count={count}
-            items={items}
-            loading={isLoading}
-            variant="drawer"
-            onMarkAllRead={handleMarkAllRead}
-            onItemClick={handleItemClick}
-            onClose={() => setOpen(false)}
-          />
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+    <>
+      {isRealtimeActive && sealedQuery ? (
+        <LiveNotificationsSubscriber query={sealedQuery} />
+      ) : null}
 
-      <PopoverContent
-        align="end"
-        sideOffset={8}
-        className="w-80 overflow-hidden rounded-xl border border-border/70 p-0 shadow-lg sm:w-96"
-      >
-        <NotificationPanel
-          count={count}
-          items={items}
-          loading={isLoading}
-          variant="popover"
-          onMarkAllRead={handleMarkAllRead}
-          onItemClick={handleItemClick}
-          onClose={() => setOpen(false)}
-        />
-      </PopoverContent>
-    </Popover>
+      {isMobile ? (
+        <Drawer open={open} onOpenChange={handleOpenChange}>
+          <DrawerTrigger asChild>{trigger}</DrawerTrigger>
+          <DrawerContent className="gap-0 rounded-t-[28px] border-x-0 border-b-0 bg-background p-0 data-[vaul-drawer-direction=bottom]:max-h-[85dvh]">
+            <DrawerHeader className="sr-only">
+              <DrawerTitle>Notificações</DrawerTitle>
+              <DrawerDescription>
+                Suas notificações recentes e avisos da igreja.
+              </DrawerDescription>
+            </DrawerHeader>
+            <NotificationPanel
+              count={count}
+              items={items}
+              loading={isLoading}
+              variant="drawer"
+              onMarkAllRead={handleMarkAllRead}
+              onItemClick={handleItemClick}
+              onClose={() => setOpen(false)}
+            />
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Popover open={open} onOpenChange={handleOpenChange}>
+          <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+
+          <PopoverContent
+            align="end"
+            sideOffset={8}
+            className="w-80 overflow-hidden rounded-xl border border-border/70 p-0 shadow-lg sm:w-96"
+          >
+            <NotificationPanel
+              count={count}
+              items={items}
+              loading={isLoading}
+              variant="popover"
+              onMarkAllRead={handleMarkAllRead}
+              onItemClick={handleItemClick}
+              onClose={() => setOpen(false)}
+            />
+          </PopoverContent>
+        </Popover>
+      )}
+    </>
   );
 }

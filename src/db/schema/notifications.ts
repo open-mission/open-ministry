@@ -127,3 +127,39 @@ export const pushSubscriptionRelations = relations(
     }),
   }),
 );
+
+export const organizationMessageTemplate = pgTable(
+  "organization_message_template",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    title: text("title").notNull(),
+    content: text("content").notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("org_msg_template_org_idx").on(table.organizationId),
+    uniqueIndex("org_msg_template_org_type_uidx").on(
+      table.organizationId,
+      table.type,
+    ),
+  ],
+);
+
+export const organizationMessageTemplateRelations = relations(
+  organizationMessageTemplate,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [organizationMessageTemplate.organizationId],
+      references: [organization.id],
+    }),
+  }),
+);

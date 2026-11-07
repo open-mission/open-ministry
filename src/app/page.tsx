@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { OpenMinistrySymbol } from "@/components/brand/openministry-logo";
 
 const features = [
   {
@@ -92,7 +93,7 @@ export default function Home() {
       <header className="mx-auto flex h-20 w-full max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
         <Link href="/" className="flex items-center gap-2.5">
           <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <ChurchIcon className="size-5" />
+            <OpenMinistrySymbol className="size-5" />
           </span>
           <span className="font-heading text-xl tracking-tight">
             OpenMinistry
@@ -111,6 +112,12 @@ export default function Home() {
             className="transition-colors hover:text-foreground"
           >
             Como funciona
+          </Link>
+          <Link
+            href="/brand"
+            className="transition-colors hover:text-foreground"
+          >
+            Marca
           </Link>
           <Link
             href="/api/docs"
@@ -428,7 +435,7 @@ export default function Home() {
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2.5">
             <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <ChurchIcon className="size-4" />
+              <OpenMinistrySymbol className="size-4" />
             </span>
             <span className="font-heading text-lg tracking-tight">
               OpenMinistry
@@ -436,6 +443,9 @@ export default function Home() {
           </div>
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+            <Link href="/brand" className="hover:text-foreground">
+              Brand Kit
+            </Link>
             <Link href="/signup" className="hover:text-foreground">
               Criar conta
             </Link>

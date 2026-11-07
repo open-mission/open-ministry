@@ -15,6 +15,8 @@ import {
 } from "@/lib/queue";
 import { getAppBaseUrl } from "@/lib/app-url";
 import { sendWebPushToUser } from "@/lib/push-notifications";
+import type { MessageTemplateType } from "@/lib/message-templates";
+import { renderOrganizationMessageText } from "@/lib/message-templates-server";
 
 export type DispatchNotificationOptions = {
   organizationId: string;
@@ -252,14 +254,40 @@ export async function dispatchNotification(
   }
 
   const recipientName = targetName || "Membro";
-  const messageText = buildWhatsAppMessageText(type, {
-    name: recipientName,
-    churchName,
-    title,
-    body,
-    href,
-    metadata,
-  });
+  const baseUrl = getAppBaseUrl();
+  const fullLink = href
+    ? (href.startsWith("http") ? href : `${baseUrl}${href}`)
+    : (metadata?.link as string) || baseUrl;
+
+  let messageText = "";
+  try {
+    messageText = await renderOrganizationMessageText({
+      organizationId,
+      type: type as MessageTemplateType,
+      variables: {
+        name: recipientName,
+        church_name: churchName,
+        link: fullLink,
+        event_title: (metadata?.eventTitle as string) || "",
+        function_name: (metadata?.functionName as string) || "",
+        event_date: (metadata?.eventDate as string) || "",
+        event_time: (metadata?.eventTime as string) || "",
+        title,
+        body: body || "",
+        church_phone: evolutionConfig.instanceName,
+        whatsapp_name: evolutionConfig.instanceName,
+      },
+    });
+  } catch {
+    messageText = buildWhatsAppMessageText(type, {
+      name: recipientName,
+      churchName,
+      title,
+      body,
+      href,
+      metadata,
+    });
+  }
 
   const job: NotificationJob = {
     organizationId,

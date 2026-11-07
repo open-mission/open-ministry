@@ -3,8 +3,11 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
+import { db } from "@/db";
+import * as schema from "@/db/schema";
 import { actionErrorMessage } from "@/lib/auth-errors";
 import { auth } from "@/lib/auth";
 import { syncUserAdminRole } from "@/lib/admin-role";
@@ -16,6 +19,9 @@ import {
 import { birthdayFieldSchema, updateBirthday } from "@/lib/profile";
 import { getRequestOrigin } from "@/lib/request-origin";
 import { getSession } from "@/lib/session";
+import { buildWhatsAppShareUrl } from "@/lib/message-templates";
+import { renderOrganizationMessageText } from "@/lib/message-templates-server";
+import { getOrganizationEvolutionConfig } from "@/lib/notification-service";
 
 export type InviteFormState =
   | {
@@ -24,13 +30,20 @@ export type InviteFormState =
         name?: string[];
         email?: string[];
         role?: string[];
+        phone?: string[];
       };
       invitation?: {
         id: string;
         email: string;
         role: string;
+        name?: string | null;
+        phone?: string | null;
+        churchName?: string;
         link: string;
         expiresAt: string;
+        whatsappMessage?: string;
+        saveContactMessage?: string;
+        whatsappShareUrl?: string;
       };
     }
   | undefined;
@@ -68,6 +81,14 @@ const inviteSchema = z.object({
   role: z.enum(["member", "admin"], {
     error: "Escolha um papel válido.",
   }),
+  phone: z.preprocess(
+    (value) => {
+      if (typeof value !== "string") return undefined;
+      const trimmed = value.trim();
+      return trimmed === "" ? undefined : trimmed;
+    },
+    z.string().max(30, "Telefone inválido.").optional(),
+  ),
 });
 
 const acceptInvitationSchema = z.object({
@@ -83,6 +104,7 @@ export async function inviteMemberAction(
     name: formData.get("name"),
     email: formData.get("email"),
     role: formData.get("role"),
+    phone: formData.get("phone"),
   });
 
   if (!parsed.success) {
@@ -102,17 +124,20 @@ export async function inviteMemberAction(
   const requestHeaders = await headers();
 
   try {
+    const orgId = session.session.activeOrganizationId;
+
     await ensurePersonForEmail({
-      organizationId: session.session.activeOrganizationId,
+      organizationId: orgId,
       email: parsed.data.email,
       name: parsed.data.name,
+      phone: parsed.data.phone,
     });
 
     const invitation = await auth.api.createInvitation({
       body: {
         email: parsed.data.email,
         role: parsed.data.role,
-        organizationId: session.session.activeOrganizationId,
+        organizationId: orgId,
         resend: true,
       },
       headers: requestHeaders,
@@ -120,6 +145,43 @@ export async function inviteMemberAction(
 
     const origin = await getRequestOrigin(requestHeaders);
     const link = `${origin}/accept-invitation/${invitation.id}`;
+
+    const orgRecord = await db.query.organization.findFirst({
+      where: eq(schema.organization.id, orgId),
+    });
+    const churchName = orgRecord?.name || "Igreja";
+
+    const { config: evolutionConfig } = await getOrganizationEvolutionConfig(orgId);
+
+    const recipientName = parsed.data.name?.trim() || parsed.data.email.split("@")[0];
+
+    const whatsappMessage = await renderOrganizationMessageText({
+      organizationId: orgId,
+      type: "invite_church",
+      variables: {
+        name: recipientName,
+        church_name: churchName,
+        link,
+        role: parsed.data.role === "admin" ? "Administrador" : "Membro",
+        church_phone: evolutionConfig?.instanceName || "",
+      },
+    });
+
+    const saveContactMessage = await renderOrganizationMessageText({
+      organizationId: orgId,
+      type: "save_contact",
+      variables: {
+        name: recipientName,
+        church_name: churchName,
+        church_phone: evolutionConfig?.instanceName || "",
+        whatsapp_name: evolutionConfig?.instanceName || churchName,
+      },
+    });
+
+    const whatsappShareUrl = buildWhatsAppShareUrl({
+      phone: parsed.data.phone,
+      text: whatsappMessage,
+    });
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/members");
@@ -129,13 +191,93 @@ export async function inviteMemberAction(
         id: invitation.id,
         email: invitation.email,
         role: invitation.role ?? parsed.data.role,
+        name: parsed.data.name ?? null,
+        phone: parsed.data.phone ?? null,
+        churchName,
         link,
         expiresAt: new Date(invitation.expiresAt).toISOString(),
+        whatsappMessage,
+        saveContactMessage,
+        whatsappShareUrl,
       },
     };
   } catch (error) {
     return { error: actionErrorMessage(error) };
   }
+}
+
+export async function getInvitationWhatsAppMessagesAction(invitationId: string): Promise<{
+  ok: boolean;
+  inviteMessage?: string;
+  saveContactMessage?: string;
+  whatsappUrl?: string;
+  phone?: string | null;
+  name?: string | null;
+  churchName?: string;
+  error?: string;
+}> {
+  const session = await getSession();
+  if (!session || !session.session.activeOrganizationId) {
+    return { ok: false, error: "Não autorizado." };
+  }
+
+  const details = await findInvitationDetails(invitationId);
+  if (!details || details.organizationId !== session.session.activeOrganizationId) {
+    return { ok: false, error: "Convite não encontrado." };
+  }
+
+  const origin = await getRequestOrigin(await headers());
+  const link = `${origin}/accept-invitation/${details.id}`;
+
+  const person = await db.query.person.findFirst({
+    where: and(
+      eq(schema.person.organizationId, details.organizationId),
+      eq(schema.person.email, details.email),
+    ),
+  });
+
+  const { config: evolutionConfig } = await getOrganizationEvolutionConfig(details.organizationId);
+
+  const recipientName = person?.name || details.email.split("@")[0];
+  const churchName = details.organization.name;
+
+  const inviteMessage = await renderOrganizationMessageText({
+    organizationId: details.organizationId,
+    type: "invite_church",
+    variables: {
+      name: recipientName,
+      church_name: churchName,
+      link,
+      role: details.role === "admin" ? "Administrador" : "Membro",
+      church_phone: evolutionConfig?.instanceName || "",
+    },
+  });
+
+  const saveContactMessage = await renderOrganizationMessageText({
+    organizationId: details.organizationId,
+    type: "save_contact",
+    variables: {
+      name: recipientName,
+      church_name: churchName,
+      church_phone: evolutionConfig?.instanceName || "",
+      whatsapp_name: evolutionConfig?.instanceName || churchName,
+    },
+  });
+
+  const whatsappUrl = buildWhatsAppShareUrl({
+    phone: person?.phone,
+    text: inviteMessage,
+  });
+
+  return {
+    ok: true,
+    inviteMessage,
+    saveContactMessage,
+    whatsappUrl,
+    phone: person?.phone ?? null,
+    name: recipientName,
+    churchName,
+  };
 }
 
 export async function cancelInvitationAction(

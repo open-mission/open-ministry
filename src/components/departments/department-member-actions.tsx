@@ -8,6 +8,7 @@ import {
   removeDepartmentMemberAction,
   setDepartmentLeaderAction,
 } from "@/app/actions/departments";
+import { DepartmentWhatsAppInviteDialog } from "@/components/departments/department-whatsapp-invite-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,11 +28,17 @@ export function DepartmentMemberActions({
   memberName,
   isLeader,
   canManageLeaders,
+  departmentId,
+  departmentName,
+  personId,
 }: {
   memberId: string;
   memberName: string;
   isLeader: boolean;
   canManageLeaders: boolean;
+  departmentId?: string;
+  departmentName?: string;
+  personId?: string;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -67,6 +74,15 @@ export function DepartmentMemberActions({
 
   return (
     <div className="flex items-center justify-end gap-1">
+      {departmentId && personId ? (
+        <DepartmentWhatsAppInviteDialog
+          departmentId={departmentId}
+          departmentName={departmentName || "Departamento"}
+          personId={personId}
+          personName={memberName}
+        />
+      ) : null}
+
       {canManageLeaders ? (
         <Button
           type="button"
