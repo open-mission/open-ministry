@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChurchIcon } from "lucide-react";
+import { OpenMinistrySymbol } from "@/components/brand/openministry-logo";
 
 import { NavUser } from "@/components/app/nav-user";
 import { SidebarNav } from "@/components/app/sidebar-nav";
@@ -46,12 +46,12 @@ export function AppSidebar({
                       alt={`Logo de ${organizationName}`}
                     />
                     <AvatarFallback className="rounded-lg bg-primary text-primary-foreground">
-                      <ChurchIcon className="size-4" />
+                      <OpenMinistrySymbol className="size-4" />
                     </AvatarFallback>
                   </Avatar>
                 ) : (
                   <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                    <ChurchIcon className="size-4" />
+                    <OpenMinistrySymbol className="size-4" />
                   </span>
                 )}
                 <span className="flex min-w-0 flex-col">

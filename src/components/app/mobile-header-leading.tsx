@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowLeftIcon } from "lucide-react";
 
+import { OpenMinistrySymbol } from "@/components/brand/openministry-logo";
 import {
   getParentHref,
   isMobileNavRoute,
@@ -35,14 +35,8 @@ export function MobileHeaderLeading({
             className="size-8 rounded-lg object-cover shrink-0"
           />
         ) : (
-          <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 shrink-0">
-            <Image
-              src="/icon.png"
-              alt="OpenMinistry"
-              width={20}
-              height={20}
-              className="size-5 rounded"
-            />
+          <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shrink-0 shadow-xs">
+            <OpenMinistrySymbol className="size-4" />
           </div>
         )}
       </Link>

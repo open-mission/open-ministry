@@ -1,8 +1,26 @@
-# OpenMinistry
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/brand/openministry-logo-full-white.svg">
+    <source media="(prefers-color-scheme: light)" srcset="public/brand/openministry-logo-full-black.svg">
+    <img alt="OpenMinistry - Organize. Planeje. Sirva." src="public/brand/openministry-logo-full-black.svg" width="460">
+  </picture>
+</p>
 
-Uma solução para ajudar igrejas a se organizarem, cuidarem das pessoas e
-crescerem em comunidade. Inspirado em ferramentas como Planning Center e
-Voluts.
+<p align="center">
+  <strong>ORGANIZE. PLANEJE. SIRVA.</strong><br>
+  Uma solução para ajudar igrejas a se organizarem, cuidarem das pessoas e crescerem em comunidade.<br>
+  Inspirado em ferramentas como Planning Center e Voluts.
+</p>
+
+<p align="center">
+  <a href="#stack">Stack</a> •
+  <a href="#marca--identidade-visual">Brand Kit</a> •
+  <a href="#configuração">Configuração</a> •
+  <a href="#git-flow">Git Flow</a> •
+  <a href="#scripts">Scripts</a>
+</p>
+
+---
 
 O painel reúne as pessoas da igreja, os departamentos e suas funções, os
 aniversariantes, os cultos e eventos recorrentes, as escalas de cada ocorrência e
@@ -23,6 +41,35 @@ quem serve.
 - [Tailwind CSS 4](https://tailwindcss.com/)
 - [date-fns](https://date-fns.org/) + `date-fns-tz` para datas e recorrências
 - [Scalar](https://scalar.com/) para documentação da API
+
+## 🎨 Marca & Identidade Visual
+
+O OpenMinistry possui uma página oficial de diretrizes de marca acessível em [`/brand`](https://openministry.app/brand) com pré-visualização interativa, download de arquivos vetoriais e regras de aplicação.
+
+### Variações dos Logotipos
+
+| Variação | Aplicação | Arquivos |
+| :--- | :--- | :--- |
+| **Logo Completo** | Institucional com tagline (*ORGANIZE. PLANEJE. SIRVA.*) | [`SVG Preto`](public/brand/openministry-logo-full-black.svg) • [`SVG Branco`](public/brand/openministry-logo-full-white.svg) • [`PNG`](public/brand/openministry-logo-full-black.png) |
+| **Logo Minimal** | Cabeçalhos e barras de navegação (Símbolo + Nome) | [`SVG Preto`](public/brand/openministry-logo-black.svg) • [`SVG Branco`](public/brand/openministry-logo-white.svg) • [`PNG`](public/brand/openministry-logo-black.png) |
+| **Ícone Minimal** | Símbolo isolado (Livro aberto com cruz) | [`SVG Preto`](public/brand/openministry-symbol-black.svg) • [`SVG Branco`](public/brand/openministry-symbol-white.svg) • [`PNG`](public/brand/openministry-symbol-black.png) |
+| **App Icons** | Ícones de app mobile (iOS / Android / PWA) | [`Dark PNG`](public/brand/openministry-app-icon-dark.png) • [`Light PNG`](public/brand/openministry-app-icon-light.png) • [`SVG PWA`](public/icons/icon.svg) |
+| **Brand Kit (.zip)** | Pacote completo com todos os vetores e PNGs 4K | [`openministry-brand-assets.zip`](public/brand/openministry-brand-assets.zip) |
+
+### Paleta Oficial
+
+- **Verde Floresta (Primário):** `#264A3A`
+- **Creme Suave (Fundo):** `#FBF7EF`
+- **Grafite Noturno (Dark):** `#0A0A0A`
+- **Branco Puro:** `#FFFFFF`
+- **Verde Sálvia (Acento):** `#3D735A`
+- **Cinza Neutro:** `#71717A`
+
+### Tipografia
+
+- **Títulos & Editorial:** [Fraunces](https://fonts.google.com/specimen/Fraunces) (Serifada calorosa e nobre)
+- **Interface & UI:** [Geist](https://vercel.com/font) (Sans-serif moderna de alta legibilidade)
+- **Assinatura / Tagline:** Caixa alta com tracking expandido (`letter-spacing: 0.18em`)
 
 ## Pré-requisitos
 
