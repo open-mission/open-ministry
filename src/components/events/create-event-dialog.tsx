@@ -48,19 +48,25 @@ type DepartmentOption = {
 export function CreateEventDialog({
   departments,
   defaultDate,
+  trigger,
 }: {
   departments: DepartmentOption[];
   defaultDate: string;
+  trigger?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="lg" className="h-9">
-          <CalendarPlusIcon data-icon="inline-start" />
-          Novo culto ou evento
-        </Button>
+        {trigger ? (
+          trigger
+        ) : (
+          <Button size="lg" className="h-9">
+            <CalendarPlusIcon data-icon="inline-start" />
+            Novo culto ou evento
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
