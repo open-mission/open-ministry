@@ -5,8 +5,8 @@ import { Suspense } from "react";
 import { ClipboardListIcon } from "lucide-react";
 
 import { MemberSchedules } from "@/components/app/member-schedules";
+import { PageInfo } from "@/components/app/page-info";
 import { ScheduleList } from "@/components/events/schedule-list";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -68,22 +68,24 @@ async function SchedulesContent() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
       <header className="space-y-2">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <h1 className="font-heading text-4xl leading-none tracking-tight">
             Escalas
           </h1>
-          <Badge variant="outline" className="font-normal">
-            {upcoming.length}
-          </Badge>
+          <PageInfo
+            title="Escalas"
+            description={
+              <>
+                Acompanhe quem serve em cada encontro de{" "}
+                <span className="font-medium text-foreground">
+                  {organization.name}
+                </span>{" "}
+                e veja o que ainda falta montar. As escalas anteriores ficam no
+                histórico.
+              </>
+            }
+          />
         </div>
-        <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-          Acompanhe quem serve em cada encontro de{" "}
-          <span className="font-medium text-foreground">
-            {organization.name}
-          </span>{" "}
-          e veja o que ainda falta montar. As escalas anteriores ficam no
-          histórico.
-        </p>
         {upcoming.length > 0 ? (
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
             <span>

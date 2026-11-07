@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { CakeIcon } from "lucide-react";
 
+import { PageInfo } from "@/components/app/page-info";
 import { BirthdayForm } from "@/components/birthdays/birthday-form";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -84,21 +85,26 @@ async function BirthdaysContent() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
       <header className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <h1 className="font-heading text-4xl leading-none tracking-tight">
             Aniversariantes
           </h1>
           <Badge variant="outline" className="font-normal">
             {entries.length}
           </Badge>
+          <PageInfo
+            title="Aniversariantes"
+            description={
+              <>
+                As datas de quem faz parte de{" "}
+                <span className="font-medium text-foreground">
+                  {organization.name}
+                </span>
+                . O dia e o mês ficam visíveis para toda a equipe.
+              </>
+            }
+          />
         </div>
-        <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-          As datas de quem faz parte de{" "}
-          <span className="font-medium text-foreground">
-            {organization.name}
-          </span>
-          . O dia e o mês ficam visíveis para toda a equipe.
-        </p>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[1.55fr_0.85fr]">

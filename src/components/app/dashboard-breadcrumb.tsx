@@ -78,26 +78,36 @@ export function DashboardBreadcrumb() {
     return { href, label, isLast };
   });
 
+  const isNav = isMobileNavRoute(pathname);
+  const currentLabel = items[items.length - 1]?.label ?? "Detalhes";
+
   return (
-    <Breadcrumb>
-      <BreadcrumbList>
-        {items.map((item, index) => (
-          <React.Fragment key={item.href}>
-            {index > 0 && <BreadcrumbSeparator />}
-            <BreadcrumbItem>
-              {item.isLast ? (
-                <BreadcrumbPage className="font-medium text-foreground">
-                  {item.label}
-                </BreadcrumbPage>
-              ) : (
-                <BreadcrumbLink asChild>
-                  <Link href={item.href}>{item.label}</Link>
-                </BreadcrumbLink>
-              )}
-            </BreadcrumbItem>
-          </React.Fragment>
-        ))}
-      </BreadcrumbList>
-    </Breadcrumb>
+    <div className="flex min-w-0 items-center">
+      {!isNav ? (
+        <span className="truncate font-heading text-sm font-semibold text-foreground md:hidden">
+          {currentLabel}
+        </span>
+      ) : null}
+      <Breadcrumb className="hidden md:block">
+        <BreadcrumbList>
+          {items.map((item, index) => (
+            <React.Fragment key={item.href}>
+              {index > 0 && <BreadcrumbSeparator />}
+              <BreadcrumbItem>
+                {item.isLast ? (
+                  <BreadcrumbPage className="font-medium text-foreground">
+                    {item.label}
+                  </BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink asChild>
+                    <Link href={item.href}>{item.label}</Link>
+                  </BreadcrumbLink>
+                )}
+              </BreadcrumbItem>
+            </React.Fragment>
+          ))}
+        </BreadcrumbList>
+      </Breadcrumb>
+    </div>
   );
 }

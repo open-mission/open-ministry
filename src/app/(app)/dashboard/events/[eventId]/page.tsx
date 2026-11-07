@@ -96,7 +96,7 @@ async function EventContent({
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-      <div>
+      <div className="hidden sm:block">
         <Link
           href="/dashboard/events"
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -109,7 +109,7 @@ async function EventContent({
       <header className="flex flex-col gap-5">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex size-20 shrink-0 flex-col items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+            <div className="hidden sm:flex size-20 shrink-0 flex-col items-center justify-center rounded-2xl bg-primary text-primary-foreground">
               <span className="font-heading text-3xl leading-none">
                 {parts.day}
               </span>
@@ -120,7 +120,7 @@ async function EventContent({
 
             <div className="min-w-0 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="font-heading text-4xl leading-none tracking-tight">
+                <h1 className="font-heading text-2xl sm:text-4xl leading-tight tracking-tight">
                   {event.title}
                 </h1>
                 <Badge
@@ -213,21 +213,27 @@ async function EventContent({
       </header>
 
       <Tabs defaultValue="order" className="space-y-6">
-        <TabsList className="w-fit p-1">
-          <TabsTrigger value="order" className="gap-2 py-1.5 px-3">
-            <ClockIcon className="size-4" />
-            Cronograma do Culto
+        <TabsList className="grid w-full grid-cols-2 sm:w-fit sm:inline-flex group-data-horizontal/tabs:h-10 h-10 p-1 items-stretch rounded-xl bg-muted">
+          <TabsTrigger
+            value="order"
+            className="h-8 flex items-center justify-center gap-1.5 px-2.5 text-xs sm:text-sm sm:gap-2 sm:px-3"
+          >
+            <ClockIcon className="size-3.5 sm:size-4 shrink-0" />
+            <span className="truncate">Cronograma do Culto</span>
             {event.planItems?.length ? (
-              <span className="rounded-full bg-primary/10 px-1.5 py-0.2 text-[10px] font-semibold text-primary">
+              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/10 px-1 text-[10px] font-semibold text-primary shrink-0">
                 {event.planItems.length}
               </span>
             ) : null}
           </TabsTrigger>
 
-          <TabsTrigger value="teams" className="gap-2 py-1.5 px-3">
-            <UsersIcon className="size-4" />
-            Escala & Equipes
-            <span className="rounded-full bg-muted px-1.5 py-0.2 text-[10px] font-semibold text-muted-foreground">
+          <TabsTrigger
+            value="teams"
+            className="h-8 flex items-center justify-center gap-1.5 px-2.5 text-xs sm:text-sm sm:gap-2 sm:px-3"
+          >
+            <UsersIcon className="size-3.5 sm:size-4 shrink-0" />
+            <span className="truncate">Escala & Equipes</span>
+            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-muted-foreground/15 px-1 text-[10px] font-semibold text-muted-foreground shrink-0">
               {progress.assignmentsCount}
             </span>
           </TabsTrigger>

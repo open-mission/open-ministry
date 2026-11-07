@@ -14,6 +14,39 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Done
 
+- [x] Design Feedback: Badge de Informações (`PageInfo`) com Drawer/Dialog e Ganho de Espaço nos Cabeçalhos
+  - [x] Criar componente reutilizável `PageInfo` (`src/components/app/page-info.tsx`) com disparador via badge/botão (`InfoIcon` + "Info"), renderizando Drawer responsivo no mobile e Dialog no desktop
+  - [x] Ocultar parágrafos extensos de descrição nos cabeçalhos das páginas para ganho de espaço vertical (~50px), concentrando as informações contextuais no `PageInfo`
+  - [x] Implementado em todas as páginas do painel com descrição:
+    - `/dashboard/events` (Cultos e eventos)
+    - `/dashboard/schedules` (Escalas)
+    - `/dashboard/members` (Sua equipe / Pessoas)
+    - `/dashboard/departments` (Departamentos)
+    - `/dashboard/birthdays` (Aniversariantes)
+    - `/dashboard/church` (Sua igreja)
+    - `/dashboard/notifications` (Notificações)
+    - `/dashboard/profile` (Seu perfil)
+    - `/dashboard/settings` (Configurações)
+
+- [x] PWA & Mobile UX: Ativação de Notificações Push para App Instalado e Identidade Visual no Cabeçalho
+  - [x] Verificação de notificações ativas ao instalar o PWA ou abrir em modo standalone (`PwaNotificationPrompt` e `push-client.ts`)
+  - [x] Prompt flutuante moderno acima da barra de navegação móvel solicitando ativação de notificações push com disparo de permissão nativa, registro VAPID e feedback visual
+  - [x] Substituição do botão hambúrguer no cabeçalho mobile (`header.sticky.top-0`) pela logo e nome da igreja (`MobileHeaderLeadingLoader`), evitando redundância com o botão "Mais" da barra de navegação inferior
+  - [x] Remoção da borda divisora (`border-b`) dos cabeçalhos mensais em listagens de cultos e escalas
+  - [x] Modo de segurança e confirmação de descarte de alterações não salvas no drawer de edição de cronograma
+
+- [x] Design Feedback: Refinamentos Mobile em Detalhes do Culto (`/dashboard/events/[id]`) e Agrupamento no Calendário (`/dashboard/calendar`)
+  - [x] Ocultar bloco 80x80 de data no cabeçalho do culto em telas móveis (`hidden sm:flex`) para ganho de espaço vertical e horizontal
+  - [x] Remover link redundante de retorno "Cultos e eventos" no corpo da página no mobile (`hidden sm:block`)
+  - [x] Otimizar botão de voltar no cabeçalho mobile (`MobileHeaderLeading`) com ícone maior (`size-5`) e área de toque confortável
+  - [x] Simplificar breadcrumb no mobile (`DashboardBreadcrumb`): exibe apenas o título da página atual ("Detalhes do culto") sem wrapping ou corte de tela
+  - [x] Unificar altura e alinhamento das abas (`TabsList` e `TabsTrigger`) com altura consistente (`h-10`/`h-8`) e badges perfeitamente alinhadas
+  - [x] Modo de Leitura/Apresentação no Cronograma do Culto (`PlanReadView`): visualização limpa estilo itinerário, sem botões de arrastar ou ações inline que poluíam a tela no celular
+  - [x] Formatação explícita de minutos na duração dos momentos (ex: `5 min`, `20 min`) eliminando a confusão de parecer dois horários consecutivos
+  - [x] Modo de Edição em Drawer tela cheia (`Drawer` de 92dvh): botão primário "Editar Cronograma" abrindo drawer com DndContext, botões de ação e toolbar
+  - [x] Card de momento reordenável redesenhado para toque (`SortablePlanRow`) com linha superior compacta e hierarquia clara
+  - [x] Agrupamento inteligente de escalas do mesmo evento no Calendário (`/dashboard/calendar` e `CalendarAgendaView`): quando um membro tem múltiplas funções no mesmo culto (ex: Cameraman e Livestream), elas são exibidas em um único card unificado (`Escalado: Cameraman, Livestream`), evitando cartões duplicados para o mesmo evento
+
 - [x] UI Otimista, Notificações Reativas (0ms de latência percebida) e Otimização de Cache e Queries
   - [x] Implementar store de notificações reativa no cliente (`src/lib/notification-store.ts`) com `useSyncExternalStore`, janela de cache de 30s e sincronização em tempo real
   - [x] Hidratação inicial dos itens recentes no `NotificationBellLoader` para zero loading na primeira abertura do sino
@@ -300,4 +333,10 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - Pipelining de comandos Upstash Redis (`redis.pipeline()`) em `src/lib/cache.ts`: operações de gravação e invalidação de tags agora são despachadas em um único roundtrip HTTP batched em vez de N chamadas sequenciais.
   - Caching L1/L2 com tag da organização em `withTenantDb`.
   - Cobertura de testes unitários para a store de notificações reativa (`src/lib/__tests__/notification-store.test.ts`).
+- **07/11/2026:** Refinamentos de UI/UX Mobile em Eventos e Calendário concluídos:
+  - Header de Detalhes do Culto (`/dashboard/events/[id]`): caixa grande de data 80x80 ocultada no mobile para liberar espaço; link repetido de voltar removido; ícone de voltar no cabeçalho ampliado para toque com `size-5`; breadcrumb adaptado para exibir apenas o título da página ("Detalhes do culto") sem corte ou quebra de linha.
+  - Abas ("Cronograma do Culto" e "Escala & Equipes"): altura padronizada (`h-10` container, `h-8` triggers) com badges alinhadas e largura preenchendo a tela do celular sem truncamentos.
+  - Cronograma do Culto no Mobile: dividido em Modo Leitura (itinerário limpo, sem botões de arrastar ou ações poluidoras) e Modo Edição em Drawer (`92dvh`) acionado por botão destacado "Editar Cronograma".
+  - Duração dos Momentos: adicionada a unidade "min" (ex: `5 min`, `20 min`) no badge de duração, eliminando a confusão de parecer dois horários lado a lado.
+  - Calendário e Agenda (`/dashboard/calendar`): escalas com múltiplas funções para o mesmo evento (ex: Cameraman e Livestream) agora são agrupadas em um único card (`Escalado: Cameraman, Livestream`), e na visualização geral o card de escala substitui o card genérico do evento, eliminando itens duplicados para o mesmo culto.
 

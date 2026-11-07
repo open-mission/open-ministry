@@ -87,18 +87,39 @@ export async function getCalendarDataAction(): Promise<{
       },
     });
 
-    // If user is assigned, create dedicated assignment items
-    for (const assignment of myAssignments) {
-      const deptName = event.departments.find(
-        (d) => d.departmentId === assignment.departmentId,
-      )?.department?.name;
+    // If user is assigned, create dedicated assignment item grouped by event
+    if (myAssignments.length > 0) {
+      const distinctFunctions = Array.from(
+        new Set(myAssignments.map((a) => a.function.name).filter(Boolean)),
+      );
+      const distinctDepts = Array.from(
+        new Set(
+          myAssignments
+            .map(
+              (a) =>
+                event.departments.find((d) => d.departmentId === a.departmentId)
+                  ?.department?.name,
+            )
+            .filter((name): name is string => Boolean(name)),
+        ),
+      );
+
+      const functionsLabel =
+        distinctFunctions.length === 1
+          ? distinctFunctions[0]
+          : distinctFunctions.join(", ");
+
+      const deptLabel = distinctDepts.join(", ");
+      const subtitle = deptLabel
+        ? `${deptLabel} · ${event.title}`
+        : event.title;
 
       items.push({
-        id: `assignment-${assignment.id}`,
+        id: `assignment-event-${event.id}`,
         type: "assignment",
-        title: `Escalado: ${assignment.function.name}`,
-        subtitle: deptName ? `${deptName} · ${event.title}` : event.title,
-        description: `Função: ${assignment.function.name} no evento ${event.title}`,
+        title: `Escalado: ${functionsLabel}`,
+        subtitle,
+        description: `Funções: ${functionsLabel} no evento ${event.title}`,
         startsAt: event.startsAt.toISOString(),
         endsAt: event.endsAt.toISOString(),
         allDay: false,
@@ -107,8 +128,8 @@ export async function getCalendarDataAction(): Promise<{
         href: `/dashboard/events/${event.id}`,
         metadata: {
           eventId: event.id,
-          departmentName: deptName,
-          functionName: assignment.function.name,
+          departmentName: deptLabel,
+          functionName: functionsLabel,
           isMyAssignment: true,
         },
       });
