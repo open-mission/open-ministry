@@ -10,6 +10,9 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
+- [ ] Implementar a opção do usuário selecionar datas específicas de indisponibilidade (bloqueio de data pontual com motivo/observação e período).
+- [ ] Implementar tela de agenda e calendário completo baseado no repositório dninomiya/full-calendar-for-shadcn-ui (views: dia, semana, mês, ano e agenda; exibição de cultos, escalas do usuário e dias indisponíveis; configurações de início da semana e fuso horário).
+
 ### Doing
 
 ### Done
