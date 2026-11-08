@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   isChordLine,
@@ -23,6 +22,7 @@ import {
   transposeChord,
   transposeChordsText,
 } from "@/lib/music/chords-utils";
+import { cn } from "@/lib/utils";
 import { SectionBadge } from "./section-badge";
 
 type ChordsViewerProps = {
@@ -68,7 +68,10 @@ export function ChordsViewer({ chords, originalTone }: ChordsViewerProps) {
     lg: "text-base leading-loose",
   }[fontSize];
 
-  const renderChordLineHighlighted = (line: string, lineKey: string | number) => {
+  const renderChordLineHighlighted = (
+    line: string,
+    lineKey: string | number,
+  ) => {
     if (isChordLine(line)) {
       const tokens = tokenizeChordLine(line);
       return (
@@ -109,8 +112,8 @@ export function ChordsViewer({ chords, originalTone }: ChordsViewerProps) {
 
   if (!chords || !chords.trim()) {
     return (
-      <Card className="p-8 text-center">
-        <FileMusicIcon className="mx-auto size-8 text-muted-foreground/60" />
+      <Card className="p-6 text-center">
+        <FileMusicIcon className="mx-auto size-7 text-muted-foreground/60" />
         <p className="mt-2 text-sm font-medium">Nenhuma cifra cadastrada</p>
         <p className="mt-1 text-xs text-muted-foreground">
           Clique em Editar para colar a cifra com acordes e tablaturas.
@@ -120,120 +123,134 @@ export function ChordsViewer({ chords, originalTone }: ChordsViewerProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {/* TOOLBAR DO MÚSICO ERGONÔMICA */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/80 bg-card p-3 shadow-2xs sm:p-3.5">
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* BADGE DE TOM */}
-          <div className="flex h-9 items-center gap-1.5 rounded-lg border border-border/80 bg-background px-3 font-medium shadow-2xs">
-            <span className="text-xs text-muted-foreground">Tom:</span>
-            <span className="font-heading text-sm font-bold text-primary">
+    <div className="space-y-3.5">
+      {/* TOOLBAR DO MÚSICO COM ALTURAS PERFEITAS E SEM BORDAS QUE DESALINHAM */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-border/80 bg-card p-2.5 shadow-2xs sm:p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* BADGE DE TOM HARMONIZADO COM A FONTE DA INTERFACE */}
+          <div className="flex h-9 items-center gap-1.5 rounded-lg border border-border/80 bg-background px-3 text-xs shadow-2xs">
+            <span className="text-muted-foreground">Tom:</span>
+            <span className="font-sans font-semibold text-sm text-foreground">
               {currentTone ?? (originalTone || "—")}
             </span>
             {semitones !== 0 ? (
-              <span className="ml-0.5 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+              <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
                 {semitones > 0 ? `+${semitones}` : semitones}
               </span>
             ) : null}
           </div>
 
-          {/* GRUPO DE TRANSPOSIÇÃO DE SEMITONS */}
-          <ButtonGroup className="h-9">
-            <Button
+          {/* CONTROLE DE TRANSPOSIÇÃO DE SEMITONS SEGMENTADO */}
+          <div className="inline-flex h-9 items-center rounded-lg border border-border/80 bg-background p-0.5 shadow-2xs">
+            <button
               type="button"
-              variant="outline"
-              size="sm"
               onClick={() => setSemitones((s) => s - 1)}
               title="Diminuir 1 semitom (-1/2 tom)"
-              className="h-9 w-9 p-0"
+              className="flex h-7.5 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-95"
             >
-              <MinusIcon className="size-4" />
-            </Button>
-            <Button
+              <MinusIcon className="size-3.5" />
+            </button>
+            <button
               type="button"
-              variant="outline"
-              size="sm"
               onClick={() => setSemitones(0)}
               disabled={semitones === 0}
               title="Restaurar tom original"
-              className="h-9 px-3 text-xs font-medium"
+              className={cn(
+                "flex h-7.5 items-center gap-1 rounded-md px-2.5 text-xs font-medium transition-colors",
+                semitones !== 0
+                  ? "text-primary hover:bg-primary/10 font-semibold"
+                  : "text-muted-foreground/60 cursor-default",
+              )}
             >
-              <RotateCcwIcon className="mr-1.5 size-3.5" />
-              Original
-            </Button>
-            <Button
+              <RotateCcwIcon className="size-3" />
+              <span>Original</span>
+            </button>
+            <button
               type="button"
-              variant="outline"
-              size="sm"
               onClick={() => setSemitones((s) => s + 1)}
               title="Aumentar 1 semitom (+1/2 tom)"
-              className="h-9 w-9 p-0"
+              className="flex h-7.5 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-95"
             >
-              <PlusIcon className="size-4" />
-            </Button>
-          </ButtonGroup>
+              <PlusIcon className="size-3.5" />
+            </button>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* GRUPO DE TAMANHO DE FONTE */}
-          <ButtonGroup className="h-9">
-            <Button
+        <div className="flex flex-wrap items-center gap-2">
+          {/* CONTROLE DE TAMANHO DE FONTE SEGMENTADO */}
+          <div className="inline-flex h-9 items-center rounded-lg border border-border/80 bg-muted/40 p-0.5 shadow-2xs">
+            <button
               type="button"
-              variant={fontSize === "sm" ? "secondary" : "outline"}
-              size="sm"
               onClick={() => setFontSize("sm")}
               title="Tamanho pequeno"
-              className="h-9 px-2.5 text-xs font-semibold"
+              className={cn(
+                "flex h-7.5 items-center justify-center rounded-md px-2.5 text-xs font-medium transition-all",
+                fontSize === "sm"
+                  ? "bg-background text-foreground shadow-2xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
             >
               A-
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
-              variant={fontSize === "base" ? "secondary" : "outline"}
-              size="sm"
               onClick={() => setFontSize("base")}
               title="Tamanho normal"
-              className="h-9 px-2.5 text-xs font-semibold"
+              className={cn(
+                "flex h-7.5 items-center justify-center rounded-md px-2.5 text-xs font-medium transition-all",
+                fontSize === "base"
+                  ? "bg-background text-foreground shadow-2xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
             >
               A
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
-              variant={fontSize === "lg" ? "secondary" : "outline"}
-              size="sm"
               onClick={() => setFontSize("lg")}
               title="Tamanho grande"
-              className="h-9 px-2.5 text-xs font-semibold"
+              className={cn(
+                "flex h-7.5 items-center justify-center rounded-md px-2.5 text-xs font-medium transition-all",
+                fontSize === "lg"
+                  ? "bg-background text-foreground shadow-2xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
             >
               A+
-            </Button>
-          </ButtonGroup>
+            </button>
+          </div>
 
-          {/* ALTERNADOR DE MODO DE VISUALIZAÇÃO */}
-          <ButtonGroup className="h-9">
-            <Button
+          {/* ALTERNADOR DE MODO DE VISUALIZAÇÃO SEGMENTADO */}
+          <div className="inline-flex h-9 items-center rounded-lg border border-border/80 bg-muted/40 p-0.5 shadow-2xs">
+            <button
               type="button"
-              variant={viewMode === "sections" ? "secondary" : "outline"}
-              size="sm"
               onClick={() => setViewMode("sections")}
               title="Ver em cards por seção"
-              className="h-9 px-2.5 text-xs font-medium gap-1"
+              className={cn(
+                "flex h-7.5 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all",
+                viewMode === "sections"
+                  ? "bg-background text-foreground shadow-2xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
             >
               <LayoutGridIcon className="size-3.5" />
               <span className="hidden sm:inline">Seções</span>
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
-              variant={viewMode === "continuous" ? "secondary" : "outline"}
-              size="sm"
               onClick={() => setViewMode("continuous")}
               title="Visualização contínua"
-              className="h-9 px-2.5 text-xs font-medium gap-1"
+              className={cn(
+                "flex h-7.5 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all",
+                viewMode === "continuous"
+                  ? "bg-background text-foreground shadow-2xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
             >
               <ListIcon className="size-3.5" />
               <span className="hidden sm:inline">Contínua</span>
-            </Button>
-          </ButtonGroup>
+            </button>
+          </div>
 
           {/* BOTÃO COPIAR CIFRA */}
           <Button
@@ -257,16 +274,16 @@ export function ChordsViewer({ chords, originalTone }: ChordsViewerProps) {
 
       {/* ÁREA DE EXIBIÇÃO DA CIFRA */}
       {viewMode === "sections" ? (
-        <div className="space-y-3.5">
+        <div className="space-y-3">
           {sections.map((section) => (
             <Card
               key={section.id}
-              className="overflow-hidden border border-border/80 bg-card shadow-2xs transition-shadow hover:shadow-xs"
+              className="overflow-hidden border border-border/70 bg-card shadow-2xs transition-colors hover:border-border"
             >
-              <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 bg-muted/20 px-4 py-2.5 sm:px-5">
+              <CardHeader className="flex flex-row items-center justify-between border-b border-border/50 bg-muted/15 px-3.5 py-1.5 sm:px-4 sm:py-2">
                 <SectionBadge type={section.type} name={section.name} />
               </CardHeader>
-              <CardContent className="overflow-x-auto p-4 sm:p-5">
+              <CardContent className="overflow-x-auto px-3.5 py-3 sm:px-4 sm:py-3.5">
                 <div
                   className={`font-mono select-text whitespace-pre ${fontSizeClass}`}
                 >
@@ -280,7 +297,7 @@ export function ChordsViewer({ chords, originalTone }: ChordsViewerProps) {
         </div>
       ) : (
         /* VISUALIZAÇÃO CONTÍNUA */
-        <div className="overflow-x-auto rounded-2xl border border-border/80 bg-card p-4 shadow-2xs sm:p-6">
+        <div className="overflow-x-auto rounded-xl border border-border/70 bg-card p-3.5 shadow-2xs sm:p-5">
           <div
             className={`font-mono select-text whitespace-pre ${fontSizeClass}`}
           >

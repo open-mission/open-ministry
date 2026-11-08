@@ -13,48 +13,49 @@ const TYPE_CONFIG: Record<
   intro: {
     label: "Intro",
     badgeClass:
-      "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-300",
+      "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-500/20 dark:text-emerald-200",
     dotClass: "bg-emerald-500",
   },
   verse: {
     label: "Verso",
     badgeClass:
-      "border-primary/30 bg-primary/10 text-primary dark:border-primary/30 dark:bg-primary/20 dark:text-primary-foreground",
+      "border-primary/30 bg-primary/10 text-primary dark:border-primary/40 dark:bg-primary/25 dark:text-emerald-200",
     dotClass: "bg-primary",
   },
   "pre-chorus": {
     label: "Pré-Refrão",
     badgeClass:
-      "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/20 dark:text-sky-300",
+      "border-sky-500/30 bg-sky-500/10 text-sky-800 dark:border-sky-400/40 dark:bg-sky-500/20 dark:text-sky-200",
     dotClass: "bg-sky-500",
   },
   chorus: {
     label: "Refrão",
     badgeClass:
-      "border-amber-500/40 bg-amber-500/15 text-amber-800 font-semibold dark:border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-300",
+      "border-amber-500/40 bg-amber-500/15 text-amber-900 font-semibold dark:border-amber-400/40 dark:bg-amber-500/25 dark:text-amber-200",
     dotClass: "bg-amber-500 animate-pulse",
   },
   bridge: {
     label: "Ponte",
     badgeClass:
-      "border-purple-500/30 bg-purple-500/10 text-purple-700 dark:border-purple-500/30 dark:bg-purple-500/20 dark:text-purple-300",
+      "border-purple-500/30 bg-purple-500/10 text-purple-800 dark:border-purple-400/40 dark:bg-purple-500/20 dark:text-purple-200",
     dotClass: "bg-purple-500",
   },
   solo: {
     label: "Solo / Instrumental",
     badgeClass:
-      "border-orange-500/30 bg-orange-500/10 text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/20 dark:text-orange-300",
+      "border-orange-500/30 bg-orange-500/10 text-orange-800 dark:border-orange-400/40 dark:bg-orange-500/20 dark:text-orange-200",
     dotClass: "bg-orange-500",
   },
   outro: {
     label: "Final",
     badgeClass:
-      "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/20 dark:text-rose-300",
+      "border-rose-500/30 bg-rose-500/10 text-rose-800 dark:border-rose-400/40 dark:bg-rose-500/20 dark:text-rose-200",
     dotClass: "bg-rose-500",
   },
   generic: {
     label: "Seção",
-    badgeClass: "border-border/80 bg-muted/60 text-muted-foreground",
+    badgeClass:
+      "border-border/80 bg-muted/70 text-foreground dark:border-border dark:bg-muted dark:text-foreground",
     dotClass: "bg-muted-foreground",
   },
 };

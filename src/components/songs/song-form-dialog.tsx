@@ -250,18 +250,21 @@ export function SongFormDialog({
 
   // Formulário compartilhado entre Sheet (mobile) e Dialog (desktop)
   const formBody = (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col">
-      {/* HEADER DO FORMULÁRIO */}
-      <div className="flex items-center justify-between border-b border-border/70 px-5 py-4 sm:px-6">
-        <div className="flex items-center gap-2.5">
+    <form
+      onSubmit={handleSubmit}
+      className="flex h-full min-h-0 flex-1 flex-col overflow-hidden"
+    >
+      {/* HEADER DO FORMULÁRIO COM BOTÃO DE SALVAR EMBUTIDO NO TOPO */}
+      <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 sm:px-6 sm:py-3.5">
+        <div className="flex min-w-0 items-center gap-2.5">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <Music2Icon className="size-4" />
           </span>
-          <div>
-            <h2 className="font-heading text-lg font-bold tracking-tight text-foreground sm:text-xl">
+          <div className="min-w-0">
+            <h2 className="truncate font-heading text-base font-bold tracking-tight text-foreground sm:text-lg">
               {isEditing ? "Editar Música" : "Nova Música no Repertório"}
             </h2>
-            <p className="text-xs text-muted-foreground">
+            <p className="hidden truncate text-xs text-muted-foreground sm:block">
               {isEditing
                 ? "Edite metadados, tom, letra, cifra e plataformas."
                 : "Cadastre letras, cifras e links para a equipe de louvor."}
@@ -269,20 +272,41 @@ export function SongFormDialog({
           </div>
         </div>
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => handleRequestClose(false)}
-          className="text-muted-foreground hover:text-foreground"
-          title="Fechar"
-        >
-          <XIcon className="size-4" />
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          {isDirty ? (
+            <span className="hidden items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 sm:flex">
+              <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+              Modificado
+            </span>
+          ) : null}
+
+          {/* BOTÃO DE SALVAR NO HEADER (AÇÃO PRINCIPAL SEMPRE VISÍVEL) */}
+          <Button
+            type="submit"
+            disabled={isPending}
+            size="sm"
+            className="h-8.5 gap-1.5 px-3.5 text-xs font-semibold shadow-xs"
+          >
+            {isPending ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
+            <span>{isEditing ? "Salvar" : "Adicionar"}</span>
+          </Button>
+
+          {/* ÚNICO BOTÃO DE FECHAR (X) */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => handleRequestClose(false)}
+            className="text-muted-foreground hover:text-foreground"
+            title="Fechar"
+          >
+            <XIcon className="size-4" />
+          </Button>
+        </div>
       </div>
 
-      {/* ÁREA DE ROLAGEM COM AS ABAS */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+      {/* ÁREA DE ROLAGEM COM AS ABAS (min-h-0 e overflow-y-auto habilitam scroll funcional) */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6">
         <Tabs defaultValue="cifra-letra" className="w-full space-y-4">
           <TabsList className="grid h-10 w-full grid-cols-3">
             <TabsTrigger value="cifra-letra" className="gap-1.5 text-xs sm:text-sm">
@@ -321,7 +345,7 @@ export function SongFormDialog({
                   value={chords}
                   onChange={(e) => setChords(e.target.value)}
                   placeholder="Cole aqui a cifra do Cifra Club ou do seu arquivo .txt...&#10;&#10;[Intro] D  A6  D  A6&#10;&#10;[Primeira Parte]&#10;D         A6&#10;Os meus olhos viram a salvação&#10;D         A6&#10;A luz para o mundo, esperança da terra&#10;&#10;[Refrão]&#10;G           D&#10;Glória nas alturas"
-                  className="min-h-[300px] flex-1 resize-y font-mono text-xs leading-relaxed sm:text-sm lg:min-h-[460px]"
+                  className="min-h-[260px] flex-1 resize-y font-mono text-xs leading-relaxed sm:text-sm lg:min-h-[420px]"
                 />
                 <p className="text-[11px] leading-relaxed text-muted-foreground">
                   Dica: Use <code>[Intro]</code>, <code>[Primeira Parte]</code>,{" "}
@@ -356,7 +380,7 @@ export function SongFormDialog({
                   value={lyrics}
                   onChange={(e) => setLyrics(e.target.value)}
                   placeholder="A letra cantada limpa sem acordes (para projeção de slides no culto e ensaios)...&#10;&#10;[Primeira Parte]&#10;Os meus olhos viram a salvação&#10;A luz para o mundo, esperança da terra&#10;&#10;[Refrão]&#10;Glória nas alturas"
-                  className="min-h-[300px] flex-1 resize-y font-sans text-xs leading-relaxed sm:text-sm lg:min-h-[460px]"
+                  className="min-h-[260px] flex-1 resize-y font-sans text-xs leading-relaxed sm:text-sm lg:min-h-[420px]"
                 />
                 <p className="text-[11px] leading-relaxed text-muted-foreground">
                   Texto limpo sem acordes, ideal para projeção no telão e leitura dos vocalistas.
@@ -571,7 +595,7 @@ export function SongFormDialog({
       </div>
 
       {/* FOOTER FIXO DO FORMULÁRIO */}
-      <div className="flex flex-row items-center justify-between border-t border-border/70 bg-card/60 px-5 py-3.5 sm:px-6">
+      <div className="flex flex-row items-center justify-between border-t border-border/70 bg-card/60 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-2">
           {isDirty ? (
             <span className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
@@ -587,12 +611,13 @@ export function SongFormDialog({
           <Button
             type="button"
             variant="outline"
+            size="sm"
             onClick={() => handleRequestClose(false)}
           >
             Cancelar
           </Button>
-          <Button type="submit" disabled={isPending} className="gap-1.5">
-            {isPending ? <Loader2Icon className="size-4 animate-spin" /> : null}
+          <Button type="submit" size="sm" disabled={isPending} className="gap-1.5">
+            {isPending ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
             {isEditing ? "Salvar alterações" : "Adicionar ao repertório"}
           </Button>
         </div>
@@ -608,7 +633,7 @@ export function SongFormDialog({
           <SheetContent
             side="bottom"
             showCloseButton={false}
-            className="flex h-[100dvh] max-h-[100dvh] w-full flex-col rounded-none border-0 bg-background p-0"
+            className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full flex-col overflow-hidden rounded-none border-0 bg-background p-0"
             onPointerDownOutside={(e) => {
               if (isDirty) {
                 e.preventDefault();
@@ -636,7 +661,8 @@ export function SongFormDialog({
       ) : (
         <Dialog open={open} onOpenChange={handleRequestClose}>
           <DialogContent
-            className="flex max-h-[92vh] sm:max-w-5xl xl:max-w-6xl flex-col gap-0 overflow-hidden rounded-2xl p-0"
+            showCloseButton={false}
+            className="flex h-[92vh] max-h-[92vh] min-h-0 sm:max-w-5xl xl:max-w-6xl flex-col gap-0 overflow-hidden rounded-2xl p-0"
             onPointerDownOutside={(e) => {
               if (isDirty) {
                 e.preventDefault();
