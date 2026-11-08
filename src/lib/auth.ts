@@ -111,6 +111,9 @@ export const auth = betterAuth({
     }),
     lastLoginMethod(),
     jwt({
+      jwks: {
+        disablePrivateKeyEncryption: true,
+      },
       jwt: {
         audience: "openministry",
         expirationTime: "15m",
