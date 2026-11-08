@@ -88,9 +88,12 @@ export function NotificationDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] sm:max-w-xl">
+      <DialogContent
+        className="max-h-[90vh] sm:max-w-xl"
+        showCloseButton={false}
+      >
         <DialogHeader className="gap-2">
-          <div className="flex flex-wrap items-center justify-between gap-2 pr-6">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               {isAnnouncement ? (
                 <Badge
@@ -162,23 +165,18 @@ export function NotificationDetailDialog({
         </div>
 
         <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between pt-2">
-          <div>
-            {!isRead ? (
-              <Button
-                type="button"
-                onClick={handleMarkRead}
-                className="w-full gap-2 sm:w-auto"
-              >
-                <CheckCheckIcon className="size-4" />
-                <span>Marcar como lida</span>
-              </Button>
-            ) : (
-              <div className="flex items-center gap-1.5 py-1 text-xs font-medium text-muted-foreground">
-                <CheckCheckIcon className="size-4 text-emerald-600 dark:text-emerald-400" />
-                <span>Leitura confirmada</span>
-              </div>
-            )}
-          </div>
+          {!isRead ? (
+            <Button
+              type="button"
+              onClick={handleMarkRead}
+              className="w-full gap-2 sm:w-auto"
+            >
+              <CheckCheckIcon className="size-4" />
+              <span>Marcar como lida</span>
+            </Button>
+          ) : (
+            <div />
+          )}
 
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
             {notification.href ? (
