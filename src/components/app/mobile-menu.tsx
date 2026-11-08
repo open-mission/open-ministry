@@ -19,8 +19,6 @@ import {
 import { useTheme } from "next-themes";
 
 import { signOutAction } from "@/app/actions/auth";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -30,7 +28,6 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { isNavItemActive, navGroups } from "@/components/app/nav-config";
-import { getInitials, roleLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 type MobileMenuContextValue = {
@@ -81,20 +78,7 @@ export function MobileMenuTrigger({ className }: { className?: string }) {
   );
 }
 
-export function MobileMenu({
-  organizationName,
-  role,
-  user,
-}: {
-  organizationName: string;
-  organizationLogo?: string | null;
-  role: string;
-  user: {
-    name: string;
-    email: string;
-    image: string | null;
-  };
-}) {
+export function MobileMenu() {
   const pathname = usePathname();
   const { open, setOpen } = useMobileMenu();
   const { resolvedTheme, setTheme } = useTheme();
@@ -119,41 +103,6 @@ export function MobileMenu({
 
         <div className="relative min-h-0 flex-1">
           <div className="h-full overflow-y-auto overscroll-contain px-4 pt-3 pb-6">
-            <div className="mb-5">
-              <Link
-                href="/dashboard/profile"
-                onClick={() => setOpen(false)}
-                className="flex w-full items-center gap-3.5 rounded-2xl border border-border/70 bg-card px-4 py-3.5 transition-colors active:bg-muted/60"
-              >
-                <Avatar className="size-12 shrink-0 border">
-                  <AvatarImage src={user.image ?? undefined} alt={user.name} />
-                  <AvatarFallback className="bg-primary/10 font-heading text-base text-primary">
-                    {getInitials(user.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-heading text-base leading-tight tracking-tight">
-                    {user.name}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {user.email}
-                  </p>
-                  <div className="mt-1.5 flex items-center gap-1.5">
-                    <Badge
-                      variant="secondary"
-                      className="h-5 px-2 text-[10px] font-medium"
-                    >
-                      {roleLabel(role)}
-                    </Badge>
-                    <span className="truncate text-[11px] text-muted-foreground">
-                      {organizationName}
-                    </span>
-                  </div>
-                </div>
-                <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/50" />
-              </Link>
-            </div>
-  
             <nav aria-label="Menu principal" className="space-y-5">
               {navGroups.map((group) => (
                 <section key={group.title} className="space-y-2">
