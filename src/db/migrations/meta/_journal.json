@@ -176,6 +176,13 @@
       "when": 1794147874076,
       "tag": "0024_conscious_deathstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794159879687,
+      "tag": "0025_medical_raider",
+      "breakpoints": true
     }
   ]
 }

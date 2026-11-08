@@ -7,7 +7,7 @@ import { AddSongChoiceDialog } from "@/components/songs/add-song-choice-dialog";
 import { SongsListView } from "@/components/songs/songs-list-view";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrganizationContext } from "@/lib/organizations";
-import { canAccessMusicModule, listSongs } from "@/lib/songs";
+import { canAccessMusicModule, listSongCollections, listSongs } from "@/lib/songs";
 
 export const metadata: Metadata = {
   title: "Músicas & Repertório",
@@ -52,7 +52,10 @@ async function SongsContent() {
     );
   }
 
-  const songs = await listSongs(organization.id);
+  const [songs, collections] = await Promise.all([
+    listSongs(organization.id),
+    listSongCollections(organization.id),
+  ]);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
@@ -61,10 +64,14 @@ async function SongsContent() {
           Repertório de Músicas
         </h1>
 
-        <AddSongChoiceDialog />
+        <AddSongChoiceDialog existingCollections={collections} />
       </header>
 
-      <SongsListView songs={songs} canManage={true} />
+      <SongsListView
+        songs={songs}
+        existingCollections={collections}
+        canManage={true}
+      />
     </div>
   );
 }

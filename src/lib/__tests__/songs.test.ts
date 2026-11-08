@@ -4,6 +4,7 @@ import {
   classifySectionType,
   extractLyricsFromChords,
   isChordLine,
+  parseCifraClubTxt,
   parseSongSections,
   STANDARD_TONES,
   tokenizeChordLine,
@@ -195,6 +196,39 @@ Como Zaqueu eu quero subir`;
       expect(lyrics).toContain("Como Zaqueu eu quero subir");
       // O [Intro] puramente instrumental deve ter sido omitido
       expect(lyrics).not.toContain("[Intro]");
+    });
+
+    it("parses Cifra Club .txt exports extracting title, artist, tone, chords and lyrics", () => {
+      const sampleTxt = `A Casa É Sua
+Casa Worship
+
+Tom: E
+Capotraste: Sem capo
+
+[Intro] C#m7  A9  E  B4
+
+[Primeira Parte]
+        C#m7
+Cê é bem-vindo aqui
+         A9
+A casa é Sua, pode entrar
+E          B4
+Deixa Teu fogo queimar
+
+[Refrão]
+A9         E
+Vem me incendiar`;
+
+      const parsed = parseCifraClubTxt(sampleTxt, "Casa Worship - A Casa É Sua.txt");
+
+      expect(parsed.title).toBe("A Casa É Sua");
+      expect(parsed.artist).toBe("Casa Worship");
+      expect(parsed.tone).toBe("E");
+      expect(parsed.chords).toContain("[Intro] C#m7  A9  E  B4");
+      expect(parsed.chords).toContain("Cê é bem-vindo aqui");
+      expect(parsed.lyrics).toContain("[Primeira Parte]");
+      expect(parsed.lyrics).toContain("Cê é bem-vindo aqui");
+      expect(parsed.lyrics).not.toContain("C#m7");
     });
   });
 });

@@ -108,6 +108,19 @@ export async function getSongStats(organizationId: string) {
   };
 }
 
+export async function listSongCollections(
+  organizationId: string,
+): Promise<string[]> {
+  const songs = await listSongs(organizationId);
+  const set = new Set<string>();
+  for (const s of songs) {
+    if (s.collection?.trim()) {
+      set.add(s.collection.trim());
+    }
+  }
+  return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+}
+
 export async function invalidateSongCache(
   organizationId: string,
   songId?: string,

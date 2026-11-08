@@ -6,6 +6,7 @@ import {
   ExternalLinkIcon,
   FileMusicIcon,
   FileTextIcon,
+  FolderIcon,
   MoreVerticalIcon,
   Music2Icon,
   PencilIcon,
@@ -95,8 +96,17 @@ export function SongCard({ song, canManage = true }: SongCardProps) {
             ) : null}
           </div>
 
-          {/* BADGES MUSICAIS: TOM, BPM, COMPASSO */}
+          {/* BADGES MUSICAIS: GRUPO, TOM, BPM, COMPASSO */}
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
+            {song.collection ? (
+              <Badge
+                variant="outline"
+                className="gap-1 border-primary/30 bg-primary/10 text-[11px] font-semibold text-primary"
+              >
+                <FolderIcon className="size-3 text-primary" />
+                <span>{song.collection}</span>
+              </Badge>
+            ) : null}
             {song.tone ? (
               <Badge variant="outline" className="font-semibold text-primary">
                 Tom {song.tone}
@@ -196,6 +206,7 @@ export function SongCard({ song, canManage = true }: SongCardProps) {
           youtubeUrl: song.youtubeUrl ?? "",
           youtubeMusicUrl: song.youtubeMusicUrl ?? "",
           spotifyUrl: song.spotifyUrl ?? "",
+          collection: song.collection ?? "",
           tags: song.tags ?? [],
         }}
       />

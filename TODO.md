@@ -380,6 +380,12 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - **Largura Ampla no Modo Kanban sem Scroll Interno:** Colunas ajustadas para `w-[86vw] max-w-[460px] sm:w-[420px] lg:w-[460px]` com `overflow-x-hidden`, garantindo que versos longos caibam com folga sem acionar barras horizontais internas nas colunas.
   - **Drawer de Tons 90% no Mobile (`SongsListView`):** No mobile, o seletor de tom agora abre em Bottom Drawer preenchendo 90% da tela (`h-[90dvh]`), com botões táteis ampliados para todos os tons maiores e menores e botão de limpar filtro.
   - **Otimização do Cabeçalho e Busca no Mobile:** Removidos badge de contagem e botão Info do topo de `/dashboard/songs`; ocultado o botão secundário "Nova música" da busca no mobile; e ocultada a label de texto "Todos os tons" no mobile mantendo a interface limpa e focada no ícone.
+- **08/11/2026:** Menu de Adição (Dropdown/Drawer), Importação de .txt (Cifra Club) e Grupos/Coleções de Músicas:
+  - **Botão "Adicionar" Responsivo (`AddSongChoiceDialog`):** No desktop, exibe botão "Adicionar" com `DropdownMenu` ("Nova Música", "Importar Música (.txt)", "Buscar na internet"). No mobile, abre Bottom Drawer com cards táteis e descrições claras para cada modalidade.
+  - **Importador de Cifras .TXT (`ImportSongDialog` & `parseCifraClubTxt`):** Suporte completo ao upload de arquivo `.txt` ou colagem direta de cifras do Cifra Club. O parser inteligente extrai automaticamente título, artista, tom normalizado, cifra completa e letra limpa (usando `extractLyricsFromChords`), permitindo associar imediatamente uma coleção antes de abrir o editor pré-preenchido.
+  - **Coleção / Grupo de Músicas (`CollectionCombobox`):** Adicionado campo `collection` no schema de músicas com índice de busca. Permite selecionar grupos existentes da igreja (ex: "Harpa Cristã", "Jovens", "Louvor") ou criar novos grupos na hora com busca integrada. Funciona como Popover com busca no desktop e Drawer touch no mobile.
+  - **Filtros e Visualização de Coleções (`SongsListView` & `SongCard`):** Exibição de badge com ícone de pasta nos cards de música e régua horizontal de pílulas de grupos no topo da listagem para filtragem instantânea por coleção, com contagem de músicas e chip de descarte.
+
 
 
 

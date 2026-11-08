@@ -28,6 +28,7 @@ export const song = pgTable(
     youtubeUrl: text("youtube_url"),
     youtubeMusicUrl: text("youtube_music_url"),
     spotifyUrl: text("spotify_url"),
+    collection: text("collection"),
     tags: jsonb("tags").$type<string[]>().default([]).notNull(),
     createdById: text("created_by_id").references(() => user.id, {
       onDelete: "set null",
@@ -41,6 +42,10 @@ export const song = pgTable(
   (table) => [
     index("song_organizationId_idx").on(table.organizationId),
     index("song_organizationId_title_idx").on(table.organizationId, table.title),
+    index("song_organizationId_collection_idx").on(
+      table.organizationId,
+      table.collection,
+    ),
   ],
 );
 

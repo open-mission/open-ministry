@@ -57,6 +57,7 @@ const songInputSchema = z.object({
       (val) => !val || val.startsWith("http://") || val.startsWith("https://"),
       "Link do Spotify inválido.",
     ),
+  collection: z.string().trim().max(100).optional().nullable(),
   tags: z
     .array(z.string().trim())
     .optional()
@@ -141,6 +142,7 @@ export async function createSongAction(
     youtubeUrl: formData.get("youtubeUrl") || null,
     youtubeMusicUrl: formData.get("youtubeMusicUrl") || null,
     spotifyUrl: formData.get("spotifyUrl") || null,
+    collection: formData.get("collection") || null,
     tags: parsedTags,
   });
 
@@ -168,6 +170,7 @@ export async function createSongAction(
       youtubeUrl: data.youtubeUrl,
       youtubeMusicUrl: data.youtubeMusicUrl,
       spotifyUrl: data.spotifyUrl,
+      collection: data.collection,
       tags: data.tags,
       createdById: session.user.id,
     });
@@ -229,6 +232,7 @@ export async function updateSongAction(
     youtubeUrl: formData.get("youtubeUrl") || null,
     youtubeMusicUrl: formData.get("youtubeMusicUrl") || null,
     spotifyUrl: formData.get("spotifyUrl") || null,
+    collection: formData.get("collection") || null,
     tags: parsedTags,
   });
 
@@ -255,6 +259,7 @@ export async function updateSongAction(
         youtubeUrl: data.youtubeUrl,
         youtubeMusicUrl: data.youtubeMusicUrl,
         spotifyUrl: data.spotifyUrl,
+        collection: data.collection,
         tags: data.tags,
         updatedAt: new Date(),
       })

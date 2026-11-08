@@ -55,6 +55,7 @@ import {
 } from "@/lib/music/chords-utils";
 import { generateStreamingSearchLinks } from "@/lib/music/lyrics-service";
 import { cn } from "@/lib/utils";
+import { CollectionCombobox } from "./collection-combobox";
 
 type SongFormDialogProps = {
   open: boolean;
@@ -71,8 +72,10 @@ type SongFormDialogProps = {
     youtubeUrl?: string;
     youtubeMusicUrl?: string;
     spotifyUrl?: string;
+    collection?: string | null;
     tags?: string[];
   };
+  existingCollections?: string[];
 };
 
 export function SongFormDialog({
@@ -80,6 +83,7 @@ export function SongFormDialog({
   onOpenChange,
   songId,
   initialData,
+  existingCollections = [],
 }: SongFormDialogProps) {
   const isEditing = Boolean(songId);
   const isMobile = useIsMobile();
@@ -110,6 +114,9 @@ export function SongFormDialog({
     initialData?.youtubeMusicUrl ?? "",
   );
   const [spotifyUrl, setSpotifyUrl] = useState(initialData?.spotifyUrl ?? "");
+  const [collection, setCollection] = useState(
+    initialData?.collection ?? "",
+  );
   const [tagsInput, setTagsInput] = useState(
     initialData?.tags?.join(", ") ?? "",
   );
@@ -127,6 +134,7 @@ export function SongFormDialog({
       youtubeUrl !== (initialData?.youtubeUrl ?? "") ||
       youtubeMusicUrl !== (initialData?.youtubeMusicUrl ?? "") ||
       spotifyUrl !== (initialData?.spotifyUrl ?? "") ||
+      collection !== (initialData?.collection ?? "") ||
       tagsInput !== (initialData?.tags?.join(", ") ?? "")
     );
   }, [
@@ -140,6 +148,7 @@ export function SongFormDialog({
     youtubeUrl,
     youtubeMusicUrl,
     spotifyUrl,
+    collection,
     tagsInput,
     initialData,
   ]);
@@ -169,6 +178,7 @@ export function SongFormDialog({
     setYoutubeUrl(initialData?.youtubeUrl ?? "");
     setYoutubeMusicUrl(initialData?.youtubeMusicUrl ?? "");
     setSpotifyUrl(initialData?.spotifyUrl ?? "");
+    setCollection(initialData?.collection ?? "");
     setTagsInput(initialData?.tags?.join(", ") ?? "");
 
     setShowDiscardAlert(false);
@@ -233,6 +243,7 @@ export function SongFormDialog({
       formData.append("youtubeUrl", youtubeUrl);
       formData.append("youtubeMusicUrl", youtubeMusicUrl);
       formData.append("spotifyUrl", spotifyUrl);
+      if (collection.trim()) formData.append("collection", collection.trim());
 
       const parsedTags = tagsInput
         .split(",")
@@ -511,6 +522,16 @@ export function SongFormDialog({
                   onChange={(e) => setArtist(e.target.value)}
                   placeholder="Ex: Casa Worship, Morada..."
                   className="h-10"
+                />
+              </div>
+
+              {/* GRUPO OU COLEÇÃO */}
+              <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
+                <Label>Coleção ou Grupo</Label>
+                <CollectionCombobox
+                  value={collection}
+                  onChange={setCollection}
+                  existingCollections={existingCollections}
                 />
               </div>
 

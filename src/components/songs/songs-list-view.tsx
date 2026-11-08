@@ -6,7 +6,9 @@ import {
   ChevronDownIcon,
   FileMusicIcon,
   FileTextIcon,
+  FolderIcon,
   GuitarIcon,
+  LayersIcon,
   Music2Icon,
   SearchIcon,
   XIcon,
@@ -43,17 +45,27 @@ import { SongCard } from "./song-card";
 
 type SongsListViewProps = {
   songs: SongRecord[];
+  existingCollections?: string[];
   canManage?: boolean;
 };
 
-export function SongsListView({ songs, canManage = true }: SongsListViewProps) {
+export function SongsListView({
+  songs,
+  existingCollections = [],
+  canManage = true,
+}: SongsListViewProps) {
   const isMobile = useIsMobile();
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [toneFilter, setToneFilter] = useState("");
+  const [collectionFilter, setCollectionFilter] = useState("");
 
   const filteredSongs = useMemo(() => {
     let result = songs;
+
+    if (collectionFilter) {
+      result = result.filter((s) => s.collection === collectionFilter);
+    }
 
     if (toneFilter) {
       result = result.filter((s) => s.tone === toneFilter);
@@ -65,13 +77,14 @@ export function SongsListView({ songs, canManage = true }: SongsListViewProps) {
         (s) =>
           s.title.toLowerCase().includes(q) ||
           s.artist?.toLowerCase().includes(q) ||
+          s.collection?.toLowerCase().includes(q) ||
           s.tags?.some((t) => t.toLowerCase().includes(q)) ||
           s.tone?.toLowerCase().includes(q),
       );
     }
 
     return result;
-  }, [songs, search, toneFilter]);
+  }, [songs, search, toneFilter, collectionFilter]);
 
   const statsItems: StatItem[] = useMemo(() => {
     const withChords = songs.filter((s) => Boolean(s.chords?.trim())).length;
@@ -405,15 +418,78 @@ export function SongsListView({ songs, canManage = true }: SongsListViewProps) {
         {/* BOTÃO NOVA MÚSICA COM ALTURA PADRONIZADA (h-10) - OCULTO NO MOBILE */}
         {canManage ? (
           <div className="hidden shrink-0 sm:block">
-            <AddSongChoiceDialog />
+            <AddSongChoiceDialog existingCollections={existingCollections} />
           </div>
         ) : null}
       </div>
 
+      {/* SELETOR RÁPIDO DE COLEÇÃO / GRUPO */}
+      {existingCollections.length > 0 ? (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          <button
+            type="button"
+            onClick={() => setCollectionFilter("")}
+            className={cn(
+              "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-colors",
+              !collectionFilter
+                ? "bg-foreground text-background shadow-2xs"
+                : "border border-border/70 bg-card/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          >
+            <LayersIcon className="size-3.5" />
+            <span>Todos os Grupos ({songs.length})</span>
+          </button>
+
+          {existingCollections.map((col) => {
+            const count = songs.filter((s) => s.collection === col).length;
+            const isSelected = collectionFilter === col;
+            return (
+              <button
+                key={col}
+                type="button"
+                onClick={() => setCollectionFilter(isSelected ? "" : col)}
+                className={cn(
+                  "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
+                  isSelected
+                    ? "border border-primary/30 bg-primary/10 font-bold text-primary shadow-2xs"
+                    : "border border-border/70 bg-card/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+              >
+                <FolderIcon className="size-3.5 opacity-80" />
+                <span>{col}</span>
+                <span
+                  className={cn(
+                    "rounded-full px-1.5 py-0.5 text-[10px]",
+                    isSelected
+                      ? "bg-primary/20 text-primary font-bold"
+                      : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
       {/* CHIP DE FILTRO ATIVO SELECIONADO */}
-      {(search || toneFilter) && (
+      {(search || toneFilter || collectionFilter) && (
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <span>Filtros ativos:</span>
+          {collectionFilter ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 font-medium text-primary">
+              <FolderIcon className="size-3" />
+              Grupo: {collectionFilter}
+              <button
+                type="button"
+                onClick={() => setCollectionFilter("")}
+                className="hover:text-destructive"
+              >
+                <XIcon className="size-3" />
+              </button>
+            </span>
+          ) : null}
           {search ? (
             <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-muted/50 px-2.5 py-0.5 text-foreground">
               Busca: &ldquo;{search}&rdquo;
@@ -444,6 +520,7 @@ export function SongsListView({ songs, canManage = true }: SongsListViewProps) {
             onClick={() => {
               setSearch("");
               setToneFilter("");
+              setCollectionFilter("");
             }}
             className="text-xs text-primary hover:underline font-medium ml-1"
           >
@@ -472,7 +549,9 @@ export function SongsListView({ songs, canManage = true }: SongsListViewProps) {
             vincular aos momentos dos cultos e momentos de louvor.
           </p>
           <div className="mt-5">
-            {canManage ? <AddSongChoiceDialog /> : null}
+            {canManage ? (
+              <AddSongChoiceDialog existingCollections={existingCollections} />
+            ) : null}
           </div>
         </div>
       ) : (
@@ -483,12 +562,13 @@ export function SongsListView({ songs, canManage = true }: SongsListViewProps) {
           <p className="mt-1 text-xs text-muted-foreground">
             Tente pesquisar com outros termos ou limpar o filtro de tom.
           </p>
-          {(search || toneFilter) && (
+          {(search || toneFilter || collectionFilter) && (
             <button
               type="button"
               onClick={() => {
                 setSearch("");
                 setToneFilter("");
+                setCollectionFilter("");
               }}
               className="mt-3 text-xs font-medium text-primary hover:underline"
             >
