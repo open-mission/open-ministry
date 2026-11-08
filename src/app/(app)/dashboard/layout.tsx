@@ -64,9 +64,11 @@ export default function DashboardLayout({
                   <Suspense fallback={<NotificationBellFallback />}>
                     <NotificationBellLoader />
                   </Suspense>
-                  <Suspense fallback={<UserMenuFallback />}>
-                    <UserMenuLoader />
-                  </Suspense>
+                  <div className="flex items-center md:hidden">
+                    <Suspense fallback={<UserMenuFallback />}>
+                      <UserMenuLoader />
+                    </Suspense>
+                  </div>
                 </div>
               </header>
               <OfflineBanner />

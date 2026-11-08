@@ -32,6 +32,6 @@ export async function UserMenuLoader() {
 
 export function UserMenuFallback() {
   return (
-    <Skeleton className="size-8 sm:size-9 rounded-full shrink-0" />
+    <Skeleton className="size-8 sm:size-9 rounded-full shrink-0 md:hidden" />
   );
 }
