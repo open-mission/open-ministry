@@ -23,7 +23,10 @@ import { PwaInstallBanner } from "@/components/pwa/pwa-install-banner";
 import { PwaInstallTracker } from "@/components/pwa/pwa-install-tracker";
 import { PwaNotificationPrompt } from "@/components/pwa/pwa-notification-prompt";
 import { WhatsAppPromptLoader } from "@/components/app/whatsapp-prompt-loader";
-import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  UserMenuFallback,
+  UserMenuLoader,
+} from "@/components/app/user-menu-loader";
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
@@ -57,11 +60,13 @@ export default function DashboardLayout({
                 <Suspense fallback={<DashboardBreadcrumbFallback />}>
                   <DashboardBreadcrumb />
                 </Suspense>
-                <div className="ml-auto flex items-center gap-1">
+                <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
                   <Suspense fallback={<NotificationBellFallback />}>
                     <NotificationBellLoader />
                   </Suspense>
-                  <ThemeToggle />
+                  <Suspense fallback={<UserMenuFallback />}>
+                    <UserMenuLoader />
+                  </Suspense>
                 </div>
               </header>
               <OfflineBanner />
