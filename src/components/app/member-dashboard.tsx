@@ -42,6 +42,7 @@ export function MemberDashboard({
   assignments,
   agenda,
   initialMood,
+  terminology,
 }: {
   firstName: string;
   organizationName: string;
@@ -50,6 +51,11 @@ export function MemberDashboard({
   assignments: UpcomingAssignment[];
   agenda: AgendaEvent[];
   initialMood?: InitialMoodData;
+  terminology?: {
+    type: string;
+    singular: string;
+    plural: string;
+  };
 }) {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 pb-4 sm:gap-12">
@@ -66,7 +72,7 @@ export function MemberDashboard({
         </p>
       </header>
 
-      <QuickActions isAdmin={false} />
+      <QuickActions isAdmin={false} terminology={terminology} />
 
       <FelicitometroCard initialMood={initialMood} userName={firstName} />
 

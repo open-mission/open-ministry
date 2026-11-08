@@ -29,6 +29,7 @@ import {
   buildBirthdayEntries,
   getTodayInSaoPaulo,
 } from "@/lib/birthdays";
+import { getDepartmentTerminology, parseChurchMetadata } from "@/lib/church";
 import { listDepartments } from "@/lib/departments";
 import { listUpcomingEvents, splitEvents, toInputDate } from "@/lib/events";
 import {
@@ -61,6 +62,8 @@ async function DashboardContent() {
 
   const { organization, session, isAdmin } = await requireOrganizationContext();
   const firstName = session.user.name.trim().split(/\s+/)[0] ?? "líder";
+  const churchMeta = parseChurchMetadata(organization.metadata);
+  const departmentTerminology = getDepartmentTerminology(churchMeta);
 
   const [people, initialPerson] = await Promise.all([
     listPeople(organization.id),
@@ -114,6 +117,7 @@ async function DashboardContent() {
         assignments={assignments}
         agenda={agenda}
         initialMood={todayMood}
+        terminology={departmentTerminology}
       />
     );
   }
@@ -205,6 +209,7 @@ async function DashboardContent() {
         people={peopleOptions}
         isWhatsAppConfigured={isWhatsAppConfigured}
         defaultDate={defaultDate}
+        terminology={departmentTerminology}
       />
 
       {/* 2. Próximo Culto em Destaque */}

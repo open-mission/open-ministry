@@ -15,7 +15,6 @@ import {
   MenuIcon,
   MoonIcon,
   SunIcon,
-  XIcon,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -25,7 +24,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerHeader,
@@ -121,11 +119,11 @@ export function MobileMenu({
 
         <div className="relative min-h-0 flex-1">
           <div className="h-full overflow-y-auto overscroll-contain px-4 pt-3 pb-6">
-            <div className="mb-5 flex items-center justify-between gap-2">
+            <div className="mb-5">
               <Link
                 href="/dashboard/profile"
                 onClick={() => setOpen(false)}
-                className="flex min-w-0 flex-1 items-center gap-3.5 rounded-2xl border border-border/70 bg-card px-4 py-3.5 transition-colors active:bg-muted/60"
+                className="flex w-full items-center gap-3.5 rounded-2xl border border-border/70 bg-card px-4 py-3.5 transition-colors active:bg-muted/60"
               >
                 <Avatar className="size-12 shrink-0 border">
                   <AvatarImage src={user.image ?? undefined} alt={user.name} />
@@ -154,18 +152,6 @@ export function MobileMenu({
                 </div>
                 <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/50" />
               </Link>
-
-              <DrawerClose asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label="Fechar menu"
-                  className="size-9 shrink-0 rounded-full text-muted-foreground"
-                >
-                  <XIcon className="size-5" />
-                </Button>
-              </DrawerClose>
             </div>
   
             <nav aria-label="Menu principal" className="space-y-5">
