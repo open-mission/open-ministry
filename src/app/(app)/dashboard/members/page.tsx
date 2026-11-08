@@ -11,10 +11,12 @@ import { CreatePersonDialog } from "@/components/people/create-person-dialog";
 import { PeopleTable } from "@/components/people/people-table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getPersonMemberships } from "@/lib/agenda";
+import { getDepartmentTerminology, parseChurchMetadata } from "@/lib/church";
 import { listUserLeaderDepartments } from "@/lib/departments";
 import { getOrganizationMoodOverview } from "@/lib/felicitometro";
 import { requireOrganizationContext } from "@/lib/organizations";
-import { listPeople } from "@/lib/people";
+import { findPersonByUserId, listPeople } from "@/lib/people";
 
 export const metadata: Metadata = {
   title: "Pessoas",
@@ -42,12 +44,52 @@ async function MembersContent() {
       })
     : null;
 
-  const [people, leaderDepartments] = await Promise.all([
+  const [allPeople, leaderDepartments] = await Promise.all([
     listPeople(organization.id),
     isAdmin
       ? Promise.resolve([])
       : listUserLeaderDepartments(organization.id, session.user.id),
   ]);
+
+  const churchMeta = parseChurchMetadata(organization.metadata);
+  const terminology = getDepartmentTerminology(churchMeta);
+
+  let people = allPeople;
+
+  if (!isAdmin) {
+    const currentPerson =
+      allPeople.find((person) => person.userId === session.user.id) ??
+      (await findPersonByUserId(organization.id, session.user.id));
+
+    const userDepartmentIds = new Set<string>();
+
+    if (currentPerson) {
+      if (
+        "memberships" in currentPerson &&
+        Array.isArray(currentPerson.memberships)
+      ) {
+        for (const m of currentPerson.memberships) {
+          userDepartmentIds.add(m.departmentId);
+        }
+      } else {
+        const memberships = await getPersonMemberships(currentPerson.id);
+        for (const m of memberships) {
+          userDepartmentIds.add(m.departmentId);
+        }
+      }
+    }
+
+    for (const ld of leaderDepartments) {
+      userDepartmentIds.add(ld.id);
+    }
+
+    people = allPeople.filter(
+      (person) =>
+        person.id === currentPerson?.id ||
+        person.userId === session.user.id ||
+        person.memberships.some((m) => userDepartmentIds.has(m.departmentId)),
+    );
+  }
 
   const canViewFelicitometro = isAdmin || leaderDepartments.length > 0;
   const moodOverview = isAdmin
@@ -126,6 +168,7 @@ async function MembersContent() {
               linkableMembers={linkableMembers}
               isAdmin={isAdmin}
               currentUserId={session.user.id}
+              terminology={terminology}
             />
 
             {isAdmin ? (
@@ -145,6 +188,7 @@ async function MembersContent() {
             linkableMembers={linkableMembers}
             isAdmin={isAdmin}
             currentUserId={session.user.id}
+            terminology={terminology}
           />
 
           {isAdmin ? (
