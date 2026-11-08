@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   ArrowRightIcon,
   BellIcon,
@@ -9,6 +8,7 @@ import {
   MegaphoneIcon,
 } from "lucide-react";
 
+import { NotificationDetailDialog } from "@/components/notifications/notification-detail-dialog";
 import { useNotificationStore } from "@/lib/notification-store";
 import { cn } from "@/lib/utils";
 
@@ -39,19 +39,12 @@ export function NotificationRow({
 }: {
   notification: NotificationItem;
 }) {
-  const router = useRouter();
+  const [detailOpen, setDetailOpen] = useState(false);
   const [isRead, setIsRead] = useState(notification.read);
   const { markAsRead } = useNotificationStore();
 
   function handleOpen() {
-    if (!isRead) {
-      setIsRead(true);
-      markAsRead(notification.id);
-    }
-
-    if (notification.href) {
-      router.push(notification.href);
-    }
+    setDetailOpen(true);
   }
 
   return (
@@ -110,6 +103,24 @@ export function NotificationRow({
           <ArrowRightIcon className="mt-2 size-4 shrink-0 text-primary" />
         ) : null}
       </button>
+
+      <NotificationDetailDialog
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        notification={{
+          id: notification.id,
+          type: notification.type,
+          title: notification.title,
+          body: notification.body,
+          href: notification.href,
+          read: isRead,
+          createdAtLabel: notification.createdAtLabel,
+        }}
+        onMarkAsRead={(id) => {
+          setIsRead(true);
+          markAsRead(id);
+        }}
+      />
     </li>
   );
 }

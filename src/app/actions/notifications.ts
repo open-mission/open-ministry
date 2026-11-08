@@ -95,6 +95,7 @@ const announcementSchema = z
 async function revalidateNotifications(userId?: string) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/notifications");
+  revalidatePath("/dashboard/announcements");
 
   if (userId) {
     await cacheInvalidateTags(`notifications:${userId}`);
