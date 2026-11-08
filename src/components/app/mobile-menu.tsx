@@ -3,6 +3,7 @@
 import {
   createContext,
   useContext,
+  useMemo,
   useState,
   useSyncExternalStore,
   type ReactNode,
@@ -27,7 +28,9 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { isNavItemActive, navGroups, type NavGroup } from "@/components/app/nav-config";
+import { isNavItemActive, type NavGroup } from "@/components/app/nav-config";
+import { buildAccessibleNavGroups } from "@/lib/modules/nav";
+import type { ModuleKey } from "@/lib/modules/types";
 import { cn } from "@/lib/utils";
 
 type MobileMenuContextValue = {
@@ -78,7 +81,13 @@ export function MobileMenuTrigger({ className }: { className?: string }) {
   );
 }
 
-export function MobileMenu({ groups = navGroups }: { groups?: NavGroup[] } = {}) {
+export function MobileMenu({
+  groups: customGroups,
+  activeModuleKeys = [],
+}: {
+  groups?: NavGroup[];
+  activeModuleKeys?: ModuleKey[];
+} = {}) {
   const pathname = usePathname();
   const { open, setOpen } = useMobileMenu();
   const { resolvedTheme, setTheme } = useTheme();
@@ -86,6 +95,10 @@ export function MobileMenu({ groups = navGroups }: { groups?: NavGroup[] } = {})
     subscribe,
     getClientSnapshot,
     getServerSnapshot,
+  );
+  const groups = useMemo(
+    () => customGroups ?? buildAccessibleNavGroups(activeModuleKeys),
+    [customGroups, activeModuleKeys],
   );
   const isDark = mounted && resolvedTheme === "dark";
   const themeValue = isDark ? "Escuro" : "Claro";
