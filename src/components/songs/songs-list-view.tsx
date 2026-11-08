@@ -15,6 +15,16 @@ import {
 import { StatStrip, type StatItem } from "@/components/app/stat-strip";
 import { Button } from "@/components/ui/button";
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
@@ -24,6 +34,7 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { STANDARD_TONES } from "@/lib/music/chords-utils";
 import type { SongRecord } from "@/lib/songs";
 import { cn } from "@/lib/utils";
@@ -36,6 +47,8 @@ type SongsListViewProps = {
 };
 
 export function SongsListView({ songs, canManage = true }: SongsListViewProps) {
+  const isMobile = useIsMobile();
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [toneFilter, setToneFilter] = useState("");
 
@@ -118,112 +131,280 @@ export function SongsListView({ songs, canManage = true }: SongsListViewProps) {
               </button>
             ) : null}
 
-            {/* SELETOR DE TOM INTEGRADO AO INPUT GROUP COM ÍCONE DE INSTRUMENTO */}
+            {/* SELETOR DE TOM INTEGRADO AO INPUT GROUP (DRAWER NO MOBILE / DROPDOWN NO DESKTOP) */}
             <div className="pr-1.5 shrink-0">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant={toneFilter ? "secondary" : "ghost"}
-                    size="sm"
-                    className={cn(
-                      "h-8 gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors select-none",
-                      toneFilter
-                        ? "border border-primary/25 bg-primary/10 font-semibold text-primary hover:bg-primary/20"
-                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                    )}
-                    title="Filtrar por tom musical"
-                  >
-                    <GuitarIcon className="size-3.5 text-primary" />
-                    <span>{toneFilter ? `Tom ${toneFilter}` : "Todos os tons"}</span>
-                    <ChevronDownIcon className="size-3 opacity-60" />
-                  </Button>
-                </DropdownMenuTrigger>
-
-                <DropdownMenuContent
-                  align="end"
-                  className="w-64 max-h-[80vh] overflow-y-auto rounded-xl p-2.5 shadow-lg"
+              {isMobile ? (
+                <Drawer
+                  open={mobileDrawerOpen}
+                  onOpenChange={setMobileDrawerOpen}
                 >
-                  <div className="flex items-center justify-between border-b border-border/60 px-1 pb-2">
-                    <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                  <DrawerTrigger asChild>
+                    <Button
+                      type="button"
+                      variant={toneFilter ? "secondary" : "ghost"}
+                      size="sm"
+                      className={cn(
+                        "h-8 gap-1.5 rounded-lg px-2 text-xs font-medium transition-colors select-none sm:px-2.5",
+                        toneFilter
+                          ? "border border-primary/25 bg-primary/10 font-semibold text-primary hover:bg-primary/20"
+                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                      )}
+                      title={
+                        toneFilter
+                          ? `Filtrando por Tom ${toneFilter}`
+                          : "Filtrar por tom musical"
+                      }
+                    >
                       <GuitarIcon className="size-3.5 text-primary" />
-                      Filtrar por Tom
-                    </span>
-                    {toneFilter ? (
+                      <span className="hidden sm:inline">
+                        {toneFilter ? `Tom ${toneFilter}` : "Todos os tons"}
+                      </span>
+                      {toneFilter ? (
+                        <span className="font-bold sm:hidden text-primary">
+                          {toneFilter}
+                        </span>
+                      ) : null}
+                      <ChevronDownIcon className="size-3 opacity-60" />
+                    </Button>
+                  </DrawerTrigger>
+
+                  <DrawerContent className="h-[90dvh] max-h-[90dvh] flex flex-col p-0">
+                    <DrawerHeader className="border-b border-border/70 px-5 py-3.5 text-left">
+                      <div className="flex items-center justify-between">
+                        <DrawerTitle className="flex items-center gap-2 text-base font-bold font-heading">
+                          <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                            <GuitarIcon className="size-4" />
+                          </span>
+                          <span>Filtrar por Tom</span>
+                        </DrawerTitle>
+                        {toneFilter ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setToneFilter("");
+                              setMobileDrawerOpen(false);
+                            }}
+                            className="text-xs font-semibold text-primary hover:underline"
+                          >
+                            Limpar filtro
+                          </button>
+                        ) : null}
+                      </div>
+                      <DrawerDescription className="text-xs text-muted-foreground mt-0.5">
+                        Selecione o tom desejado para filtrar as músicas do
+                        repertório.
+                      </DrawerDescription>
+                    </DrawerHeader>
+
+                    <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4">
+                      {/* TODOS OS TONS */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setToneFilter("");
+                          setMobileDrawerOpen(false);
+                        }}
+                        className={cn(
+                          "flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-colors",
+                          !toneFilter
+                            ? "bg-primary text-primary-foreground shadow-2xs"
+                            : "border border-border/80 bg-muted/40 text-foreground hover:bg-muted",
+                        )}
+                      >
+                        <span>Todos os tons</span>
+                        {!toneFilter ? <CheckIcon className="size-4" /> : null}
+                      </button>
+
+                      {/* TONS MAIORES */}
+                      <div className="space-y-2">
+                        <div className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                          Tons Maiores
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                          {STANDARD_TONES.filter((t) => !t.endsWith("m")).map(
+                            (t) => (
+                              <Button
+                                key={t}
+                                type="button"
+                                variant={
+                                  toneFilter === t ? "default" : "outline"
+                                }
+                                onClick={() => {
+                                  setToneFilter(toneFilter === t ? "" : t);
+                                  setMobileDrawerOpen(false);
+                                }}
+                                className={cn(
+                                  "h-11 rounded-xl text-sm font-bold shadow-2xs",
+                                  toneFilter === t &&
+                                    "ring-2 ring-primary ring-offset-2",
+                                )}
+                              >
+                                {t}
+                              </Button>
+                            ),
+                          )}
+                        </div>
+                      </div>
+
+                      {/* TONS MENORES */}
+                      <div className="space-y-2 pt-1">
+                        <div className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                          Tons Menores
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                          {STANDARD_TONES.filter((t) => t.endsWith("m")).map(
+                            (t) => (
+                              <Button
+                                key={t}
+                                type="button"
+                                variant={
+                                  toneFilter === t ? "default" : "outline"
+                                }
+                                onClick={() => {
+                                  setToneFilter(toneFilter === t ? "" : t);
+                                  setMobileDrawerOpen(false);
+                                }}
+                                className={cn(
+                                  "h-11 rounded-xl text-sm font-bold shadow-2xs",
+                                  toneFilter === t &&
+                                    "ring-2 ring-primary ring-offset-2",
+                                )}
+                              >
+                                {t}
+                              </Button>
+                            ),
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <DrawerFooter className="border-t border-border/70 px-5 py-3 bg-muted/20">
+                      <DrawerClose asChild>
+                        <Button variant="outline" className="w-full">
+                          Fechar
+                        </Button>
+                      </DrawerClose>
+                    </DrawerFooter>
+                  </DrawerContent>
+                </Drawer>
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant={toneFilter ? "secondary" : "ghost"}
+                      size="sm"
+                      className={cn(
+                        "h-8 gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors select-none",
+                        toneFilter
+                          ? "border border-primary/25 bg-primary/10 font-semibold text-primary hover:bg-primary/20"
+                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                      )}
+                      title="Filtrar por tom musical"
+                    >
+                      <GuitarIcon className="size-3.5 text-primary" />
+                      <span>
+                        {toneFilter ? `Tom ${toneFilter}` : "Todos os tons"}
+                      </span>
+                      <ChevronDownIcon className="size-3 opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-64 max-h-[80vh] overflow-y-auto rounded-xl p-2.5 shadow-lg"
+                  >
+                    <div className="flex items-center justify-between border-b border-border/60 px-1 pb-2">
+                      <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                        <GuitarIcon className="size-3.5 text-primary" />
+                        Filtrar por Tom
+                      </span>
+                      {toneFilter ? (
+                        <button
+                          type="button"
+                          onClick={() => setToneFilter("")}
+                          className="text-[11px] font-medium text-primary hover:underline"
+                        >
+                          Limpar
+                        </button>
+                      ) : null}
+                    </div>
+
+                    <div className="py-2">
                       <button
                         type="button"
                         onClick={() => setToneFilter("")}
-                        className="text-[11px] font-medium text-primary hover:underline"
+                        className={cn(
+                          "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
+                          !toneFilter
+                            ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                        )}
                       >
-                        Limpar
+                        <span>Todos os tons</span>
+                        {!toneFilter ? (
+                          <CheckIcon className="size-3.5" />
+                        ) : null}
                       </button>
-                    ) : null}
-                  </div>
+                    </div>
 
-                  <div className="py-2">
-                    <button
-                      type="button"
-                      onClick={() => setToneFilter("")}
-                      className={cn(
-                        "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
-                        !toneFilter
-                          ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                      )}
-                    >
-                      <span>Todos os tons</span>
-                      {!toneFilter ? <CheckIcon className="size-3.5" /> : null}
-                    </button>
-                  </div>
+                    <div className="space-y-1.5 border-t border-border/60 pt-2">
+                      <div className="px-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+                        Tons Maiores
+                      </div>
+                      <div className="grid grid-cols-4 gap-1">
+                        {STANDARD_TONES.filter((t) => !t.endsWith("m")).map(
+                          (t) => (
+                            <Button
+                              key={t}
+                              type="button"
+                              variant={toneFilter === t ? "default" : "outline"}
+                              size="xs"
+                              onClick={() =>
+                                setToneFilter(toneFilter === t ? "" : t)
+                              }
+                              className="h-7 rounded-md text-xs font-semibold"
+                            >
+                              {t}
+                            </Button>
+                          ),
+                        )}
+                      </div>
+                    </div>
 
-                  <div className="space-y-1.5 border-t border-border/60 pt-2">
-                    <div className="px-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
-                      Tons Maiores
+                    <div className="mt-2.5 space-y-1.5 border-t border-border/60 pt-2">
+                      <div className="px-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+                        Tons Menores
+                      </div>
+                      <div className="grid grid-cols-4 gap-1">
+                        {STANDARD_TONES.filter((t) => t.endsWith("m")).map(
+                          (t) => (
+                            <Button
+                              key={t}
+                              type="button"
+                              variant={toneFilter === t ? "default" : "outline"}
+                              size="xs"
+                              onClick={() =>
+                                setToneFilter(toneFilter === t ? "" : t)
+                              }
+                              className="h-7 rounded-md text-xs font-semibold"
+                            >
+                              {t}
+                            </Button>
+                          ),
+                        )}
+                      </div>
                     </div>
-                    <div className="grid grid-cols-4 gap-1">
-                      {STANDARD_TONES.filter((t) => !t.endsWith("m")).map((t) => (
-                        <Button
-                          key={t}
-                          type="button"
-                          variant={toneFilter === t ? "default" : "outline"}
-                          size="xs"
-                          onClick={() => setToneFilter(toneFilter === t ? "" : t)}
-                          className="h-7 rounded-md text-xs font-semibold"
-                        >
-                          {t}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="mt-2.5 space-y-1.5 border-t border-border/60 pt-2">
-                    <div className="px-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
-                      Tons Menores
-                    </div>
-                    <div className="grid grid-cols-4 gap-1">
-                      {STANDARD_TONES.filter((t) => t.endsWith("m")).map((t) => (
-                        <Button
-                          key={t}
-                          type="button"
-                          variant={toneFilter === t ? "default" : "outline"}
-                          size="xs"
-                          onClick={() => setToneFilter(toneFilter === t ? "" : t)}
-                          className="h-7 rounded-md text-xs font-semibold"
-                        >
-                          {t}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </InputGroup>
         </div>
 
-        {/* BOTÃO NOVA MÚSICA COM ALTURA PADRONIZADA (h-10) */}
+        {/* BOTÃO NOVA MÚSICA COM ALTURA PADRONIZADA (h-10) - OCULTO NO MOBILE */}
         {canManage ? (
-          <div className="shrink-0">
+          <div className="hidden shrink-0 sm:block">
             <AddSongChoiceDialog />
           </div>
         ) : null}

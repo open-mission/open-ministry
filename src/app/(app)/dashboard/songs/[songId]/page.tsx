@@ -178,7 +178,12 @@ async function SongDetailContent({
         {/* CONTEÚDO DA CIFRA */}
         <TabsContent value="cifra" className="pt-4">
           {song.chords?.trim() ? (
-            <ChordsViewer chords={song.chords} originalTone={song.tone} />
+            <ChordsViewer
+              chords={song.chords}
+              originalTone={song.tone}
+              songTitle={song.title}
+              songArtist={song.artist ?? undefined}
+            />
           ) : (
             <Card className="p-8 text-center">
               <FileMusicIcon className="mx-auto size-8 text-muted-foreground/60" />
