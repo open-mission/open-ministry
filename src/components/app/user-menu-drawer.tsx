@@ -100,31 +100,33 @@ export function UserMenuDrawer({
       </DrawerTrigger>
 
       <DrawerContent className="gap-0 rounded-t-[28px] border-x-0 border-b-0 bg-background p-0 sm:max-w-md sm:mx-auto">
-        <DrawerHeader className="px-5 pt-3 pb-2 text-left">
-          <DrawerTitle className="sr-only">Menu do usuário</DrawerTitle>
-          <DrawerDescription className="sr-only">
+        <DrawerHeader className="sr-only">
+          <DrawerTitle>Menu do usuário</DrawerTitle>
+          <DrawerDescription>
             Opções da sua conta, perfil, aparência e preferências.
           </DrawerDescription>
+        </DrawerHeader>
 
+        <div className="space-y-4 px-5 pt-4 pb-6">
           {/* User Profile Card */}
-          <div className="flex items-center gap-3.5 rounded-2xl border border-border/70 bg-card p-3.5 shadow-2xs">
+          <div className="flex items-center gap-3.5 rounded-2xl border border-border/70 bg-card p-3.5 text-left shadow-2xs">
             <Avatar className="size-12 shrink-0 border border-border/80">
               <AvatarImage src={user.image ?? undefined} alt={user.name} />
               <AvatarFallback className="bg-primary/10 font-heading text-base font-semibold text-primary">
                 {getInitials(user.name)}
               </AvatarFallback>
             </Avatar>
-            <div className="min-w-0 flex-1 space-y-0.5">
-              <p className="truncate font-heading text-base font-semibold leading-tight tracking-tight text-foreground">
+            <div className="min-w-0 flex-1 space-y-0.5 text-left">
+              <p className="truncate font-heading text-base font-semibold leading-tight tracking-tight text-foreground text-left">
                 {user.name}
               </p>
-              <p className="truncate text-xs text-muted-foreground">
+              <p className="truncate text-xs text-muted-foreground text-left">
                 {user.email}
               </p>
-              <div className="mt-1 flex flex-wrap items-center gap-1.5 pt-0.5">
+              <div className="mt-1 flex flex-wrap items-center justify-start gap-1.5 pt-0.5 text-left">
                 <Badge
                   variant="secondary"
-                  className="h-5 px-2 text-[10px] font-medium"
+                  className="h-5 px-2 text-[10px] font-medium shrink-0"
                 >
                   {roleLabel(role)}
                 </Badge>
@@ -136,9 +138,6 @@ export function UserMenuDrawer({
               </div>
             </div>
           </div>
-        </DrawerHeader>
-
-        <div className="space-y-4 px-5 pt-2 pb-6">
           {/* Main Navigation Options */}
           <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xs">
             <Link
