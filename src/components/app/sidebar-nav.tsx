@@ -1,9 +1,12 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { isNavItemActive, navGroups, type NavGroup } from "@/components/app/nav-config";
+import { isNavItemActive, type NavGroup } from "@/components/app/nav-config";
+import { buildAccessibleNavGroups } from "@/lib/modules/nav";
+import type { ModuleKey } from "@/lib/modules/types";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -13,8 +16,18 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-export function SidebarNav({ groups = navGroups }: { groups?: NavGroup[] }) {
+export function SidebarNav({
+  groups: customGroups,
+  activeModuleKeys = [],
+}: {
+  groups?: NavGroup[];
+  activeModuleKeys?: ModuleKey[];
+}) {
   const pathname = usePathname();
+  const groups = useMemo(
+    () => customGroups ?? buildAccessibleNavGroups(activeModuleKeys),
+    [customGroups, activeModuleKeys],
+  );
 
   return (
     <>

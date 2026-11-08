@@ -1,10 +1,7 @@
 import { connection } from "next/server";
 
 import { AppSidebar } from "@/components/app/app-sidebar";
-import {
-  buildAccessibleNavGroups,
-  getUserAccessibleModuleKeys,
-} from "@/lib/modules/service";
+import { getUserAccessibleModuleKeys } from "@/lib/modules/service";
 import { requireOrganizationContext } from "@/lib/organizations";
 
 export async function AppSidebarLoader() {
@@ -19,8 +16,6 @@ export async function AppSidebarLoader() {
     isAdmin,
   );
 
-  const groups = buildAccessibleNavGroups(activeModuleKeys);
-
   return (
     <AppSidebar
       organizationName={organization.name}
@@ -31,7 +26,7 @@ export async function AppSidebarLoader() {
         email: session.user.email,
         image: session.user.image ?? null,
       }}
-      groups={groups}
+      activeModuleKeys={activeModuleKeys}
     />
   );
 }
