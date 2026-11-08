@@ -1,3 +1,67 @@
+export type DepartmentNomenclatureType =
+  | "departments"
+  | "ministries"
+  | "teams"
+  | "networks"
+  | "custom";
+
+export type DepartmentNomenclature = {
+  type: DepartmentNomenclatureType;
+  singular: string;
+  plural: string;
+};
+
+export const NOMENCLATURE_PRESETS: Record<
+  Exclude<DepartmentNomenclatureType, "custom">,
+  { label: string; singular: string; plural: string; description: string }
+> = {
+  departments: {
+    label: "Departamentos",
+    singular: "Departamento",
+    plural: "Departamentos",
+    description: "Estrutura tradicional (Infantil, Música, Recepção, etc.)",
+  },
+  ministries: {
+    label: "Ministérios",
+    singular: "Ministério",
+    plural: "Ministérios",
+    description: "Foco vocacional e de serviço ministerial (Louvor, Diaconia, Jovens, etc.)",
+  },
+  teams: {
+    label: "Equipes / Times",
+    singular: "Equipe",
+    plural: "Equipes",
+    description: "Abordagem dinâmica para grupos de voluntários e liderança",
+  },
+  networks: {
+    label: "Redes",
+    singular: "Rede",
+    plural: "Redes",
+    description: "Comum em igrejas organizadas em células ou redes de geração",
+  },
+};
+
+export function getDepartmentTerminology(metadata?: ChurchPublicMetadata | null): {
+  type: DepartmentNomenclatureType;
+  singular: string;
+  plural: string;
+} {
+  const nomenclature = metadata?.departmentNomenclature;
+  if (nomenclature?.singular && nomenclature?.plural) {
+    return {
+      type: nomenclature.type || "custom",
+      singular: nomenclature.singular,
+      plural: nomenclature.plural,
+    };
+  }
+
+  return {
+    type: "departments",
+    singular: "Departamento",
+    plural: "Departamentos",
+  };
+}
+
 export type ChurchPublicMetadata = {
   phone?: string;
   website?: string;
@@ -6,6 +70,7 @@ export type ChurchPublicMetadata = {
   youtube?: string;
   facebook?: string;
   description?: string;
+  departmentNomenclature?: DepartmentNomenclature;
 };
 
 export function parseChurchMetadata(
@@ -21,6 +86,18 @@ export function parseChurchMetadata(
       return {};
     }
 
+    let departmentNomenclature: DepartmentNomenclature | undefined;
+    if (parsed.departmentNomenclature && typeof parsed.departmentNomenclature === "object") {
+      const nom = parsed.departmentNomenclature;
+      if (typeof nom.singular === "string" && typeof nom.plural === "string") {
+        departmentNomenclature = {
+          type: (typeof nom.type === "string" ? nom.type : "custom") as DepartmentNomenclatureType,
+          singular: nom.singular,
+          plural: nom.plural,
+        };
+      }
+    }
+
     return {
       phone: typeof parsed.phone === "string" ? parsed.phone : undefined,
       website: typeof parsed.website === "string" ? parsed.website : undefined,
@@ -32,6 +109,7 @@ export function parseChurchMetadata(
         typeof parsed.facebook === "string" ? parsed.facebook : undefined,
       description:
         typeof parsed.description === "string" ? parsed.description : undefined,
+      departmentNomenclature,
     };
   } catch {
     return {};
