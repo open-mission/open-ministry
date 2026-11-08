@@ -14,6 +14,8 @@ import {
 
 import { ChordsViewer } from "@/components/songs/chords-viewer";
 import { SongDetailHeaderActions } from "@/components/songs/song-detail-header-actions";
+import { SongLyricsViewer } from "@/components/songs/song-lyrics-viewer";
+import { SongTagsList } from "@/components/songs/song-tags-list";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -104,12 +106,10 @@ async function SongDetailContent({
             {song.timeSignature ? (
               <Badge variant="secondary">Compasso: {song.timeSignature}</Badge>
             ) : null}
-            {song.tags?.map((tag) => (
-              <Badge key={tag} variant="outline" className="font-normal">
-                {tag}
-              </Badge>
-            ))}
           </div>
+
+          {/* TAGS DA MÚSICA (MAX 3 + DIALOG/DRAWER) */}
+          <SongTagsList tags={song.tags ?? []} />
         </div>
 
         <div className="flex flex-col items-start gap-3 sm:items-end">
@@ -192,21 +192,7 @@ async function SongDetailContent({
 
         {/* CONTEÚDO DA LETRA */}
         <TabsContent value="letra" className="pt-4">
-          {song.lyrics?.trim() ? (
-            <div className="rounded-2xl border border-border/80 bg-card p-6 sm:p-8 shadow-xs">
-              <div className="whitespace-pre-line text-sm leading-loose font-sans text-foreground sm:text-base">
-                {song.lyrics}
-              </div>
-            </div>
-          ) : (
-            <Card className="p-8 text-center">
-              <FileTextIcon className="mx-auto size-8 text-muted-foreground/60" />
-              <p className="mt-2 text-sm font-medium">Nenhuma letra cadastrada</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Clique em Editar para adicionar a letra desta música.
-              </p>
-            </Card>
-          )}
+          <SongLyricsViewer lyrics={song.lyrics ?? ""} />
         </TabsContent>
 
         {/* CONTEÚDO DOS CULTOS RECENTES */}

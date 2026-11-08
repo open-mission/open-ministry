@@ -29,7 +29,7 @@ export function AddSongChoiceDialog({ trigger }: AddSongChoiceDialogProps) {
       <Dialog open={choiceOpen} onOpenChange={setChoiceOpen}>
         <DialogTrigger asChild>
           {trigger ?? (
-            <Button className="h-9 gap-1.5 shadow-xs">
+            <Button className="h-10 gap-1.5 shadow-xs font-medium">
               <PlusIcon className="size-4" />
               <span>Nova música</span>
             </Button>

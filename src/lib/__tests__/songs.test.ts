@@ -1,7 +1,11 @@
 import { describe, expect, it } from "bun:test";
 
 import {
+  classifySectionType,
+  isChordLine,
+  parseSongSections,
   STANDARD_TONES,
+  tokenizeChordLine,
   transposeChord,
   transposeChordsText,
 } from "@/lib/music/chords-utils";
@@ -83,6 +87,86 @@ Me esvazio de mim`;
       expect(STANDARD_TONES).toContain("Am");
       expect(STANDARD_TONES).toContain("F#m");
       expect(STANDARD_TONES.length).toBeGreaterThan(20);
+    });
+  });
+
+  describe("Song Sections Parser & Chord Syntax Highlighting", () => {
+    it("parses bracketed section headers like Cifra Club into structured cards", () => {
+      const sheet = `[Intro] D A6 D A6
+[Primeira Parte]
+D         A6
+Os meus olhos viram a salvação
+[Refrão]
+G           D
+Glória nas alturas
+[Ponte]
+Bm          A
+Sempre fiel`;
+
+      const sections = parseSongSections(sheet);
+      expect(sections.length).toBe(4);
+
+      expect(sections[0].name).toBe("Intro");
+      expect(sections[0].type).toBe("intro");
+      expect(sections[0].content).toBe("D A6 D A6");
+
+      expect(sections[1].name).toBe("Primeira Parte");
+      expect(sections[1].type).toBe("verse");
+      expect(sections[1].content).toContain("Os meus olhos viram a salvação");
+
+      expect(sections[2].name).toBe("Refrão");
+      expect(sections[2].type).toBe("chorus");
+      expect(sections[2].content).toContain("Glória nas alturas");
+
+      expect(sections[3].name).toBe("Ponte");
+      expect(sections[3].type).toBe("bridge");
+      expect(sections[3].content).toContain("Sempre fiel");
+    });
+
+    it("parses unbracketed lyrics divided by stanzas into verse cards", () => {
+      const lyrics = `Primeira estrofe da música
+Com versos e adoração
+
+Segunda estrofe da canção
+Outra parte para o culto`;
+
+      const sections = parseSongSections(lyrics);
+      expect(sections.length).toBe(2);
+      expect(sections[0].name).toBe("Estrofe 1");
+      expect(sections[1].name).toBe("Estrofe 2");
+    });
+
+    it("correctly classifies section types", () => {
+      expect(classifySectionType("Intro")).toBe("intro");
+      expect(classifySectionType("Introdução")).toBe("intro");
+      expect(classifySectionType("Verso 1")).toBe("verse");
+      expect(classifySectionType("Primeira Parte")).toBe("verse");
+      expect(classifySectionType("Pré-refrão")).toBe("pre-chorus");
+      expect(classifySectionType("Refrão")).toBe("chorus");
+      expect(classifySectionType("Coro")).toBe("chorus");
+      expect(classifySectionType("Ponte")).toBe("bridge");
+      expect(classifySectionType("Solo")).toBe("solo");
+      expect(classifySectionType("Final")).toBe("outro");
+    });
+
+    it("accurately detects chord lines vs lyric lines vs tablature", () => {
+      expect(isChordLine("D         A6        F#m     A6/C#")).toBe(true);
+      expect(isChordLine("G   C   D   G")).toBe(true);
+      expect(isChordLine("Os meus olhos viram a salvação")).toBe(false);
+      expect(isChordLine("E eu não temerei o mal que vier")).toBe(false);
+      expect(isChordLine("e|---0-2-3---|")).toBe(false);
+      expect(isChordLine("[Refrão]")).toBe(false);
+    });
+
+    it("tokenizes chord lines preserving exact spacing for monospace alignment", () => {
+      const line = "D         A6        F#m     A6/C#     D7M";
+      const tokens = tokenizeChordLine(line);
+
+      const reconstructed = tokens.map((t) => t.value).join("");
+      expect(reconstructed).toBe(line);
+
+      const chords = tokens.filter((t) => t.type === "chord").map((t) => t.value);
+      expect(chords).toEqual(["D", "A6", "F#m", "A6/C#", "D7M"]);
     });
   });
 });
