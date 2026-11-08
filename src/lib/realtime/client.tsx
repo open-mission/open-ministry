@@ -3,8 +3,7 @@
 import {
   createContext,
   useContext,
-  useEffect,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import {
@@ -28,30 +27,40 @@ export function useIsRealtimeActive() {
   return useContext(OpenMinistryRealtimeContext).isEnabled;
 }
 
+let sharedClient: RealtimeClient | null = null;
+const noopSubscribe = () => () => {};
+
+function getClientSnapshot(): RealtimeClient | null {
+  if (typeof window === "undefined") return null;
+  const realtimeUrl = process.env.NEXT_PUBLIC_NEON_REALTIME_URL;
+  if (!realtimeUrl) return null;
+  if (!sharedClient) {
+    try {
+      sharedClient = createRealtimeClient({
+        url: realtimeUrl,
+        parsers: { ...drizzleParsers },
+      });
+    } catch {
+      return null;
+    }
+  }
+  return sharedClient;
+}
+
+function getServerSnapshot(): RealtimeClient | null {
+  return null;
+}
+
 export function OpenMinistryRealtimeProvider({
   children,
 }: {
   children: ReactNode;
 }) {
-  const realtimeUrl = process.env.NEXT_PUBLIC_NEON_REALTIME_URL;
-
-  const [client, setClient] = useState<RealtimeClient | null>(null);
-
-  useEffect(() => {
-    if (!realtimeUrl) return;
-    try {
-      const c = createRealtimeClient({
-        url: realtimeUrl,
-        parsers: { ...drizzleParsers },
-      });
-      setClient(c);
-      return () => {
-        c.close();
-      };
-    } catch {
-      return;
-    }
-  }, [realtimeUrl]);
+  const client = useSyncExternalStore(
+    noopSubscribe,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
 
   const value: RealtimeContextValue = {
     isEnabled: Boolean(client),
