@@ -50,6 +50,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatDurationSeconds, parseDurationToSeconds } from "@/lib/plan-utils";
 import { getInitials } from "@/lib/format";
+import { PlanSongPicker } from "./plan-song-picker";
 
 export type PersonOption = {
   id: string;
@@ -62,6 +63,8 @@ export type SongOption = {
   title: string;
   artist?: string | null;
   tone?: string | null;
+  collection?: string | null;
+  tags?: string[] | null;
 };
 
 type PlanItemDialogProps = {
@@ -402,34 +405,11 @@ function PlanItemFields({
               <Music2Icon className="size-3.5 text-primary" />
               Música do Repertório (opcional)
             </FieldLabel>
-            <Select
+            <PlanSongPicker
+              songs={songs}
               value={selectedSongId}
-              onValueChange={setSelectedSongId}
-            >
-              <SelectTrigger id="plan-song-select" className="h-10">
-                <SelectValue placeholder="Vincular música do repertório..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Nenhuma música vinculada</SelectItem>
-                {songs.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="font-medium">{s.title}</span>
-                      {s.artist ? (
-                        <span className="text-muted-foreground text-xs">
-                          · {s.artist}
-                        </span>
-                      ) : null}
-                      {s.tone ? (
-                        <span className="rounded bg-primary/10 px-1 py-0.5 text-[10px] font-semibold text-primary">
-                          {s.tone}
-                        </span>
-                      ) : null}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={setSelectedSongId}
+            />
             <FieldDescription>
               Vincula cifras e links diretamente ao momento do culto.
             </FieldDescription>
