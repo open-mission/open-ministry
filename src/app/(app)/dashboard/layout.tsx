@@ -20,6 +20,7 @@ import { NotificationBellFallback, NotificationBellLoader } from "@/components/a
 import { OfflineBanner } from "@/components/offline/offline-banner";
 import { OpenMinistryRealtimeProvider } from "@/lib/realtime/client";
 import { PwaInstallBanner } from "@/components/pwa/pwa-install-banner";
+import { PwaInstallTracker } from "@/components/pwa/pwa-install-tracker";
 import { PwaNotificationPrompt } from "@/components/pwa/pwa-notification-prompt";
 import { WhatsAppPromptLoader } from "@/components/app/whatsapp-prompt-loader";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -81,6 +82,7 @@ export default function DashboardLayout({
               </Suspense>
               <PwaInstallBanner />
               <PwaNotificationPrompt />
+              <PwaInstallTracker />
               <Suspense fallback={null}>
                 <WhatsAppPromptLoader />
               </Suspense>

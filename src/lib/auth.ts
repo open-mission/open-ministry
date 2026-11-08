@@ -52,6 +52,27 @@ export const auth = betterAuth({
         defaultValue: "America/Sao_Paulo",
         input: true,
       },
+      pwaInstalled: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+        input: false,
+      },
+      pwaInstalledAt: {
+        type: "date",
+        required: false,
+        input: false,
+      },
+      pwaPlatform: {
+        type: "string",
+        required: false,
+        input: false,
+      },
+      pwaLastSeenAt: {
+        type: "date",
+        required: false,
+        input: false,
+      },
     },
   },
   socialProviders: {
