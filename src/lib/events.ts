@@ -115,6 +115,7 @@ export async function getEvent(
           planItems: {
             with: {
               person: { with: { user: true } },
+              song: true,
             },
             orderBy: (items, { asc }) => [asc(items.order), asc(items.createdAt)],
           },

@@ -2,10 +2,10 @@ import { describe, expect, it } from "bun:test";
 
 import {
   AVAILABLE_MODULES,
-  buildAccessibleNavGroups,
   getSystemModule,
   SYSTEM_MODULES,
 } from "@/lib/modules";
+import { buildAccessibleNavGroups } from "@/lib/modules/service";
 
 describe("Modules System Foundation", () => {
   it("registers system modules properly", () => {

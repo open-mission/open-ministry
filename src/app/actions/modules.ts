@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache";
 
 import { getDepartmentAccess } from "@/lib/departments";
-import { setDepartmentModuleEnabled } from "@/lib/modules";
 import type { ModuleKey } from "@/lib/modules";
+import { setDepartmentModuleEnabled } from "@/lib/modules/service";
 import { requireOrganizationContext } from "@/lib/organizations";
 
 export type ToggleDepartmentModuleResult = {

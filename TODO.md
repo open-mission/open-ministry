@@ -10,17 +10,20 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
-- [ ] Implementação do Modulo de Musica:  
-  O Modulo de Musica está baseado em:   
-  - Linkar uma musica em item de Cronograma  
-  - No Sidebar/menu criar um grupo de Item Inicial: Repertório  
-  - CRUD com as Musicas: Teremos duas opção de Cadastro: Manual ou Busca na Internet (Usando o Vagalume Api) (no Front end quando clicamos em Add musica mostrar um modal com os dois items ao selecionar abre o modal/drawer de acordo com a opção).  
-  - Teremos a opção de Além dos Metadados da Musica, teremos a opção de add a letra e a cifra, tbm teremos a opção de colocar o link da musica em tres plataforma (youtube music, youtube, spotify)  
-  - Futuramente teremos mais funcionalidades.
-
 ### Doing
 
 ### Done
+
+- [x] Implementação do Modulo de Musica:  
+  - [x] Schema para músicas (`song`) com título, artista, tom, BPM, compasso, cifra, letra, links (YouTube, YouTube Music, Spotify) e tags
+  - [x] Campo `songId` em `event_plan_item` para vincular músicas aos itens de cronograma de cultos e templates
+  - [x] Serviço de busca de letras na internet com Vagalume API e fallback automático de alta disponibilidade (LRCLIB)
+  - [x] Server actions e queries para CRUD de músicas e busca de letras
+  - [x] Modal de criação com escolha de fluxo: "Busca na Internet (Vagalume)" e "Cadastro Manual"
+  - [x] Visualizador e reprodutor de músicas com abas de Cifra (com transposição de tom +1/-1 e cópia) e Letra, além de atalhos para plataformas de streaming
+  - [x] Integração com o cronograma do culto (`PlanItemDialog`, `SortablePlanRow`, `PlanReadView`): seleção rápida da música do repertório e abertura de drawer com cifra/letra durante o planejamento e execução do culto
+  - [x] Proteção de acesso à rota `/dashboard/songs` baseada na permissão do módulo de música para a igreja/departamentos
+  - [x] Testes unitários para serviço de letras, transposição de tons, CRUD e vinculação com cronograma
 
 - [x] Sistema de módulos que dão suporte aos departamentos:
   - [x] Estruturar o fundamento dos módulos do sistema e seus registros (registro central de módulos, chaves, títulos e navegação vinculada)
@@ -356,4 +359,5 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - Duração dos Momentos: adicionada a unidade "min" (ex: `5 min`, `20 min`) no badge de duração, eliminando a confusão de parecer dois horários lado a lado.
   - Calendário e Agenda (`/dashboard/calendar`): escalas com múltiplas funções para o mesmo evento (ex: Cameraman e Livestream) agora são agrupadas em um único card (`Escalado: Cameraman, Livestream`), e na visualização geral o card de escala substitui o card genérico do evento, eliminando itens duplicados para o mesmo culto.
 - **08/11/2026:** Sistema de Módulos para Departamentos concluído. Foi estruturado o fundamento arquitetural de módulos do sistema (`src/lib/modules/`), permitindo que a liderança ative ferramentas complementares por departamento via `department_module` (com migration e policies RLS). A tela do departamento (`/dashboard/departments/[departmentId]`) ganhou a seção interativa de módulos com feedback otimista e controle de permissões. O Sidebar e o Mobile Menu foram integrados para injetar dinamicamente grupos e rotas de módulos liberados para o usuário (ou administradores). Cobertura com testes unitários automatizados.
+- **08/11/2026:** Módulo de Música e Repertório concluído. Foi implementado o acervo completo de músicas (`song`) com título, artista, tom, BPM, compasso, cifra, letra, tags e links diretos para plataformas de streaming (YouTube, YouTube Music e Spotify). O cadastro conta com modal de escolha inteligente: busca automática de letras na internet (Vagalume API com fallback de alta disponibilidade para LRCLIB) ou formulário manual detalhado. O visualizador de músicas conta com transposição em tempo real de tons (+1/-1 semitons), cópia de cifras e leitura limpa de estrofes. As músicas foram integradas ao cronograma do culto (`event_plan_item.song_id`), permitindo selecionar músicas do acervo durante o planejamento do culto e abrir drawer rápido com cifras e acordes em tempo real durante os cultos e ensaios. Cobertura com testes unitários automatizados e compilação de produção validada.
 
