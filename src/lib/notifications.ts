@@ -299,3 +299,101 @@ export async function getNotificationRecipients(
     ...new Set(members.map((member) => member.userId)),
   ];
 }
+
+export type SentAnnouncementRecipient = {
+  userId: string;
+  name: string;
+  email: string | null;
+  image: string | null;
+  readAt: Date | null;
+};
+
+export type SentAnnouncementReceipt = {
+  key: string;
+  title: string;
+  body: string | null;
+  createdAt: Date;
+  actorId: string | null;
+  actorName: string;
+  totalRecipients: number;
+  readRecipients: number;
+  recipients: SentAnnouncementRecipient[];
+};
+
+export async function listSentAnnouncementsWithReadReceipts(
+  organizationId: string,
+  userId: string,
+  isAdmin: boolean,
+  limit = 20,
+): Promise<SentAnnouncementReceipt[]> {
+  const where = isAdmin
+    ? and(
+        eq(schema.notification.organizationId, organizationId),
+        eq(schema.notification.type, "announcement"),
+      )
+    : and(
+        eq(schema.notification.organizationId, organizationId),
+        eq(schema.notification.type, "announcement"),
+        eq(schema.notification.actorId, userId),
+      );
+
+  const rows = await db.query.notification.findMany({
+    where,
+    with: {
+      user: {
+        columns: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+        },
+      },
+      actor: {
+        columns: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: [desc(schema.notification.createdAt)],
+    limit: 300,
+  });
+
+  const groups = new Map<string, SentAnnouncementReceipt>();
+
+  for (const row of rows) {
+    const timeBucket = Math.floor(row.createdAt.getTime() / (120 * 1000));
+    const groupKey = `${row.actorId ?? "unknown"}:${row.title}:${timeBucket}`;
+
+    let group = groups.get(groupKey);
+    if (!group) {
+      group = {
+        key: row.id,
+        title: row.title,
+        body: row.body,
+        createdAt: row.createdAt,
+        actorId: row.actorId,
+        actorName: row.actor?.name ?? "Liderança",
+        totalRecipients: 0,
+        readRecipients: 0,
+        recipients: [],
+      };
+      groups.set(groupKey, group);
+    }
+
+    group.totalRecipients += 1;
+    if (row.readAt) {
+      group.readRecipients += 1;
+    }
+
+    group.recipients.push({
+      userId: row.userId,
+      name: row.user?.name ?? "Membro",
+      email: row.user?.email ?? null,
+      image: row.user?.image ?? null,
+      readAt: row.readAt,
+    });
+  }
+
+  return Array.from(groups.values()).slice(0, limit);
+}
