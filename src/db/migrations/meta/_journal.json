@@ -162,6 +162,13 @@
       "when": 1794112374544,
       "tag": "0022_wild_quentin_quire",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794147631138,
+      "tag": "0023_petite_masked_marvel",
+      "breakpoints": true
     }
   ]
 }

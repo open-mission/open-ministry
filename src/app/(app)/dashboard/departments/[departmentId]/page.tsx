@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { ArrowLeftIcon, CrownIcon, MegaphoneIcon } from "lucide-react";
 
 import { DeleteDepartmentButton } from "@/components/departments/delete-department-button";
+import { DepartmentModulesSection } from "@/components/departments/department-modules-section";
 import { EditDepartmentDialog } from "@/components/departments/edit-department-dialog";
 import { FunctionsSection } from "@/components/departments/functions-section";
 import { PeopleSection } from "@/components/departments/people-section";
@@ -173,6 +174,12 @@ async function DepartmentContent({
           </div>
         ) : null}
       </header>
+
+      <DepartmentModulesSection
+        departmentId={department.id}
+        activeModuleKeys={(department.modules ?? []).map((m) => m.moduleKey)}
+        canManage={access.canManage}
+      />
 
       <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
         <PeopleSection

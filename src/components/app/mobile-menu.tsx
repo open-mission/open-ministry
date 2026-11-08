@@ -27,7 +27,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { isNavItemActive, navGroups } from "@/components/app/nav-config";
+import { isNavItemActive, navGroups, type NavGroup } from "@/components/app/nav-config";
 import { cn } from "@/lib/utils";
 
 type MobileMenuContextValue = {
@@ -78,7 +78,7 @@ export function MobileMenuTrigger({ className }: { className?: string }) {
   );
 }
 
-export function MobileMenu() {
+export function MobileMenu({ groups = navGroups }: { groups?: NavGroup[] } = {}) {
   const pathname = usePathname();
   const { open, setOpen } = useMobileMenu();
   const { resolvedTheme, setTheme } = useTheme();
@@ -104,7 +104,7 @@ export function MobileMenu() {
         <div className="relative min-h-0 flex-1">
           <div className="h-full overflow-y-auto overscroll-contain px-4 pt-3 pb-6">
             <nav aria-label="Menu principal" className="space-y-5">
-              {navGroups.map((group) => (
+              {groups.map((group) => (
                 <section key={group.title} className="space-y-2">
                   <h2 className="px-1 text-[0.68rem] font-semibold tracking-[0.14em] text-muted-foreground/70 uppercase">
                     {group.title}

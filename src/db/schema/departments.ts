@@ -9,6 +9,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { organization } from "./auth";
+import { departmentModule } from "./modules";
 import { person } from "./people";
 
 export const department = pgTable(
@@ -109,6 +110,7 @@ export const departmentRelations = relations(department, ({ one, many }) => ({
   }),
   functions: many(departmentFunction),
   members: many(departmentMember),
+  modules: many(departmentModule),
 }));
 
 export const departmentFunctionRelations = relations(

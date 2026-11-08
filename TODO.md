@@ -10,7 +10,6 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
-- [ ] Precisamos desenvolver um sistema de módulos que dão suporte aos departamentos. Eles não está diretamente relacionado a um departamento em si, mas pode ser liberado para determinados grupos e ao ser ativo para um grupo de usuários baseado nos departamentos ele terá acesso aos items desse modulo, por exemplo o Módulo de Musica que permite registrar as musicas que são usadas no repertório do grupo ou da igreja. E ai nas opções do departamento o Líder/Admin pode ativar esse modulo ao Departamento. Assim os usuários terão acesso aos items do módulos, esse item pode ser grupo de ltems ou apenas um item no sidebar/menu de acordo com a necessidade. Nesse momento iremos estruturar o fundamento dos módulos e seus registros, nos itens abaixo vamos especificar melhor o primeiro modulo a ser desenvolvido. Importante que os módulos não estão relacionados diretamente aos departamentos, por exemplo o modulo de musica tbm será usado na criação de cronograma podendo linkar uma musica ao item de cronograma de um culto. Mas quem o departamento que tem acesso ao modulo pode acessar diretamente as paginas de musicas e etc. 
 - [ ] Implementação do Modulo de Musica:  
   O Modulo de Musica está baseado em:   
   - Linkar uma musica em item de Cronograma  
@@ -22,6 +21,14 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 ### Doing
 
 ### Done
+
+- [x] Sistema de módulos que dão suporte aos departamentos:
+  - [x] Estruturar o fundamento dos módulos do sistema e seus registros (registro central de módulos, chaves, títulos e navegação vinculada)
+  - [x] Modelo de persistência e schema para ativação de módulos por departamento (`department_module`) com migration e RLS
+  - [x] RLS policies e helpers de verificação de acesso a módulos (por administrador ou membresia de departamento ativo)
+  - [x] Interface no departamento (`/dashboard/departments/[departmentId]`) permitindo que Líderes ou Admins ativem/desativem módulos para o departamento com feedback otimista
+  - [x] Integração dinâmica com o Sidebar e Mobile Menu exibindo itens/grupos de módulos ativos conforme permissão do usuário
+  - [x] Testes unitários para o sistema de módulos e controle de acesso
 
 - [x] Design Feedback: Badge de Informações (`PageInfo`) com Drawer/Dialog e Ganho de Espaço nos Cabeçalhos
   - [x] Criar componente reutilizável `PageInfo` (`src/components/app/page-info.tsx`) com disparador via badge/botão (`InfoIcon` + "Info"), renderizando Drawer responsivo no mobile e Dialog no desktop
@@ -348,4 +355,5 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - Cronograma do Culto no Mobile: dividido em Modo Leitura (itinerário limpo, sem botões de arrastar ou ações poluidoras) e Modo Edição em Drawer (`92dvh`) acionado por botão destacado "Editar Cronograma".
   - Duração dos Momentos: adicionada a unidade "min" (ex: `5 min`, `20 min`) no badge de duração, eliminando a confusão de parecer dois horários lado a lado.
   - Calendário e Agenda (`/dashboard/calendar`): escalas com múltiplas funções para o mesmo evento (ex: Cameraman e Livestream) agora são agrupadas em um único card (`Escalado: Cameraman, Livestream`), e na visualização geral o card de escala substitui o card genérico do evento, eliminando itens duplicados para o mesmo culto.
+- **08/11/2026:** Sistema de Módulos para Departamentos concluído. Foi estruturado o fundamento arquitetural de módulos do sistema (`src/lib/modules/`), permitindo que a liderança ative ferramentas complementares por departamento via `department_module` (com migration e policies RLS). A tela do departamento (`/dashboard/departments/[departmentId]`) ganhou a seção interativa de módulos com feedback otimista e controle de permissões. O Sidebar e o Mobile Menu foram integrados para injetar dinamicamente grupos e rotas de módulos liberados para o usuário (ou administradores). Cobertura com testes unitários automatizados.
 
