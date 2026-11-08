@@ -2,17 +2,31 @@
 
 import { useMemo, useState } from "react";
 import {
+  CheckIcon,
+  ChevronDownIcon,
   FileMusicIcon,
   FileTextIcon,
+  GuitarIcon,
   Music2Icon,
   SearchIcon,
+  XIcon,
 } from "lucide-react";
 
 import { StatStrip, type StatItem } from "@/components/app/stat-strip";
-import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { STANDARD_TONES } from "@/lib/music/chords-utils";
 import type { SongRecord } from "@/lib/songs";
+import { cn } from "@/lib/utils";
 import { AddSongChoiceDialog } from "./add-song-choice-dialog";
 import { SongCard } from "./song-card";
 
@@ -77,37 +91,185 @@ export function SongsListView({ songs, canManage = true }: SongsListViewProps) {
       {/* STATS STRIP */}
       <StatStrip items={statsItems} />
 
-      {/* BARRA DE FILTROS E BUSCA */}
+      {/* BARRA DE FILTROS E BUSCA COM ALTURAS PADRONIZADAS (h-10) */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 items-center gap-2">
-          <div className="relative flex-1 max-w-md">
-            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
+          {/* INPUT GROUP UNIFICADO COM BUSCA E SELETOR DE TOM */}
+          <InputGroup className="h-10 w-full max-w-lg rounded-xl border border-border/80 bg-background shadow-2xs transition-colors focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20">
+            <InputGroupAddon align="inline-start" className="pl-3 text-muted-foreground">
+              <SearchIcon className="size-4" />
+            </InputGroupAddon>
+
+            <InputGroupInput
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por título, artista, tom ou tag..."
-              className="pl-9 h-10"
+              className="h-10 text-sm placeholder:text-muted-foreground/70"
             />
-          </div>
 
-          <div className="w-36 shrink-0">
-            <NativeSelect
-              value={toneFilter}
-              onChange={(e) => setToneFilter(e.target.value)}
-              className="h-10"
-            >
-              <option value="">Todos os tons</option>
-              {STANDARD_TONES.map((t) => (
-                <option key={t} value={t}>
-                  Tom {t}
-                </option>
-              ))}
-            </NativeSelect>
-          </div>
+            {search ? (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="mr-1 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                title="Limpar busca"
+              >
+                <XIcon className="size-3.5" />
+              </button>
+            ) : null}
+
+            {/* SELETOR DE TOM INTEGRADO AO INPUT GROUP COM ÍCONE DE INSTRUMENTO */}
+            <div className="pr-1.5 shrink-0">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant={toneFilter ? "secondary" : "ghost"}
+                    size="sm"
+                    className={cn(
+                      "h-8 gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors select-none",
+                      toneFilter
+                        ? "border border-primary/25 bg-primary/10 font-semibold text-primary hover:bg-primary/20"
+                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                    )}
+                    title="Filtrar por tom musical"
+                  >
+                    <GuitarIcon className="size-3.5 text-primary" />
+                    <span>{toneFilter ? `Tom ${toneFilter}` : "Todos os tons"}</span>
+                    <ChevronDownIcon className="size-3 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent
+                  align="end"
+                  className="w-64 max-h-[80vh] overflow-y-auto rounded-xl p-2.5 shadow-lg"
+                >
+                  <div className="flex items-center justify-between border-b border-border/60 px-1 pb-2">
+                    <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                      <GuitarIcon className="size-3.5 text-primary" />
+                      Filtrar por Tom
+                    </span>
+                    {toneFilter ? (
+                      <button
+                        type="button"
+                        onClick={() => setToneFilter("")}
+                        className="text-[11px] font-medium text-primary hover:underline"
+                      >
+                        Limpar
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <div className="py-2">
+                    <button
+                      type="button"
+                      onClick={() => setToneFilter("")}
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
+                        !toneFilter
+                          ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                      )}
+                    >
+                      <span>Todos os tons</span>
+                      {!toneFilter ? <CheckIcon className="size-3.5" /> : null}
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5 border-t border-border/60 pt-2">
+                    <div className="px-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+                      Tons Maiores
+                    </div>
+                    <div className="grid grid-cols-4 gap-1">
+                      {STANDARD_TONES.filter((t) => !t.endsWith("m")).map((t) => (
+                        <Button
+                          key={t}
+                          type="button"
+                          variant={toneFilter === t ? "default" : "outline"}
+                          size="xs"
+                          onClick={() => setToneFilter(toneFilter === t ? "" : t)}
+                          className="h-7 rounded-md text-xs font-semibold"
+                        >
+                          {t}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-2.5 space-y-1.5 border-t border-border/60 pt-2">
+                    <div className="px-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+                      Tons Menores
+                    </div>
+                    <div className="grid grid-cols-4 gap-1">
+                      {STANDARD_TONES.filter((t) => t.endsWith("m")).map((t) => (
+                        <Button
+                          key={t}
+                          type="button"
+                          variant={toneFilter === t ? "default" : "outline"}
+                          size="xs"
+                          onClick={() => setToneFilter(toneFilter === t ? "" : t)}
+                          className="h-7 rounded-md text-xs font-semibold"
+                        >
+                          {t}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </InputGroup>
         </div>
 
-        {canManage ? <AddSongChoiceDialog /> : null}
+        {/* BOTÃO NOVA MÚSICA COM ALTURA PADRONIZADA (h-10) */}
+        {canManage ? (
+          <div className="shrink-0">
+            <AddSongChoiceDialog />
+          </div>
+        ) : null}
       </div>
+
+      {/* CHIP DE FILTRO ATIVO SELECIONADO */}
+      {(search || toneFilter) && (
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span>Filtros ativos:</span>
+          {search ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-muted/50 px-2.5 py-0.5 text-foreground">
+              Busca: &ldquo;{search}&rdquo;
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="hover:text-destructive"
+              >
+                <XIcon className="size-3" />
+              </button>
+            </span>
+          ) : null}
+          {toneFilter ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 font-medium text-primary">
+              <GuitarIcon className="size-3" />
+              Tom {toneFilter}
+              <button
+                type="button"
+                onClick={() => setToneFilter("")}
+                className="hover:text-destructive"
+              >
+                <XIcon className="size-3" />
+              </button>
+            </span>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => {
+              setSearch("");
+              setToneFilter("");
+            }}
+            className="text-xs text-primary hover:underline font-medium ml-1"
+          >
+            Limpar todos
+          </button>
+        </div>
+      )}
 
       {/* GRID DE MÚSICAS */}
       {filteredSongs.length > 0 ? (

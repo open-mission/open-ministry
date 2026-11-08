@@ -1,3 +1,7 @@
+/**
+ * Utilitários para Cifras, Transposição de Tons e Estrutura de Seções Musicais
+ */
+
 export const STANDARD_TONES = [
   "C",
   "C#",
@@ -42,6 +46,7 @@ export const STANDARD_TIME_SIGNATURES = [
   "5/4",
 ] as const;
 
+// Escala cromática com sustenidos
 const CHROMATIC_SHARP = [
   "C",
   "C#",
@@ -57,6 +62,7 @@ const CHROMATIC_SHARP = [
   "B",
 ];
 
+// Escala cromática com bemóis
 const CHROMATIC_FLAT = [
   "C",
   "Db",
@@ -129,12 +135,40 @@ export function transposeChord(chord: string, semitones: number): string {
 }
 
 /**
- * Expressão regular para encontrar cifras em linhas de cifras.
+ * Expressão regular aprimorada para detecção de cifras incluindo notação brasileira (ex: 7M, 7+, °, sus4).
  */
-const CHORD_REGEX = /\b[A-G][#b]?(?:m|maj|min|dim|aug|sus[24]?|add[29]|7|9|11|13|6|4)*(?:\/[A-G][#b]?)?\b/g;
+export const CHORD_REGEX =
+  /\b[A-G][#b]?(?:maj|min|dim|aug|sus|add|m|M|º|°|[0-9#b\(\)\+\-])*(?:\/[A-G][#b]?)?(?![A-Za-z0-9#º°\(\)])/g;
 
 /**
- * Transpõe um texto de cifra completo linha por linha.
+ * Verifica se uma linha textual é uma linha de acordes/cifras.
+ */
+export function isChordLine(line: string): boolean {
+  const trimmed = line.trim();
+  if (!trimmed) return false;
+
+  // Se for comentário de seção [Refrão], [Intro]
+  if (trimmed.startsWith("[") && trimmed.endsWith("]")) return false;
+
+  // Linhas de tablatura (ex: e|---0-2-3---|)
+  if (/^[eBGDAE]?\|[-0-9pbrh\/~\s|]+$/i.test(trimmed)) return false;
+
+  CHORD_REGEX.lastIndex = 0;
+  const matches = trimmed.match(CHORD_REGEX);
+  if (!matches) return false;
+
+  const words = trimmed.split(/\s+/);
+  const chordCount = matches.length;
+
+  return (
+    chordCount >= 1 &&
+    (chordCount / words.length >= 0.4 ||
+      (words.length <= 4 && chordCount >= words.length * 0.5))
+  );
+}
+
+/**
+ * Transpõe um texto de cifra completo linha por linha preservando seções e letras.
  */
 export function transposeChordsText(text: string, semitones: number): string {
   if (semitones === 0 || !text) return text;
@@ -142,26 +176,183 @@ export function transposeChordsText(text: string, semitones: number): string {
   const lines = text.split("\n");
 
   const transposedLines = lines.map((line) => {
-    // Se a linha for vazia ou for comentário de seção (ex: [Refrão], [Intro]), mantém
-    if (!line.trim() || line.trim().startsWith("[") && line.trim().endsWith("]")) {
+    // Linha vazia
+    if (!line.trim()) return line;
+
+    // Se for cabeçalho de seção pura (ex: [Refrão], [Intro]), mantém
+    if (line.trim().startsWith("[") && line.trim().endsWith("]")) {
       return line;
     }
 
-    // Testa se a linha parece conter acordes (alta proporção de notas musicais e espaços)
-    const matches = line.match(CHORD_REGEX);
-    if (!matches) return line;
-
-    // Se mais de 40% das palavras forem acordes ou a linha for curta com acordes, transpõe
-    const words = line.trim().split(/\s+/);
-    const chordCount = matches.length;
-    const isChordLine = chordCount >= 1 && (chordCount / words.length >= 0.4 || words.length <= 4);
-
-    if (!isChordLine) {
+    // Se começar com tag de seção inline (ex: [Intro] D A6 D A6), preserva a tag e transpõe o restante
+    const inlineSectionMatch = line.match(/^(\[[^\]]+\]\s*)(.*)$/);
+    if (inlineSectionMatch) {
+      const tagPrefix = inlineSectionMatch[1];
+      const rest = inlineSectionMatch[2];
+      if (isChordLine(rest)) {
+        CHORD_REGEX.lastIndex = 0;
+        return `${tagPrefix}${rest.replace(CHORD_REGEX, (match) => transposeChord(match, semitones))}`;
+      }
       return line;
     }
 
+    // Testa se a linha é de acordes
+    if (!isChordLine(line)) {
+      return line;
+    }
+
+    CHORD_REGEX.lastIndex = 0;
     return line.replace(CHORD_REGEX, (match) => transposeChord(match, semitones));
   });
 
   return transposedLines.join("\n");
+}
+
+export type ChordLineToken =
+  | { type: "chord"; value: string }
+  | { type: "text"; value: string };
+
+/**
+ * Tokeniza uma linha de acordes preservando os espaços em branco para alinhamento monoespaçado perfeito.
+ */
+export function tokenizeChordLine(line: string): ChordLineToken[] {
+  const tokens: ChordLineToken[] = [];
+  let lastIndex = 0;
+
+  CHORD_REGEX.lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = CHORD_REGEX.exec(line)) !== null) {
+    if (match.index > lastIndex) {
+      tokens.push({
+        type: "text",
+        value: line.slice(lastIndex, match.index),
+      });
+    }
+
+    tokens.push({
+      type: "chord",
+      value: match[0],
+    });
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < line.length) {
+    tokens.push({
+      type: "text",
+      value: line.slice(lastIndex),
+    });
+  }
+
+  return tokens;
+}
+
+export type SongSectionType =
+  | "intro"
+  | "verse"
+  | "pre-chorus"
+  | "chorus"
+  | "bridge"
+  | "solo"
+  | "outro"
+  | "generic";
+
+export type SongSection = {
+  id: string;
+  name: string;
+  type: SongSectionType;
+  content: string;
+};
+
+/**
+ * Classifica semanticamente o tipo da seção musical com base no nome.
+ */
+export function classifySectionType(name: string): SongSectionType {
+  const n = name.toLowerCase();
+  if (/intro|introdu[çc]/i.test(n)) return "intro";
+  if (/pr[eé]-?refr|pre-?chorus/i.test(n)) return "pre-chorus";
+  if (/refr|chorus|coro/i.test(n)) return "chorus";
+  if (/ponte|bridge/i.test(n)) return "bridge";
+  if (/solo|instrumental|interl[uú]d|passagem/i.test(n)) return "solo";
+  if (/final|outro|encerramento/i.test(n)) return "outro";
+  if (/verso|parte|estrofe/i.test(n)) return "verse";
+  return "generic";
+}
+
+/**
+ * Converte um texto de cifra ou letra em seções estruturadas identificando [Nome da Seção].
+ */
+export function parseSongSections(text: string): SongSection[] {
+  if (!text || !text.trim()) return [];
+
+  // Divide por delimitadores [Nome da Seção]
+  const parts = text.split(/(?=\[[^\]]+\])/).filter((p) => p.trim());
+  if (parts.length === 0) return [];
+
+  // Caso o texto não tenha tags [Seção]
+  if (parts.length === 1 && !parts[0].trim().startsWith("[")) {
+    const paragraphs = text.split(/\n\s*\n/).filter((p) => p.trim());
+    if (paragraphs.length > 1) {
+      return paragraphs.map((p, idx) => {
+        const firstLine = p.split("\n")[0].trim();
+        const headerMatch = firstLine.match(
+          /^(Verso\s*\d*|Primeira\s*Parte|Segunda\s*Parte|Refr[aã]o|Ponte|Intro|Coro|Final):?\s*$/i,
+        );
+        if (headerMatch) {
+          const sectionName = headerMatch[1].replace(/:$/, "").trim();
+          const rest = p.split("\n").slice(1).join("\n").trim();
+          return {
+            id: `section-${idx}`,
+            name: sectionName,
+            type: classifySectionType(sectionName),
+            content: rest,
+          };
+        }
+
+        return {
+          id: `section-${idx}`,
+          name: `Estrofe ${idx + 1}`,
+          type: "verse" as const,
+          content: p.trim(),
+        };
+      });
+    }
+
+    return [
+      {
+        id: "section-0",
+        name: "Música Completa",
+        type: "generic",
+        content: text.trim(),
+      },
+    ];
+  }
+
+  const sections: SongSection[] = [];
+
+  for (let idx = 0; idx < parts.length; idx++) {
+    const part = parts[idx].trim();
+    const match = part.match(/^\[([^\]]+)\]\s*([\s\S]*)$/);
+
+    if (match) {
+      const rawName = match[1].trim();
+      const content = match[2].trim();
+      sections.push({
+        id: `section-${idx}-${rawName.toLowerCase().replace(/\s+/g, "-")}`,
+        name: rawName,
+        type: classifySectionType(rawName),
+        content,
+      });
+    } else {
+      sections.push({
+        id: `section-${idx}`,
+        name: idx === 0 ? "Introdução" : `Seção ${idx + 1}`,
+        type: "generic",
+        content: part,
+      });
+    }
+  }
+
+  return sections;
 }

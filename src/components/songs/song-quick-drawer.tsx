@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/drawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChordsViewer } from "./chords-viewer";
+import { SongLyricsViewer } from "./song-lyrics-viewer";
 
 export type QuickDrawerSong = {
   id: string;
@@ -132,15 +133,7 @@ export function SongQuickDrawer({
             </TabsContent>
 
             <TabsContent value="letra" className="pt-1">
-              {song.lyrics?.trim() ? (
-                <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-6 text-sm leading-loose whitespace-pre-line text-foreground">
-                  {song.lyrics}
-                </div>
-              ) : (
-                <div className="rounded-xl border border-dashed p-6 text-center text-xs text-muted-foreground">
-                  Nenhuma letra registrada para esta música.
-                </div>
-              )}
+              <SongLyricsViewer lyrics={song.lyrics ?? ""} />
             </TabsContent>
           </Tabs>
         </div>
