@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CrownIcon } from "lucide-react";
+import { CrownIcon, SmartphoneIcon } from "lucide-react";
 
 import { RoleBadge } from "@/components/members/role-badge";
 import { DeletePersonButton } from "@/components/people/delete-person-button";
@@ -151,16 +151,27 @@ export function PeopleTable({
                           </TableCell>
 
                           <TableCell>
-                            {role ? (
-                              <RoleBadge role={role} />
-                            ) : (
-                              <Badge
-                                variant="outline"
-                                className="font-normal"
-                              >
-                                Sem conta
-                              </Badge>
-                            )}
+                            <div className="flex flex-col gap-1 items-start">
+                              {role ? (
+                                <RoleBadge role={role} />
+                              ) : (
+                                <Badge
+                                  variant="outline"
+                                  className="font-normal"
+                                >
+                                  Sem conta
+                                </Badge>
+                              )}
+                              {person.user?.pwaInstalled ? (
+                                <span
+                                  title={`Aplicativo PWA instalado${person.user.pwaPlatform ? ` (${person.user.pwaPlatform.toUpperCase()})` : ""}`}
+                                  className="inline-flex items-center gap-1 text-[0.68rem] font-medium text-emerald-600 dark:text-emerald-400"
+                                >
+                                  <SmartphoneIcon className="size-3 shrink-0" />
+                                  App PWA
+                                </span>
+                              ) : null}
+                            </div>
                           </TableCell>
 
                           <TableCell>
@@ -234,6 +245,15 @@ export function PeopleTable({
                               Sem conta
                             </Badge>
                           )}
+                          {person.user?.pwaInstalled ? (
+                            <span
+                              title={`Aplicativo PWA instalado${person.user.pwaPlatform ? ` (${person.user.pwaPlatform.toUpperCase()})` : ""}`}
+                              className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[0.65rem] font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                            >
+                              <SmartphoneIcon className="size-2.5 shrink-0" />
+                              PWA
+                            </span>
+                          ) : null}
                         </div>
                         <p className="truncate text-xs text-muted-foreground">
                           {personDisplayEmail(person) ??

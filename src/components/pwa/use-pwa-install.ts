@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { recordPwaInstallAction } from "@/app/actions/pwa";
+
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
@@ -85,6 +87,7 @@ export function usePwaInstall() {
       setIsStandalone(true);
       setDeferredPrompt(null);
       setCanInstallNatively(false);
+      void recordPwaInstallAction({ platform, isStandalone: true });
     };
 
     window.addEventListener(
@@ -100,7 +103,7 @@ export function usePwaInstall() {
       );
       window.removeEventListener("appinstalled", handleAppInstalled);
     };
-  }, []);
+  }, [platform]);
 
   const triggerNativeInstall = async (): Promise<boolean> => {
     if (!deferredPrompt) return false;
@@ -111,6 +114,7 @@ export function usePwaInstall() {
         setDeferredPrompt(null);
         setCanInstallNatively(false);
         setIsStandalone(true);
+        void recordPwaInstallAction({ platform, isStandalone: true });
         return true;
       }
       return false;

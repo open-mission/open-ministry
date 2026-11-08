@@ -30,6 +30,10 @@ export const user = pgTable("user", {
   phone: text("phone"),
   weekStartsOn: integer("week_starts_on").default(0).notNull(),
   timezone: text("timezone").default("America/Sao_Paulo").notNull(),
+  pwaInstalled: boolean("pwa_installed").default(false).notNull(),
+  pwaInstalledAt: timestamp("pwa_installed_at"),
+  pwaPlatform: text("pwa_platform"),
+  pwaLastSeenAt: timestamp("pwa_last_seen_at"),
 });
 
 export const session = pgTable(
