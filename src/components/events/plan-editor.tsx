@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   ArrowDownIcon,
@@ -147,6 +148,7 @@ export function PlanEditor({
   songs = [],
   canManage,
 }: PlanEditorProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [items, setItems] = useState<RawPlanItem[]>(planItems);
   const [prevPlanItems, setPrevPlanItems] = useState(planItems);
@@ -160,6 +162,44 @@ export function PlanEditor({
   const [selectedSongForDrawer, setSelectedSongForDrawer] =
     useState<QuickDrawerSong | null>(null);
   const [quickDrawerOpen, setQuickDrawerOpen] = useState(false);
+
+  function handleItemSaved(savedItem: {
+    id?: string;
+    type: "header" | "item";
+    title: string;
+    description: string | null;
+    durationSeconds: number;
+    personId: string | null;
+    customResponsible: string | null;
+    songId?: string | null;
+  }) {
+    if (savedItem.id) {
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === savedItem.id
+            ? {
+                ...item,
+                title: savedItem.title,
+                description: savedItem.description,
+                durationSeconds: savedItem.durationSeconds,
+                personId: savedItem.personId,
+                customResponsible: savedItem.customResponsible,
+                songId: savedItem.songId,
+                type: savedItem.type,
+                person: savedItem.personId
+                  ? (people.find((p) => p.id === savedItem.personId) ?? null)
+                  : null,
+                song: savedItem.songId
+                  ? ((songs.find((s) => s.id === savedItem.songId) as
+                      | QuickDrawerSong
+                      | undefined) ?? null)
+                  : null,
+              }
+            : item,
+        ),
+      );
+    }
+  }
 
   const handleOpenSong = (song: QuickDrawerSong) => {
     setSelectedSongForDrawer(song);
@@ -199,6 +239,7 @@ export function PlanEditor({
         setHasUnsavedReorder(false);
         setMobileEditDrawerOpen(false);
         setShowDiscardAlert(false);
+        router.refresh();
       } else {
         toast.error(res.error || "Erro ao salvar cronograma.");
       }
@@ -296,12 +337,16 @@ export function PlanEditor({
 
   function handleDelete(id: string) {
     setDeletingId(id);
+    // Remoção otimista imediata na interface (0ms de latência percebida)
+    setItems((prev) => prev.filter((item) => item.id !== id));
     startTransition(async () => {
       const res = await deletePlanItemAction(id, eventId);
       if (res.ok) {
         toast.success("Item removido do cronograma.");
+        router.refresh();
       } else {
         toast.error(res.error || "Erro ao excluir.");
+        setItems(planItems); // Rollback em caso de erro
       }
       setDeletingId(null);
     });
@@ -761,6 +806,7 @@ export function PlanEditor({
             setEditDialogOpen(open);
             if (!open) setEditingItem(null);
           }}
+          onItemSaved={handleItemSaved}
         />
       ) : null}
 

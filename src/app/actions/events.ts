@@ -253,7 +253,11 @@ async function revalidateEvents(eventId?: string, organizationId?: string) {
   }
 
   if (organizationId) {
-    await cacheInvalidateTags(`events:${organizationId}`);
+    const tags = [`events:${organizationId}`];
+    if (eventId) {
+      tags.push(`event:${eventId}`);
+    }
+    await cacheInvalidateTags(...tags);
   }
 }
 

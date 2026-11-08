@@ -414,13 +414,6 @@ export function SongsListView({
             </div>
           </InputGroup>
         </div>
-
-        {/* BOTÃO NOVA MÚSICA COM ALTURA PADRONIZADA (h-10) - OCULTO NO MOBILE */}
-        {canManage ? (
-          <div className="hidden shrink-0 sm:block">
-            <AddSongChoiceDialog existingCollections={existingCollections} />
-          </div>
-        ) : null}
       </div>
 
       {/* SELETOR RÁPIDO DE COLEÇÃO / GRUPO */}

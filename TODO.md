@@ -385,6 +385,13 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - **Importador de Cifras .TXT (`ImportSongDialog` & `parseCifraClubTxt`):** Suporte completo ao upload de arquivo `.txt` ou colagem direta de cifras do Cifra Club. O parser inteligente extrai automaticamente título, artista, tom normalizado, cifra completa e letra limpa (usando `extractLyricsFromChords`), permitindo associar imediatamente uma coleção antes de abrir o editor pré-preenchido.
   - **Coleção / Grupo de Músicas (`CollectionCombobox`):** Adicionado campo `collection` no schema de músicas com índice de busca. Permite selecionar grupos existentes da igreja (ex: "Harpa Cristã", "Jovens", "Louvor") ou criar novos grupos na hora com busca integrada. Funciona como Popover com busca no desktop e Drawer touch no mobile.
   - **Filtros e Visualização de Coleções (`SongsListView` & `SongCard`):** Exibição de badge com ícone de pasta nos cards de música e régua horizontal de pílulas de grupos no topo da listagem para filtragem instantânea por coleção, com contagem de músicas e chip de descarte.
+- **08/11/2026:** Remoção de Botão Redundante e Atualização Imediata da UI (0ms) ao Salvar/Editar:
+  - **Remoção do Botão Duplicado em `/dashboard/songs`:** Removido o segundo botão "Adicionar" que aparecia na barra de busca no desktop ([songs-list-view.tsx](file:///Users/claudio/Projects/OpenMission/OpenMinistry/src/components/songs/songs-list-view.tsx)), mantendo apenas o botão principal no cabeçalho da página.
+  - **Eliminação de Delay ao Salvar/Editar Itens e Músicas:**
+    - Corrigida a ausência de revalidação no cliente: adicionado `router.refresh()` em `PlanItemDialog`, `PlanTemplateDialogs` (aplicação, limpeza e importação de modelos), `SongFormDialog` e `DeleteSongDialog`, garantindo que ao salvar/editar/excluir qualquer item ou música, a árvore de Server Components seja atualizada imediatamente sem requerer recarga da página.
+    - Atualização otimista imediata no cronograma (`PlanEditor`): exclusão com remoção visual instantânea (0ms) e callback `onItemSaved` atualizando em memória o momento editado na tela antes mesmo da resposta do servidor.
+    - Invalidação precisa de cache no servidor (`revalidateEvents`): inclusão explícita da tag `event:${eventId}` junto a `events:${organizationId}`, invalidando instantaneamente o cache em memória e Redis de `getEvent`.
+
 
 
 

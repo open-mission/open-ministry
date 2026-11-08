@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ClockIcon, FolderPlusIcon, Music2Icon, PlusIcon, UserIcon } from "lucide-react";
 
@@ -81,6 +82,16 @@ type PlanItemDialogProps = {
   trigger?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  onItemSaved?: (savedItem: {
+    id?: string;
+    type: "header" | "item";
+    title: string;
+    description: string | null;
+    durationSeconds: number;
+    personId: string | null;
+    customResponsible: string | null;
+    songId?: string | null;
+  }) => void;
 };
 
 export function PlanItemDialog({
@@ -92,7 +103,9 @@ export function PlanItemDialog({
   trigger,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
+  onItemSaved,
 }: PlanItemDialogProps) {
+  const router = useRouter();
   const isMobile = useIsMobile();
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = controlledOpen ?? internalOpen;
@@ -152,7 +165,28 @@ export function PlanItemDialog({
             ? "Seção criada no cronograma."
             : "Item adicionado ao cronograma.",
       );
+      if (onItemSaved) {
+        onItemSaved({
+          id: initialItem?.id,
+          type: isHeader ? "header" : "item",
+          title: String(formData.get("title") ?? ""),
+          description: formData.get("description")
+            ? String(formData.get("description"))
+            : null,
+          durationSeconds: Number(formData.get("durationSeconds") ?? 0),
+          personId: formData.get("personId")
+            ? String(formData.get("personId"))
+            : null,
+          customResponsible: formData.get("customResponsible")
+            ? String(formData.get("customResponsible"))
+            : null,
+          songId: formData.get("songId")
+            ? String(formData.get("songId"))
+            : null,
+        });
+      }
       setOpen(false);
+      router.refresh();
     } else if (res?.error) {
       toast.error(res.error);
     }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   AlertTriangleIcon,
@@ -85,6 +86,7 @@ export function SongFormDialog({
   initialData,
   existingCollections = [],
 }: SongFormDialogProps) {
+  const router = useRouter();
   const isEditing = Boolean(songId);
   const isMobile = useIsMobile();
   const [isPending, startTransition] = useTransition();
@@ -265,6 +267,7 @@ export function SongFormDialog({
         );
         setIsMaximized(false);
         onOpenChange(false);
+        router.refresh();
       }
     });
   };
