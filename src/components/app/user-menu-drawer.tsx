@@ -11,7 +11,6 @@ import {
   MoonIcon,
   SettingsIcon,
   SunIcon,
-  UserIcon,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -108,16 +107,20 @@ export function UserMenuDrawer({
         </DrawerHeader>
 
         <div className="space-y-4 px-5 pt-4 pb-6">
-          {/* User Profile Card */}
-          <div className="flex items-center gap-3.5 rounded-2xl border border-border/70 bg-card p-3.5 text-left shadow-2xs">
-            <Avatar className="size-12 shrink-0 border border-border/80">
+          {/* User Profile Card (Clickable link to profile) */}
+          <Link
+            href="/dashboard/profile"
+            onClick={() => setOpen(false)}
+            className="group flex w-full items-center gap-3.5 rounded-2xl border border-border/70 bg-card p-3.5 text-left shadow-2xs transition-all hover:bg-muted/50 hover:border-border active:scale-[0.99] cursor-pointer"
+          >
+            <Avatar className="size-12 shrink-0 border border-border/80 ring-1 ring-transparent group-hover:ring-primary/25 transition-all">
               <AvatarImage src={user.image ?? undefined} alt={user.name} />
               <AvatarFallback className="bg-primary/10 font-heading text-base font-semibold text-primary">
                 {getInitials(user.name)}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1 space-y-0.5 text-left">
-              <p className="truncate font-heading text-base font-semibold leading-tight tracking-tight text-foreground text-left">
+              <p className="truncate font-heading text-base font-semibold leading-tight tracking-tight text-foreground group-hover:text-primary transition-colors text-left">
                 {user.name}
               </p>
               <p className="truncate text-xs text-muted-foreground text-left">
@@ -137,32 +140,15 @@ export function UserMenuDrawer({
                 ) : null}
               </div>
             </div>
-          </div>
+            <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+          </Link>
+
           {/* Main Navigation Options */}
           <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xs">
-            <Link
-              href="/dashboard/profile"
-              onClick={() => setOpen(false)}
-              className="flex min-h-12 items-center gap-3 px-3.5 py-2.5 transition-colors hover:bg-muted/50 active:bg-muted/70"
-            >
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <UserIcon className="size-4.5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-foreground">
-                  Meu perfil
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Dados pessoais, WhatsApp e aniversário
-                </p>
-              </div>
-              <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40" />
-            </Link>
-
             <button
               type="button"
               onClick={handleOpenSettings}
-              className="flex min-h-12 w-full items-center gap-3 border-t border-border/50 px-3.5 py-2.5 text-left transition-colors hover:bg-muted/50 active:bg-muted/70 cursor-pointer"
+              className="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-muted/50 active:bg-muted/70 cursor-pointer"
             >
               <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <SettingsIcon className="size-4.5" />
