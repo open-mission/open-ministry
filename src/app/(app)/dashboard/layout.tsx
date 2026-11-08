@@ -21,6 +21,7 @@ import { OfflineBanner } from "@/components/offline/offline-banner";
 import { OpenMinistryRealtimeProvider } from "@/lib/realtime/client";
 import { PwaInstallBanner } from "@/components/pwa/pwa-install-banner";
 import { PwaNotificationPrompt } from "@/components/pwa/pwa-notification-prompt";
+import { WhatsAppPromptLoader } from "@/components/app/whatsapp-prompt-loader";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -80,6 +81,9 @@ export default function DashboardLayout({
               </Suspense>
               <PwaInstallBanner />
               <PwaNotificationPrompt />
+              <Suspense fallback={null}>
+                <WhatsAppPromptLoader />
+              </Suspense>
             </SidebarInset>
           </SettingsModalProvider>
         </MobileMenuProvider>
