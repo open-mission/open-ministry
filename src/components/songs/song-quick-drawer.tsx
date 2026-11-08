@@ -124,7 +124,12 @@ export function SongQuickDrawer({
 
             <TabsContent value="cifra" className="pt-1">
               {song.chords?.trim() ? (
-                <ChordsViewer chords={song.chords} originalTone={song.tone} />
+                <ChordsViewer
+                  chords={song.chords}
+                  originalTone={song.tone}
+                  songTitle={song.title}
+                  songArtist={song.artist ?? undefined}
+                />
               ) : (
                 <div className="rounded-xl border border-dashed p-6 text-center text-xs text-muted-foreground">
                   Nenhuma cifra registrada para esta música.

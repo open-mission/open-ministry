@@ -3,10 +3,8 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { ShieldAlertIcon } from "lucide-react";
 
-import { PageInfo } from "@/components/app/page-info";
 import { AddSongChoiceDialog } from "@/components/songs/add-song-choice-dialog";
 import { SongsListView } from "@/components/songs/songs-list-view";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { canAccessMusicModule, listSongs } from "@/lib/songs";
@@ -59,25 +57,9 @@ async function SongsContent() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
-            Repertório de Músicas
-          </h1>
-          <Badge variant="outline" className="font-normal">
-            {songs.length} {songs.length === 1 ? "música" : "músicas"}
-          </Badge>
-          <PageInfo
-            title="Músicas e Repertório"
-            description={
-              <>
-                Central de louvores da igreja. Cadastre músicas com letras,
-                cifras interativas com transposição de tom em tempo real, links
-                para YouTube e Spotify, e vincule as faixas aos momentos de
-                culto e cronogramas.
-              </>
-            }
-          />
-        </div>
+        <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
+          Repertório de Músicas
+        </h1>
 
         <AddSongChoiceDialog />
       </header>

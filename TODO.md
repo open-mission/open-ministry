@@ -375,12 +375,11 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - **Proteção contra Fechamento Acidental (Dirty State):** Bloqueio de fechamento por toque fora ou tecla Escape quando houver alterações pendentes, acionando diálogo de alerta com opções de "Continuar editando" ou "Descartar alterações".
   - **Cifra &amp; Letra em 2 Colunas no Desktop:** Visualização lado a lado no desktop com caixas de texto amplas (`min-h-[460px]`) e tipografia otimizada.
   - **Sincronização Cifra &gt; Letra:** Botão "Sincronizar da cifra" que extrai os versos cantados da cifra (removendo acordes e tablaturas e limpando seções instrumentais vazias), com alerta de confirmação prévio avisando sobre a substituição do texto existente.
-- **08/11/2026:** Layout Fixo, Maximização de Tela, Sub-abas Mobile e Modo Kanban no Repertório:
-  - **Rodapé e TabsList Fixos:** Rodapé com ações de salvar/cancelar e barra de abas superior mantidos fixos permanentemente no formulário, evitando deslocamento visual durante a navegação.
-  - **Scroll Interno nos Textareas:** Campos de Cifra e Letra configurados com rolagem vertical interna própria e dimensões fixas, mantendo o modal livre de barras de rolagem globais redundantes.
-  - **Header Limpo com Maximização Desktop:** Removidos botões e badges redundantes do cabeçalho; adicionado botão de maximizar para tela cheia (`100dvh` x `100vw`) no desktop com alternância suave para o tamanho padrão.
-  - **Sub-abas Cifra/Letra no Mobile & Sem Vazamento:** Alternador segmentado no mobile para alternar entre Cifra e Letra com aproveitamento total da tela, e barra de abas principal com scroll horizontal seguro sem quebra ou vazamento de layout.
-  - **Visualização Kanban das Seções (`ChordsViewer`):** Adicionado modo de visualização horizontal em colunas tipo Kanban com snap scrolling e destaque sintático de acordes, ideal para leitura dinâmica ao vivo.
+- **08/11/2026:** Modo Full Screen com Controles do Músico, Drawer de Tom 90% no Mobile e Refinamentos no Kanban:
+  - **Modo Tela Cheia para Cifras (`ChordsViewer`):** Adicionado botão e modo completo de tela cheia via portal, sincronizado com Fullscreen API e tecla ESC. Inclui cabeçalho com título/artista da música, transposição harmônica com semitons em tempo real, seletor de 4 tamanhos de fonte (`A-`, `A`, `A+`, `A++` para palco/estante) e suporte aos 3 modos de visualização (`Seções`, `Kanban`, `Contínua`).
+  - **Largura Ampla no Modo Kanban sem Scroll Interno:** Colunas ajustadas para `w-[86vw] max-w-[460px] sm:w-[420px] lg:w-[460px]` com `overflow-x-hidden`, garantindo que versos longos caibam com folga sem acionar barras horizontais internas nas colunas.
+  - **Drawer de Tons 90% no Mobile (`SongsListView`):** No mobile, o seletor de tom agora abre em Bottom Drawer preenchendo 90% da tela (`h-[90dvh]`), com botões táteis ampliados para todos os tons maiores e menores e botão de limpar filtro.
+  - **Otimização do Cabeçalho e Busca no Mobile:** Removidos badge de contagem e botão Info do topo de `/dashboard/songs`; ocultado o botão secundário "Nova música" da busca no mobile; e ocultada a label de texto "Todos os tons" no mobile mantendo a interface limpa e focada no ícone.
 
 
 
