@@ -375,6 +375,12 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - **Proteção contra Fechamento Acidental (Dirty State):** Bloqueio de fechamento por toque fora ou tecla Escape quando houver alterações pendentes, acionando diálogo de alerta com opções de "Continuar editando" ou "Descartar alterações".
   - **Cifra &amp; Letra em 2 Colunas no Desktop:** Visualização lado a lado no desktop com caixas de texto amplas (`min-h-[460px]`) e tipografia otimizada.
   - **Sincronização Cifra &gt; Letra:** Botão "Sincronizar da cifra" que extrai os versos cantados da cifra (removendo acordes e tablaturas e limpando seções instrumentais vazias), com alerta de confirmação prévio avisando sobre a substituição do texto existente.
+- **08/11/2026:** Refinamentos de UI no Editor e Visualizador de Músicas:
+  - **Scroll no Modal &amp; Salvar no Header:** Altura delimitada com `min-h-0` viabilizando rolagem suave em qualquer resolução, botão "Salvar" reposicionado estrategicamente no topo/header e eliminação do botão de fechar (X) duplicado.
+  - **Layout Minimalista nas Letras:** Redução expressiva de paddings e margens nos cards de estrofes de letras e cifras para máximo aproveitamento visual.
+  - **Contraste em Badges de Seção:** Cores de alto contraste e legibilidade ajustadas para modo claro e escuro (`text-emerald-200`, `text-amber-200`, `text-sky-200`, etc.), eliminando problemas de leitura de texto escuro.
+  - **Harmonização da Toolbar do Músico:** Controles segmentados em `h-9` sem alteração de borda ativa ou variação de altura ao alternar fontes/modos, e tipografia do tom unificada com o restante do painel.
+
 
 
 
