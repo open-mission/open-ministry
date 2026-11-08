@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useRef, type ChangeEvent } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   BookmarkPlusIcon,
@@ -175,6 +176,7 @@ export function ManagePlanTemplatesDialog({
   onOpenChange,
   currentItemsCount,
 }: ManagePlanTemplatesDialogProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [templates, setTemplates] = useState<SavedPlanTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -219,6 +221,7 @@ export function ManagePlanTemplatesDialog({
         setConfirmReplaceOpen(false);
         setPendingTemplateToApply(null);
         onOpenChange(false);
+        router.refresh();
       } else {
         toast.error(res.error || "Erro ao aplicar modelo.");
       }
@@ -465,6 +468,7 @@ export function ClearPlanDialog({
   onOpenChange,
   itemsCount,
 }: ClearPlanDialogProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   function handleClear() {
@@ -473,6 +477,7 @@ export function ClearPlanDialog({
       if (res.ok) {
         toast.success("Cronograma limpo com sucesso!");
         onOpenChange(false);
+        router.refresh();
       } else {
         toast.error(res.error || "Erro ao limpar cronograma.");
       }
@@ -576,6 +581,7 @@ export function ImportPlanDialog({
   onOpenChange,
   currentItemsCount,
 }: ImportPlanDialogProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [parsedItems, setParsedItems] = useState<PlanTemplateItem[] | null>(
@@ -653,6 +659,7 @@ export function ImportPlanDialog({
         setParsedItems(null);
         setConfirmReplaceOpen(false);
         onOpenChange(false);
+        router.refresh();
       } else {
         toast.error(res.error || "Erro ao importar momentos.");
       }

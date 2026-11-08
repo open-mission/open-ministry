@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2Icon } from "lucide-react";
 
@@ -29,6 +30,7 @@ export function DeleteSongDialog({
   songId,
   songTitle,
 }: DeleteSongDialogProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const handleDelete = () => {
@@ -43,6 +45,7 @@ export function DeleteSongDialog({
       } else {
         toast.success("Música removida do repertório.");
         onOpenChange(false);
+        router.refresh();
       }
     });
   };
