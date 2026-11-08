@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { format, isSameDay, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -14,7 +15,11 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { CalendarItem } from "@/lib/calendar";
+import {
+  computeGridHours,
+  layoutDayTimedItems,
+  type CalendarItem,
+} from "@/lib/calendar";
 import { cn } from "@/lib/utils";
 
 type CalendarDayViewProps = {
@@ -24,7 +29,7 @@ type CalendarDayViewProps = {
   onSwitchToMonth?: () => void;
 };
 
-const HOURS = Array.from({ length: 17 }, (_, i) => i + 7); // 07:00 to 23:00
+const DAY_HOUR_HEIGHT = 72; // Pixels per hour
 
 export function CalendarDayView({
   currentDate,
@@ -32,15 +37,48 @@ export function CalendarDayView({
   onSelectItem,
   onSwitchToMonth,
 }: CalendarDayViewProps) {
-  const dayItems = items.filter((item) =>
-    isSameDay(parseISO(item.startsAt), currentDate),
-  );
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const unavailabilities = dayItems.filter(
-    (item) => item.type === "unavailability",
-  );
+  const dayItems = useMemo(() => {
+    return items.filter((item) =>
+      isSameDay(parseISO(item.startsAt), currentDate),
+    );
+  }, [items, currentDate]);
 
-  const timedItems = dayItems.filter((item) => !item.allDay);
+  const unavailabilities = useMemo(() => {
+    return dayItems.filter((item) => item.type === "unavailability");
+  }, [dayItems]);
+
+  const timedItems = useMemo(() => {
+    return dayItems.filter((item) => !item.allDay);
+  }, [dayItems]);
+
+  // Compute dynamic hours range covering all events in the day (default 07:00 - 23:00)
+  const { minHour, hours } = useMemo(() => {
+    return computeGridHours(timedItems, 7, 23);
+  }, [timedItems]);
+
+  const totalGridHeight = hours.length * DAY_HOUR_HEIGHT;
+
+  const positionedItems = useMemo(() => {
+    return layoutDayTimedItems(timedItems, minHour, DAY_HOUR_HEIGHT);
+  }, [timedItems, minHour]);
+
+  // Auto-scroll on mount to earliest event or 08:00
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    let targetHour = 8;
+    if (timedItems.length > 0) {
+      const earliest = Math.min(
+        ...timedItems.map((i) => parseISO(i.startsAt).getHours()),
+      );
+      if (Number.isFinite(earliest) && earliest >= minHour) {
+        targetHour = Math.max(minHour, earliest - 1);
+      }
+    }
+    const scrollTarget = (targetHour - minHour) * DAY_HOUR_HEIGHT;
+    scrollRef.current.scrollTo({ top: scrollTarget, behavior: "instant" });
+  }, [timedItems, minHour]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -53,7 +91,10 @@ export function CalendarDayView({
               Indisponibilidade Registrada para este dia
             </h4>
             {unavailabilities.map((u) => (
-              <p key={u.id} className="text-xs text-muted-foreground leading-relaxed">
+              <p
+                key={u.id}
+                className="text-xs text-muted-foreground leading-relaxed"
+              >
                 {u.title} • {u.subtitle}
               </p>
             ))}
@@ -116,115 +157,115 @@ export function CalendarDayView({
             </div>
           </div>
         ) : (
-          <div className="divide-y">
-            {HOURS.map((hour) => {
-              const hourItems = timedItems.filter((item) => {
-                const itemHour = parseISO(item.startsAt).getHours();
-                return itemHour === hour;
-              });
-
-              if (hourItems.length === 0) {
-                return (
+          <div ref={scrollRef} className="max-h-[650px] overflow-y-auto">
+            <div
+              className="relative flex"
+              style={{ height: `${totalGridHeight}px` }}
+            >
+              {/* Left Time Column (Sticky) */}
+              <div className="sticky left-0 z-20 flex flex-col w-14 sm:w-16 border-r bg-card select-none">
+                {hours.map((hour) => (
                   <div
                     key={hour}
-                    className="flex min-h-[46px] items-start gap-4 p-2.5 transition-colors hover:bg-muted/10"
+                    style={{ height: `${DAY_HOUR_HEIGHT}px` }}
+                    className="flex items-start justify-center border-b border-border/40 pt-2 font-mono text-xs text-muted-foreground"
                   >
-                    <span className="w-14 text-right font-mono text-xs text-muted-foreground/60 select-none">
-                      {String(hour).padStart(2, "0")}:00
-                    </span>
-                    <div className="flex-1 border-t border-dashed border-border/40 mt-2" />
-                  </div>
-                );
-              }
-
-              return (
-                <div
-                  key={hour}
-                  className="flex flex-col gap-2 p-3 sm:flex-row sm:items-start sm:gap-4 transition-colors hover:bg-muted/10"
-                >
-                  <span className="w-14 text-left sm:text-right font-mono text-xs font-semibold text-foreground shrink-0">
                     {String(hour).padStart(2, "0")}:00
-                  </span>
+                  </div>
+                ))}
+              </div>
 
-                  <div className="flex-1 space-y-2">
-                    {hourItems.map((item) => {
-                      const startTime = format(
-                        parseISO(item.startsAt),
-                        "HH:mm",
-                      );
-                      const endTime = format(parseISO(item.endsAt), "HH:mm");
+              {/* Day Grid Column with Events */}
+              <div className="relative flex-1">
+                {/* Background Hour Slots */}
+                {hours.map((hour) => (
+                  <div
+                    key={hour}
+                    style={{ height: `${DAY_HOUR_HEIGHT}px` }}
+                    className="border-b border-border/40 transition-colors hover:bg-muted/10 cursor-pointer"
+                  />
+                ))}
 
-                      return (
-                        <div
-                          key={item.id}
-                          onClick={() => onSelectItem(item)}
-                          className={cn(
-                            "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border p-3.5 transition-all cursor-pointer hover:shadow-xs",
-                            item.type === "assignment" &&
-                              "border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/50",
-                            item.type === "event" &&
-                              "border-primary/20 bg-primary/2 hover:border-primary/40",
-                            item.type === "unavailability" &&
-                              "border-amber-500/30 bg-amber-500/5",
+                {/* Positioned Events Layer with Exact Duration Heights */}
+                {positionedItems.map((pos) => {
+                  const item = pos.item;
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => onSelectItem(item)}
+                      style={{
+                        top: `${pos.top}px`,
+                        height: `${pos.height}px`,
+                        left: `calc(${pos.leftPercent}% + 4px)`,
+                        width: `calc(${pos.widthPercent}% - 8px)`,
+                      }}
+                      className={cn(
+                        "absolute z-10 flex flex-col justify-between overflow-hidden rounded-xl border p-3.5 shadow-2xs transition-all cursor-pointer hover:z-20 hover:scale-[1.005] hover:shadow-md",
+                        item.type === "assignment" &&
+                          "border-emerald-500/40 bg-emerald-500/10 hover:border-emerald-500/60",
+                        item.type === "event" &&
+                          "border-primary/30 bg-primary/5 hover:border-primary/50",
+                        item.type === "unavailability" &&
+                          "border-amber-500/40 bg-amber-500/10",
+                      )}
+                    >
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {item.type === "assignment" && (
+                            <Badge className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30 text-[10px]">
+                              <CheckCircle2Icon className="size-3 mr-1" />
+                              Minha Escala
+                            </Badge>
                           )}
-                        >
-                          <div className="space-y-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              {item.type === "assignment" && (
-                                <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20 text-[10px]">
-                                  <CheckCircle2Icon className="size-3 mr-1" />
-                                  Minha Escala
-                                </Badge>
-                              )}
-                              <h4 className="font-heading font-semibold text-sm text-foreground">
-                                {item.title}
-                              </h4>
-                            </div>
+                          <h4 className="font-heading font-semibold text-sm sm:text-base text-foreground truncate">
+                            {item.title}
+                          </h4>
+                        </div>
 
-                            {item.subtitle ? (
-                              <p className="text-xs font-medium text-muted-foreground">
-                                {item.subtitle}
-                              </p>
-                            ) : null}
+                        {item.subtitle ? (
+                          <p className="text-xs font-medium text-muted-foreground truncate">
+                            {item.subtitle}
+                          </p>
+                        ) : null}
 
-                            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground pt-1">
-                              <span className="flex items-center gap-1 font-mono">
-                                <ClockIcon className="size-3" />
-                                {startTime} às {endTime}
-                              </span>
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground pt-0.5">
+                          <span className="flex items-center gap-1 font-mono font-medium">
+                            <ClockIcon className="size-3 text-muted-foreground" />
+                            {pos.startTimeLabel} às {pos.endTimeLabel}
+                          </span>
 
-                              {item.location ? (
-                                <span className="flex items-center gap-1">
-                                  <MapPinIcon className="size-3" />
-                                  {item.location}
-                                </span>
-                              ) : null}
-                            </div>
-                          </div>
-
-                          {item.href ? (
-                            <Button
-                              asChild
-                              size="sm"
-                              variant="outline"
-                              className="self-end sm:self-center gap-1 text-xs shrink-0"
-                            >
-                              <Link
-                                href={item.href}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                Ver culto
-                                <ExternalLinkIcon className="size-3" />
-                              </Link>
-                            </Button>
+                          {item.location && pos.height >= 70 ? (
+                            <span className="flex items-center gap-1 truncate">
+                              <MapPinIcon className="size-3 text-muted-foreground" />
+                              {item.location}
+                            </span>
                           ) : null}
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+                      </div>
+
+                      {item.href && pos.height >= 80 ? (
+                        <div className="self-end pt-1">
+                          <Button
+                            asChild
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs gap-1"
+                          >
+                            <Link
+                              href={item.href}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Ver culto
+                              <ExternalLinkIcon className="size-3" />
+                            </Link>
+                          </Button>
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
       </div>
