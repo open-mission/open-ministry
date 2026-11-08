@@ -13,6 +13,7 @@ import {
 import { organization } from "./auth";
 import { department, departmentFunction } from "./departments";
 import { person } from "./people";
+import { song } from "./songs";
 
 export const event = pgTable(
   "event",
@@ -184,6 +185,8 @@ export const eventPlanItem = pgTable(
     personId: text("person_id")
       .references(() => person.id, { onDelete: "set null" }),
     customResponsible: text("custom_responsible"),
+    songId: text("song_id")
+      .references(() => song.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -194,6 +197,7 @@ export const eventPlanItem = pgTable(
     index("event_plan_item_eventId_idx").on(table.eventId),
     index("event_plan_item_order_idx").on(table.eventId, table.order),
     index("event_plan_item_sectionId_idx").on(table.sectionId),
+    index("event_plan_item_songId_idx").on(table.songId),
   ],
 );
 
@@ -206,6 +210,10 @@ export const eventPlanItemRelations = relations(eventPlanItem, ({ one }) => ({
     fields: [eventPlanItem.personId],
     references: [person.id],
   }),
+  song: one(song, {
+    fields: [eventPlanItem.songId],
+    references: [song.id],
+  }),
 }));
 
 export type PlanTemplateItem = {
@@ -215,6 +223,7 @@ export type PlanTemplateItem = {
   durationSeconds: number;
   order: number;
   customResponsible?: string | null;
+  songId?: string | null;
 };
 
 export const planTemplate = pgTable(

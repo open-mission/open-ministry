@@ -4,7 +4,7 @@ import { AppSidebar } from "@/components/app/app-sidebar";
 import {
   buildAccessibleNavGroups,
   getUserAccessibleModuleKeys,
-} from "@/lib/modules";
+} from "@/lib/modules/service";
 import { requireOrganizationContext } from "@/lib/organizations";
 
 export async function AppSidebarLoader() {

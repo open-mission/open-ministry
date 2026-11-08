@@ -169,6 +169,13 @@
       "when": 1794147631138,
       "tag": "0023_petite_masked_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794147874076,
+      "tag": "0024_conscious_deathstrike",
+      "breakpoints": true
     }
   ]
 }

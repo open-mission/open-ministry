@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { toast } from "sonner";
-import { ClockIcon, FolderPlusIcon, PlusIcon, UserIcon } from "lucide-react";
+import { ClockIcon, FolderPlusIcon, Music2Icon, PlusIcon, UserIcon } from "lucide-react";
 
 import {
   createPlanItemAction,
@@ -50,15 +50,23 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { formatDurationSeconds, parseDurationToSeconds } from "@/lib/plan-utils";
 import { getInitials } from "@/lib/format";
 
-type PersonOption = {
+export type PersonOption = {
   id: string;
   name: string;
   avatarUrl?: string | null;
 };
 
+export type SongOption = {
+  id: string;
+  title: string;
+  artist?: string | null;
+  tone?: string | null;
+};
+
 type PlanItemDialogProps = {
   eventId: string;
   people: PersonOption[];
+  songs?: SongOption[];
   mode: "create-item" | "create-header" | "edit";
   initialItem?: {
     id: string;
@@ -68,6 +76,7 @@ type PlanItemDialogProps = {
     durationSeconds: number;
     personId: string | null;
     customResponsible: string | null;
+    songId?: string | null;
   };
   trigger?: React.ReactNode;
   open?: boolean;
@@ -77,6 +86,7 @@ type PlanItemDialogProps = {
 export function PlanItemDialog({
   eventId,
   people,
+  songs = [],
   mode,
   initialItem,
   trigger,
@@ -96,6 +106,9 @@ export function PlanItemDialog({
   );
   const [selectedPersonId, setSelectedPersonId] = useState<string>(
     initialItem?.personId ?? "",
+  );
+  const [selectedSongId, setSelectedSongId] = useState<string>(
+    initialItem?.songId ?? "none",
   );
   const [durationInput, setDurationInput] = useState<string>(
     initialItem?.durationSeconds
@@ -122,6 +135,12 @@ export function PlanItemDialog({
       formData.set("customResponsible", "");
     } else {
       formData.set("personId", "");
+    }
+
+    if (selectedSongId && selectedSongId !== "none") {
+      formData.set("songId", selectedSongId);
+    } else {
+      formData.set("songId", "");
     }
 
     const res = await actionFn(prevState, formData);
@@ -202,6 +221,9 @@ export function PlanItemDialog({
                 selectedPersonId={selectedPersonId}
                 setSelectedPersonId={setSelectedPersonId}
                 people={people}
+                songs={songs}
+                selectedSongId={selectedSongId}
+                setSelectedSongId={setSelectedSongId}
                 state={state}
               />
             </div>
@@ -253,6 +275,9 @@ export function PlanItemDialog({
             selectedPersonId={selectedPersonId}
             setSelectedPersonId={setSelectedPersonId}
             people={people}
+            songs={songs}
+            selectedSongId={selectedSongId}
+            setSelectedSongId={setSelectedSongId}
             state={state}
           />
 
@@ -286,6 +311,9 @@ function PlanItemFields({
   selectedPersonId,
   setSelectedPersonId,
   people,
+  songs,
+  selectedSongId,
+  setSelectedSongId,
   state,
 }: {
   eventId: string;
@@ -298,6 +326,9 @@ function PlanItemFields({
   selectedPersonId: string;
   setSelectedPersonId: (val: string) => void;
   people: PersonOption[];
+  songs: SongOption[];
+  selectedSongId: string;
+  setSelectedSongId: (val: string) => void;
   state: PlanItemFormState;
 }) {
   return (
@@ -330,6 +361,46 @@ function PlanItemFields({
             errors={state?.fieldErrors?.title?.map((m) => ({ message: m }))}
           />
         </Field>
+
+        {!isHeader && songs.length > 0 ? (
+          <Field>
+            <FieldLabel htmlFor="plan-song-select" className="flex items-center gap-1.5">
+              <Music2Icon className="size-3.5 text-primary" />
+              Música do Repertório (opcional)
+            </FieldLabel>
+            <Select
+              value={selectedSongId}
+              onValueChange={setSelectedSongId}
+            >
+              <SelectTrigger id="plan-song-select" className="h-10">
+                <SelectValue placeholder="Vincular música do repertório..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhuma música vinculada</SelectItem>
+                {songs.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="font-medium">{s.title}</span>
+                      {s.artist ? (
+                        <span className="text-muted-foreground text-xs">
+                          · {s.artist}
+                        </span>
+                      ) : null}
+                      {s.tone ? (
+                        <span className="rounded bg-primary/10 px-1 py-0.5 text-[10px] font-semibold text-primary">
+                          {s.tone}
+                        </span>
+                      ) : null}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FieldDescription>
+              Vincula cifras e links diretamente ao momento do culto.
+            </FieldDescription>
+          </Field>
+        ) : null}
 
         {!isHeader ? (
           <>

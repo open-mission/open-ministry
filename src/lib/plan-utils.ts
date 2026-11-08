@@ -38,6 +38,20 @@ export type ComputedPlanItem = {
     name: string;
     avatarUrl: string | null;
   } | null;
+  songId?: string | null;
+  song?: {
+    id: string;
+    title: string;
+    artist?: string | null;
+    tone?: string | null;
+    bpm?: number | null;
+    timeSignature?: string | null;
+    chords?: string | null;
+    lyrics?: string | null;
+    youtubeUrl?: string | null;
+    youtubeMusicUrl?: string | null;
+    spotifyUrl?: string | null;
+  } | null;
   calculatedStartTime: Date;
   calculatedEndTime: Date;
   timeLabel: string;
@@ -63,6 +77,8 @@ export function computePlanItemTimes(
       avatarUrl?: string | null;
       user?: { image?: string | null } | null;
     } | null;
+    songId?: string | null;
+    song?: ComputedPlanItem["song"];
   }>,
 ): {
   computedItems: ComputedPlanItem[];
@@ -98,6 +114,8 @@ export function computePlanItemTimes(
       order: item.order,
       personId: item.personId,
       customResponsible: item.customResponsible,
+      songId: item.songId ?? null,
+      song: item.song ?? null,
       person: item.person
         ? {
             id: item.person.id,
