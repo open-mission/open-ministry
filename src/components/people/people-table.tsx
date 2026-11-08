@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -25,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatOwnBirthday } from "@/lib/birthdays";
+import type { DepartmentNomenclature } from "@/lib/church";
 import { getInitials } from "@/lib/format";
 import {
   personDisplayBirthday,
@@ -46,35 +46,47 @@ export function PeopleTable({
   linkableMembers,
   isAdmin,
   currentUserId,
+  terminology,
 }: {
   people: PersonRecord[];
   roleByUserId: Record<string, string>;
   linkableMembers: LinkableMember[];
   isAdmin: boolean;
   currentUserId: string;
+  terminology?: DepartmentNomenclature;
 }) {
-  const withAccount = people.filter((person) => person.userId).length;
-  const withoutAccount = people.length - withAccount;
+  const groupWord = terminology?.plural.toLowerCase() ?? "departamentos";
+  const possessive =
+    terminology?.type === "teams" || terminology?.type === "networks"
+      ? "suas"
+      : "seus";
+  const preposition = possessive === "suas" ? "das" : "dos";
+  const scopeBadgeLabel = `${possessive.charAt(0).toUpperCase() + possessive.slice(1)} ${groupWord}`;
 
   return (
     <Card className="overflow-hidden">
       <CardHeader>
-        <CardTitle className="font-heading text-xl tracking-tight">
-          Pessoas da igreja
-        </CardTitle>
-        <CardDescription>
-          {people.length === 1
-            ? "1 pessoa faz parte da igreja."
-            : `${people.length} pessoas fazem parte da igreja.`}{" "}
-          {withoutAccount > 0
-            ? `${withAccount} com conta e ${withoutAccount} sem conta.`
-            : "Todas já têm uma conta."}
-        </CardDescription>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <CardTitle className="font-heading text-xl tracking-tight">
+              {isAdmin
+                ? "Pessoas da igreja"
+                : `Integrantes ${preposition} ${possessive} ${groupWord}`}
+            </CardTitle>
+            {!isAdmin ? (
+              <Badge variant="secondary" className="text-xs font-normal">
+                {scopeBadgeLabel}
+              </Badge>
+            ) : null}
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         {people.length === 0 ? (
           <div className="px-6 py-12 text-center text-sm text-muted-foreground">
-            Nenhuma pessoa cadastrada ainda.
+            {isAdmin
+              ? "Nenhuma pessoa cadastrada ainda."
+              : `Nenhum integrante encontrado ${preposition} ${possessive} ${groupWord}.`}
           </div>
         ) : (
           <>
@@ -85,7 +97,9 @@ export function PeopleTable({
                     <TableRow>
                       <TableHead>Pessoa</TableHead>
                       <TableHead>Papel</TableHead>
-                      <TableHead>Departamentos</TableHead>
+                      <TableHead>
+                        {terminology?.plural ?? "Departamentos"}
+                      </TableHead>
                       {isAdmin ? (
                         <TableHead className="text-right">Ações</TableHead>
                       ) : null}
@@ -153,6 +167,7 @@ export function PeopleTable({
                             <div className="max-w-72">
                               <MembershipChips
                                 memberships={person.memberships}
+                                singularGroup={terminology?.singular.toLowerCase()}
                               />
                             </div>
                           </TableCell>
@@ -236,6 +251,7 @@ export function PeopleTable({
                       <MembershipChips
                         memberships={person.memberships}
                         limit={3}
+                        singularGroup={terminology?.singular.toLowerCase()}
                       />
 
                       {isAdmin ? (
@@ -262,14 +278,16 @@ export function PeopleTable({
 function MembershipChips({
   memberships,
   limit = 2,
+  singularGroup = "departamento",
 }: {
   memberships: PersonRecord["memberships"];
   limit?: number;
+  singularGroup?: string;
 }) {
   if (memberships.length === 0) {
     return (
       <span className="text-xs text-muted-foreground">
-        Sem departamento
+        Sem {singularGroup}
       </span>
     );
   }
