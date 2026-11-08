@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   ArrowRightIcon,
@@ -34,6 +33,10 @@ import {
   type NotificationItem,
   useNotificationStore,
 } from "@/lib/notification-store";
+import {
+  NotificationDetailDialog,
+  type NotificationDetailItem,
+} from "@/components/notifications/notification-detail-dialog";
 import { useIsRealtimeActive } from "@/lib/realtime/client";
 import {
   getLiveUnreadNotificationsQuery,
@@ -134,10 +137,10 @@ function NotificationPanel({
   const isDrawer = variant === "drawer";
 
   return (
-    <>
+    <div className={cn("flex flex-1 flex-col min-h-0", isDrawer && "h-full")}>
       <div
         className={cn(
-          "flex items-center justify-between gap-3",
+          "flex items-center justify-between gap-3 shrink-0",
           isDrawer ? "bg-background px-5 py-4" : "bg-muted/30 px-4 py-3",
         )}
       >
@@ -171,12 +174,12 @@ function NotificationPanel({
         ) : null}
       </div>
 
-      <Separator />
+      <Separator className="shrink-0" />
 
       <div
         className={cn(
           "divide-y divide-border/40 overflow-y-auto",
-          isDrawer ? "max-h-[55dvh]" : "max-h-[340px]",
+          isDrawer ? "flex-1 min-h-0" : "max-h-[340px]",
         )}
       >
         {loading && items.length === 0 ? (
@@ -266,10 +269,11 @@ function NotificationPanel({
         )}
       </div>
 
-      <Separator />
+      <Separator className="shrink-0" />
 
       <div
         className={cn(
+          "shrink-0",
           isDrawer
             ? "bg-background p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
             : "bg-muted/20 p-2",
@@ -290,7 +294,7 @@ function NotificationPanel({
           </Link>
         </Button>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -303,10 +307,12 @@ export function NotificationBell({
   initialItems?: NotificationItem[];
   sealedQuery?: SealedLiveQuery<LiveNotificationRow> | null;
 }) {
-  const router = useRouter();
   const isMobile = useIsMobile();
   const isRealtimeActive = useIsRealtimeActive();
   const [open, setOpen] = useState(false);
+  const [selectedNotification, setSelectedNotification] =
+    useState<NotificationDetailItem | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const {
     count,
@@ -369,16 +375,9 @@ export function NotificationBell({
   };
 
   const handleItemClick = (item: NotificationItem) => {
+    setSelectedNotification(item);
+    setDetailOpen(true);
     setOpen(false);
-    if (!item.read) {
-      markAsRead(item.id);
-    }
-
-    if (item.href) {
-      router.push(item.href);
-    } else {
-      router.push("/dashboard/notifications");
-    }
   };
 
   const trigger = (
@@ -409,7 +408,7 @@ export function NotificationBell({
       {isMobile ? (
         <Drawer open={open} onOpenChange={handleOpenChange}>
           <DrawerTrigger asChild>{trigger}</DrawerTrigger>
-          <DrawerContent className="gap-0 rounded-t-[28px] border-x-0 border-b-0 bg-background p-0 data-[vaul-drawer-direction=bottom]:max-h-[85dvh]">
+          <DrawerContent className="h-[90dvh] max-h-[90dvh] data-[vaul-drawer-direction=bottom]:max-h-[90dvh] flex flex-col gap-0 rounded-t-[28px] border-x-0 border-b-0 bg-background p-0">
             <DrawerHeader className="sr-only">
               <DrawerTitle>Notificações</DrawerTitle>
               <DrawerDescription>
@@ -448,6 +447,18 @@ export function NotificationBell({
           </PopoverContent>
         </Popover>
       )}
+
+      <NotificationDetailDialog
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        notification={selectedNotification}
+        onMarkAsRead={(id) => {
+          markAsRead(id);
+          if (selectedNotification && selectedNotification.id === id) {
+            setSelectedNotification({ ...selectedNotification, read: true });
+          }
+        }}
+      />
     </>
   );
 }

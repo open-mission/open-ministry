@@ -5,6 +5,7 @@ import { BellIcon, MegaphoneIcon } from "lucide-react";
 
 import { PageInfo } from "@/components/app/page-info";
 import { AnnouncementsConsole } from "@/components/announcements/announcements-console";
+import { SentAnnouncementsList } from "@/components/announcements/sent-announcements-list";
 import { MarkAllReadButton } from "@/components/notifications/mark-all-read-button";
 import { NotificationRow } from "@/components/notifications/notification-row";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,7 @@ import { formatDateTime } from "@/lib/format";
 import {
   countUnreadNotifications,
   listNotifications,
+  listSentAnnouncementsWithReadReceipts,
 } from "@/lib/notifications";
 import { getOrganizationEvolutionConfig } from "@/lib/notification-service";
 import { listPeople, personDisplayName } from "@/lib/people";
@@ -55,6 +57,13 @@ async function AnnouncementsContent() {
   ]);
 
   const canSendAnnouncement = isAdmin || leaderDepartments.length > 0;
+  const sentAnnouncements = canSendAnnouncement
+    ? await listSentAnnouncementsWithReadReceipts(
+        organization.id,
+        session.user.id,
+        isAdmin,
+      )
+    : [];
   const availableDepartments = isAdmin ? allDepartments : leaderDepartments;
 
   const ledDeptIds = new Set(leaderDepartments.map((d) => d.id));
@@ -114,6 +123,11 @@ async function AnnouncementsContent() {
             currentUserName={session.user.name}
           />
         </section>
+      ) : null}
+
+      {/* Confirmações de Leitura e Histórico de Envios */}
+      {canSendAnnouncement && sentAnnouncements.length > 0 ? (
+        <SentAnnouncementsList announcements={sentAnnouncements} />
       ) : null}
 
       {/* Feed de Avisos e Notificações Recentes */}
