@@ -23,6 +23,7 @@ export async function listDepartments(organizationId: string) {
               },
             },
           },
+          modules: true,
         },
         orderBy: (departments, { asc }) => [asc(departments.name)],
       });
@@ -69,6 +70,7 @@ export async function getDepartment(
               },
             },
           },
+          modules: true,
         },
       });
     },
