@@ -449,3 +449,137 @@ export function extractLyricsFromChords(chordsText: string): string {
 
   return cleaned.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
+
+export type ParsedCifraTxt = {
+  title: string;
+  artist: string;
+  tone: string;
+  chords: string;
+  lyrics: string;
+};
+
+/**
+ * Normaliza o formato de um tom musical (ex: "f#m" -> "F#m", "c" -> "C", "bb" -> "Bb")
+ */
+export function normalizeTone(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  const match = trimmed.match(/^([A-Ga-g])([#b]?)(m?)$/);
+  if (!match) return trimmed;
+  const note = match[1].toUpperCase();
+  const acc = match[2];
+  const minor = match[3].toLowerCase();
+  return `${note}${acc}${minor}`;
+}
+
+/**
+ * Analisa e extrai metadados, cifra e versos limpos de um arquivo de texto (.txt) exportado do Cifra Club.
+ */
+export function parseCifraClubTxt(
+  rawContent: string,
+  fileName?: string,
+): ParsedCifraTxt {
+  const content = (rawContent || "").replace(/\r\n/g, "\n").trim();
+  const lines = content.split("\n");
+
+  let extractedTitle = "";
+  let extractedArtist = "";
+  let extractedTone = "";
+
+  // 1. Tentar extrair do nome do arquivo (ex: "Casa Worship - A Casa É Sua.txt")
+  if (fileName) {
+    const cleanName = fileName.replace(/\.txt$/i, "").trim();
+    if (cleanName.includes(" - ")) {
+      const parts = cleanName.split(" - ");
+      if (parts.length >= 2) {
+        extractedArtist = parts[0].trim();
+        extractedTitle = parts.slice(1).join(" - ").trim();
+      }
+    } else {
+      extractedTitle = cleanName;
+    }
+  }
+
+  // 2. Analisar as primeiras linhas em busca de metadados antes da música começar
+  const headerLimit = Math.min(lines.length, 14);
+  let chordsStartIndex = 0;
+
+  for (let i = 0; i < headerLimit; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    // Tom: D / Tom: G#m / Key: A (checar antes de isChordLine, pois "Tom: E" contém a letra/acorde E)
+    const toneMatch = line.match(
+      /^(?:tom|key|tonalidade):\s*([a-g][#b]?m?)\b/i,
+    );
+    if (toneMatch) {
+      extractedTone = normalizeTone(toneMatch[1]);
+      chordsStartIndex = i + 1;
+      continue;
+    }
+
+    // Título / Música: X
+    const titleMatch = line.match(/^(?:m[úu]sica|t[íi]tulo|title):\s*(.+)$/i);
+    if (titleMatch) {
+      extractedTitle = titleMatch[1].trim();
+      chordsStartIndex = i + 1;
+      continue;
+    }
+
+    // Artista: Y
+    const artistMatch = line.match(/^(?:artista|artist|banda):\s*(.+)$/i);
+    if (artistMatch) {
+      extractedArtist = artistMatch[1].trim();
+      chordsStartIndex = i + 1;
+      continue;
+    }
+
+    // Capotraste / Afinação ignorados no cabeçalho
+    if (/^(?:capotraste|capo|afina[çc][ãa]o|tuning):/i.test(line)) {
+      chordsStartIndex = i + 1;
+      continue;
+    }
+
+    // Se encontramos uma seção [Intro], [Primeira Parte] ou uma linha de acordes, os metadados acabaram
+    if (/^\[[^\]]+\]/.test(line) || isChordLine(line)) {
+      chordsStartIndex = i;
+      break;
+    }
+
+    // Se for formato "Artista - Música" na primeira linha
+    if (i === 0 && line.includes(" - ") && !extractedTitle) {
+      const parts = line.split(" - ");
+      extractedArtist = parts[0].trim();
+      extractedTitle = parts.slice(1).join(" - ").trim();
+      chordsStartIndex = i + 1;
+      continue;
+    }
+
+    // Se as linhas 0 e 1 forem "Título" e "Artista" (formato comum em cópias)
+    if (i === 0 && !extractedTitle && !line.includes(":")) {
+      extractedTitle = line;
+      chordsStartIndex = i + 1;
+      continue;
+    }
+    if (i === 1 && !extractedArtist && !line.includes(":")) {
+      extractedArtist = line;
+      chordsStartIndex = i + 1;
+      continue;
+    }
+  }
+
+  // 3. O restante do conteúdo é a cifra
+  const chordsLines = lines.slice(chordsStartIndex);
+  const chords = chordsLines.join("\n").trim();
+
+  // 4. Extrair os versos limpos (letra) da cifra
+  const lyrics = extractLyricsFromChords(chords);
+
+  return {
+    title: extractedTitle,
+    artist: extractedArtist,
+    tone: extractedTone,
+    chords,
+    lyrics,
+  };
+}
