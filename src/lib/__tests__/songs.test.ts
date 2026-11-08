@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 
 import {
   classifySectionType,
+  extractLyricsFromChords,
   isChordLine,
   parseSongSections,
   STANDARD_TONES,
@@ -167,6 +168,33 @@ Outra parte para o culto`;
 
       const chords = tokens.filter((t) => t.type === "chord").map((t) => t.value);
       expect(chords).toEqual(["D", "A6", "F#m", "A6/C#", "D7M"]);
+    });
+
+    it("extracts pure lyrics from chord sheets removing chords and tablatures", () => {
+      const chordSheet = `[Intro]
+C   G   Am   F
+e|---0-2-3---|
+
+[Primeira Parte]
+C                 G
+Entra na minha casa
+Am                F
+Entra na minha vida
+
+[Refrão]
+C           G
+Como Zaqueu eu quero subir`;
+
+      const lyrics = extractLyricsFromChords(chordSheet);
+      expect(lyrics).not.toContain("C   G   Am   F");
+      expect(lyrics).not.toContain("e|---0-2-3---|");
+      expect(lyrics).toContain("[Primeira Parte]");
+      expect(lyrics).toContain("Entra na minha casa");
+      expect(lyrics).toContain("Entra na minha vida");
+      expect(lyrics).toContain("[Refrão]");
+      expect(lyrics).toContain("Como Zaqueu eu quero subir");
+      // O [Intro] puramente instrumental deve ter sido omitido
+      expect(lyrics).not.toContain("[Intro]");
     });
   });
 });

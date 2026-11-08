@@ -356,3 +356,96 @@ export function parseSongSections(text: string): SongSection[] {
 
   return sections;
 }
+
+/**
+ * Extrai a letra pura a partir de um texto de cifra,
+ * removendo linhas de acordes e tablaturas, preservando seções com conteúdo cantado.
+ */
+export function extractLyricsFromChords(chordsText: string): string {
+  if (!chordsText || !chordsText.trim()) return "";
+  const lines = chordsText.split("\n");
+  const result: string[] = [];
+  let prevWasEmpty = false;
+
+  for (const rawLine of lines) {
+    const trimmed = rawLine.trim();
+
+    // Preserva tags de seção isoladas: [Intro], [Primeira Parte], [Refrão], etc.
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      if (result.length > 0 && !prevWasEmpty) {
+        result.push("");
+      }
+      result.push(trimmed);
+      prevWasEmpty = false;
+      continue;
+    }
+
+    // Se a linha começar com tag de seção inline: [Intro] D A6 D A6
+    const inlineMatch = trimmed.match(/^(\[[^\]]+\])\s*(.*)$/);
+    if (inlineMatch) {
+      if (result.length > 0 && !prevWasEmpty) {
+        result.push("");
+      }
+      result.push(inlineMatch[1]);
+      const rest = inlineMatch[2].trim();
+      if (
+        rest &&
+        !isChordLine(rest) &&
+        !/^[eBGDAE]?\|[-0-9pbrh\/~\s|]+$/i.test(rest)
+      ) {
+        result.push(rest);
+      }
+      prevWasEmpty = false;
+      continue;
+    }
+
+    // Ignora linhas vazias repetidas
+    if (!trimmed) {
+      if (!prevWasEmpty && result.length > 0) {
+        result.push("");
+        prevWasEmpty = true;
+      }
+      continue;
+    }
+
+    // Ignora linhas de tablatura (ex: e|---0-2-3---|)
+    if (/^[eBGDAE]?\|[-0-9pbrh\/~\s|]+$/i.test(trimmed)) {
+      continue;
+    }
+
+    // Ignora linhas de acordes
+    if (isChordLine(trimmed)) {
+      continue;
+    }
+
+    // Linha de letra limpa
+    result.push(trimmed);
+    prevWasEmpty = false;
+  }
+
+  // Remove cabeçalhos de seção instrumentais sem versos (ex: [Intro] ou [Solo] sem letra)
+  const cleaned: string[] = [];
+  for (let i = 0; i < result.length; i++) {
+    const line = result[i].trim();
+    if (line.startsWith("[") && line.endsWith("]")) {
+      let hasContent = false;
+      for (let j = i + 1; j < result.length; j++) {
+        const next = result[j].trim();
+        if (next.startsWith("[") && next.endsWith("]")) {
+          break;
+        }
+        if (next) {
+          hasContent = true;
+          break;
+        }
+      }
+      if (hasContent) {
+        cleaned.push(result[i]);
+      }
+    } else {
+      cleaned.push(result[i]);
+    }
+  }
+
+  return cleaned.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
