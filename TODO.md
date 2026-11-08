@@ -391,6 +391,12 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
     - Corrigida a ausência de revalidação no cliente: adicionado `router.refresh()` em `PlanItemDialog`, `PlanTemplateDialogs` (aplicação, limpeza e importação de modelos), `SongFormDialog` e `DeleteSongDialog`, garantindo que ao salvar/editar/excluir qualquer item ou música, a árvore de Server Components seja atualizada imediatamente sem requerer recarga da página.
     - Atualização otimista imediata no cronograma (`PlanEditor`): exclusão com remoção visual instantânea (0ms) e callback `onItemSaved` atualizando em memória o momento editado na tela antes mesmo da resposta do servidor.
     - Invalidação precisa de cache no servidor (`revalidateEvents`): inclusão explícita da tag `event:${eventId}` junto a `events:${organizationId}`, invalidando instantaneamente o cache em memória e Redis de `getEvent`.
+- **08/11/2026:** Seletor de Músicas com Busca e Filtros (Grupos, Tom, Tags) no Cronograma:
+  - **Componente `PlanSongPicker` (`src/components/events/plan-song-picker.tsx`):** Substituição do `<Select>` estático nativo por um seletor moderno e responsivo (`Popover` no desktop e `Drawer` touch no mobile) acionado pelo botão `id="plan-song-select"`.
+  - **Barra de Busca Integrada:** `InputGroup` com campo de pesquisa em tempo real filtrando por título, artista, tom, grupo ou tags da música.
+  - **Filtros por Dropdown:** Dropdowns dedicados para filtrar por **Grupo/Coleção** (ex.: "Harpa Cristã", "Jovens"), **Tom** musical (ex.: "D", "E", "G") e **Tags** (ex.: "Abertura", "Ceia"), além de botão para limpar filtros com 1 clique.
+  - **Ergonomia e Desvinculação:** Opção destacada "Nenhuma música vinculada", contagem dinâmica de resultados e botão de desvincular rápido (X) diretamente no trigger sem precisar reabrir o dropdown.
+
 
 
 
