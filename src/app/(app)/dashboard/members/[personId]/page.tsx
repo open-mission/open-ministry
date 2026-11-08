@@ -15,6 +15,7 @@ import {
   MessageSquareHeartIcon,
   PhoneIcon,
   ShieldAlertIcon,
+  SmartphoneIcon,
   SparklesIcon,
   TrendingUpIcon,
 } from "lucide-react";
@@ -180,6 +181,16 @@ async function MemberPageContent({
                       Membro
                     </Badge>
                   )}
+                  {person.user?.pwaInstalled ? (
+                    <Badge
+                      variant="secondary"
+                      className="gap-1 bg-emerald-50 text-[11px] text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                      title={`Aplicativo PWA instalado no ${person.user.pwaPlatform ? person.user.pwaPlatform.toUpperCase() : "dispositivo"}`}
+                    >
+                      <SmartphoneIcon className="size-3" />
+                      App PWA
+                    </Badge>
+                  ) : null}
                   {latestMood && (
                     <span
                       className="text-2xl"
