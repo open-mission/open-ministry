@@ -370,6 +370,12 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - **Listagem de Repertório (`/dashboard/songs`):**
     - Alturas perfeitamente padronizadas em `h-10` para busca, botão de filtro e botão de nova música.
     - `InputGroup` unificado com busca textual e botão seletor de tom com ícone de instrumento (`GuitarIcon`) abrindo menu com tons maiores e menores em grid tátil.
+- **08/11/2026:** Editor de Músicas com Sheet Bottom 100%, Proteção contra Descarte e Sincronização Cifra &gt; Letra:
+  - **Sheet Bottom 100% no celular &amp; Dialog Amplo no Desktop:** O modal de edição/criação (`SongFormDialog`) agora abre em Sheet Bottom preenchendo 100% da viewport no mobile e em Dialog amplo (`max-w-6xl`) no desktop.
+  - **Proteção contra Fechamento Acidental (Dirty State):** Bloqueio de fechamento por toque fora ou tecla Escape quando houver alterações pendentes, acionando diálogo de alerta com opções de "Continuar editando" ou "Descartar alterações".
+  - **Cifra &amp; Letra em 2 Colunas no Desktop:** Visualização lado a lado no desktop com caixas de texto amplas (`min-h-[460px]`) e tipografia otimizada.
+  - **Sincronização Cifra &gt; Letra:** Botão "Sincronizar da cifra" que extrai os versos cantados da cifra (removendo acordes e tablaturas e limpando seções instrumentais vazias), com alerta de confirmação prévio avisando sobre a substituição do texto existente.
+
 
 
 
