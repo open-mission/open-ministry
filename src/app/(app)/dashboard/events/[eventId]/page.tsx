@@ -35,6 +35,7 @@ import { eventKindLabels, type EventKind } from "@/lib/event-options";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { listPeople } from "@/lib/people";
 import { personDisplayImage } from "@/lib/person-format";
+import { listSongs } from "@/lib/songs";
 
 export const metadata: Metadata = {
   title: "Culto ou evento",
@@ -68,10 +69,11 @@ async function EventContent({
     notFound();
   }
 
-  const [departments, people, unavailablePeopleMap] = await Promise.all([
+  const [departments, people, unavailablePeopleMap, songs] = await Promise.all([
     listDepartments(organization.id),
     listPeople(organization.id),
     getEventUnavailablePeopleAction(event.id),
+    listSongs(organization.id),
   ]);
   const actingIds = new Set(
     event.departments.map((item) => item.departmentId),
@@ -250,6 +252,12 @@ async function EventContent({
               id: p.id,
               name: p.name,
               avatarUrl: personDisplayImage(p),
+            }))}
+            songs={songs.map((s) => ({
+              id: s.id,
+              title: s.title,
+              artist: s.artist,
+              tone: s.tone,
             }))}
             canManage={canManagePlan}
           />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   ArrowDownIcon,
@@ -13,6 +14,7 @@ import {
   LayoutTemplateIcon,
   ListOrderedIcon,
   MoreHorizontalIcon,
+  Music2Icon,
   PencilIcon,
   PlusIcon,
   SparklesIcon,
@@ -43,7 +45,14 @@ import {
   deletePlanItemAction,
   reorderPlanItemsAction,
 } from "@/app/actions/events";
-import { PlanItemDialog } from "@/components/events/plan-item-dialog";
+import {
+  PlanItemDialog,
+  type SongOption,
+} from "@/components/events/plan-item-dialog";
+import {
+  SongQuickDrawer,
+  type QuickDrawerSong,
+} from "@/components/songs/song-quick-drawer";
 import {
   ClearPlanDialog,
   exportPlanAsJson,
@@ -108,6 +117,8 @@ type RawPlanItem = {
   order: number;
   personId: string | null;
   customResponsible: string | null;
+  songId?: string | null;
+  song?: QuickDrawerSong | null;
   person?: {
     id: string;
     name: string;
@@ -123,6 +134,7 @@ type PlanEditorProps = {
   endsAt: Date;
   planItems: RawPlanItem[];
   people: PersonOption[];
+  songs?: SongOption[];
   canManage: boolean;
 };
 
@@ -133,8 +145,10 @@ export function PlanEditor({
   endsAt,
   planItems,
   people,
+  songs = [],
   canManage,
 }: PlanEditorProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [items, setItems] = useState<RawPlanItem[]>(planItems);
   const [prevPlanItems, setPrevPlanItems] = useState(planItems);
@@ -145,6 +159,52 @@ export function PlanEditor({
   const [hasUnsavedReorder, setHasUnsavedReorder] = useState(false);
   const [drawerSnapshot, setDrawerSnapshot] = useState<RawPlanItem[]>([]);
   const [showDiscardAlert, setShowDiscardAlert] = useState(false);
+  const [selectedSongForDrawer, setSelectedSongForDrawer] =
+    useState<QuickDrawerSong | null>(null);
+  const [quickDrawerOpen, setQuickDrawerOpen] = useState(false);
+
+  function handleItemSaved(savedItem: {
+    id?: string;
+    type: "header" | "item";
+    title: string;
+    description: string | null;
+    durationSeconds: number;
+    personId: string | null;
+    customResponsible: string | null;
+    songId?: string | null;
+  }) {
+    if (savedItem.id) {
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === savedItem.id
+            ? {
+                ...item,
+                title: savedItem.title,
+                description: savedItem.description,
+                durationSeconds: savedItem.durationSeconds,
+                personId: savedItem.personId,
+                customResponsible: savedItem.customResponsible,
+                songId: savedItem.songId,
+                type: savedItem.type,
+                person: savedItem.personId
+                  ? (people.find((p) => p.id === savedItem.personId) ?? null)
+                  : null,
+                song: savedItem.songId
+                  ? ((songs.find((s) => s.id === savedItem.songId) as
+                      | QuickDrawerSong
+                      | undefined) ?? null)
+                  : null,
+              }
+            : item,
+        ),
+      );
+    }
+  }
+
+  const handleOpenSong = (song: QuickDrawerSong) => {
+    setSelectedSongForDrawer(song);
+    setQuickDrawerOpen(true);
+  };
 
   function openMobileDrawer() {
     setDrawerSnapshot(items);
@@ -179,6 +239,7 @@ export function PlanEditor({
         setHasUnsavedReorder(false);
         setMobileEditDrawerOpen(false);
         setShowDiscardAlert(false);
+        router.refresh();
       } else {
         toast.error(res.error || "Erro ao salvar cronograma.");
       }
@@ -276,12 +337,16 @@ export function PlanEditor({
 
   function handleDelete(id: string) {
     setDeletingId(id);
+    // Remoção otimista imediata na interface (0ms de latência percebida)
+    setItems((prev) => prev.filter((item) => item.id !== id));
     startTransition(async () => {
       const res = await deletePlanItemAction(id, eventId);
       if (res.ok) {
         toast.success("Item removido do cronograma.");
+        router.refresh();
       } else {
         toast.error(res.error || "Erro ao excluir.");
+        setItems(planItems); // Rollback em caso de erro
       }
       setDeletingId(null);
     });
@@ -324,11 +389,13 @@ export function PlanEditor({
             <PlanItemDialog
               eventId={eventId}
               people={people}
+              songs={songs}
               mode="create-header"
             />
             <PlanItemDialog
               eventId={eventId}
               people={people}
+              songs={songs}
               mode="create-item"
             />
 
@@ -435,6 +502,7 @@ export function PlanEditor({
                 <PlanItemDialog
                   eventId={eventId}
                   people={people}
+                  songs={songs}
                   mode="create-item"
                   trigger={
                     <Button variant="outline" className="gap-1.5">
@@ -455,7 +523,10 @@ export function PlanEditor({
         <>
           {/* Mobile Read-Only View */}
           <div className="sm:hidden">
-            <PlanReadView computedItems={computedItems} />
+            <PlanReadView
+              computedItems={computedItems}
+              onOpenSong={handleOpenSong}
+            />
           </div>
 
           {/* Desktop Full In-place Editor */}
@@ -493,6 +564,7 @@ export function PlanEditor({
                       setEditDialogOpen(true);
                     }}
                     onDelete={handleDelete}
+                    onOpenSong={handleOpenSong}
                   />
                 ))}
               </SortableContext>
@@ -547,6 +619,7 @@ export function PlanEditor({
               <PlanItemDialog
                 eventId={eventId}
                 people={people}
+                songs={songs}
                 mode="create-item"
                 trigger={
                   <Button size="sm" className="gap-1.5 h-8 text-xs shrink-0 rounded-lg">
@@ -558,6 +631,7 @@ export function PlanEditor({
               <PlanItemDialog
                 eventId={eventId}
                 people={people}
+                songs={songs}
                 mode="create-header"
                 trigger={
                   <Button
@@ -653,6 +727,7 @@ export function PlanEditor({
                         setEditDialogOpen(true);
                       }}
                       onDelete={handleDelete}
+                      onOpenSong={handleOpenSong}
                     />
                   ))}
                 </SortableContext>
@@ -714,6 +789,7 @@ export function PlanEditor({
         <PlanItemDialog
           eventId={eventId}
           people={people}
+          songs={songs}
           mode="edit"
           initialItem={{
             id: editingItem.id,
@@ -723,12 +799,14 @@ export function PlanEditor({
             durationSeconds: editingItem.durationSeconds,
             personId: editingItem.personId,
             customResponsible: editingItem.customResponsible,
+            songId: editingItem.songId,
           }}
           open={editDialogOpen}
           onOpenChange={(open) => {
             setEditDialogOpen(open);
             if (!open) setEditingItem(null);
           }}
+          onItemSaved={handleItemSaved}
         />
       ) : null}
 
@@ -764,6 +842,13 @@ export function PlanEditor({
         onOpenChange={setImportDialogOpen}
         currentItemsCount={computedItems.length}
       />
+
+      {/* Song Quick Drawer */}
+      <SongQuickDrawer
+        song={selectedSongForDrawer}
+        open={quickDrawerOpen}
+        onOpenChange={setQuickDrawerOpen}
+      />
     </div>
   );
 }
@@ -780,8 +865,10 @@ function formatDurationMinutesLabel(totalSeconds: number): string {
 
 function PlanReadView({
   computedItems,
+  onOpenSong,
 }: {
   computedItems: ComputedPlanItem[];
+  onOpenSong?: (song: QuickDrawerSong) => void;
 }) {
   return (
     <div className="divide-y rounded-2xl border bg-card overflow-hidden shadow-xs">
@@ -825,6 +912,24 @@ function PlanReadView({
                   {item.description}
                 </p>
               ) : null}
+              {item.song ? (
+                <div className="pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => onOpenSong?.(item.song!)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+                    title="Abrir cifra e letra desta música"
+                  >
+                    <Music2Icon className="size-3" />
+                    <span>{item.song.title}</span>
+                    {item.song.tone ? (
+                      <span className="font-bold text-[10px] opacity-80">
+                        ({item.song.tone})
+                      </span>
+                    ) : null}
+                  </button>
+                </div>
+              ) : null}
               {item.person ? (
                 <div className="pt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Avatar className="size-4 shrink-0 ring-1 ring-border">
@@ -861,6 +966,7 @@ type SortablePlanRowProps = {
   onMove: (index: number, direction: "up" | "down") => void;
   onEdit: (item: RawPlanItem) => void;
   onDelete: (id: string) => void;
+  onOpenSong?: (song: QuickDrawerSong) => void;
 };
 
 function SortablePlanRow({
@@ -873,6 +979,7 @@ function SortablePlanRow({
   onMove,
   onEdit,
   onDelete,
+  onOpenSong,
 }: SortablePlanRowProps) {
   const {
     attributes,
@@ -899,6 +1006,8 @@ function SortablePlanRow({
     order: item.order,
     personId: item.personId,
     customResponsible: item.customResponsible,
+    songId: item.songId,
+    song: item.song,
     person: item.person,
   };
 
@@ -1097,6 +1206,24 @@ function SortablePlanRow({
           <p className="line-clamp-2 text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
             {item.description}
           </p>
+        ) : null}
+        {item.song ? (
+          <div className="pt-0.5">
+            <button
+              type="button"
+              onClick={() => onOpenSong?.(item.song!)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+              title="Abrir cifra e letra desta música"
+            >
+              <Music2Icon className="size-3" />
+              <span>{item.song.title}</span>
+              {item.song.tone ? (
+                <span className="font-bold text-[10px] opacity-80">
+                  ({item.song.tone})
+                </span>
+              ) : null}
+            </button>
+          </div>
         ) : null}
       </div>
 

@@ -10,18 +10,28 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
 
 ### Backlog
 
-- [ ] Precisamos desenvolver um sistema de módulos que dão suporte aos departamentos. Eles não está diretamente relacionado a um departamento em si, mas pode ser liberado para determinados grupos e ao ser ativo para um grupo de usuários baseado nos departamentos ele terá acesso aos items desse modulo, por exemplo o Módulo de Musica que permite registrar as musicas que são usadas no repertório do grupo ou da igreja. E ai nas opções do departamento o Líder/Admin pode ativar esse modulo ao Departamento. Assim os usuários terão acesso aos items do módulos, esse item pode ser grupo de ltems ou apenas um item no sidebar/menu de acordo com a necessidade. Nesse momento iremos estruturar o fundamento dos módulos e seus registros, nos itens abaixo vamos especificar melhor o primeiro modulo a ser desenvolvido. Importante que os módulos não estão relacionados diretamente aos departamentos, por exemplo o modulo de musica tbm será usado na criação de cronograma podendo linkar uma musica ao item de cronograma de um culto. Mas quem o departamento que tem acesso ao modulo pode acessar diretamente as paginas de musicas e etc. 
-- [ ] Implementação do Modulo de Musica:  
-  O Modulo de Musica está baseado em:   
-  - Linkar uma musica em item de Cronograma  
-  - No Sidebar/menu criar um grupo de Item Inicial: Repertório  
-  - CRUD com as Musicas: Teremos duas opção de Cadastro: Manual ou Busca na Internet (Usando o Vagalume Api) (no Front end quando clicamos em Add musica mostrar um modal com os dois items ao selecionar abre o modal/drawer de acordo com a opção).  
-  - Teremos a opção de Além dos Metadados da Musica, teremos a opção de add a letra e a cifra, tbm teremos a opção de colocar o link da musica em tres plataforma (youtube music, youtube, spotify)  
-  - Futuramente teremos mais funcionalidades.
-
 ### Doing
 
 ### Done
+
+- [x] Implementação do Modulo de Musica:  
+  - [x] Schema para músicas (`song`) com título, artista, tom, BPM, compasso, cifra, letra, links (YouTube, YouTube Music, Spotify) e tags
+  - [x] Campo `songId` em `event_plan_item` para vincular músicas aos itens de cronograma de cultos e templates
+  - [x] Serviço de busca de letras na internet com Vagalume API e fallback automático de alta disponibilidade (LRCLIB)
+  - [x] Server actions e queries para CRUD de músicas e busca de letras
+  - [x] Modal de criação com escolha de fluxo: "Busca na Internet (Vagalume)" e "Cadastro Manual"
+  - [x] Visualizador e reprodutor de músicas com abas de Cifra (com transposição de tom +1/-1 e cópia) e Letra, além de atalhos para plataformas de streaming
+  - [x] Integração com o cronograma do culto (`PlanItemDialog`, `SortablePlanRow`, `PlanReadView`): seleção rápida da música do repertório e abertura de drawer com cifra/letra durante o planejamento e execução do culto
+  - [x] Proteção de acesso à rota `/dashboard/songs` baseada na permissão do módulo de música para a igreja/departamentos
+  - [x] Testes unitários para serviço de letras, transposição de tons, CRUD e vinculação com cronograma
+
+- [x] Sistema de módulos que dão suporte aos departamentos:
+  - [x] Estruturar o fundamento dos módulos do sistema e seus registros (registro central de módulos, chaves, títulos e navegação vinculada)
+  - [x] Modelo de persistência e schema para ativação de módulos por departamento (`department_module`) com migration e RLS
+  - [x] RLS policies e helpers de verificação de acesso a módulos (por administrador ou membresia de departamento ativo)
+  - [x] Interface no departamento (`/dashboard/departments/[departmentId]`) permitindo que Líderes ou Admins ativem/desativem módulos para o departamento com feedback otimista
+  - [x] Integração dinâmica com o Sidebar e Mobile Menu exibindo itens/grupos de módulos ativos conforme permissão do usuário
+  - [x] Testes unitários para o sistema de módulos e controle de acesso
 
 - [x] Design Feedback: Badge de Informações (`PageInfo`) com Drawer/Dialog e Ganho de Espaço nos Cabeçalhos
   - [x] Criar componente reutilizável `PageInfo` (`src/components/app/page-info.tsx`) com disparador via badge/botão (`InfoIcon` + "Info"), renderizando Drawer responsivo no mobile e Dialog no desktop
@@ -348,4 +358,49 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - Cronograma do Culto no Mobile: dividido em Modo Leitura (itinerário limpo, sem botões de arrastar ou ações poluidoras) e Modo Edição em Drawer (`92dvh`) acionado por botão destacado "Editar Cronograma".
   - Duração dos Momentos: adicionada a unidade "min" (ex: `5 min`, `20 min`) no badge de duração, eliminando a confusão de parecer dois horários lado a lado.
   - Calendário e Agenda (`/dashboard/calendar`): escalas com múltiplas funções para o mesmo evento (ex: Cameraman e Livestream) agora são agrupadas em um único card (`Escalado: Cameraman, Livestream`), e na visualização geral o card de escala substitui o card genérico do evento, eliminando itens duplicados para o mesmo culto.
+- **08/11/2026:** Sistema de Módulos para Departamentos concluído. Foi estruturado o fundamento arquitetural de módulos do sistema (`src/lib/modules/`), permitindo que a liderança ative ferramentas complementares por departamento via `department_module` (com migration e policies RLS). A tela do departamento (`/dashboard/departments/[departmentId]`) ganhou a seção interativa de módulos com feedback otimista e controle de permissões. O Sidebar e o Mobile Menu foram integrados para injetar dinamicamente grupos e rotas de módulos liberados para o usuário (ou administradores). Cobertura com testes unitários automatizados.
+- **08/11/2026:** Módulo de Música e Repertório concluído. Foi implementado o acervo completo de músicas (`song`) com título, artista, tom, BPM, compasso, cifra, letra, tags e links diretos para plataformas de streaming (YouTube, YouTube Music e Spotify). O cadastro conta com modal de escolha inteligente: busca automática de letras na internet (Vagalume API com fallback de alta disponibilidade para LRCLIB) ou formulário manual detalhado. O visualizador de músicas conta com transposição em tempo real de tons (+1/-1 semitons), cópia de cifras e leitura limpa de estrofes. As músicas foram integradas ao cronograma do culto (`event_plan_item.song_id`), permitindo selecionar músicas do acervo durante o planejamento do culto e abrir drawer rápido com cifras e acordes em tempo real durante os cultos e ensaios. Cobertura com testes unitários automatizados e compilação de produção validada.
+- **08/11/2026:** Correção de serialização RSC na navegação: resolvido o erro de passagem de objetos não simples (`icon: {$$typeof: ..., render: ...}`) entre Server Components (`AppSidebarLoader` / `MobileMenuLoader`) e Client Components (`AppSidebar` / `MobileMenu`). Os loaders agora passam apenas a lista de chaves serilizáveis (`activeModuleKeys: ModuleKey[]`), montando a árvore de navegação e ícones diretamente no cliente.
+- **08/11/2026:** Design Feedback das Telas de Música &amp; Repertório concluído:
+  - **Detalhes da Música (`/dashboard/songs/[songId]`):**
+    - Identificação e separação de seções musicais (`[Intro]`, `[Primeira Parte]`, `[Refrão]`, `[Ponte]`, etc.) em cards individuais com badges temáticas e distintivas tanto na aba de Cifra quanto na aba de Letra.
+    - Syntax Highlighting de cifras com destaque em tom quente/âmbar preservando o alinhamento monoespaçado perfeito das cifras sobre as sílabas da letra.
+    - Organização de tags em linha dedicada: exibe até 3 tags principais e botão `+N` acionando Drawer no celular e Dialog no desktop.
+    - Toolbar do músico ergonômica com altura padronizada `h-9`, `ButtonGroup` para transposição (`[-]`, `[Original]`, `[+]`), `ButtonGroup` para fontes (`[A-]`, `[A]`, `[A+]`) e botão copiar cifra.
+  - **Listagem de Repertório (`/dashboard/songs`):**
+    - Alturas perfeitamente padronizadas em `h-10` para busca, botão de filtro e botão de nova música.
+    - `InputGroup` unificado com busca textual e botão seletor de tom com ícone de instrumento (`GuitarIcon`) abrindo menu com tons maiores e menores em grid tátil.
+- **08/11/2026:** Editor de Músicas com Sheet Bottom 100%, Proteção contra Descarte e Sincronização Cifra &gt; Letra:
+  - **Sheet Bottom 100% no celular &amp; Dialog Amplo no Desktop:** O modal de edição/criação (`SongFormDialog`) agora abre em Sheet Bottom preenchendo 100% da viewport no mobile e em Dialog amplo (`max-w-6xl`) no desktop.
+  - **Proteção contra Fechamento Acidental (Dirty State):** Bloqueio de fechamento por toque fora ou tecla Escape quando houver alterações pendentes, acionando diálogo de alerta com opções de "Continuar editando" ou "Descartar alterações".
+  - **Cifra &amp; Letra em 2 Colunas no Desktop:** Visualização lado a lado no desktop com caixas de texto amplas (`min-h-[460px]`) e tipografia otimizada.
+  - **Sincronização Cifra &gt; Letra:** Botão "Sincronizar da cifra" que extrai os versos cantados da cifra (removendo acordes e tablaturas e limpando seções instrumentais vazias), com alerta de confirmação prévio avisando sobre a substituição do texto existente.
+- **08/11/2026:** Modo Full Screen com Controles do Músico, Drawer de Tom 90% no Mobile e Refinamentos no Kanban:
+  - **Modo Tela Cheia para Cifras (`ChordsViewer`):** Adicionado botão e modo completo de tela cheia via portal, sincronizado com Fullscreen API e tecla ESC. Inclui cabeçalho com título/artista da música, transposição harmônica com semitons em tempo real, seletor de 4 tamanhos de fonte (`A-`, `A`, `A+`, `A++` para palco/estante) e suporte aos 3 modos de visualização (`Seções`, `Kanban`, `Contínua`).
+  - **Largura Ampla no Modo Kanban sem Scroll Interno:** Colunas ajustadas para `w-[86vw] max-w-[460px] sm:w-[420px] lg:w-[460px]` com `overflow-x-hidden`, garantindo que versos longos caibam com folga sem acionar barras horizontais internas nas colunas.
+  - **Drawer de Tons 90% no Mobile (`SongsListView`):** No mobile, o seletor de tom agora abre em Bottom Drawer preenchendo 90% da tela (`h-[90dvh]`), com botões táteis ampliados para todos os tons maiores e menores e botão de limpar filtro.
+  - **Otimização do Cabeçalho e Busca no Mobile:** Removidos badge de contagem e botão Info do topo de `/dashboard/songs`; ocultado o botão secundário "Nova música" da busca no mobile; e ocultada a label de texto "Todos os tons" no mobile mantendo a interface limpa e focada no ícone.
+- **08/11/2026:** Menu de Adição (Dropdown/Drawer), Importação de .txt (Cifra Club) e Grupos/Coleções de Músicas:
+  - **Botão "Adicionar" Responsivo (`AddSongChoiceDialog`):** No desktop, exibe botão "Adicionar" com `DropdownMenu` ("Nova Música", "Importar Música (.txt)", "Buscar na internet"). No mobile, abre Bottom Drawer com cards táteis e descrições claras para cada modalidade.
+  - **Importador de Cifras .TXT (`ImportSongDialog` & `parseCifraClubTxt`):** Suporte completo ao upload de arquivo `.txt` ou colagem direta de cifras do Cifra Club. O parser inteligente extrai automaticamente título, artista, tom normalizado, cifra completa e letra limpa (usando `extractLyricsFromChords`), permitindo associar imediatamente uma coleção antes de abrir o editor pré-preenchido.
+  - **Coleção / Grupo de Músicas (`CollectionCombobox`):** Adicionado campo `collection` no schema de músicas com índice de busca. Permite selecionar grupos existentes da igreja (ex: "Harpa Cristã", "Jovens", "Louvor") ou criar novos grupos na hora com busca integrada. Funciona como Popover com busca no desktop e Drawer touch no mobile.
+  - **Filtros e Visualização de Coleções (`SongsListView` & `SongCard`):** Exibição de badge com ícone de pasta nos cards de música e régua horizontal de pílulas de grupos no topo da listagem para filtragem instantânea por coleção, com contagem de músicas e chip de descarte.
+- **08/11/2026:** Remoção de Botão Redundante e Atualização Imediata da UI (0ms) ao Salvar/Editar:
+  - **Remoção do Botão Duplicado em `/dashboard/songs`:** Removido o segundo botão "Adicionar" que aparecia na barra de busca no desktop ([songs-list-view.tsx](file:///Users/claudio/Projects/OpenMission/OpenMinistry/src/components/songs/songs-list-view.tsx)), mantendo apenas o botão principal no cabeçalho da página.
+  - **Eliminação de Delay ao Salvar/Editar Itens e Músicas:**
+    - Corrigida a ausência de revalidação no cliente: adicionado `router.refresh()` em `PlanItemDialog`, `PlanTemplateDialogs` (aplicação, limpeza e importação de modelos), `SongFormDialog` e `DeleteSongDialog`, garantindo que ao salvar/editar/excluir qualquer item ou música, a árvore de Server Components seja atualizada imediatamente sem requerer recarga da página.
+    - Atualização otimista imediata no cronograma (`PlanEditor`): exclusão com remoção visual instantânea (0ms) e callback `onItemSaved` atualizando em memória o momento editado na tela antes mesmo da resposta do servidor.
+    - Invalidação precisa de cache no servidor (`revalidateEvents`): inclusão explícita da tag `event:${eventId}` junto a `events:${organizationId}`, invalidando instantaneamente o cache em memória e Redis de `getEvent`.
+- **08/11/2026:** Seletor de Músicas com Busca e Filtros (Grupos, Tom, Tags) no Cronograma:
+  - **Componente `PlanSongPicker` (`src/components/events/plan-song-picker.tsx`):** Substituição do `<Select>` estático nativo por um seletor moderno e responsivo (`Popover` no desktop e `Drawer` touch no mobile) acionado pelo botão `id="plan-song-select"`.
+  - **Barra de Busca Integrada:** `InputGroup` com campo de pesquisa em tempo real filtrando por título, artista, tom, grupo ou tags da música.
+  - **Filtros por Dropdown:** Dropdowns dedicados para filtrar por **Grupo/Coleção** (ex.: "Harpa Cristã", "Jovens"), **Tom** musical (ex.: "D", "E", "G") e **Tags** (ex.: "Abertura", "Ceia"), além de botão para limpar filtros com 1 clique.
+  - **Ergonomia e Desvinculação:** Opção destacada "Nenhuma música vinculada", contagem dinâmica de resultados e botão de desvincular rápido (X) diretamente no trigger sem precisar reabrir o dropdown.
+
+
+
+
+
+
+
 

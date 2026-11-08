@@ -253,7 +253,11 @@ async function revalidateEvents(eventId?: string, organizationId?: string) {
   }
 
   if (organizationId) {
-    await cacheInvalidateTags(`events:${organizationId}`);
+    const tags = [`events:${organizationId}`];
+    if (eventId) {
+      tags.push(`event:${eventId}`);
+    }
+    await cacheInvalidateTags(...tags);
   }
 }
 
@@ -860,6 +864,7 @@ const planItemSchema = z.object({
   personId: z.string().optional().or(z.literal("")),
   customResponsible: optionalText(120, "O responsável pode ter no máximo 120 caracteres."),
   sectionId: z.string().optional().or(z.literal("")),
+  songId: z.string().optional().or(z.literal("")),
 });
 
 export type PlanItemFormState =
@@ -887,6 +892,7 @@ export async function createPlanItemAction(
     personId: formData.get("personId") ?? undefined,
     customResponsible: formData.get("customResponsible") ?? undefined,
     sectionId: formData.get("sectionId") ?? undefined,
+    songId: formData.get("songId") ?? undefined,
   });
 
   if (!parsed.success) {
@@ -931,6 +937,7 @@ export async function createPlanItemAction(
       personId: parsed.data.personId || null,
       customResponsible: parsed.data.customResponsible || null,
       sectionId: parsed.data.sectionId || null,
+      songId: parsed.data.songId || null,
     });
   } catch (error) {
     console.error("Erro ao criar item do cronograma", error);
@@ -959,6 +966,7 @@ export async function updatePlanItemAction(
     personId: formData.get("personId") ?? undefined,
     customResponsible: formData.get("customResponsible") ?? undefined,
     sectionId: formData.get("sectionId") ?? undefined,
+    songId: formData.get("songId") ?? undefined,
   });
 
   if (!parsed.success) {
@@ -992,6 +1000,7 @@ export async function updatePlanItemAction(
         durationSeconds: parsed.data.durationSeconds,
         personId: parsed.data.personId || null,
         customResponsible: parsed.data.customResponsible || null,
+        songId: parsed.data.songId || null,
       })
       .where(eq(schema.eventPlanItem.id, itemId));
   } catch (error) {
@@ -1179,6 +1188,7 @@ export async function savePlanAsTemplateAction(
       durationSeconds: item.durationSeconds,
       order: index,
       customResponsible: item.customResponsible ?? (item.person?.name || null),
+      songId: item.songId ?? null,
     }));
 
     const id = randomUUID();
@@ -1283,6 +1293,7 @@ export async function applyPlanTemplateAction(
         durationSeconds: item.durationSeconds ?? 0,
         order: index,
         customResponsible: item.customResponsible ?? null,
+        songId: item.songId ?? null,
       });
     }
   } catch (error) {
@@ -1394,6 +1405,7 @@ export async function importPlanItemsAction(
         customResponsible: item.customResponsible
           ? String(item.customResponsible).trim()
           : null,
+        songId: item.songId ? String(item.songId).trim() : null,
       });
     }
   } catch (error) {

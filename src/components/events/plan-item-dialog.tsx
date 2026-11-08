@@ -1,8 +1,9 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ClockIcon, FolderPlusIcon, PlusIcon, UserIcon } from "lucide-react";
+import { ClockIcon, FolderPlusIcon, Music2Icon, PlusIcon, UserIcon } from "lucide-react";
 
 import {
   createPlanItemAction,
@@ -49,16 +50,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatDurationSeconds, parseDurationToSeconds } from "@/lib/plan-utils";
 import { getInitials } from "@/lib/format";
+import { PlanSongPicker } from "./plan-song-picker";
 
-type PersonOption = {
+export type PersonOption = {
   id: string;
   name: string;
   avatarUrl?: string | null;
 };
 
+export type SongOption = {
+  id: string;
+  title: string;
+  artist?: string | null;
+  tone?: string | null;
+  collection?: string | null;
+  tags?: string[] | null;
+};
+
 type PlanItemDialogProps = {
   eventId: string;
   people: PersonOption[];
+  songs?: SongOption[];
   mode: "create-item" | "create-header" | "edit";
   initialItem?: {
     id: string;
@@ -68,21 +80,35 @@ type PlanItemDialogProps = {
     durationSeconds: number;
     personId: string | null;
     customResponsible: string | null;
+    songId?: string | null;
   };
   trigger?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  onItemSaved?: (savedItem: {
+    id?: string;
+    type: "header" | "item";
+    title: string;
+    description: string | null;
+    durationSeconds: number;
+    personId: string | null;
+    customResponsible: string | null;
+    songId?: string | null;
+  }) => void;
 };
 
 export function PlanItemDialog({
   eventId,
   people,
+  songs = [],
   mode,
   initialItem,
   trigger,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
+  onItemSaved,
 }: PlanItemDialogProps) {
+  const router = useRouter();
   const isMobile = useIsMobile();
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = controlledOpen ?? internalOpen;
@@ -96,6 +122,9 @@ export function PlanItemDialog({
   );
   const [selectedPersonId, setSelectedPersonId] = useState<string>(
     initialItem?.personId ?? "",
+  );
+  const [selectedSongId, setSelectedSongId] = useState<string>(
+    initialItem?.songId ?? "none",
   );
   const [durationInput, setDurationInput] = useState<string>(
     initialItem?.durationSeconds
@@ -124,6 +153,12 @@ export function PlanItemDialog({
       formData.set("personId", "");
     }
 
+    if (selectedSongId && selectedSongId !== "none") {
+      formData.set("songId", selectedSongId);
+    } else {
+      formData.set("songId", "");
+    }
+
     const res = await actionFn(prevState, formData);
     if (res?.success) {
       toast.success(
@@ -133,7 +168,28 @@ export function PlanItemDialog({
             ? "Seção criada no cronograma."
             : "Item adicionado ao cronograma.",
       );
+      if (onItemSaved) {
+        onItemSaved({
+          id: initialItem?.id,
+          type: isHeader ? "header" : "item",
+          title: String(formData.get("title") ?? ""),
+          description: formData.get("description")
+            ? String(formData.get("description"))
+            : null,
+          durationSeconds: Number(formData.get("durationSeconds") ?? 0),
+          personId: formData.get("personId")
+            ? String(formData.get("personId"))
+            : null,
+          customResponsible: formData.get("customResponsible")
+            ? String(formData.get("customResponsible"))
+            : null,
+          songId: formData.get("songId")
+            ? String(formData.get("songId"))
+            : null,
+        });
+      }
       setOpen(false);
+      router.refresh();
     } else if (res?.error) {
       toast.error(res.error);
     }
@@ -202,6 +258,9 @@ export function PlanItemDialog({
                 selectedPersonId={selectedPersonId}
                 setSelectedPersonId={setSelectedPersonId}
                 people={people}
+                songs={songs}
+                selectedSongId={selectedSongId}
+                setSelectedSongId={setSelectedSongId}
                 state={state}
               />
             </div>
@@ -253,6 +312,9 @@ export function PlanItemDialog({
             selectedPersonId={selectedPersonId}
             setSelectedPersonId={setSelectedPersonId}
             people={people}
+            songs={songs}
+            selectedSongId={selectedSongId}
+            setSelectedSongId={setSelectedSongId}
             state={state}
           />
 
@@ -286,6 +348,9 @@ function PlanItemFields({
   selectedPersonId,
   setSelectedPersonId,
   people,
+  songs,
+  selectedSongId,
+  setSelectedSongId,
   state,
 }: {
   eventId: string;
@@ -298,6 +363,9 @@ function PlanItemFields({
   selectedPersonId: string;
   setSelectedPersonId: (val: string) => void;
   people: PersonOption[];
+  songs: SongOption[];
+  selectedSongId: string;
+  setSelectedSongId: (val: string) => void;
   state: PlanItemFormState;
 }) {
   return (
@@ -330,6 +398,23 @@ function PlanItemFields({
             errors={state?.fieldErrors?.title?.map((m) => ({ message: m }))}
           />
         </Field>
+
+        {!isHeader && songs.length > 0 ? (
+          <Field>
+            <FieldLabel htmlFor="plan-song-select" className="flex items-center gap-1.5">
+              <Music2Icon className="size-3.5 text-primary" />
+              Música do Repertório (opcional)
+            </FieldLabel>
+            <PlanSongPicker
+              songs={songs}
+              value={selectedSongId}
+              onChange={setSelectedSongId}
+            />
+            <FieldDescription>
+              Vincula cifras e links diretamente ao momento do culto.
+            </FieldDescription>
+          </Field>
+        ) : null}
 
         {!isHeader ? (
           <>

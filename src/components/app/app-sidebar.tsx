@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { OpenMinistrySymbol } from "@/components/brand/openministry-logo";
 
+import type { NavGroup } from "@/components/app/nav-config";
+import type { ModuleKey } from "@/lib/modules/types";
 import { NavUser } from "@/components/app/nav-user";
 import { SidebarNav } from "@/components/app/sidebar-nav";
 import { SidebarSettingsButton } from "@/components/app/sidebar-settings-button";
@@ -25,6 +27,8 @@ type AppSidebarProps = {
     email: string;
     image: string | null;
   };
+  activeModuleKeys?: ModuleKey[];
+  groups?: NavGroup[];
 };
 
 export function AppSidebar({
@@ -32,6 +36,8 @@ export function AppSidebar({
   organizationLogo,
   role,
   user,
+  activeModuleKeys,
+  groups,
 }: AppSidebarProps) {
   return (
     <Sidebar collapsible="offcanvas">
@@ -70,7 +76,7 @@ export function AppSidebar({
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarNav />
+        <SidebarNav groups={groups} activeModuleKeys={activeModuleKeys} />
       </SidebarContent>
 
       <SidebarFooter>
