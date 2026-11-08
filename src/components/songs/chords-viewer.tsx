@@ -6,6 +6,7 @@ import {
   CheckIcon,
   CopyIcon,
   FileMusicIcon,
+  KanbanIcon,
   LayoutGridIcon,
   ListIcon,
   MinusIcon,
@@ -34,9 +35,9 @@ export function ChordsViewer({ chords, originalTone }: ChordsViewerProps) {
   const [semitones, setSemitones] = useState(0);
   const [copied, setCopied] = useState(false);
   const [fontSize, setFontSize] = useState<"sm" | "base" | "lg">("base");
-  const [viewMode, setViewMode] = useState<"sections" | "continuous">(
-    "sections",
-  );
+  const [viewMode, setViewMode] = useState<
+    "sections" | "kanban" | "continuous"
+  >("sections");
 
   const currentTone = useMemo(() => {
     if (!originalTone) return null;
@@ -220,12 +221,12 @@ export function ChordsViewer({ chords, originalTone }: ChordsViewerProps) {
             </button>
           </div>
 
-          {/* ALTERNADOR DE MODO DE VISUALIZAÇÃO SEGMENTADO */}
+          {/* ALTERNADOR DE MODO DE VISUALIZAÇÃO SEGMENTADO (SEÇÕES / KANBAN / CONTÍNUA) */}
           <div className="inline-flex h-9 items-center rounded-lg border border-border/80 bg-muted/40 p-0.5 shadow-2xs">
             <button
               type="button"
               onClick={() => setViewMode("sections")}
-              title="Ver em cards por seção"
+              title="Ver em lista vertical de seções"
               className={cn(
                 "flex h-7.5 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all",
                 viewMode === "sections"
@@ -235,6 +236,20 @@ export function ChordsViewer({ chords, originalTone }: ChordsViewerProps) {
             >
               <LayoutGridIcon className="size-3.5" />
               <span className="hidden sm:inline">Seções</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("kanban")}
+              title="Ver em colunas horizontais (Kanban)"
+              className={cn(
+                "flex h-7.5 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all",
+                viewMode === "kanban"
+                  ? "bg-background text-foreground shadow-2xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <KanbanIcon className="size-3.5" />
+              <span className="hidden sm:inline">Kanban</span>
             </button>
             <button
               type="button"
@@ -294,6 +309,31 @@ export function ChordsViewer({ chords, originalTone }: ChordsViewerProps) {
               </CardContent>
             </Card>
           ))}
+        </div>
+      ) : viewMode === "kanban" ? (
+        /* VISUALIZAÇÃO EM KANBAN (COLUNAS HORIZONTAIS) */
+        <div className="relative">
+          <div className="flex items-start gap-3.5 overflow-x-auto pb-4 pt-1 snap-x scroll-smooth [-ms-overflow-style:none] [scrollbar-width:thin]">
+            {sections.map((section) => (
+              <div
+                key={section.id}
+                className="flex w-[290px] shrink-0 snap-start flex-col rounded-xl border border-border/70 bg-card shadow-2xs transition-colors hover:border-border sm:w-[340px]"
+              >
+                <div className="flex shrink-0 items-center justify-between border-b border-border/50 bg-muted/20 px-3.5 py-2 sm:px-4">
+                  <SectionBadge type={section.type} name={section.name} />
+                </div>
+                <div className="max-h-[72vh] overflow-x-auto overflow-y-auto px-3.5 py-3 sm:px-4 sm:py-3.5">
+                  <div
+                    className={`font-mono select-text whitespace-pre ${fontSizeClass}`}
+                  >
+                    {section.content.split("\n").map((line, lIdx) =>
+                      renderChordLineHighlighted(line, lIdx),
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
         /* VISUALIZAÇÃO CONTÍNUA */

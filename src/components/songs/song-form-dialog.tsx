@@ -9,6 +9,8 @@ import {
   FileTextIcon,
   GuitarIcon,
   Loader2Icon,
+  Maximize2Icon,
+  Minimize2Icon,
   Music2Icon,
   SparklesIcon,
   XIcon,
@@ -52,6 +54,7 @@ import {
   STANDARD_TONES,
 } from "@/lib/music/chords-utils";
 import { generateStreamingSearchLinks } from "@/lib/music/lyrics-service";
+import { cn } from "@/lib/utils";
 
 type SongFormDialogProps = {
   open: boolean;
@@ -82,9 +85,13 @@ export function SongFormDialog({
   const isMobile = useIsMobile();
   const [isPending, startTransition] = useTransition();
 
-  // Estados de confirmação
+  // Estados de confirmação e visualização
   const [showDiscardAlert, setShowDiscardAlert] = useState(false);
   const [showSyncAlert, setShowSyncAlert] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
+  const [mobileMusicTab, setMobileMusicTab] = useState<"chords" | "lyrics">(
+    "chords",
+  );
 
   // Campos do formulário
   const [title, setTitle] = useState(initialData?.title ?? "");
@@ -142,6 +149,7 @@ export function SongFormDialog({
       if (isDirty) {
         setShowDiscardAlert(true);
       } else {
+        setIsMaximized(false);
         onOpenChange(false);
       }
     } else {
@@ -164,6 +172,7 @@ export function SongFormDialog({
     setTagsInput(initialData?.tags?.join(", ") ?? "");
 
     setShowDiscardAlert(false);
+    setIsMaximized(false);
     onOpenChange(false);
   };
 
@@ -243,6 +252,7 @@ export function SongFormDialog({
             ? "Música atualizada com sucesso!"
             : "Música adicionada ao repertório!",
         );
+        setIsMaximized(false);
         onOpenChange(false);
       }
     });
@@ -254,8 +264,8 @@ export function SongFormDialog({
       onSubmit={handleSubmit}
       className="flex h-full min-h-0 flex-1 flex-col overflow-hidden"
     >
-      {/* HEADER DO FORMULÁRIO COM BOTÃO DE SALVAR EMBUTIDO NO TOPO */}
-      <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 sm:px-6 sm:py-3.5">
+      {/* 1. HEADER DO FORMULÁRIO */}
+      <div className="flex shrink-0 items-center justify-between border-b border-border/70 bg-card/60 px-4 py-3 sm:px-6 sm:py-3.5">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <Music2Icon className="size-4" />
@@ -272,23 +282,28 @@ export function SongFormDialog({
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
-          {isDirty ? (
-            <span className="hidden items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 sm:flex">
-              <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
-              Modificado
-            </span>
-          ) : null}
-
-          {/* BOTÃO DE SALVAR NO HEADER (AÇÃO PRINCIPAL SEMPRE VISÍVEL) */}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {/* BOTÃO MAXIMIZAR / RESTAURAR (DESKTOP) */}
           <Button
-            type="submit"
-            disabled={isPending}
-            size="sm"
-            className="h-8.5 gap-1.5 px-3.5 text-xs font-semibold shadow-xs"
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setIsMaximized((prev) => !prev)}
+            className="hidden text-muted-foreground hover:text-foreground sm:inline-flex"
+            title={
+              isMaximized
+                ? "Restaurar tamanho da janela"
+                : "Maximizar para tela cheia"
+            }
           >
-            {isPending ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
-            <span>{isEditing ? "Salvar" : "Adicionar"}</span>
+            {isMaximized ? (
+              <Minimize2Icon className="size-4" />
+            ) : (
+              <Maximize2Icon className="size-4" />
+            )}
+            <span className="sr-only">
+              {isMaximized ? "Restaurar tamanho" : "Maximizar tela"}
+            </span>
           </Button>
 
           {/* ÚNICO BOTÃO DE FECHAR (X) */}
@@ -301,96 +316,178 @@ export function SongFormDialog({
             title="Fechar"
           >
             <XIcon className="size-4" />
+            <span className="sr-only">Fechar</span>
           </Button>
         </div>
       </div>
 
-      {/* ÁREA DE ROLAGEM COM AS ABAS (min-h-0 e overflow-y-auto habilitam scroll funcional) */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6">
-        <Tabs defaultValue="cifra-letra" className="w-full space-y-4">
-          <TabsList className="grid h-10 w-full grid-cols-3">
-            <TabsTrigger value="cifra-letra" className="gap-1.5 text-xs sm:text-sm">
-              <FileMusicIcon className="size-3.5" />
-              <span>Cifra & Letra</span>
-            </TabsTrigger>
-            <TabsTrigger value="dados" className="gap-1.5 text-xs sm:text-sm">
-              <GuitarIcon className="size-3.5" />
-              <span>Dados Gerais</span>
-            </TabsTrigger>
-            <TabsTrigger value="links" className="gap-1.5 text-xs sm:text-sm">
-              <ExternalLinkIcon className="size-3.5" />
-              <span>Plataformas & Links</span>
-            </TabsTrigger>
-          </TabsList>
+      {/* 2. TABS CONTAINER FIXO COM SCROLL DENTRO DOS CAMPOS */}
+      <Tabs
+        defaultValue="cifra-letra"
+        className="flex flex-1 min-h-0 flex-col overflow-hidden"
+      >
+        {/* TABS LIST FIXO NO TOPO COM SUPORTE A ROLAGEM HORIZONTAL NO MOBILE */}
+        <div className="shrink-0 border-b border-border/70 bg-muted/20 px-3 py-2 sm:px-6">
+          <div className="w-full overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <TabsList className="inline-flex h-9.5 w-max min-w-full items-center justify-start gap-1 rounded-lg bg-muted/80 p-1 sm:grid sm:h-10 sm:w-full sm:grid-cols-3">
+              <TabsTrigger
+                value="cifra-letra"
+                className="shrink-0 gap-1.5 px-3 py-1.5 text-xs font-medium sm:text-sm"
+              >
+                <FileMusicIcon className="size-3.5" />
+                <span>Cifra & Letra</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="dados"
+                className="shrink-0 gap-1.5 px-3 py-1.5 text-xs font-medium sm:text-sm"
+              >
+                <GuitarIcon className="size-3.5" />
+                <span>Dados Gerais</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="links"
+                className="shrink-0 gap-1.5 px-3 py-1.5 text-xs font-medium sm:text-sm"
+              >
+                <ExternalLinkIcon className="size-3.5" />
+                <span>Plataformas & Links</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+        </div>
 
-          {/* ABA 1: CIFRA & LETRA (DUAS COLUNAS NO DESKTOP + SINCRONIZAÇÃO) */}
-          <TabsContent value="cifra-letra" className="space-y-4 pt-1">
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-6">
-              {/* COLUNA 1: CIFRA */}
-              <div className="flex flex-col space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label
-                    htmlFor="song-chords"
-                    className="flex items-center gap-1.5 font-medium text-foreground"
-                  >
-                    <FileMusicIcon className="size-4 text-primary" />
-                    <span>Cifra (Acordes com texto)</span>
-                  </Label>
-                  <span className="text-[11px] font-mono text-muted-foreground">
-                    Fonte monoespaçada
-                  </span>
-                </div>
-                <Textarea
-                  id="song-chords"
-                  value={chords}
-                  onChange={(e) => setChords(e.target.value)}
-                  placeholder="Cole aqui a cifra do Cifra Club ou do seu arquivo .txt...&#10;&#10;[Intro] D  A6  D  A6&#10;&#10;[Primeira Parte]&#10;D         A6&#10;Os meus olhos viram a salvação&#10;D         A6&#10;A luz para o mundo, esperança da terra&#10;&#10;[Refrão]&#10;G           D&#10;Glória nas alturas"
-                  className="min-h-[260px] flex-1 resize-y font-mono text-xs leading-relaxed sm:text-sm lg:min-h-[420px]"
-                />
-                <p className="text-[11px] leading-relaxed text-muted-foreground">
-                  Dica: Use <code>[Intro]</code>, <code>[Primeira Parte]</code>,{" "}
-                  <code>[Refrão]</code> ou <code>[Ponte]</code> para dividir a cifra em cards automáticos.
-                </p>
-              </div>
-
-              {/* COLUNA 2: LETRA COMPLETA + BOTÃO DE SINCRONIZAÇÃO */}
-              <div className="flex flex-col space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label
-                    htmlFor="song-lyrics"
-                    className="flex items-center gap-1.5 font-medium text-foreground"
-                  >
-                    <FileTextIcon className="size-4 text-primary" />
-                    <span>Letra completa da música</span>
-                  </Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="xs"
-                    onClick={handleSyncLyricsClick}
-                    className="h-7 gap-1.5 px-2.5 text-xs font-medium text-primary hover:bg-primary/10 hover:text-primary"
-                    title="Extrai e preenche a letra a partir da cifra apagando acordes e tablaturas"
-                  >
-                    <SparklesIcon className="size-3 text-primary" />
-                    <span>Sincronizar da cifra</span>
-                  </Button>
-                </div>
-                <Textarea
-                  id="song-lyrics"
-                  value={lyrics}
-                  onChange={(e) => setLyrics(e.target.value)}
-                  placeholder="A letra cantada limpa sem acordes (para projeção de slides no culto e ensaios)...&#10;&#10;[Primeira Parte]&#10;Os meus olhos viram a salvação&#10;A luz para o mundo, esperança da terra&#10;&#10;[Refrão]&#10;Glória nas alturas"
-                  className="min-h-[260px] flex-1 resize-y font-sans text-xs leading-relaxed sm:text-sm lg:min-h-[420px]"
-                />
-                <p className="text-[11px] leading-relaxed text-muted-foreground">
-                  Texto limpo sem acordes, ideal para projeção no telão e leitura dos vocalistas.
-                </p>
-              </div>
+        {/* ABA 1: CIFRA & LETRA (MODAL SEM SCROLL; SCROLL DENTRO DOS TEXTAREAS; ABAS NO MOBILE) */}
+        <TabsContent
+          value="cifra-letra"
+          className="mt-0 flex flex-1 min-h-0 flex-col overflow-hidden p-3 sm:p-5 data-[state=inactive]:hidden"
+        >
+          {/* CONTROLE DE SUB-ABAS NO MOBILE (CIFRA / LETRA) */}
+          <div className="mb-2.5 flex shrink-0 items-center justify-between lg:hidden">
+            <div className="inline-flex h-8 items-center rounded-lg border border-border/80 bg-muted/40 p-0.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setMobileMusicTab("chords")}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors",
+                  mobileMusicTab === "chords"
+                    ? "bg-background text-foreground shadow-2xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <FileMusicIcon className="size-3.5" />
+                <span>Cifra</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileMusicTab("lyrics")}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors",
+                  mobileMusicTab === "lyrics"
+                    ? "bg-background text-foreground shadow-2xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <FileTextIcon className="size-3.5" />
+                <span>Letra</span>
+              </button>
             </div>
-          </TabsContent>
 
-          {/* ABA 2: DADOS GERAIS */}
-          <TabsContent value="dados" className="space-y-4 pt-1">
+            {mobileMusicTab === "lyrics" ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="xs"
+                onClick={handleSyncLyricsClick}
+                className="h-7 gap-1 px-2.5 text-xs font-medium text-primary hover:bg-primary/10 hover:text-primary"
+                title="Extrai e preenche a letra a partir da cifra"
+              >
+                <SparklesIcon className="size-3" />
+                <span>Sincronizar</span>
+              </Button>
+            ) : null}
+          </div>
+
+          {/* GRID 2 COLUNAS NO DESKTOP / VISUALIZAÇÃO ALTERNADA NO MOBILE */}
+          <div className="grid h-full min-h-0 flex-1 grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2 lg:gap-5">
+            {/* COLUNA 1: CIFRA */}
+            <div
+              className={cn(
+                "flex h-full min-h-0 flex-1 flex-col space-y-1.5",
+                mobileMusicTab === "lyrics" ? "hidden lg:flex" : "flex",
+              )}
+            >
+              <div className="flex shrink-0 items-center justify-between">
+                <Label
+                  htmlFor="song-chords"
+                  className="flex items-center gap-1.5 text-xs font-medium text-foreground sm:text-sm"
+                >
+                  <FileMusicIcon className="size-4 text-primary" />
+                  <span>Cifra (Acordes com texto)</span>
+                </Label>
+                <span className="text-[11px] font-mono text-muted-foreground">
+                  Fonte monoespaçada
+                </span>
+              </div>
+              <Textarea
+                id="song-chords"
+                value={chords}
+                onChange={(e) => setChords(e.target.value)}
+                placeholder="Cole aqui a cifra do Cifra Club ou do seu arquivo .txt...&#10;&#10;[Intro] D  A6  D  A6&#10;&#10;[Primeira Parte]&#10;D         A6&#10;Os meus olhos viram a salvação&#10;D         A6&#10;A luz para o mundo, esperança da terra&#10;&#10;[Refrão]&#10;G           D&#10;Glória nas alturas"
+                style={{ fieldSizing: "fixed" as never }}
+                className="h-full min-h-0 flex-1 resize-none overflow-y-auto font-mono text-xs leading-relaxed sm:text-sm [field-sizing:fixed]"
+              />
+              <p className="shrink-0 text-[11px] leading-relaxed text-muted-foreground">
+                Dica: Use <code>[Intro]</code>, <code>[Primeira Parte]</code>,{" "}
+                <code>[Refrão]</code> ou <code>[Ponte]</code> para dividir a cifra em cards automáticos.
+              </p>
+            </div>
+
+            {/* COLUNA 2: LETRA COMPLETA + BOTÃO DE SINCRONIZAÇÃO */}
+            <div
+              className={cn(
+                "flex h-full min-h-0 flex-1 flex-col space-y-1.5",
+                mobileMusicTab === "chords" ? "hidden lg:flex" : "flex",
+              )}
+            >
+              <div className="flex shrink-0 items-center justify-between">
+                <Label
+                  htmlFor="song-lyrics"
+                  className="flex items-center gap-1.5 text-xs font-medium text-foreground sm:text-sm"
+                >
+                  <FileTextIcon className="size-4 text-primary" />
+                  <span>Letra completa da música</span>
+                </Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="xs"
+                  onClick={handleSyncLyricsClick}
+                  className="hidden h-7 gap-1.5 px-2.5 text-xs font-medium text-primary hover:bg-primary/10 hover:text-primary lg:inline-flex"
+                  title="Extrai e preenche a letra a partir da cifra apagando acordes e tablaturas"
+                >
+                  <SparklesIcon className="size-3 text-primary" />
+                  <span>Sincronizar da cifra</span>
+                </Button>
+              </div>
+              <Textarea
+                id="song-lyrics"
+                value={lyrics}
+                onChange={(e) => setLyrics(e.target.value)}
+                placeholder="A letra cantada limpa sem acordes (para projeção de slides no culto e ensaios)...&#10;&#10;[Primeira Parte]&#10;Os meus olhos viram a salvação&#10;A luz para o mundo, esperança da terra&#10;&#10;[Refrão]&#10;Glória nas alturas"
+                style={{ fieldSizing: "fixed" as never }}
+                className="h-full min-h-0 flex-1 resize-none overflow-y-auto font-sans text-xs leading-relaxed sm:text-sm [field-sizing:fixed]"
+              />
+              <p className="shrink-0 text-[11px] leading-relaxed text-muted-foreground">
+                Texto limpo sem acordes, ideal para projeção no telão e leitura dos vocalistas.
+              </p>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* ABA 2: DADOS GERAIS */}
+        <TabsContent
+          value="dados"
+          className="mt-0 flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 data-[state=inactive]:hidden"
+        >
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="song-title">
@@ -592,18 +689,19 @@ export function SongFormDialog({
             </div>
           </TabsContent>
         </Tabs>
-      </div>
 
-      {/* FOOTER FIXO DO FORMULÁRIO */}
-      <div className="flex flex-row items-center justify-between border-t border-border/70 bg-card/60 px-4 py-3 sm:px-6">
+      {/* 3. FOOTER FIXO DO FORMULÁRIO */}
+      <div className="flex shrink-0 flex-row items-center justify-between border-t border-border/70 bg-card/95 backdrop-blur-xs px-4 py-3 sm:px-6">
         <div className="flex items-center gap-2">
           {isDirty ? (
-            <span className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
               <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
               Alterações não salvas
             </span>
           ) : (
-            <span className="text-xs text-muted-foreground">Tudo salvo</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              Tudo salvo
+            </span>
           )}
         </div>
 
@@ -616,8 +714,15 @@ export function SongFormDialog({
           >
             Cancelar
           </Button>
-          <Button type="submit" size="sm" disabled={isPending} className="gap-1.5">
-            {isPending ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
+          <Button
+            type="submit"
+            size="sm"
+            disabled={isPending}
+            className="gap-1.5 font-semibold"
+          >
+            {isPending ? (
+              <Loader2Icon className="size-3.5 animate-spin" />
+            ) : null}
             {isEditing ? "Salvar alterações" : "Adicionar ao repertório"}
           </Button>
         </div>
@@ -662,7 +767,12 @@ export function SongFormDialog({
         <Dialog open={open} onOpenChange={handleRequestClose}>
           <DialogContent
             showCloseButton={false}
-            className="flex h-[92vh] max-h-[92vh] min-h-0 sm:max-w-5xl xl:max-w-6xl flex-col gap-0 overflow-hidden rounded-2xl p-0"
+            className={cn(
+              "flex flex-col gap-0 overflow-hidden bg-background p-0 duration-150",
+              isMaximized
+                ? "fixed top-0 left-0 translate-x-0 translate-y-0 h-[100dvh] max-h-[100dvh] w-screen max-w-none sm:max-w-none xl:max-w-none rounded-none border-0 ring-0"
+                : "h-[92vh] max-h-[92vh] min-h-0 sm:max-w-5xl xl:max-w-6xl rounded-2xl border border-border/80 shadow-2xl",
+            )}
             onPointerDownOutside={(e) => {
               if (isDirty) {
                 e.preventDefault();

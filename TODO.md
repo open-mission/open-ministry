@@ -375,11 +375,12 @@ Atualizar a task nos status abaixo de acordo com que for trabalhando, sempre com
   - **Proteção contra Fechamento Acidental (Dirty State):** Bloqueio de fechamento por toque fora ou tecla Escape quando houver alterações pendentes, acionando diálogo de alerta com opções de "Continuar editando" ou "Descartar alterações".
   - **Cifra &amp; Letra em 2 Colunas no Desktop:** Visualização lado a lado no desktop com caixas de texto amplas (`min-h-[460px]`) e tipografia otimizada.
   - **Sincronização Cifra &gt; Letra:** Botão "Sincronizar da cifra" que extrai os versos cantados da cifra (removendo acordes e tablaturas e limpando seções instrumentais vazias), com alerta de confirmação prévio avisando sobre a substituição do texto existente.
-- **08/11/2026:** Refinamentos de UI no Editor e Visualizador de Músicas:
-  - **Scroll no Modal &amp; Salvar no Header:** Altura delimitada com `min-h-0` viabilizando rolagem suave em qualquer resolução, botão "Salvar" reposicionado estrategicamente no topo/header e eliminação do botão de fechar (X) duplicado.
-  - **Layout Minimalista nas Letras:** Redução expressiva de paddings e margens nos cards de estrofes de letras e cifras para máximo aproveitamento visual.
-  - **Contraste em Badges de Seção:** Cores de alto contraste e legibilidade ajustadas para modo claro e escuro (`text-emerald-200`, `text-amber-200`, `text-sky-200`, etc.), eliminando problemas de leitura de texto escuro.
-  - **Harmonização da Toolbar do Músico:** Controles segmentados em `h-9` sem alteração de borda ativa ou variação de altura ao alternar fontes/modos, e tipografia do tom unificada com o restante do painel.
+- **08/11/2026:** Layout Fixo, Maximização de Tela, Sub-abas Mobile e Modo Kanban no Repertório:
+  - **Rodapé e TabsList Fixos:** Rodapé com ações de salvar/cancelar e barra de abas superior mantidos fixos permanentemente no formulário, evitando deslocamento visual durante a navegação.
+  - **Scroll Interno nos Textareas:** Campos de Cifra e Letra configurados com rolagem vertical interna própria e dimensões fixas, mantendo o modal livre de barras de rolagem globais redundantes.
+  - **Header Limpo com Maximização Desktop:** Removidos botões e badges redundantes do cabeçalho; adicionado botão de maximizar para tela cheia (`100dvh` x `100vw`) no desktop com alternância suave para o tamanho padrão.
+  - **Sub-abas Cifra/Letra no Mobile & Sem Vazamento:** Alternador segmentado no mobile para alternar entre Cifra e Letra com aproveitamento total da tela, e barra de abas principal com scroll horizontal seguro sem quebra ou vazamento de layout.
+  - **Visualização Kanban das Seções (`ChordsViewer`):** Adicionado modo de visualização horizontal em colunas tipo Kanban com snap scrolling e destaque sintático de acordes, ideal para leitura dinâmica ao vivo.
 
 
 
