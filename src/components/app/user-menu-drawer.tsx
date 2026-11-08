@@ -87,7 +87,7 @@ export function UserMenuDrawer({
         <button
           type="button"
           aria-label="Abrir menu do usuário"
-          className="group relative flex size-8 sm:size-9 items-center justify-center rounded-full ring-2 ring-transparent transition-all hover:ring-primary/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95 cursor-pointer shrink-0"
+          className="group relative flex size-8 sm:size-9 items-center justify-center rounded-full ring-2 ring-transparent transition-all hover:ring-primary/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95 cursor-pointer shrink-0 md:hidden"
         >
           <Avatar className="size-8 sm:size-9 border border-border/70 shadow-2xs">
             <AvatarImage src={user.image ?? undefined} alt={user.name} />
