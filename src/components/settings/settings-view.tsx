@@ -9,12 +9,12 @@ import {
   ChurchIcon,
   HardDriveIcon,
   InfoIcon,
+  LayersIcon,
   MessageSquareIcon,
   MessageSquareQuoteIcon,
   PaletteIcon,
   ShieldCheckIcon,
   SmartphoneIcon,
-  SparklesIcon,
   UserIcon,
 } from "lucide-react";
 
@@ -23,7 +23,6 @@ import type {
   PasskeyViewItem,
   SessionItem,
 } from "@/app/actions/settings";
-import { PageInfo } from "@/components/app/page-info";
 import { AboutCard } from "@/components/settings/about-card";
 import { AccountProfileCard } from "@/components/settings/account-profile-card";
 import { ActiveSessionsCard } from "@/components/settings/active-sessions-card";
@@ -31,6 +30,7 @@ import { AdminEvolutionApiCard } from "@/components/settings/admin-evolution-api
 import { CalendarPreferencesCard } from "@/components/settings/calendar-preferences-card";
 import { ChangePasswordCard } from "@/components/settings/change-password-card";
 import { ChurchInfoCard } from "@/components/settings/church-info-card";
+import { ChurchNomenclatureCard } from "@/components/settings/church-nomenclature-card";
 import { MessageTemplatesCard } from "@/components/settings/message-templates-card";
 import { NotificationPreferencesCard } from "@/components/settings/notification-preferences-card";
 import { OfflineCacheCard } from "@/components/settings/offline-cache-card";
@@ -41,6 +41,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { CalendarPreferences } from "@/lib/calendar";
+import { getDepartmentTerminology, parseChurchMetadata } from "@/lib/church";
 import { getInitials, roleLabel } from "@/lib/format";
 import type { ResolvedTemplate } from "@/lib/message-templates";
 import { cn } from "@/lib/utils";
@@ -86,6 +87,7 @@ export type SettingsSection =
   | "whatsapp"
   | "templates"
   | "church"
+  | "nomenclature"
   | "about";
 
 type SettingsNavItem = {
@@ -117,6 +119,9 @@ export function SettingsView({
   messageTemplates,
   isModal = false,
 }: SettingsViewProps) {
+  const churchMeta = parseChurchMetadata(organization.metadata);
+  const currentTerminology = getDepartmentTerminology(churchMeta);
+
   // Mobile active section for iOS style drill-down
   const [activeMobileSection, setActiveMobileSection] =
     useState<SettingsSection | null>(null);
@@ -226,6 +231,17 @@ export function SettingsView({
           icon: ChurchIcon,
           color: "bg-amber-600 text-white",
         },
+        ...(isAdmin
+          ? [
+              {
+                id: "nomenclature" as const,
+                label: "Nomenclatura",
+                subtitle: `${currentTerminology.plural} (${currentTerminology.singular})`,
+                icon: LayersIcon,
+                color: "bg-orange-500 text-white",
+              },
+            ]
+          : []),
       ],
     },
     {
@@ -289,6 +305,12 @@ export function SettingsView({
             departmentsCount={departmentsCount}
           />
         );
+      case "nomenclature":
+        return (
+          <ChurchNomenclatureCard
+            initialNomenclature={churchMeta.departmentNomenclature}
+          />
+        );
       case "about":
         return <AboutCard />;
       default:
@@ -300,23 +322,10 @@ export function SettingsView({
     <div className={cn("mx-auto flex w-full flex-col", isModal ? "max-w-none" : "max-w-6xl gap-6 sm:gap-8")}>
       {/* Page Header (apenas na página comum, não dentro do modal onde o DialogHeader já atua) */}
       {!isModal ? (
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-heading text-3xl sm:text-4xl leading-none tracking-tight">
-              Configurações
-            </h1>
-            <PageInfo
-              title="Configurações"
-              description="Gerencie os dados da sua conta, chaves de acesso biométricas (passkeys), sessões ativas, preferências e recursos da sua igreja."
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="font-mono text-xs gap-1 border-primary/20 text-primary">
-              <SparklesIcon className="size-3" />
-              v{APP_VERSION}
-            </Badge>
-          </div>
+        <header className="border-b pb-4">
+          <h1 className="font-heading text-3xl sm:text-4xl leading-none tracking-tight">
+            Configurações
+          </h1>
         </header>
       ) : null}
 
@@ -493,20 +502,26 @@ export function SettingsView({
         ) : (
           // Visualização Detalhada com Barra Superior iOS
           <div className="space-y-5">
-            <div className="flex items-center justify-between pb-1 border-b">
+            <div className="flex items-center gap-2 pb-2 border-b">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setActiveMobileSection(null)}
-                className="gap-1 -ml-2 text-primary font-medium hover:bg-transparent h-9 px-2"
+                className="gap-1.5 -ml-2 text-primary font-medium hover:bg-transparent h-9 px-2 text-sm"
               >
-                <ChevronLeftIcon className="size-5" />
-                Configurações
+                <ChevronLeftIcon className="size-4" />
+                Voltar
               </Button>
-
-              <Badge variant="outline" className="font-mono text-[10px]">
-                v{APP_VERSION}
-              </Badge>
+              {(() => {
+                const activeItem = navCategories
+                  .flatMap((c) => c.items)
+                  .find((item) => item.id === activeMobileSection);
+                return activeItem ? (
+                  <span className="font-heading text-sm font-semibold text-foreground truncate flex-1 text-right">
+                    {activeItem.label}
+                  </span>
+                ) : null;
+              })()}
             </div>
 
             {/* Conteúdo da Seção no Mobile */}

@@ -76,12 +76,22 @@ export function QuickActions({
   people = [],
   isWhatsAppConfigured = false,
   defaultDate = "",
+  terminology = {
+    type: "departments",
+    singular: "Departamento",
+    plural: "Departamentos",
+  },
 }: {
   isAdmin?: boolean;
   departments?: DepartmentOption[];
   people?: PersonOption[];
   isWhatsAppConfigured?: boolean;
   defaultDate?: string;
+  terminology?: {
+    type: string;
+    singular: string;
+    plural: string;
+  };
 }) {
   return (
     <section aria-labelledby="quick-actions-heading" className="space-y-4">
@@ -97,7 +107,7 @@ export function QuickActions({
         </span>
       </div>
 
-      <div className="-mx-4 flex gap-3 overflow-x-auto overscroll-x-contain px-4 pb-1.5 pt-0.5 snap-x snap-mandatory scroll-pl-4 scrollbar-none sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-3 sm:px-0 lg:grid-cols-4">
+      <div className="flex w-full gap-3 overflow-x-auto overscroll-x-contain pb-2 pt-0.5 snap-x snap-mandatory scrollbar-none sm:grid sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
         {isAdmin ? (
           <>
             <CreateEventDialog
@@ -186,12 +196,12 @@ export function QuickActions({
             <Link
               href="/dashboard/departments"
               className={tileClassName}
-              aria-label="Abrir ministérios"
+              aria-label={`Abrir ${terminology.plural.toLowerCase()}`}
             >
               <QuickActionContent
                 icon={IconStack2}
-                label="Ministérios"
-                hint="Equipes"
+                label={terminology.plural}
+                hint={terminology.type === "departments" ? "Ministérios" : "Equipes"}
                 iconTone="bg-orange-500/10 text-orange-600 dark:text-orange-400 group-hover:bg-orange-600 group-hover:text-white"
               />
             </Link>
@@ -240,12 +250,12 @@ export function QuickActions({
             <Link
               href="/dashboard/departments"
               className={tileClassName}
-              aria-label="Abrir departamentos"
+              aria-label={`Abrir ${terminology.plural.toLowerCase()}`}
             >
               <QuickActionContent
                 icon={IconStack2}
-                label="Departamentos"
-                hint="Ministérios"
+                label={terminology.plural}
+                hint={terminology.type === "departments" ? "Ministérios" : "Equipes"}
                 iconTone="bg-orange-500/10 text-orange-600 dark:text-orange-400 group-hover:bg-orange-600 group-hover:text-white"
               />
             </Link>

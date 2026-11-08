@@ -212,3 +212,65 @@ export async function updateChurchDetailsAction(
 
   return { success: true };
 }
+
+const nomenclatureSchema = z.object({
+  type: z.enum(["departments", "ministries", "teams", "networks", "custom"]),
+  singular: z.string().trim().min(1, "O termo no singular é obrigatório.").max(40),
+  plural: z.string().trim().min(1, "O termo no plural é obrigatório.").max(40),
+});
+
+export async function updateChurchNomenclatureAction(input: {
+  type: "departments" | "ministries" | "teams" | "networks" | "custom";
+  singular: string;
+  plural: string;
+}) {
+  const context = await getOrganizationContext();
+
+  if (!context || !context.isAdmin) {
+    return {
+      error: "Apenas administradores podem atualizar a nomenclatura dos grupos.",
+    };
+  }
+
+  const parsed = nomenclatureSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0]?.message ?? "Dados de nomenclatura inválidos.",
+    };
+  }
+
+  try {
+    const existingOrg = await db.query.organization.findFirst({
+      where: eq(schema.organization.id, context.organization.id),
+    });
+
+    const currentMeta = parseChurchMetadata(existingOrg?.metadata);
+    const updatedMeta: ChurchPublicMetadata = {
+      ...currentMeta,
+      departmentNomenclature: {
+        type: parsed.data.type,
+        singular: parsed.data.singular,
+        plural: parsed.data.plural,
+      },
+    };
+
+    await db
+      .update(schema.organization)
+      .set({
+        metadata: JSON.stringify(updatedMeta),
+      })
+      .where(eq(schema.organization.id, context.organization.id));
+
+    await cacheInvalidateTags(`org:${context.organization.id}`);
+  } catch (error) {
+    console.error("Erro ao atualizar nomenclatura:", error);
+    return { error: "Não foi possível salvar a nomenclatura." };
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/church");
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/departments");
+
+  return { success: true };
+}
