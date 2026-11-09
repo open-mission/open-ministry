@@ -27,6 +27,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { MOOD_LEVELS } from "@/lib/felicitometro-types";
+import { cn } from "@/lib/utils";
 
 export type InitialMoodData = {
   score: number;
@@ -39,9 +40,11 @@ export type InitialMoodData = {
 export function FelicitometroCard({
   initialMood,
   userName,
+  className,
 }: {
   initialMood?: InitialMoodData;
   userName?: string;
+  className?: string;
 }) {
   const [isEditing, setIsEditing] = useState(!initialMood);
   const [selectedScore, setSelectedScore] = useState<number>(
@@ -72,7 +75,7 @@ export function FelicitometroCard({
   const activeMood = MOOD_LEVELS[selectedScore];
 
   return (
-    <Card className="relative overflow-hidden border-primary/15 bg-card shadow-xs">
+    <Card className={cn("relative overflow-hidden border-primary/15 bg-card shadow-xs", className)}>
       <CardHeader className="px-5 pt-5 pb-3 sm:px-6 sm:pt-6">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-2.5">

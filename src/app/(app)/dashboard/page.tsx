@@ -237,11 +237,14 @@ async function DashboardContent() {
         <UpcomingServicesCarousel events={otherUpcomingEvents} />
       )}
 
-      {/* 4. Felicitômetro Pessoal do Líder */}
-      <FelicitometroCard initialMood={todayMood} userName={firstName} />
-
-      {/* 5. Resumo do Cuidado Pastoral & Felicitômetro da Igreja */}
-      <PastoralCarePreview overview={moodOverview} />
+      {/* 4 e 5. Felicitômetro Pessoal & Cuidado Pastoral (50% no Desktop, lado a lado) */}
+      <section
+        aria-label="Cuidado pastoral e felicitômetro"
+        className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start"
+      >
+        <FelicitometroCard initialMood={todayMood} userName={firstName} />
+        <PastoralCarePreview overview={moodOverview} />
+      </section>
 
       {/* 6. Indicadores Gerais da Igreja */}
       <StatStrip
@@ -298,8 +301,10 @@ function DashboardSkeleton() {
         <Skeleton className="h-5 w-28" />
         <Skeleton className="h-56 rounded-2xl" />
       </div>
-      <Skeleton className="h-40 rounded-2xl" />
-      <Skeleton className="h-28 rounded-2xl" />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Skeleton className="h-48 rounded-2xl" />
+        <Skeleton className="h-48 rounded-2xl" />
+      </div>
       <Skeleton className="h-40 rounded-2xl" />
       <Skeleton className="h-64 rounded-2xl" />
     </div>
