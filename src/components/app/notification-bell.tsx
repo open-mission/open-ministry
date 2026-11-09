@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -51,14 +51,16 @@ function LiveNotificationsSubscriber({
 }: {
   query: SealedLiveQuery<LiveNotificationRow>;
 }) {
+  const refreshQuery = useCallback(async () => {
+    const refreshed = await getLiveUnreadNotificationsQuery();
+    if (!refreshed) {
+      throw new Error("Não foi possível renovar a consulta em tempo real");
+    }
+    return refreshed;
+  }, []);
+
   const { data: liveRows } = useLiveQuery(query, {
-    refreshQuery: async () => {
-      const refreshed = await getLiveUnreadNotificationsQuery();
-      if (!refreshed) {
-        throw new Error("Não foi possível renovar a consulta em tempo real");
-      }
-      return refreshed;
-    },
+    refreshQuery,
   });
 
   const { init } = useNotificationStore();
