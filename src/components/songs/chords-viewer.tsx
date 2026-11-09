@@ -81,6 +81,19 @@ export function ChordsViewer({
     };
   }, [isFullscreen]);
 
+  // Bloqueio do scroll da página de fundo (body) ao abrir tela cheia no mobile/desktop
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const originalOverflow = document.body.style.overflow;
+    const originalTouchAction = document.body.style.touchAction;
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.touchAction = originalTouchAction;
+    };
+  }, [isFullscreen]);
+
   const toggleFullscreen = async () => {
     if (!isFullscreen) {
       setIsFullscreen(true);
@@ -447,7 +460,7 @@ export function ChordsViewer({
       {/* APRESENTAÇÃO COMPLETA EM TELA CHEIA (FULLSCREEN PORTAL) */}
       {isFullscreen && isClient
         ? createPortal(
-            <div className="fixed inset-0 z-100 flex flex-col bg-background text-foreground animate-in fade-in-0 duration-150">
+            <div className="fixed inset-0 z-100 flex h-dvh max-h-dvh flex-col bg-background text-foreground overscroll-contain animate-in fade-in-0 duration-150 select-text">
               {/* HEADER DO FULLSCREEN COM CONTROLES COMPLETOS */}
               <div className="flex shrink-0 flex-col gap-2.5 border-b border-border/70 bg-card/95 backdrop-blur-xs px-3.5 py-2.5 sm:px-6 sm:py-3 shadow-xs">
                 <div className="flex items-center justify-between gap-3">
@@ -663,75 +676,73 @@ export function ChordsViewer({
               </div>
 
               {/* CORPO DO FULLSCREEN COM O MODO SELECIONADO */}
-              <div className="flex-1 min-h-0 overflow-hidden">
-                {viewMode === "sections" ? (
-                  <div className="h-full overflow-y-auto p-4 sm:p-6 lg:p-8">
-                    <div className="mx-auto max-w-4xl space-y-3.5">
-                      {sections.map((section) => (
-                        <Card
-                          key={section.id}
-                          className="overflow-hidden border border-border/70 bg-card shadow-xs transition-colors hover:border-border"
-                        >
-                          <CardHeader className="flex flex-row items-center justify-between border-b border-border/50 bg-muted/15 px-4 py-2 sm:px-5 sm:py-2.5">
-                            <SectionBadge
-                              type={section.type}
-                              name={section.name}
-                            />
-                          </CardHeader>
-                          <CardContent className="overflow-x-auto px-4 py-3 sm:px-5 sm:py-4">
-                            <div
-                              className={`font-mono select-text whitespace-pre ${fontSizeClass}`}
-                            >
-                              {section.content.split("\n").map((line, lIdx) =>
-                                renderChordLineHighlighted(line, lIdx),
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                ) : viewMode === "kanban" ? (
-                  <div className="h-full p-3 sm:p-5">
-                    <div className="flex h-full min-h-0 items-start gap-4 overflow-x-auto pb-2 snap-x scroll-smooth [-ms-overflow-style:none] [scrollbar-width:thin]">
-                      {sections.map((section) => (
-                        <div
-                          key={section.id}
-                          className="flex h-full min-h-0 w-[86vw] max-w-[480px] shrink-0 snap-start flex-col rounded-xl border border-border/70 bg-card shadow-xs transition-colors hover:border-border sm:w-[440px] lg:w-[480px]"
-                        >
-                          <div className="flex shrink-0 items-center justify-between border-b border-border/50 bg-muted/20 px-4 py-2.5">
-                            <SectionBadge
-                              type={section.type}
-                              name={section.name}
-                            />
+              {viewMode === "sections" ? (
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y p-4 sm:p-6 lg:p-8 [-webkit-overflow-scrolling:touch]">
+                  <div className="mx-auto max-w-4xl space-y-3.5">
+                    {sections.map((section) => (
+                      <Card
+                        key={section.id}
+                        className="overflow-hidden border border-border/70 bg-card shadow-xs transition-colors hover:border-border"
+                      >
+                        <CardHeader className="flex flex-row items-center justify-between border-b border-border/50 bg-muted/15 px-4 py-2 sm:px-5 sm:py-2.5">
+                          <SectionBadge
+                            type={section.type}
+                            name={section.name}
+                          />
+                        </CardHeader>
+                        <CardContent className="overflow-x-auto touch-pan-y px-4 py-3 sm:px-5 sm:py-4">
+                          <div
+                            className={`font-mono select-text whitespace-pre ${fontSizeClass}`}
+                          >
+                            {section.content.split("\n").map((line, lIdx) =>
+                              renderChordLineHighlighted(line, lIdx),
+                            )}
                           </div>
-                          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-3.5 sm:px-5 sm:py-4">
-                            <div
-                              className={`font-mono select-text whitespace-pre ${fontSizeClass}`}
-                            >
-                              {section.content.split("\n").map((line, lIdx) =>
-                                renderChordLineHighlighted(line, lIdx),
-                              )}
-                            </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ) : viewMode === "kanban" ? (
+                <div className="flex-1 min-h-0 overflow-hidden p-3 sm:p-5">
+                  <div className="flex h-full min-h-0 items-start gap-4 overflow-x-auto pb-2 snap-x scroll-smooth overscroll-x-contain touch-pan-x [-ms-overflow-style:none] [scrollbar-width:thin]">
+                    {sections.map((section) => (
+                      <div
+                        key={section.id}
+                        className="flex h-full min-h-0 w-[86vw] max-w-[480px] shrink-0 snap-start flex-col rounded-xl border border-border/70 bg-card shadow-xs transition-colors hover:border-border sm:w-[440px] lg:w-[480px]"
+                      >
+                        <div className="flex shrink-0 items-center justify-between border-b border-border/50 bg-muted/20 px-4 py-2.5">
+                          <SectionBadge
+                            type={section.type}
+                            name={section.name}
+                          />
+                        </div>
+                        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y px-4 py-3.5 sm:px-5 sm:py-4 [-webkit-overflow-scrolling:touch]">
+                          <div
+                            className={`font-mono select-text whitespace-pre ${fontSizeClass}`}
+                          >
+                            {section.content.split("\n").map((line, lIdx) =>
+                              renderChordLineHighlighted(line, lIdx),
+                            )}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="h-full overflow-y-auto p-4 sm:p-6 lg:p-8">
-                    <div className="mx-auto max-w-4xl overflow-x-auto rounded-xl border border-border/70 bg-card p-5 shadow-xs sm:p-7">
-                      <div
-                        className={`font-mono select-text whitespace-pre ${fontSizeClass}`}
-                      >
-                        {transposedText.split("\n").map((line, lIdx) =>
-                          renderChordLineHighlighted(line, lIdx),
-                        )}
                       </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y p-4 sm:p-6 lg:p-8 [-webkit-overflow-scrolling:touch]">
+                  <div className="mx-auto max-w-4xl overflow-x-auto touch-pan-y rounded-xl border border-border/70 bg-card p-5 shadow-xs sm:p-7">
+                    <div
+                      className={`font-mono select-text whitespace-pre ${fontSizeClass}`}
+                    >
+                      {transposedText.split("\n").map((line, lIdx) =>
+                        renderChordLineHighlighted(line, lIdx),
+                      )}
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>,
             document.body,
           )
