@@ -2,7 +2,6 @@
 
 import { useState, useSyncExternalStore } from "react";
 import {
-  CheckIcon,
   MonitorIcon,
   MoonIcon,
   SunIcon,
@@ -136,9 +135,6 @@ export function ThemeToggle() {
                     {option.description}
                   </span>
                 </span>
-                {selected ? (
-                  <CheckIcon className="size-4 shrink-0 text-primary" />
-                ) : null}
               </button>
             );
           })}
