@@ -1,15 +1,26 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import {
+  AlertCircleIcon,
   CheckCheckIcon,
+  CheckIcon,
   ClockIcon,
   EyeIcon,
+  Loader2Icon,
   MegaphoneIcon,
+  MessageSquareIcon,
+  RotateCcwIcon,
   SearchIcon,
-  UsersIcon,
+  SendIcon,
+  XCircleIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 
+import {
+  retryAnnouncementSingleWhatsAppAction,
+  retryAnnouncementWhatsAppAction,
+} from "@/app/actions/notifications";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -128,6 +139,35 @@ export function SentAnnouncementsList({
                     />
                   </div>
 
+                  {item.whatsappSummary && item.whatsappSummary.total > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px]">
+                      <span className="flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400">
+                        <MessageSquareIcon className="size-3" />
+                        {item.whatsappSummary.delivered + item.whatsappSummary.read} no WhatsApp
+                      </span>
+                      {item.whatsappSummary.failed > 0 && (
+                        <Badge
+                          variant="destructive"
+                          className="h-4 px-1.5 text-[10px]"
+                        >
+                          {item.whatsappSummary.failed} falha(s)
+                        </Badge>
+                      )}
+                      {item.whatsappSummary.pending +
+                        item.whatsappSummary.sending >
+                        0 && (
+                        <Badge
+                          variant="outline"
+                          className="h-4 border-amber-500/30 px-1.5 text-[10px] text-amber-600 bg-amber-500/5"
+                        >
+                          {item.whatsappSummary.pending +
+                            item.whatsappSummary.sending}{" "}
+                          na fila
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between pt-1">
                     <span className="text-[11px] text-muted-foreground">
                       Por: {item.actorName}
@@ -167,19 +207,36 @@ function SentAnnouncementDetailDialog({
   onOpenChange: (open: boolean) => void;
   announcement: SentAnnouncementReceipt | null;
 }) {
-  const [filter, setFilter] = useState<"all" | "read" | "unread">("all");
+  const [filter, setFilter] = useState<
+    "all" | "read" | "unread" | "wa_ok" | "wa_pending"
+  >("all");
   const [search, setSearch] = useState("");
+  const [isRetrying, startRetrying] = useTransition();
+  const [retryingLogId, setRetryingLogId] = useState<string | null>(null);
 
   const filteredRecipients = useMemo(() => {
     if (!announcement) return [];
     return announcement.recipients.filter((r) => {
       if (filter === "read" && !r.readAt) return false;
       if (filter === "unread" && r.readAt) return false;
+      if (filter === "wa_ok") {
+        if (!r.whatsapp) return false;
+        if (r.whatsapp.status !== "delivered" && r.whatsapp.status !== "read" && r.whatsapp.status !== "sent") {
+          return false;
+        }
+      }
+      if (filter === "wa_pending") {
+        if (!r.whatsapp) return false;
+        if (r.whatsapp.status !== "failed" && r.whatsapp.status !== "pending" && r.whatsapp.status !== "sending") {
+          return false;
+        }
+      }
       if (search.trim()) {
         const query = search.toLowerCase();
         return (
           r.name.toLowerCase().includes(query) ||
-          (r.email && r.email.toLowerCase().includes(query))
+          (r.email && r.email.toLowerCase().includes(query)) ||
+          (r.whatsapp?.phone && r.whatsapp.phone.includes(query))
         );
       }
       return true;
@@ -188,9 +245,39 @@ function SentAnnouncementDetailDialog({
 
   if (!announcement) return null;
 
+  const waSummary = announcement.whatsappSummary;
+  const waFailedOrPending =
+    (waSummary?.failed ?? 0) + (waSummary?.pending ?? 0) + (waSummary?.sending ?? 0);
+
+  function handleRetrySingle(logId: string) {
+    setRetryingLogId(logId);
+    startRetrying(async () => {
+      const res = await retryAnnouncementSingleWhatsAppAction(logId);
+      if (res.ok) {
+        toast.success("Mensagem reenviada com sucesso!");
+      } else {
+        toast.error(res.error || "Não foi possível reenviar a mensagem.");
+      }
+      setRetryingLogId(null);
+    });
+  }
+
+  function handleRetryAll() {
+    startRetrying(async () => {
+      const res = await retryAnnouncementWhatsAppAction(
+        announcement?.batchId ?? undefined,
+      );
+      if (res.ok) {
+        toast.success(`Reenvio acionado para as mensagens pendentes.`);
+      } else {
+        toast.error(res.error || "Não foi possível acionar o reenvio.");
+      }
+    });
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] sm:max-w-xl">
+      <DialogContent className="max-h-[90vh] sm:max-w-2xl">
         <DialogHeader className="gap-2">
           <div className="flex items-center gap-2">
             <span className="flex size-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
@@ -211,35 +298,77 @@ function SentAnnouncementDetailDialog({
         {/* Message body preview with scroll */}
         {announcement.body ? (
           <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
-            <p className="max-h-[25vh] overflow-y-auto text-xs leading-relaxed text-foreground whitespace-pre-wrap select-text">
+            <p className="max-h-[20vh] overflow-y-auto text-xs leading-relaxed text-foreground whitespace-pre-wrap select-text">
               {announcement.body}
             </p>
           </div>
         ) : null}
 
-        {/* Read metrics and recipients list */}
+        {/* Delivery metrics and actions */}
         <div className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge
                 variant="outline"
-                className="gap-1 border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-600 dark:text-emerald-400"
+                className="gap-1 border-primary/30 bg-primary/5 text-xs text-primary"
               >
                 <CheckCheckIcon className="size-3" />
-                <span>{announcement.readRecipients} confirmaram leitura</span>
-              </Badge>
-              <Badge variant="outline" className="text-xs text-muted-foreground">
-                <UsersIcon className="size-3 mr-1" />
                 <span>
-                  {announcement.totalRecipients - announcement.readRecipients}{" "}
-                  pendentes
+                  App: {announcement.readRecipients} de{" "}
+                  {announcement.totalRecipients} lidos
                 </span>
               </Badge>
+
+              {waSummary && waSummary.total > 0 && (
+                <>
+                  <Badge
+                    variant="outline"
+                    className="gap-1 border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-600 dark:text-emerald-400"
+                  >
+                    <MessageSquareIcon className="size-3" />
+                    <span>
+                      WhatsApp: {waSummary.delivered + waSummary.read} de{" "}
+                      {waSummary.total} entregues
+                    </span>
+                  </Badge>
+
+                  {waFailedOrPending > 0 && (
+                    <Badge
+                      variant="outline"
+                      className="gap-1 border-destructive/30 text-xs text-destructive bg-destructive/5"
+                    >
+                      <AlertCircleIcon className="size-3" />
+                      <span>{waFailedOrPending} pendente(s)/falha(s)</span>
+                    </Badge>
+                  )}
+                </>
+              )}
             </div>
 
+            {waFailedOrPending > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRetryAll}
+                disabled={isRetrying}
+                className="h-8 gap-1.5 text-xs border-destructive/40 text-destructive hover:bg-destructive/10"
+              >
+                {isRetrying ? (
+                  <Loader2Icon className="size-3.5 animate-spin" />
+                ) : (
+                  <RotateCcwIcon className="size-3.5" />
+                )}
+                Reenviar falhas no WhatsApp
+              </Button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <Tabs
               value={filter}
-              onValueChange={(v) => setFilter(v as "all" | "read" | "unread")}
+              onValueChange={(v) =>
+                setFilter(v as "all" | "read" | "unread" | "wa_ok" | "wa_pending")
+              }
               className="w-auto"
             >
               <TabsList className="h-8">
@@ -247,27 +376,36 @@ function SentAnnouncementDetailDialog({
                   Todos ({announcement.totalRecipients})
                 </TabsTrigger>
                 <TabsTrigger value="read" className="text-xs px-2.5">
-                  Lidos ({announcement.readRecipients})
+                  Lidos no App ({announcement.readRecipients})
                 </TabsTrigger>
-                <TabsTrigger value="unread" className="text-xs px-2.5">
-                  Pendentes (
-                  {announcement.totalRecipients - announcement.readRecipients})
-                </TabsTrigger>
+                {waSummary && waSummary.total > 0 && (
+                  <>
+                    <TabsTrigger value="wa_ok" className="text-xs px-2.5">
+                      WhatsApp OK ({waSummary.delivered + waSummary.read})
+                    </TabsTrigger>
+                    {waFailedOrPending > 0 && (
+                      <TabsTrigger
+                        value="wa_pending"
+                        className="text-xs px-2.5 text-destructive"
+                      >
+                        WhatsApp Fila/Falhas ({waFailedOrPending})
+                      </TabsTrigger>
+                    )}
+                  </>
+                )}
               </TabsList>
             </Tabs>
-          </div>
 
-          {announcement.totalRecipients > 6 ? (
-            <div className="relative">
+            <div className="relative max-w-xs flex-1">
               <SearchIcon className="absolute top-2.5 left-2.5 size-3.5 text-muted-foreground" />
               <Input
-                placeholder="Buscar destinatário por nome ou email..."
+                placeholder="Buscar por nome, email ou telefone..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="h-8 pl-8 text-xs"
               />
             </div>
-          ) : null}
+          </div>
 
           <div className="max-h-[35vh] divide-y divide-border/40 overflow-y-auto rounded-xl border border-border/60">
             {filteredRecipients.length === 0 ? (
@@ -275,47 +413,133 @@ function SentAnnouncementDetailDialog({
                 Nenhum destinatário encontrado neste filtro.
               </div>
             ) : (
-              filteredRecipients.map((recipient) => (
-                <div
-                  key={recipient.userId}
-                  className="flex items-center justify-between gap-3 p-3 text-xs"
-                >
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <Avatar className="size-7">
-                      {recipient.image ? (
-                        <AvatarImage src={recipient.image} alt={recipient.name} />
-                      ) : null}
-                      <AvatarFallback className="text-[10px]">
-                        {getInitials(recipient.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <p className="truncate font-medium text-foreground">
-                        {recipient.name}
-                      </p>
-                      {recipient.email ? (
-                        <p className="truncate text-[10px] text-muted-foreground">
-                          {recipient.email}
+              filteredRecipients.map((recipient) => {
+                const isSingleRetrying =
+                  isRetrying &&
+                  retryingLogId === recipient.whatsapp?.logId;
+
+                return (
+                  <div
+                    key={recipient.userId || recipient.personId || recipient.whatsapp?.phone}
+                    className="flex flex-col gap-2 p-3 text-xs sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <Avatar className="size-7">
+                        {recipient.image ? (
+                          <AvatarImage
+                            src={recipient.image}
+                            alt={recipient.name}
+                          />
+                        ) : null}
+                        <AvatarFallback className="text-[10px]">
+                          {getInitials(recipient.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-foreground">
+                          {recipient.name}
                         </p>
-                      ) : null}
+                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                          {recipient.email && (
+                            <span className="truncate">{recipient.email}</span>
+                          )}
+                          {recipient.whatsapp?.phone && (
+                            <span className="font-mono">
+                              {recipient.whatsapp.phone}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                      {/* App read status */}
+                      {recipient.readAt ? (
+                        <span className="flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                          <CheckCheckIcon className="size-3.5" />
+                          <span>Lido no App</span>
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <ClockIcon className="size-3.5" />
+                          <span>Aguardando App</span>
+                        </span>
+                      )}
+
+                      {/* WhatsApp status */}
+                      {recipient.whatsapp && (
+                        <div className="flex items-center gap-1.5 pl-2 border-l">
+                          {recipient.whatsapp.status === "read" && (
+                            <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 gap-1 text-[10px] font-normal">
+                              <CheckCheckIcon className="size-3" />
+                              Lido WhatsApp
+                            </Badge>
+                          )}
+
+                          {recipient.whatsapp.status === "delivered" && (
+                            <Badge className="bg-teal-500/15 text-teal-700 dark:text-teal-400 gap-1 text-[10px] font-normal">
+                              <CheckIcon className="size-3" />
+                              Entregue
+                            </Badge>
+                          )}
+
+                          {recipient.whatsapp.status === "sent" && (
+                            <Badge variant="secondary" className="gap-1 text-[10px] font-normal">
+                              <SendIcon className="size-3" />
+                              Enviado
+                            </Badge>
+                          )}
+
+                          {recipient.whatsapp.status === "sending" && (
+                            <Badge variant="outline" className="gap-1 text-[10px] font-normal text-blue-600">
+                              <Loader2Icon className="size-3 animate-spin" />
+                              Enviando...
+                            </Badge>
+                          )}
+
+                          {recipient.whatsapp.status === "pending" && (
+                            <Badge variant="outline" className="gap-1 text-[10px] font-normal border-amber-500/30 text-amber-600 bg-amber-500/5">
+                              <ClockIcon className="size-3" />
+                              Na fila
+                            </Badge>
+                          )}
+
+                          {recipient.whatsapp.status === "failed" && (
+                            <div className="flex items-center gap-1">
+                              <Badge
+                                variant="destructive"
+                                className="gap-1 text-[10px] font-normal"
+                                title={recipient.whatsapp.lastError || "Falha no envio"}
+                              >
+                                <XCircleIcon className="size-3" />
+                                Falha
+                              </Badge>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleRetrySingle(
+                                    recipient.whatsapp!.logId,
+                                  )
+                                }
+                                disabled={isSingleRetrying}
+                                className="h-6 px-1.5 text-[10px] gap-1"
+                              >
+                                {isSingleRetrying ? (
+                                  <Loader2Icon className="size-2.5 animate-spin" />
+                                ) : (
+                                  <RotateCcwIcon className="size-2.5" />
+                                )}
+                                Reenviar
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
-
-                  <div>
-                    {recipient.readAt ? (
-                      <span className="flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400">
-                        <CheckCheckIcon className="size-3.5" />
-                        <span>Lido em {formatDateTime(recipient.readAt)}</span>
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-muted-foreground">
-                        <ClockIcon className="size-3.5" />
-                        <span>Aguardando</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

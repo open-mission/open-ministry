@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -17,6 +18,8 @@ import {
 import {
   dispatchNotification,
   getOrganizationEvolutionConfig,
+  retryWhatsAppMessage,
+  retryFailedWhatsAppMessages,
 } from "@/lib/notification-service";
 import { sendWebPushToUser } from "@/lib/push-notifications";
 import { getOrganizationContext } from "@/lib/organizations";
@@ -293,6 +296,8 @@ export async function sendAnnouncementAction(
     };
   }
 
+  const announcementBatchId = randomUUID();
+
   try {
     // 1. Send in-app notifications
     if (data.sendInApp) {
@@ -340,6 +345,7 @@ export async function sendAnnouncementAction(
             personId: recipient.id,
             phone: recipient.phone,
             name: recipient.name,
+            batchId: announcementBatchId,
             channels: ["whatsapp"],
             metadata: {
               churchName: context.organization.name,
@@ -461,4 +467,30 @@ export async function getRecentNotificationsAction(
     read: Boolean(n.readAt),
     createdAt: n.createdAt.toISOString(),
   }));
+}
+
+export async function retryAnnouncementWhatsAppAction(
+  batchId?: string,
+): Promise<{ ok: boolean; count: number; error?: string }> {
+  const context = await getOrganizationContext();
+  if (!context) {
+    return { ok: false, count: 0, error: "Sua sessão expirou." };
+  }
+
+  const res = await retryFailedWhatsAppMessages(context.organization.id, batchId);
+  await revalidateNotifications(context.session.user.id);
+  return { ok: true, count: res.sent };
+}
+
+export async function retryAnnouncementSingleWhatsAppAction(
+  logId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const context = await getOrganizationContext();
+  if (!context) {
+    return { ok: false, error: "Sua sessão expirou." };
+  }
+
+  const res = await retryWhatsAppMessage(logId, context.organization.id);
+  await revalidateNotifications(context.session.user.id);
+  return res;
 }

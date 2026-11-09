@@ -9,9 +9,17 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import {
   checkEvolutionConnection,
+  configureEvolutionWebhook,
   formatPhoneNumberForEvolution,
   sendEvolutionTextMessage,
 } from "@/lib/evolution-api";
+import { getAppBaseUrl } from "@/lib/app-url";
+import {
+  listEvolutionMessageLogs,
+  retryWhatsAppMessage,
+  retryFailedWhatsAppMessages,
+  type EvolutionMessageLogItem,
+} from "@/lib/notification-service";
 import { getOrganizationContext, requireOrganizationContext } from "@/lib/organizations";
 import { syncPersonProfile, listPeople } from "@/lib/people";
 import { listDepartments } from "@/lib/departments";
@@ -301,6 +309,8 @@ export type EvolutionSettingsView = {
   apiKey: string;
   instanceName: string;
   isActive: boolean;
+  webhookSecret?: string | null;
+  webhookUrl?: string;
 };
 
 export async function getEvolutionSettingsAction(): Promise<EvolutionSettingsView> {
@@ -322,12 +332,28 @@ export async function getEvolutionSettingsAction(): Promise<EvolutionSettingsVie
     ),
   });
 
+  let secret = channel?.webhookSecret;
+  if (channel && !secret) {
+    secret = randomUUID();
+    await db
+      .update(schema.organizationNotificationChannel)
+      .set({ webhookSecret: secret })
+      .where(eq(schema.organizationNotificationChannel.id, channel.id));
+  }
+
+  const baseUrl = getAppBaseUrl();
+  const webhookUrl = secret
+    ? `${baseUrl.replace(/\/+$/, "")}/api/webhooks/evolution?token=${secret}`
+    : `${baseUrl.replace(/\/+$/, "")}/api/webhooks/evolution`;
+
   return {
     id: channel?.id ?? null,
     apiUrl: channel?.apiUrl ?? "",
     apiKey: channel?.apiKey ?? "",
     instanceName: channel?.instanceName ?? "",
     isActive: channel?.isActive ?? true,
+    webhookSecret: secret ?? null,
+    webhookUrl,
   };
 }
 
@@ -400,6 +426,7 @@ export async function saveEvolutionSettingsAction(
         apiUrl: parsed.data.apiUrl,
         apiKey: parsed.data.apiKey,
         instanceName: parsed.data.instanceName,
+        webhookSecret: randomUUID(),
         isActive: parsed.data.isActive,
       });
     }
@@ -479,6 +506,79 @@ export async function sendTestEvolutionMessageAction(
   });
 
   return result;
+}
+
+export async function configureEvolutionWebhookAction(): Promise<{
+  ok: boolean;
+  error?: string;
+}> {
+  const context = await getOrganizationContext();
+  if (!context || !context.isAdmin) {
+    return { ok: false, error: "Apenas administradores podem configurar webhooks." };
+  }
+
+  const settings = await getEvolutionSettingsAction();
+  if (!settings.apiUrl || !settings.apiKey || !settings.instanceName || !settings.webhookUrl) {
+    return { ok: false, error: "Salve as configurações da Evolution API primeiro." };
+  }
+
+  const res = await configureEvolutionWebhook({
+    config: {
+      apiUrl: settings.apiUrl,
+      apiKey: settings.apiKey,
+      instanceName: settings.instanceName,
+    },
+    webhookUrl: settings.webhookUrl,
+  });
+
+  if (res.ok) {
+    revalidatePath("/dashboard/settings");
+  }
+
+  return res;
+}
+
+export async function getEvolutionMessageLogsAction(options?: {
+  limit?: number;
+  offset?: number;
+  status?: string;
+  search?: string;
+  type?: string;
+}): Promise<{ logs: EvolutionMessageLogItem[]; total: number }> {
+  const context = await getOrganizationContext();
+  if (!context || !context.isAdmin) {
+    return { logs: [], total: 0 };
+  }
+
+  return listEvolutionMessageLogs(context.organization.id, options);
+}
+
+export async function retryEvolutionMessageAction(
+  logId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const context = await getOrganizationContext();
+  if (!context || !context.isAdmin) {
+    return { ok: false, error: "Apenas administradores podem reenviar mensagens." };
+  }
+
+  const res = await retryWhatsAppMessage(logId, context.organization.id);
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/announcements");
+  return res;
+}
+
+export async function retryAllFailedEvolutionMessagesAction(
+  batchId?: string,
+): Promise<{ total: number; sent: number; failed: number }> {
+  const context = await getOrganizationContext();
+  if (!context || !context.isAdmin) {
+    return { total: 0, sent: 0, failed: 0 };
+  }
+
+  const res = await retryFailedWhatsAppMessages(context.organization.id, batchId);
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/announcements");
+  return res;
 }
 
 export async function getSettingsDialogDataAction() {

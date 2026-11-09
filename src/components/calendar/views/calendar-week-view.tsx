@@ -76,17 +76,18 @@ export function CalendarWeekView({
         role="region"
         aria-label="Agenda semanal"
         tabIndex={0}
-        className="overflow-x-auto overscroll-x-contain scrollbar-none focus-visible:outline-none"
+        ref={scrollRef}
+        className="max-h-[580px] overflow-auto overscroll-contain focus-visible:outline-none"
       >
         <div className="min-w-[49rem] md:min-w-0">
           {/* Week Header */}
           <div
             className={cn(
               weekGridClassName,
-              "border-b bg-muted/40 text-xs",
+              "sticky top-0 z-40 h-[58px] border-b bg-card text-xs shadow-2xs",
             )}
           >
-            <div className="sticky left-0 z-30 flex items-center justify-center border-r bg-muted py-2.5 text-center font-medium text-muted-foreground">
+            <div className="sticky left-0 top-0 z-50 flex items-center justify-center border-r bg-muted text-center font-medium text-muted-foreground shadow-xs">
               Horário
             </div>
             {days.map((day) => {
@@ -96,7 +97,7 @@ export function CalendarWeekView({
                   key={day.toISOString()}
                   onClick={() => onSelectDate(day)}
                   className={cn(
-                    "cursor-pointer border-r py-2 text-center transition-colors last:border-r-0 hover:bg-muted/50",
+                    "cursor-pointer border-r py-2 text-center bg-card transition-colors last:border-r-0 hover:bg-muted/50",
                     isDayToday && "bg-primary/5",
                   )}
                 >
@@ -124,10 +125,10 @@ export function CalendarWeekView({
           <div
             className={cn(
               weekGridClassName,
-              "min-h-[44px] border-b bg-muted/15",
+              "sticky top-[58px] z-30 min-h-[44px] border-b bg-card shadow-2xs",
             )}
           >
-            <div className="sticky left-0 z-20 flex items-center justify-center border-r bg-card p-1 text-[11px] font-medium text-muted-foreground">
+            <div className="sticky left-0 z-35 flex items-center justify-center border-r bg-card p-1 text-[11px] font-medium text-muted-foreground shadow-xs">
               Dia todo
             </div>
             {days.map((day) => {
@@ -139,7 +140,7 @@ export function CalendarWeekView({
               return (
                 <div
                   key={`allday-${day.toISOString()}`}
-                  className="min-h-[44px] space-y-1 border-r p-1 last:border-r-0"
+                  className="min-h-[44px] space-y-1 border-r bg-card p-1 last:border-r-0"
                 >
                   {dayAllDayItems.map((item) => (
                     <button
@@ -159,13 +160,13 @@ export function CalendarWeekView({
           </div>
 
           {/* Hourly Timeline Grid with Proportional Event Heights */}
-          <div ref={scrollRef} className="max-h-[580px] overflow-y-auto">
+          <div>
             <div
               className={cn(weekGridClassName, "relative")}
               style={{ height: `${totalGridHeight}px` }}
             >
               {/* Hour Labels Column (Pinned to Left) */}
-              <div className="sticky left-0 z-20 flex flex-col border-r bg-card select-none">
+              <div className="sticky left-0 z-20 flex flex-col border-r bg-card select-none shadow-xs">
                 {hours.map((hour) => (
                   <div
                     key={hour}

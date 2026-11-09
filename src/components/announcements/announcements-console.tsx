@@ -564,6 +564,21 @@ export function AnnouncementsConsole({
 
               {state?.error ? <FormAlert>{state.error}</FormAlert> : null}
 
+              {/* Confirmação explícita do destinatário para prevenir disparos acidentais */}
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
+                <span className="text-muted-foreground">Destinatário confirmado do envio:</span>
+                <span className="font-semibold text-primary flex items-center gap-1.5">
+                  {audienceType === "person" && <UserIcon className="size-3.5" />}
+                  {audienceType === "department" && <UsersIcon className="size-3.5" />}
+                  {audienceType === "all" && <Building2Icon className="size-3.5" />}
+                  {audienceType === "person"
+                    ? `1 pessoa: ${people.find((p) => p.id === selectedPersonId)?.name || "Pessoa selecionada"}`
+                    : audienceType === "department"
+                      ? `Departamento: ${departments.find((d) => d.id === selectedDeptId)?.name || "Departamento selecionado"}`
+                      : "Toda a igreja (todos os membros)"}
+                </span>
+              </div>
+
               <div className="flex justify-end pt-2">
                 <SubmitButton
                   className="h-10 gap-2"

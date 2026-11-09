@@ -215,7 +215,7 @@ export function PeopleTable({
                 return (
                   <li
                     key={person.id}
-                    className="rounded-xl border border-border/60 bg-muted/15 p-3"
+                    className="overflow-hidden rounded-xl border border-border/60 bg-muted/15 p-3"
                   >
                     <Link
                       href={`/dashboard/members/${person.id}`}
@@ -267,15 +267,17 @@ export function PeopleTable({
                       </div>
                     </Link>
 
-                    <div className="mt-2.5 flex flex-wrap items-center gap-2 border-t border-border/40 pt-2.5">
-                      <MembershipChips
-                        memberships={person.memberships}
-                        limit={3}
-                        singularGroup={terminology?.singular.toLowerCase()}
-                      />
+                    <div className="mt-2.5 flex min-w-0 items-center justify-between gap-2 border-t border-border/40 pt-2.5">
+                      <div className="min-w-0 flex-1">
+                        <MembershipChips
+                          memberships={person.memberships}
+                          limit={3}
+                          singularGroup={terminology?.singular.toLowerCase()}
+                        />
+                      </div>
 
                       {isAdmin ? (
-                        <div className="ml-auto flex items-center gap-0.5">
+                        <div className="ml-auto flex shrink-0 items-center gap-0.5">
                           <PersonActions
                             person={person}
                             linkableMembers={linkableMembers}
@@ -313,7 +315,7 @@ function MembershipChips({
   }
 
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex min-w-0 max-w-full flex-wrap gap-1.5">
       {memberships.slice(0, limit).map((membership) => {
         const functions = membership.assignments
           .map((assignment) => assignment.function.name)
@@ -326,17 +328,17 @@ function MembershipChips({
           <span
             key={membership.id}
             title={label}
-            className="inline-flex max-w-full items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[0.7rem] text-muted-foreground"
+            className="inline-flex min-w-0 max-w-full items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[0.7rem] text-muted-foreground"
           >
             {membership.isLeader ? (
               <CrownIcon className="size-3 shrink-0 text-accent-foreground" />
             ) : null}
-            <span className="truncate">{label}</span>
+            <span className="min-w-0 truncate">{label}</span>
           </span>
         );
       })}
       {memberships.length > limit ? (
-        <span className="rounded-full bg-muted px-2 py-0.5 text-[0.7rem] text-muted-foreground">
+        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[0.7rem] text-muted-foreground">
           +{memberships.length - limit}
         </span>
       ) : null}
