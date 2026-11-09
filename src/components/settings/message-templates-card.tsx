@@ -8,7 +8,6 @@ import {
   RefreshCwIcon,
   SendIcon,
   SmartphoneIcon,
-  SparklesIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -191,10 +190,6 @@ export function MessageTemplatesCard({
               </CardDescription>
             </div>
           </div>
-          <Badge variant="outline" className="gap-1.5 py-1 px-2.5">
-            <SparklesIcon className="size-3 text-primary" />
-            Variáveis Dinâmicas
-          </Badge>
         </div>
       </CardHeader>
 

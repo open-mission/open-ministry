@@ -123,7 +123,7 @@ export function QuickActions({
                     icon={IconCalendarPlus}
                     label="Novo culto"
                     hint="Criar evento"
-                    iconTone="bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
+                    iconTone="bg-primary/10 text-primary group-hover:bg-primary/20"
                   />
                 </button>
               }
@@ -144,7 +144,7 @@ export function QuickActions({
                     icon={IconSpeakerphone}
                     label="Enviar aviso"
                     hint="Multicanal"
-                    iconTone="bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:bg-amber-500 group-hover:text-white"
+                    iconTone="bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:bg-amber-500/20"
                   />
                 </button>
               }
@@ -161,7 +161,7 @@ export function QuickActions({
                     icon={IconUserPlus}
                     label="Nova pessoa"
                     hint="Cadastrar"
-                    iconTone="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white"
+                    iconTone="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500/20"
                   />
                 </button>
               }
@@ -176,7 +176,7 @@ export function QuickActions({
                 icon={IconClipboardList}
                 label="Escalas"
                 hint="Gerenciar"
-                iconTone="bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:bg-blue-600 group-hover:text-white"
+                iconTone="bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:bg-blue-500/20"
               />
             </Link>
 
@@ -189,7 +189,7 @@ export function QuickActions({
                 icon={IconCalendarEvent}
                 label="Agenda"
                 hint="Calendário"
-                iconTone="bg-violet-500/10 text-violet-600 dark:text-violet-400 group-hover:bg-violet-600 group-hover:text-white"
+                iconTone="bg-violet-500/10 text-violet-600 dark:text-violet-400 group-hover:bg-violet-500/20"
               />
             </Link>
 
@@ -202,7 +202,7 @@ export function QuickActions({
                 icon={IconStack2}
                 label={terminology.plural}
                 hint={terminology.type === "departments" ? "Ministérios" : "Equipes"}
-                iconTone="bg-orange-500/10 text-orange-600 dark:text-orange-400 group-hover:bg-orange-600 group-hover:text-white"
+                iconTone="bg-orange-500/10 text-orange-600 dark:text-orange-400 group-hover:bg-orange-500/20"
               />
             </Link>
 
@@ -215,7 +215,7 @@ export function QuickActions({
                 icon={IconHeartHandshake}
                 label="Cuidado"
                 hint="Pastoral"
-                iconTone="bg-rose-500/10 text-rose-600 dark:text-rose-400 group-hover:bg-rose-600 group-hover:text-white"
+                iconTone="bg-rose-500/10 text-rose-600 dark:text-rose-400 group-hover:bg-rose-500/20"
               />
             </Link>
           </>
@@ -230,7 +230,7 @@ export function QuickActions({
                 icon={IconClipboardList}
                 label="Minhas escalas"
                 hint="Onde sirvo"
-                iconTone="bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
+                iconTone="bg-primary/10 text-primary group-hover:bg-primary/20"
               />
             </Link>
 
@@ -243,7 +243,7 @@ export function QuickActions({
                 icon={IconCalendarEvent}
                 label="Agenda"
                 hint="Calendário"
-                iconTone="bg-violet-500/10 text-violet-600 dark:text-violet-400 group-hover:bg-violet-600 group-hover:text-white"
+                iconTone="bg-violet-500/10 text-violet-600 dark:text-violet-400 group-hover:bg-violet-500/20"
               />
             </Link>
 
@@ -256,7 +256,7 @@ export function QuickActions({
                 icon={IconStack2}
                 label={terminology.plural}
                 hint={terminology.type === "departments" ? "Ministérios" : "Equipes"}
-                iconTone="bg-orange-500/10 text-orange-600 dark:text-orange-400 group-hover:bg-orange-600 group-hover:text-white"
+                iconTone="bg-orange-500/10 text-orange-600 dark:text-orange-400 group-hover:bg-orange-500/20"
               />
             </Link>
 
@@ -269,7 +269,7 @@ export function QuickActions({
                 icon={IconUsers}
                 label="Pessoas"
                 hint="Irmãos na fé"
-                iconTone="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white"
+                iconTone="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500/20"
               />
             </Link>
 
@@ -282,7 +282,7 @@ export function QuickActions({
                 icon={IconSpeakerphone}
                 label="Avisos"
                 hint="Comunicados"
-                iconTone="bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:bg-amber-500 group-hover:text-white"
+                iconTone="bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:bg-amber-500/20"
               />
             </Link>
 
@@ -295,7 +295,7 @@ export function QuickActions({
                 icon={IconUserCircle}
                 label="Meu perfil"
                 hint="Dados e senha"
-                iconTone="bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:bg-blue-600 group-hover:text-white"
+                iconTone="bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:bg-blue-500/20"
               />
             </Link>
           </>

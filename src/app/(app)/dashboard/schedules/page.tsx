@@ -15,7 +15,6 @@ import {
 } from "@/lib/agenda";
 import {
   listEvents,
-  scheduleProgress,
   splitEvents,
 } from "@/lib/events";
 import { requireOrganizationContext } from "@/lib/organizations";
@@ -60,10 +59,6 @@ async function SchedulesContent() {
 
   const events = await listEvents(organization.id);
   const { upcoming, past } = splitEvents(events);
-  const complete = upcoming.filter(
-    (event) => scheduleProgress(event).status === "complete",
-  ).length;
-  const attention = upcoming.length - complete;
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
@@ -86,35 +81,6 @@ async function SchedulesContent() {
             }
           />
         </div>
-        {upcoming.length > 0 ? (
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-            <span>
-              {upcoming.length === 1
-                ? "1 encontro pela frente"
-                : `${upcoming.length} encontros pela frente`}
-            </span>
-            <span aria-hidden className="text-border">
-              ·
-            </span>
-            <span>
-              {complete === 0
-                ? "Nenhuma escala pronta"
-                : complete === 1
-                  ? "1 escala pronta"
-                  : `${complete} escalas prontas`}
-            </span>
-            <span aria-hidden className="text-border">
-              ·
-            </span>
-            <span>
-              {attention === 0
-                ? "Nada pendente"
-                : attention === 1
-                  ? "1 ainda sem escala"
-                  : `${attention} ainda sem escala`}
-            </span>
-          </p>
-        ) : null}
       </header>
 
       {events.length === 0 ? (
@@ -190,10 +156,7 @@ async function SchedulesContent() {
 function SchedulesSkeleton() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8" aria-hidden>
-      <div className="space-y-2">
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-4 w-96 max-w-full" />
-      </div>
+      <Skeleton className="h-10 w-48" />
       <div className="space-y-3">
         <Skeleton className="h-6 w-48" />
         <Skeleton className="h-24 rounded-xl" />

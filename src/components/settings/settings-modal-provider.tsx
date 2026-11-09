@@ -23,7 +23,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { APP_NAME, APP_VERSION } from "@/lib/version";
 
 type SettingsModalContextValue = {
   open: boolean;
@@ -93,8 +92,8 @@ export function SettingsModalProvider({ children }: { children: ReactNode }) {
                 <DialogTitle className="font-heading text-lg tracking-tight leading-none">
                   Configurações do Sistema
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  {APP_NAME} v{APP_VERSION} · Preferências da conta e igreja
+                <DialogDescription className="sr-only">
+                  Configurações do sistema, conta e igreja
                 </DialogDescription>
               </div>
             </div>

@@ -332,12 +332,26 @@ export function SettingsView({
       {/* ------------------------------------------------------------------ */}
       {/* DESKTOP LAYOUT COM SIDEBAR LATERAL                                 */}
       {/* ------------------------------------------------------------------ */}
-      <div className="hidden md:flex min-h-[580px] rounded-2xl border bg-card overflow-hidden shadow-xs">
+      <div
+        className={cn(
+          "hidden md:flex min-h-[580px] overflow-hidden",
+          isModal
+            ? "border-0 rounded-none shadow-none bg-transparent"
+            : "rounded-2xl border bg-card shadow-xs",
+        )}
+      >
         {/* Sidebar Lateral de Configurações */}
         <aside className="w-72 shrink-0 border-r bg-muted/20 flex flex-col justify-between">
           <div className="p-3 space-y-4 overflow-y-auto max-h-[calc(85vh-80px)]">
             {/* Resumo do Usuário no topo do Sidebar Lateral */}
-            <div className="flex items-center gap-3 p-2 rounded-xl bg-background border">
+            <div
+              className={cn(
+                "flex items-center gap-3 p-2 transition-colors",
+                isModal
+                  ? "rounded-lg bg-background/50 border-0"
+                  : "rounded-xl bg-background border",
+              )}
+            >
               <Avatar className="size-10 rounded-lg">
                 <AvatarImage src={userData.image ?? undefined} alt={userData.name} />
                 <AvatarFallback className="rounded-lg bg-primary/10 text-xs font-semibold text-primary">
