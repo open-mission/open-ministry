@@ -19,14 +19,18 @@ import {
 export function SidebarNav({
   groups: customGroups,
   activeModuleKeys = [],
+  canManageJobs,
 }: {
   groups?: NavGroup[];
   activeModuleKeys?: ModuleKey[];
+  canManageJobs?: boolean;
 }) {
   const pathname = usePathname();
   const groups = useMemo(
-    () => customGroups ?? buildAccessibleNavGroups(activeModuleKeys),
-    [customGroups, activeModuleKeys],
+    () =>
+      customGroups ??
+      buildAccessibleNavGroups(activeModuleKeys, { canManageJobs }),
+    [customGroups, activeModuleKeys, canManageJobs],
   );
 
   return (

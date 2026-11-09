@@ -84,9 +84,11 @@ export function MobileMenuTrigger({ className }: { className?: string }) {
 export function MobileMenu({
   groups: customGroups,
   activeModuleKeys = [],
+  canManageJobs,
 }: {
   groups?: NavGroup[];
   activeModuleKeys?: ModuleKey[];
+  canManageJobs?: boolean;
 } = {}) {
   const pathname = usePathname();
   const { open, setOpen } = useMobileMenu();
@@ -97,8 +99,10 @@ export function MobileMenu({
     getServerSnapshot,
   );
   const groups = useMemo(
-    () => customGroups ?? buildAccessibleNavGroups(activeModuleKeys),
-    [customGroups, activeModuleKeys],
+    () =>
+      customGroups ??
+      buildAccessibleNavGroups(activeModuleKeys, { canManageJobs }),
+    [customGroups, activeModuleKeys, canManageJobs],
   );
   const isDark = mounted && resolvedTheme === "dark";
   const themeValue = isDark ? "Escuro" : "Claro";

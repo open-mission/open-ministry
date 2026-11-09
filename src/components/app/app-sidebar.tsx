@@ -29,6 +29,7 @@ type AppSidebarProps = {
   };
   activeModuleKeys?: ModuleKey[];
   groups?: NavGroup[];
+  canManageJobs?: boolean;
 };
 
 export function AppSidebar({
@@ -38,6 +39,7 @@ export function AppSidebar({
   user,
   activeModuleKeys,
   groups,
+  canManageJobs,
 }: AppSidebarProps) {
   return (
     <Sidebar collapsible="offcanvas">
@@ -76,7 +78,11 @@ export function AppSidebar({
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarNav groups={groups} activeModuleKeys={activeModuleKeys} />
+        <SidebarNav
+          groups={groups}
+          activeModuleKeys={activeModuleKeys}
+          canManageJobs={canManageJobs}
+        />
       </SidebarContent>
 
       <SidebarFooter>

@@ -2,7 +2,6 @@ import { connection } from "next/server";
 
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { isUserLeaderInAnyDepartment } from "@/lib/departments";
-import { buildAccessibleNavGroups } from "@/lib/modules/nav";
 import { getUserAccessibleModuleKeys } from "@/lib/modules/service";
 import { requireOrganizationContext } from "@/lib/organizations";
 
@@ -24,7 +23,6 @@ export async function AppSidebarLoader() {
   ]);
 
   const canManageJobs = isAdmin || isLeader;
-  const groups = buildAccessibleNavGroups(activeModuleKeys, { canManageJobs });
 
   return (
     <AppSidebar
@@ -37,7 +35,7 @@ export async function AppSidebarLoader() {
         image: session.user.image ?? null,
       }}
       activeModuleKeys={activeModuleKeys}
-      groups={groups}
+      canManageJobs={canManageJobs}
     />
   );
 }

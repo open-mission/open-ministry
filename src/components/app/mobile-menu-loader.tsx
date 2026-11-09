@@ -2,7 +2,6 @@ import { connection } from "next/server";
 
 import { MobileMenu } from "@/components/app/mobile-menu";
 import { isUserLeaderInAnyDepartment } from "@/lib/departments";
-import { buildAccessibleNavGroups } from "@/lib/modules/nav";
 import { getUserAccessibleModuleKeys } from "@/lib/modules/service";
 import { requireOrganizationContext } from "@/lib/organizations";
 
@@ -24,7 +23,11 @@ export async function MobileMenuLoader() {
   ]);
 
   const canManageJobs = isAdmin || isLeader;
-  const groups = buildAccessibleNavGroups(activeModuleKeys, { canManageJobs });
 
-  return <MobileMenu activeModuleKeys={activeModuleKeys} groups={groups} />;
+  return (
+    <MobileMenu
+      activeModuleKeys={activeModuleKeys}
+      canManageJobs={canManageJobs}
+    />
+  );
 }
