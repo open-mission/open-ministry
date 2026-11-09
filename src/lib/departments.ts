@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { remember } from "@/lib/cache";
+import { findPersonByUserId } from "@/lib/people";
 
 export async function listDepartments(organizationId: string) {
   return remember(
@@ -151,4 +152,21 @@ export async function getAssignmentWithDepartment(assignmentId: string) {
   });
 
   return row ?? null;
+}
+
+export async function isUserLeaderInAnyDepartment(
+  organizationId: string,
+  userId: string,
+): Promise<boolean> {
+  const person = await findPersonByUserId(organizationId, userId);
+  if (!person) return false;
+
+  const leadMember = await db.query.departmentMember.findFirst({
+    where: and(
+      eq(schema.departmentMember.personId, person.id),
+      eq(schema.departmentMember.isLeader, true),
+    ),
+  });
+
+  return Boolean(leadMember);
 }
