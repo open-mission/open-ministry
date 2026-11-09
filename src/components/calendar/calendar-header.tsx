@@ -5,6 +5,7 @@ import { ptBR } from "date-fns/locale";
 import {
   CalendarDaysIcon,
   CalendarIcon,
+  CalendarPlusIcon,
   CalendarRangeIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { CalendarPreferencesDialog } from "@/components/calendar/calendar-preferences-dialog";
+import { CreateEventDialog } from "@/components/events/create-event-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Tabs,
@@ -43,6 +45,8 @@ type CalendarHeaderProps = {
     assignments: number;
     unavailabilities: number;
   };
+  isAdmin?: boolean;
+  departments?: { id: string; name: string }[];
 };
 
 export function CalendarHeader({
@@ -57,6 +61,8 @@ export function CalendarHeader({
   onToday,
   onPreferencesChange,
   itemsCount,
+  isAdmin,
+  departments,
 }: CalendarHeaderProps) {
   function getTitle() {
     switch (viewMode) {
@@ -133,44 +139,63 @@ export function CalendarHeader({
           </h2>
         </div>
 
-        {/* View Switcher */}
-        <div className="flex items-center overflow-x-auto pb-1 scrollbar-none lg:pb-0">
-          <Tabs
-            value={viewMode}
-            onValueChange={(val) => onViewChange(val as CalendarViewMode)}
-            className="w-auto shrink-0"
-          >
-            <TabsList className="h-9 p-1 bg-muted/80">
-              <TabsTrigger
-                value="month"
-                className="gap-1.5 px-2.5 py-1 text-xs"
-              >
-                <CalendarDaysIcon className="size-3.5" />
-                Mês
-              </TabsTrigger>
-              <TabsTrigger
-                value="week"
-                className="gap-1.5 px-2.5 py-1 text-xs"
-              >
-                <CalendarRangeIcon className="size-3.5" />
-                Semana
-              </TabsTrigger>
-              <TabsTrigger value="day" className="gap-1.5 px-2.5 py-1 text-xs">
-                <CalendarIcon className="size-3.5" />
-                Dia
-              </TabsTrigger>
-              <TabsTrigger value="year" className="gap-1.5 px-2.5 py-1 text-xs">
-                Ano
-              </TabsTrigger>
-              <TabsTrigger
-                value="agenda"
-                className="order-first gap-1.5 px-2.5 py-1 text-xs md:order-none"
-              >
-                <ListIcon className="size-3.5" />
-                Agenda
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+        {/* View Switcher & Actions */}
+        <div className="flex flex-wrap items-center justify-between gap-2 lg:justify-end">
+          <div className="flex items-center overflow-x-auto pb-1 scrollbar-none lg:pb-0">
+            <Tabs
+              value={viewMode}
+              onValueChange={(val) => onViewChange(val as CalendarViewMode)}
+              className="w-auto shrink-0"
+            >
+              <TabsList className="h-9 p-1 bg-muted/80">
+                <TabsTrigger
+                  value="month"
+                  className="gap-1.5 px-2.5 py-1 text-xs"
+                >
+                  <CalendarDaysIcon className="size-3.5" />
+                  Mês
+                </TabsTrigger>
+                <TabsTrigger
+                  value="week"
+                  className="gap-1.5 px-2.5 py-1 text-xs"
+                >
+                  <CalendarRangeIcon className="size-3.5" />
+                  Semana
+                </TabsTrigger>
+                <TabsTrigger value="day" className="gap-1.5 px-2.5 py-1 text-xs">
+                  <CalendarIcon className="size-3.5" />
+                  Dia
+                </TabsTrigger>
+                <TabsTrigger value="year" className="gap-1.5 px-2.5 py-1 text-xs">
+                  Ano
+                </TabsTrigger>
+                <TabsTrigger
+                  value="agenda"
+                  className="order-first gap-1.5 px-2.5 py-1 text-xs md:order-none"
+                >
+                  <ListIcon className="size-3.5" />
+                  Agenda
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          {isAdmin ? (
+            <CreateEventDialog
+              departments={departments ?? []}
+              defaultDate={format(currentDate, "yyyy-MM-dd")}
+              trigger={
+                <Button
+                  size="sm"
+                  className="h-9 shrink-0 gap-1.5 rounded-xl px-3 text-xs font-semibold shadow-xs sm:text-sm"
+                >
+                  <CalendarPlusIcon className="size-4" />
+                  <span className="hidden sm:inline">Novo culto ou evento</span>
+                  <span className="sm:hidden">Novo</span>
+                </Button>
+              }
+            />
+          ) : null}
         </div>
       </div>
 

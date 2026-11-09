@@ -3,10 +3,9 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { CalendarDaysIcon } from "lucide-react";
 
-import { PageInfo } from "@/components/app/page-info";
 import { CreateEventDialog } from "@/components/events/create-event-dialog";
 import { EventList } from "@/components/events/event-list";
-import { Badge } from "@/components/ui/badge";
+import { PastEventsSheet } from "@/components/events/past-events-sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listDepartments } from "@/lib/departments";
 import {
@@ -46,25 +45,10 @@ async function EventsContent() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
+        <div>
           <h1 className="font-heading text-4xl leading-none tracking-tight">
             Cultos e eventos
           </h1>
-          <Badge variant="outline" className="font-normal">
-            {upcoming.length}
-          </Badge>
-          <PageInfo
-            title="Cultos e eventos"
-            description={
-              <>
-                A agenda de{" "}
-                <span className="font-medium text-foreground">
-                  {organization.name}
-                </span>
-                , com os departamentos e a escala de cada ocorrência.
-              </>
-            }
-          />
         </div>
         {isAdmin ? (
           <CreateEventDialog
@@ -97,53 +81,41 @@ async function EventsContent() {
           ) : null}
         </div>
       ) : (
-        <>
-          <section className="space-y-4">
-            <div className="flex items-baseline justify-between gap-2">
+        <section className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
               <h2 className="font-heading text-2xl tracking-tight">
                 Próximos encontros
               </h2>
-              <span className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {upcoming.length === 0
                   ? "nenhum encontro futuro"
                   : upcoming.length === 1
                     ? "1 encontro futuro"
                     : `${upcoming.length} encontros futuros`}
-              </span>
+              </p>
             </div>
 
-            {upcoming.length === 0 ? (
-              <div className="rounded-xl border border-dashed px-6 py-10 text-center">
-                <p className="text-sm font-medium">
-                  Nenhum encontro futuro publicado
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {isAdmin
-                    ? "Crie o próximo culto ou evento para começar a montar a escala."
-                    : "A liderança ainda não publicou os próximos encontros."}
-                </p>
-              </div>
-            ) : (
-              <EventList events={upcoming} />
-            )}
-          </section>
+            <PastEventsSheet count={past.length}>
+              <EventList events={past} />
+            </PastEventsSheet>
+          </div>
 
-          {past.length > 0 ? (
-            <section className="space-y-4">
-              <div className="flex items-baseline justify-between gap-2">
-                <h2 className="font-heading text-2xl tracking-tight">
-                  Já aconteceram
-                </h2>
-                <span className="text-xs text-muted-foreground">
-                  {past.length === 1
-                    ? "1 encontro"
-                    : `${past.length} encontros`}
-                </span>
-              </div>
-              <EventList events={past.slice(0, 24)} />
-            </section>
-          ) : null}
-        </>
+          {upcoming.length === 0 ? (
+            <div className="rounded-xl border border-dashed px-6 py-10 text-center">
+              <p className="text-sm font-medium">
+                Nenhum encontro futuro publicado
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {isAdmin
+                  ? "Crie o próximo culto ou evento para começar a montar a escala."
+                  : "A liderança ainda não publicou os próximos encontros."}
+              </p>
+            </div>
+          ) : (
+            <EventList events={upcoming} />
+          )}
+        </section>
       )}
     </div>
   );
@@ -157,13 +129,11 @@ function EventsSkeleton() {
         <Skeleton className="h-4 w-96 max-w-full" />
       </div>
       <div className="space-y-3">
-        <Skeleton className="h-6 w-48" />
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-9 w-28 rounded-xl" />
+        </div>
         <Skeleton className="h-24 rounded-xl" />
-        <Skeleton className="h-24 rounded-xl" />
-        <Skeleton className="h-24 rounded-xl" />
-      </div>
-      <div className="space-y-3">
-        <Skeleton className="h-6 w-40" />
         <Skeleton className="h-24 rounded-xl" />
         <Skeleton className="h-24 rounded-xl" />
       </div>
