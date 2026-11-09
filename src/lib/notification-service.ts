@@ -1,6 +1,7 @@
 import "server-only";
 
-import { eq, and } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
+import { eq, and, sql, desc, or, ilike } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { remember } from "@/lib/cache";
@@ -29,6 +30,8 @@ export type DispatchNotificationOptions = {
   personId?: string | null;
   phone?: string | null;
   name?: string | null;
+  batchId?: string;
+  notificationId?: string;
   channels?: ("in_app" | "whatsapp" | "email" | "push")[];
   metadata?: {
     churchName?: string;
@@ -217,11 +220,6 @@ export async function dispatchNotification(
     organizationId,
   );
 
-  if (!evolutionConfig) {
-    // WhatsApp channel not configured or inactive
-    return { inAppSent, whatsappSent: false };
-  }
-
   // 3. Resolve phone and name
   let targetPhone = options.phone;
   let targetName = options.name;
@@ -274,8 +272,8 @@ export async function dispatchNotification(
         event_time: (metadata?.eventTime as string) || "",
         title,
         body: body || "",
-        church_phone: evolutionConfig.instanceName,
-        whatsapp_name: evolutionConfig.instanceName,
+        church_phone: evolutionConfig?.instanceName || "",
+        whatsapp_name: evolutionConfig?.instanceName || "",
       },
     });
   } catch {
@@ -289,7 +287,41 @@ export async function dispatchNotification(
     });
   }
 
+  // 4. Create persistent queue log record
+  const logId = randomUUID();
+  try {
+    await db.insert(schema.whatsappMessageLog).values({
+      id: logId,
+      organizationId,
+      notificationId: options.notificationId ?? null,
+      batchId: options.batchId ?? null,
+      type,
+      recipientPhone: targetPhone,
+      recipientName,
+      personId: personId ?? null,
+      userId: userId ?? null,
+      content: messageText,
+      status: evolutionConfig ? "pending" : "failed",
+      attempts: 0,
+      lastError: evolutionConfig
+        ? null
+        : "Canal do WhatsApp inativo ou não configurado na igreja.",
+    });
+  } catch (err) {
+    console.error("Falha ao salvar log de mensagem WhatsApp:", err);
+  }
+
+  if (!evolutionConfig) {
+    return {
+      inAppSent,
+      whatsappSent: false,
+      error: "Canal do WhatsApp inativo ou não configurado na igreja.",
+    };
+  }
+
   const job: NotificationJob = {
+    whatsappLogId: logId,
+    batchId: options.batchId,
     organizationId,
     type,
     recipientPhone: targetPhone,
@@ -306,19 +338,268 @@ export async function dispatchNotification(
     },
   };
 
-  // 4. Enqueue or dispatch WhatsApp notification
+  // 5. Enqueue or dispatch WhatsApp notification
   await enqueueNotificationJob(job, async (payload) => {
-    const res = await sendEvolutionTextMessage({
-      config: evolutionConfig,
-      to: payload.recipientPhone!,
-      text: messageText,
-    });
-    if (res.ok) {
-      whatsappSent = true;
-    } else {
-      console.warn("Falha no envio WhatsApp via Evolution API:", res.error);
+    try {
+      await db
+        .update(schema.whatsappMessageLog)
+        .set({
+          status: "sending",
+          attempts: sql`${schema.whatsappMessageLog.attempts} + 1`,
+        })
+        .where(eq(schema.whatsappMessageLog.id, logId));
+
+      const res = await sendEvolutionTextMessage({
+        config: evolutionConfig,
+        to: payload.recipientPhone!,
+        text: messageText,
+      });
+
+      if (res.ok) {
+        whatsappSent = true;
+        await db
+          .update(schema.whatsappMessageLog)
+          .set({
+            status: "sent",
+            evolutionMessageId: res.messageId ?? null,
+            sentAt: new Date(),
+            lastError: null,
+          })
+          .where(eq(schema.whatsappMessageLog.id, logId));
+      } else {
+        await db
+          .update(schema.whatsappMessageLog)
+          .set({
+            status: "failed",
+            lastError: res.error || "Falha no envio via Evolution API",
+          })
+          .where(eq(schema.whatsappMessageLog.id, logId));
+        console.warn("Falha no envio WhatsApp via Evolution API:", res.error);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro desconhecido";
+      await db
+        .update(schema.whatsappMessageLog)
+        .set({
+          status: "failed",
+          lastError: msg,
+        })
+        .where(eq(schema.whatsappMessageLog.id, logId));
     }
   });
 
   return { inAppSent, whatsappSent };
+}
+
+/**
+ * Re-envia uma mensagem específica da fila que falhou ou permaneceu pendente.
+ */
+export async function retryWhatsAppMessage(
+  logId: string,
+  organizationId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const log = await db.query.whatsappMessageLog.findFirst({
+    where: and(
+      eq(schema.whatsappMessageLog.id, logId),
+      eq(schema.whatsappMessageLog.organizationId, organizationId),
+    ),
+  });
+
+  if (!log) {
+    return { ok: false, error: "Registro de mensagem não encontrado." };
+  }
+
+  const { config: evolutionConfig } = await getOrganizationEvolutionConfig(
+    organizationId,
+  );
+
+  if (!evolutionConfig) {
+    return {
+      ok: false,
+      error: "Canal do WhatsApp inativo ou não configurado na igreja.",
+    };
+  }
+
+  try {
+    await db
+      .update(schema.whatsappMessageLog)
+      .set({
+        status: "sending",
+        attempts: sql`${schema.whatsappMessageLog.attempts} + 1`,
+      })
+      .where(eq(schema.whatsappMessageLog.id, logId));
+
+    const res = await sendEvolutionTextMessage({
+      config: evolutionConfig,
+      to: log.recipientPhone,
+      text: log.content,
+    });
+
+    if (res.ok) {
+      await db
+        .update(schema.whatsappMessageLog)
+        .set({
+          status: "sent",
+          evolutionMessageId: res.messageId ?? null,
+          sentAt: new Date(),
+          lastError: null,
+        })
+        .where(eq(schema.whatsappMessageLog.id, logId));
+      return { ok: true };
+    }
+
+    await db
+      .update(schema.whatsappMessageLog)
+      .set({
+        status: "failed",
+        lastError: res.error || "Falha ao reenviar via Evolution API",
+      })
+      .where(eq(schema.whatsappMessageLog.id, logId));
+
+    return { ok: false, error: res.error || "Falha no envio." };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Erro desconhecido";
+    await db
+      .update(schema.whatsappMessageLog)
+      .set({
+        status: "failed",
+        lastError: msg,
+      })
+      .where(eq(schema.whatsappMessageLog.id, logId));
+
+    return { ok: false, error: msg };
+  }
+}
+
+/**
+ * Re-envia em lote todas as mensagens pendentes ou com falha.
+ */
+export async function retryFailedWhatsAppMessages(
+  organizationId: string,
+  batchId?: string,
+): Promise<{ total: number; sent: number; failed: number }> {
+  const conditions = [
+    eq(schema.whatsappMessageLog.organizationId, organizationId),
+    or(
+      eq(schema.whatsappMessageLog.status, "failed"),
+      eq(schema.whatsappMessageLog.status, "pending"),
+    ),
+  ];
+
+  if (batchId) {
+    conditions.push(eq(schema.whatsappMessageLog.batchId, batchId));
+  }
+
+  const pendingList = await db.query.whatsappMessageLog.findMany({
+    where: and(...conditions),
+    orderBy: [desc(schema.whatsappMessageLog.createdAt)],
+    limit: 50,
+  });
+
+  if (pendingList.length === 0) {
+    return { total: 0, sent: 0, failed: 0 };
+  }
+
+  let sent = 0;
+  let failed = 0;
+
+  for (const item of pendingList) {
+    const res = await retryWhatsAppMessage(item.id, organizationId);
+    if (res.ok) {
+      sent += 1;
+    } else {
+      failed += 1;
+    }
+    // Small pause to prevent rate limiting issues
+    await new Promise((r) => setTimeout(r, 200));
+  }
+
+  return {
+    total: pendingList.length,
+    sent,
+    failed,
+  };
+}
+
+export type EvolutionMessageLogItem = {
+  id: string;
+  batchId: string | null;
+  type: string;
+  recipientPhone: string;
+  recipientName: string | null;
+  content: string;
+  status: "pending" | "sending" | "sent" | "delivered" | "read" | "failed";
+  evolutionMessageId: string | null;
+  attempts: number;
+  lastError: string | null;
+  sentAt: Date | null;
+  deliveredAt: Date | null;
+  readAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+/**
+ * Lista o histórico de mensagens enviadas via WhatsApp para a igreja.
+ */
+export async function listEvolutionMessageLogs(
+  organizationId: string,
+  options?: {
+    limit?: number;
+    offset?: number;
+    status?: string;
+    search?: string;
+    type?: string;
+    batchId?: string;
+  },
+): Promise<{ logs: EvolutionMessageLogItem[]; total: number }> {
+  const limit = options?.limit ?? 50;
+  const offset = options?.offset ?? 0;
+
+  const conditions = [
+    eq(schema.whatsappMessageLog.organizationId, organizationId),
+  ];
+
+  if (options?.status && options.status !== "all") {
+    conditions.push(eq(schema.whatsappMessageLog.status, options.status));
+  }
+
+  if (options?.type && options.type !== "all") {
+    conditions.push(eq(schema.whatsappMessageLog.type, options.type));
+  }
+
+  if (options?.batchId) {
+    conditions.push(eq(schema.whatsappMessageLog.batchId, options.batchId));
+  }
+
+  if (options?.search && options.search.trim()) {
+    const query = `%${options.search.trim()}%`;
+    conditions.push(
+      or(
+        ilike(schema.whatsappMessageLog.recipientName, query),
+        ilike(schema.whatsappMessageLog.recipientPhone, query),
+        ilike(schema.whatsappMessageLog.content, query),
+      )!,
+    );
+  }
+
+  const where = and(...conditions);
+
+  const [rows, countRows] = await Promise.all([
+    db.query.whatsappMessageLog.findMany({
+      where,
+      orderBy: [desc(schema.whatsappMessageLog.createdAt)],
+      limit,
+      offset,
+    }),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.whatsappMessageLog)
+      .where(where),
+  ]);
+
+  return {
+    logs: rows as EvolutionMessageLogItem[],
+    total: Number(countRows[0]?.count ?? 0),
+  };
 }

@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import {
   boolean,
   index,
+  integer,
   pgTable,
   text,
   timestamp,
@@ -9,6 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { organization, user } from "./auth";
+import { person } from "./people";
 
 export const notification = pgTable(
   "notification",
@@ -69,6 +71,7 @@ export const organizationNotificationChannel = pgTable(
     apiUrl: text("api_url"),
     apiKey: text("api_key"),
     instanceName: text("instance_name"),
+    webhookSecret: text("webhook_secret"),
     isActive: boolean("is_active").default(true).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
@@ -163,3 +166,71 @@ export const organizationMessageTemplateRelations = relations(
     }),
   }),
 );
+
+export const whatsappMessageLog = pgTable(
+  "whatsapp_message_log",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    notificationId: text("notification_id").references(
+      () => notification.id,
+      { onDelete: "set null" },
+    ),
+    batchId: text("batch_id"),
+    type: text("type").notNull().default("announcement"),
+    recipientPhone: text("recipient_phone").notNull(),
+    recipientName: text("recipient_name"),
+    personId: text("person_id").references(() => person.id, {
+      onDelete: "set null",
+    }),
+    userId: text("user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    content: text("content").notNull(),
+    status: text("status").notNull().default("pending"),
+    evolutionMessageId: text("evolution_message_id"),
+    attempts: integer("attempts").default(0).notNull(),
+    lastError: text("last_error"),
+    sentAt: timestamp("sent_at"),
+    deliveredAt: timestamp("delivered_at"),
+    readAt: timestamp("read_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("whatsapp_log_org_idx").on(table.organizationId),
+    index("whatsapp_log_org_status_idx").on(table.organizationId, table.status),
+    index("whatsapp_log_batch_idx").on(table.organizationId, table.batchId),
+    index("whatsapp_log_evo_id_idx").on(table.evolutionMessageId),
+    index("whatsapp_log_created_at_idx").on(table.organizationId, table.createdAt),
+    index("whatsapp_log_phone_idx").on(table.organizationId, table.recipientPhone),
+  ],
+);
+
+export const whatsappMessageLogRelations = relations(
+  whatsappMessageLog,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [whatsappMessageLog.organizationId],
+      references: [organization.id],
+    }),
+    notification: one(notification, {
+      fields: [whatsappMessageLog.notificationId],
+      references: [notification.id],
+    }),
+    person: one(person, {
+      fields: [whatsappMessageLog.personId],
+      references: [person.id],
+    }),
+    user: one(user, {
+      fields: [whatsappMessageLog.userId],
+      references: [user.id],
+    }),
+  }),
+);
+

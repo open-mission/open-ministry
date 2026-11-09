@@ -64,6 +64,8 @@ export function AnnouncementDialog({
   canBroadcastAll = false,
   isWhatsAppConfigured = false,
   defaultDepartmentId,
+  defaultPersonId,
+  defaultAudienceType,
   trigger,
 }: {
   departments: AnnouncementDepartment[];
@@ -71,6 +73,8 @@ export function AnnouncementDialog({
   canBroadcastAll?: boolean;
   isWhatsAppConfigured?: boolean;
   defaultDepartmentId?: string;
+  defaultPersonId?: string;
+  defaultAudienceType?: "all" | "department" | "person";
   trigger?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -110,6 +114,8 @@ export function AnnouncementDialog({
           canBroadcastAll={canBroadcastAll}
           isWhatsAppConfigured={isWhatsAppConfigured}
           defaultDepartmentId={defaultDepartmentId}
+          defaultPersonId={defaultPersonId}
+          defaultAudienceType={defaultAudienceType}
           onDone={() => setOpen(false)}
         />
       </DialogContent>
@@ -123,6 +129,8 @@ function AnnouncementForm({
   canBroadcastAll,
   isWhatsAppConfigured,
   defaultDepartmentId,
+  defaultPersonId,
+  defaultAudienceType,
   onDone,
 }: {
   departments: AnnouncementDepartment[];
@@ -130,6 +138,8 @@ function AnnouncementForm({
   canBroadcastAll: boolean;
   isWhatsAppConfigured: boolean;
   defaultDepartmentId?: string;
+  defaultPersonId?: string;
+  defaultAudienceType?: "all" | "department" | "person";
   onDone: () => void;
 }) {
   const [state, formAction] = useActionState<
@@ -141,20 +151,24 @@ function AnnouncementForm({
   const [audienceType, setAudienceType] = useState<
     "all" | "department" | "person"
   >(
-    defaultDepartmentId
-      ? "department"
-      : canBroadcastAll
-        ? "all"
-        : departments.length > 0
+    defaultAudienceType
+      ? defaultAudienceType
+      : defaultPersonId
+        ? "person"
+        : defaultDepartmentId
           ? "department"
-          : "person",
+          : canBroadcastAll
+            ? "all"
+            : departments.length > 0
+              ? "department"
+              : "person",
   );
 
   const [selectedDeptId, setSelectedDeptId] = useState<string>(
     defaultDepartmentId ?? departments[0]?.id ?? "",
   );
   const [selectedPersonId, setSelectedPersonId] = useState<string>(
-    people[0]?.id ?? "",
+    defaultPersonId ?? people[0]?.id ?? "",
   );
 
   const [sendInApp, setSendInApp] = useState(true);
@@ -470,6 +484,21 @@ function AnnouncementForm({
       </FieldGroup>
 
       {state?.error ? <FormAlert>{state.error}</FormAlert> : null}
+
+      {/* Confirmação explícita do destinatário para prevenir disparos acidentais */}
+      <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
+        <span className="text-muted-foreground">Destinatário confirmado do envio:</span>
+        <span className="font-semibold text-primary flex items-center gap-1.5">
+          {audienceType === "person" && <UserIcon className="size-3.5" />}
+          {audienceType === "department" && <UsersIcon className="size-3.5" />}
+          {audienceType === "all" && <Building2Icon className="size-3.5" />}
+          {audienceType === "person"
+            ? `1 pessoa: ${people.find((p) => p.id === selectedPersonId)?.name || "Pessoa selecionada"}`
+            : audienceType === "department"
+              ? `Departamento: ${departments.find((d) => d.id === selectedDeptId)?.name || "Departamento selecionado"}`
+              : "Toda a igreja (todos os membros)"}
+        </span>
+      </div>
 
       <DialogFooter className="gap-2 sm:gap-0">
         <DialogClose asChild>

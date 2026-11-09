@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { eq, sql } from "drizzle-orm";
+import { db } from "@/db";
+import * as schema from "@/db/schema";
 import { getQStashReceiver, type NotificationJob } from "@/lib/queue";
 import {
   getOrganizationEvolutionConfig,
@@ -68,6 +71,30 @@ export async function POST(req: Request) {
       to: job.recipientPhone,
       text,
     });
+
+    if (job.whatsappLogId) {
+      if (!result.ok) {
+        await db
+          .update(schema.whatsappMessageLog)
+          .set({
+            status: "failed",
+            lastError: result.error || "Falha no disparo via QStash",
+            attempts: sql`${schema.whatsappMessageLog.attempts} + 1`,
+          })
+          .where(eq(schema.whatsappMessageLog.id, job.whatsappLogId));
+      } else {
+        await db
+          .update(schema.whatsappMessageLog)
+          .set({
+            status: "sent",
+            evolutionMessageId: result.messageId ?? null,
+            sentAt: new Date(),
+            lastError: null,
+            attempts: sql`${schema.whatsappMessageLog.attempts} + 1`,
+          })
+          .where(eq(schema.whatsappMessageLog.id, job.whatsappLogId));
+      }
+    }
 
     if (!result.ok) {
       return NextResponse.json(
