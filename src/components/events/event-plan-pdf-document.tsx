@@ -6,8 +6,120 @@ import {
   View,
   StyleSheet,
   Image,
+  Svg,
+  Path,
+  Font,
 } from "@react-pdf/renderer";
 import type { ComputedPlanItem } from "@/lib/plan-utils";
+
+// Disable automatic English hyphenation so Portuguese words wrap naturally by full word
+Font.registerHyphenationCallback((word) => [word]);
+
+/**
+ * Strips emoji unicode characters and unprintable surrogate pairs from text strings
+ * to prevent font glyph corruption and overlapping text in standard PDF engines.
+ */
+export function sanitizePdfText(text?: string | null): string {
+  if (!text) return "";
+  return text
+    .replace(
+      /[\u{1F300}-\u{1F9FF}\u{1FA00}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F1E0}-\u{1F1FF}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}]/gu,
+      "",
+    )
+    .replace(/[\uD800-\uDFFF]/g, "")
+    .replace(/[ \t]+/g, " ")
+    .trim();
+}
+
+function CalendarIconSvg({
+  size = 9.5,
+  color = "#64748b",
+}: {
+  size?: number;
+  color?: string;
+}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </Svg>
+  );
+}
+
+function ClockIconSvg({
+  size = 9.5,
+  color = "#64748b",
+}: {
+  size?: number;
+  color?: string;
+}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M12 6v6l4 2M22 12A10 10 0 112 12a10 10 0 0120 0z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </Svg>
+  );
+}
+
+function MapPinIconSvg({
+  size = 9.5,
+  color = "#64748b",
+}: {
+  size?: number;
+  color?: string;
+}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+      <Path
+        d="M12 13a3 3 0 100-6 3 3 0 000 6z"
+        stroke={color}
+        strokeWidth={2}
+        fill="none"
+      />
+    </Svg>
+  );
+}
+
+function MusicIconSvg({
+  size = 8,
+  color = "#0284c7",
+}: {
+  size?: number;
+  color?: string;
+}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M9 18V5l12-2v13M9 18a3 3 0 11-6 0 3 3 0 016 0zm12 0a3 3 0 11-6 0 3 3 0 016 0z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </Svg>
+  );
+}
 
 const styles = StyleSheet.create({
   page: {
@@ -68,13 +180,17 @@ const styles = StyleSheet.create({
   eventMetaRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
-    fontSize: 9,
-    color: "#64748b",
+    gap: 14,
+    marginTop: 4,
   },
   metaItem: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 9,
+    color: "#64748b",
   },
   summaryBar: {
     flexDirection: "row",
@@ -170,10 +286,20 @@ const styles = StyleSheet.create({
     width: "20%",
     paddingRight: 6,
   },
+  songTitleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 4,
+    marginBottom: 2,
+  },
+  songIconWrapper: {
+    marginTop: 1.5,
+  },
   songTitle: {
     fontSize: 8.5,
     fontWeight: "bold",
     color: "#0284c7",
+    flex: 1,
   },
   songArtist: {
     fontSize: 7.5,
@@ -250,7 +376,10 @@ export function EventPlanPdfDocument({
   ).length;
 
   return (
-    <Document title={`Cronograma - ${eventTitle}`} author="OpenMinistry">
+    <Document
+      title={`Cronograma - ${sanitizePdfText(eventTitle)}`}
+      author="OpenMinistry"
+    >
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
@@ -260,18 +389,29 @@ export function EventPlanPdfDocument({
                 /* eslint-disable-next-line jsx-a11y/alt-text */
                 <Image src={organizationLogo} style={styles.orgLogo} />
               ) : null}
-              <Text style={styles.orgName}>{organizationName}</Text>
+              <Text style={styles.orgName}>
+                {sanitizePdfText(organizationName)}
+              </Text>
             </View>
-            <Text style={styles.badge}>{kindLabel}</Text>
+            <Text style={styles.badge}>{sanitizePdfText(kindLabel)}</Text>
           </View>
 
-          <Text style={styles.eventTitle}>{eventTitle}</Text>
+          <Text style={styles.eventTitle}>{sanitizePdfText(eventTitle)}</Text>
 
           <View style={styles.eventMetaRow}>
-            <Text style={styles.metaItem}>📅 {dateLabel}</Text>
-            <Text style={styles.metaItem}>⏰ {timeLabel}</Text>
+            <View style={styles.metaItem}>
+              <CalendarIconSvg size={9.5} color="#64748b" />
+              <Text style={styles.metaText}>{sanitizePdfText(dateLabel)}</Text>
+            </View>
+            <View style={styles.metaItem}>
+              <ClockIconSvg size={9.5} color="#64748b" />
+              <Text style={styles.metaText}>{sanitizePdfText(timeLabel)}</Text>
+            </View>
             {location ? (
-              <Text style={styles.metaItem}>📍 {location}</Text>
+              <View style={styles.metaItem}>
+                <MapPinIconSvg size={9.5} color="#64748b" />
+                <Text style={styles.metaText}>{sanitizePdfText(location)}</Text>
+              </View>
             ) : null}
           </View>
         </View>
@@ -307,10 +447,12 @@ export function EventPlanPdfDocument({
                 style={styles.sectionHeader}
                 wrap={false}
               >
-                <Text style={styles.sectionTitle}>{item.title}</Text>
+                <Text style={styles.sectionTitle}>
+                  {sanitizePdfText(item.title)}
+                </Text>
                 {item.description ? (
                   <Text style={styles.sectionDescription}>
-                    {item.description}
+                    {sanitizePdfText(item.description)}
                   </Text>
                 ) : null}
               </View>
@@ -334,10 +476,12 @@ export function EventPlanPdfDocument({
 
               {/* Título e Descrição */}
               <View style={styles.detailsCol}>
-                <Text style={styles.itemTitle}>{item.title}</Text>
+                <Text style={styles.itemTitle}>
+                  {sanitizePdfText(item.title)}
+                </Text>
                 {item.description ? (
                   <Text style={styles.itemDescription}>
-                    {item.description}
+                    {sanitizePdfText(item.description)}
                   </Text>
                 ) : null}
               </View>
@@ -346,12 +490,17 @@ export function EventPlanPdfDocument({
               <View style={styles.songCol}>
                 {item.song ? (
                   <>
-                    <Text style={styles.songTitle}>
-                      🎵 {item.song.title}
-                    </Text>
+                    <View style={styles.songTitleRow}>
+                      <View style={styles.songIconWrapper}>
+                        <MusicIconSvg size={8} color="#0284c7" />
+                      </View>
+                      <Text style={styles.songTitle}>
+                        {sanitizePdfText(item.song.title)}
+                      </Text>
+                    </View>
                     {item.song.artist ? (
                       <Text style={styles.songArtist}>
-                        {item.song.artist}
+                        {sanitizePdfText(item.song.artist)}
                       </Text>
                     ) : null}
                     {item.song.tone ? (
@@ -369,7 +518,7 @@ export function EventPlanPdfDocument({
               {/* Responsável */}
               <View style={styles.respCol}>
                 <Text style={styles.respName}>
-                  {responsibleName}
+                  {sanitizePdfText(responsibleName)}
                 </Text>
               </View>
             </View>

@@ -4,8 +4,25 @@ mock.module("server-only", () => ({}));
 
 const { generateEventPlanPdfBuffer } = await import("@/lib/pdf/generator");
 const { computePlanItemTimes } = await import("@/lib/plan-utils");
+const { sanitizePdfText } = await import(
+  "@/components/events/event-plan-pdf-document"
+);
 
 describe("Plan PDF & Background Jobs Engine", () => {
+  it("sanitizes emojis and surrogate pairs to avoid PDF text overlapping", () => {
+    expect(sanitizePdfText("Culto de Louvor & Adoração 🙌🔥")).toBe(
+      "Culto de Louvor & Adoração",
+    );
+    expect(sanitizePdfText("🎵 Tu és + Águas Purificadoras")).toBe(
+      "Tu és + Águas Purificadoras",
+    );
+    expect(sanitizePdfText("📅 8 de novembro de 2026")).toBe(
+      "8 de novembro de 2026",
+    );
+    expect(sanitizePdfText(null)).toBe("");
+    expect(sanitizePdfText(undefined)).toBe("");
+  });
+
   it("renders a valid PDF buffer using @react-pdf/renderer v4", async () => {
     const baseDate = new Date("2026-10-15T19:00:00Z");
 
