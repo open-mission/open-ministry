@@ -64,4 +64,13 @@ describe("Modules System Foundation", () => {
       repertoGroup[0]?.items.filter((i) => i.href === "/dashboard/songs").length,
     ).toBe(1);
   });
+
+  it("injects operations nav group when canManageJobs option is true", () => {
+    const adminNav = buildAccessibleNavGroups([], { canManageJobs: true });
+    const titles = adminNav.map((g) => g.title);
+    expect(titles).toContain("Operações");
+
+    const opsGroup = adminNav.find((g) => g.title === "Operações");
+    expect(opsGroup?.items.some((i) => i.href === "/dashboard/jobs")).toBe(true);
+  });
 });

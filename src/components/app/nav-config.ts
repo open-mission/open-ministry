@@ -6,6 +6,7 @@ import {
   CalendarRangeIcon,
   ClipboardListIcon,
   HandHeartIcon,
+  LayersIcon,
   LayoutDashboardIcon,
   MegaphoneIcon,
   UsersIcon,
@@ -99,6 +100,18 @@ export const navGroups: NavGroup[] = [
     ],
   },
 ];
+
+export const jobsNavItem: NavItem = {
+  href: "/dashboard/jobs",
+  label: "Tarefas agendadas",
+  icon: LayersIcon,
+  exact: false,
+};
+
+export const jobsNavGroup: NavGroup = {
+  title: "Operações",
+  items: [jobsNavItem],
+};
 
 export const mobileNavItems: NavItem[] = [
   {

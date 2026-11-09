@@ -1,6 +1,8 @@
 import { connection } from "next/server";
 
 import { AppSidebar } from "@/components/app/app-sidebar";
+import { isUserLeaderInAnyDepartment } from "@/lib/departments";
+import { buildAccessibleNavGroups } from "@/lib/modules/nav";
 import { getUserAccessibleModuleKeys } from "@/lib/modules/service";
 import { requireOrganizationContext } from "@/lib/organizations";
 
@@ -10,11 +12,19 @@ export async function AppSidebarLoader() {
   const { organization, role, session, isAdmin } =
     await requireOrganizationContext();
 
-  const activeModuleKeys = await getUserAccessibleModuleKeys(
-    organization.id,
-    session.user.id,
-    isAdmin,
-  );
+  const [activeModuleKeys, isLeader] = await Promise.all([
+    getUserAccessibleModuleKeys(
+      organization.id,
+      session.user.id,
+      isAdmin,
+    ),
+    !isAdmin
+      ? isUserLeaderInAnyDepartment(organization.id, session.user.id)
+      : Promise.resolve(false),
+  ]);
+
+  const canManageJobs = isAdmin || isLeader;
+  const groups = buildAccessibleNavGroups(activeModuleKeys, { canManageJobs });
 
   return (
     <AppSidebar
@@ -27,6 +37,7 @@ export async function AppSidebarLoader() {
         image: session.user.image ?? null,
       }}
       activeModuleKeys={activeModuleKeys}
+      groups={groups}
     />
   );
 }

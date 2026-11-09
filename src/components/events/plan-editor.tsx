@@ -10,13 +10,16 @@ import {
   CheckIcon,
   ClockIcon,
   DownloadIcon,
+  FileTextIcon,
   GripVerticalIcon,
+  LayersIcon,
   LayoutTemplateIcon,
   ListOrderedIcon,
   MoreHorizontalIcon,
   Music2Icon,
   PencilIcon,
   PlusIcon,
+  Share2Icon,
   SparklesIcon,
   Trash2Icon,
   UploadIcon,
@@ -45,6 +48,8 @@ import {
   deletePlanItemAction,
   reorderPlanItemsAction,
 } from "@/app/actions/events";
+import { enqueueEventPlanPdfJobAction } from "@/app/actions/jobs";
+import { SharePlanDialog } from "@/components/events/share-plan-dialog";
 import {
   PlanItemDialog,
   type SongOption,
@@ -204,6 +209,29 @@ export function PlanEditor({
   const handleOpenSong = (song: QuickDrawerSong) => {
     setSelectedSongForDrawer(song);
     setQuickDrawerOpen(true);
+  };
+
+  const handleExportPdfDirect = () => {
+    window.open(`/api/events/${eventId}/plan/pdf`, "_blank");
+  };
+
+  const handleExportPdfBackground = () => {
+    startTransition(async () => {
+      const res = await enqueueEventPlanPdfJobAction(eventId);
+      if (res.error) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(
+        "Exportação iniciada em segundo plano! Acompanhe na aba Tarefas.",
+        {
+          action: {
+            label: "Ver tarefas",
+            onClick: () => router.push("/dashboard/jobs"),
+          },
+        },
+      );
+    });
   };
 
   function openMobileDrawer() {
@@ -399,6 +427,8 @@ export function PlanEditor({
               mode="create-item"
             />
 
+            <SharePlanDialog eventId={eventId} eventTitle={eventTitle} />
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-1.5 h-9">
@@ -407,6 +437,23 @@ export function PlanEditor({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem
+                  onClick={handleExportPdfDirect}
+                  disabled={computedItems.length === 0}
+                  className="gap-2 cursor-pointer"
+                >
+                  <FileTextIcon className="size-4 text-primary" />
+                  <span>Exportar PDF (Imediato)</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={handleExportPdfBackground}
+                  disabled={computedItems.length === 0}
+                  className="gap-2 cursor-pointer"
+                >
+                  <LayersIcon className="size-4 text-muted-foreground" />
+                  <span>Exportar PDF (2º Plano)</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => setManageTemplatesOpen(true)}
                   className="gap-2 cursor-pointer"
@@ -449,6 +496,20 @@ export function PlanEditor({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+          </div>
+        ) : null}
+
+        {!canManage && computedItems.length > 0 ? (
+          <div className="hidden sm:flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportPdfDirect}
+              className="gap-1.5 h-9"
+            >
+              <FileTextIcon className="size-4 text-primary" />
+              <span>Baixar PDF</span>
+            </Button>
           </div>
         ) : null}
 
@@ -645,6 +706,21 @@ export function PlanEditor({
                 }
               />
 
+              <SharePlanDialog
+                eventId={eventId}
+                eventTitle={eventTitle}
+                trigger={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 h-8 text-xs shrink-0 rounded-lg text-primary"
+                  >
+                    <Share2Icon className="size-3.5" />
+                    Compartilhar
+                  </Button>
+                }
+              />
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -657,6 +733,23 @@ export function PlanEditor({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem
+                    onClick={handleExportPdfDirect}
+                    disabled={computedItems.length === 0}
+                    className="gap-2 cursor-pointer"
+                  >
+                    <FileTextIcon className="size-4 text-primary" />
+                    <span>Exportar PDF (Imediato)</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleExportPdfBackground}
+                    disabled={computedItems.length === 0}
+                    className="gap-2 cursor-pointer"
+                  >
+                    <LayersIcon className="size-4 text-muted-foreground" />
+                    <span>Exportar PDF (2º Plano)</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => setManageTemplatesOpen(true)}
                     className="gap-2 cursor-pointer"
