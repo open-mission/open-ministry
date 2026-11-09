@@ -40,9 +40,16 @@ import { SongFormDialog } from "./song-form-dialog";
 type SongCardProps = {
   song: SongRecord;
   canManage?: boolean;
+  onSongUpdated?: (song: SongRecord) => void;
+  onSongDeleted?: (songId: string) => void;
 };
 
-export function SongCard({ song, canManage = true }: SongCardProps) {
+export function SongCard({
+  song,
+  canManage = true,
+  onSongUpdated,
+  onSongDeleted,
+}: SongCardProps) {
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -302,6 +309,7 @@ export function SongCard({ song, canManage = true }: SongCardProps) {
           collection: song.collection ?? "",
           tags: song.tags ?? [],
         }}
+        onSongUpdated={onSongUpdated}
       />
 
       <DeleteSongDialog
@@ -309,6 +317,7 @@ export function SongCard({ song, canManage = true }: SongCardProps) {
         onOpenChange={setDeleteOpen}
         songId={song.id}
         songTitle={song.title}
+        onSongDeleted={onSongDeleted}
       />
     </>
   );

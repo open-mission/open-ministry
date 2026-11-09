@@ -29,6 +29,7 @@ import {
   NativeSelect,
   NativeSelectOption,
 } from "@/components/ui/native-select";
+import type { PersonLike } from "@/lib/person-format";
 
 type DepartmentFunction = {
   id: string;
@@ -46,6 +47,15 @@ type Assignment = {
   personId: string;
 };
 
+export type OptimisticAssignment = {
+  id: string;
+  departmentId: string;
+  functionId: string;
+  personId: string;
+  person: PersonLike;
+  function: { name: string };
+};
+
 export function AddAssignmentDialog({
   eventId,
   departmentId,
@@ -54,6 +64,8 @@ export function AddAssignmentDialog({
   members,
   assignments,
   unavailablePeopleMap,
+  onAssignmentAdded,
+  onAssignmentRollback,
 }: {
   eventId: string;
   departmentId: string;
@@ -62,6 +74,8 @@ export function AddAssignmentDialog({
   members: DepartmentMember[];
   assignments: Assignment[];
   unavailablePeopleMap?: Record<string, { isBlocked: boolean; reason?: string | null }>;
+  onAssignmentAdded?: (assignment: OptimisticAssignment) => void;
+  onAssignmentRollback?: (tempId: string) => void;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -94,6 +108,8 @@ export function AddAssignmentDialog({
           members={members}
           assignments={assignments}
           unavailablePeopleMap={unavailablePeopleMap}
+          onAssignmentAdded={onAssignmentAdded}
+          onAssignmentRollback={onAssignmentRollback}
         />
       </DialogContent>
     </Dialog>
@@ -107,6 +123,8 @@ function AssignmentForm({
   members,
   assignments,
   unavailablePeopleMap,
+  onAssignmentAdded,
+  onAssignmentRollback,
 }: {
   eventId: string;
   departmentId: string;
@@ -114,6 +132,8 @@ function AssignmentForm({
   members: DepartmentMember[];
   assignments: Assignment[];
   unavailablePeopleMap?: Record<string, { isBlocked: boolean; reason?: string | null }>;
+  onAssignmentAdded?: (assignment: OptimisticAssignment) => void;
+  onAssignmentRollback?: (tempId: string) => void;
 }) {
   const [state, formAction] = useActionState<ScheduleFormState, FormData>(
     saveScheduleAssignmentAction,
@@ -123,6 +143,7 @@ function AssignmentForm({
   const [selectedPersonId, setSelectedPersonId] = useState("");
   const [prevSuccess, setPrevSuccess] = useState(state?.success);
   const formRef = useRef<HTMLFormElement>(null);
+  const lastTempIdRef = useRef<string | null>(null);
 
   if (state?.success !== prevSuccess) {
     setPrevSuccess(state?.success);
@@ -133,10 +154,44 @@ function AssignmentForm({
 
   useEffect(() => {
     if (state?.success) {
+      lastTempIdRef.current = null;
       formRef.current?.reset();
       toast.success("Pessoa escalada.");
+    } else if (state?.error) {
+      if (lastTempIdRef.current) {
+        onAssignmentRollback?.(lastTempIdRef.current);
+        lastTempIdRef.current = null;
+      }
     }
-  }, [state]);
+  }, [state, onAssignmentRollback]);
+
+  const handleSubmit = () => {
+    if (!selectedPersonId || !functionId) return;
+
+    const member = members.find((m) => m.id === selectedPersonId);
+    const func = functions.find((f) => f.id === functionId);
+    const tempId = `temp-${crypto.randomUUID()}`;
+    lastTempIdRef.current = tempId;
+
+    if (member && func) {
+      onAssignmentAdded?.({
+        id: tempId,
+        departmentId,
+        functionId,
+        personId: selectedPersonId,
+        person: {
+          name: member.name,
+          email: member.email,
+          image: null,
+          birthday: null,
+          userId: null,
+        },
+        function: {
+          name: func.name,
+        },
+      });
+    }
+  };
 
   const assignedPersonIds = new Set(
     assignments
@@ -154,7 +209,7 @@ function AssignmentForm({
     : null;
 
   return (
-    <form ref={formRef} action={formAction} className="space-y-4">
+    <form ref={formRef} action={formAction} onSubmit={handleSubmit} className="space-y-4">
       <input type="hidden" name="eventId" value={eventId} />
       <input type="hidden" name="departmentId" value={departmentId} />
 

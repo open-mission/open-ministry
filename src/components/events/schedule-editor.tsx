@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { CrownIcon } from "lucide-react";
 
@@ -32,7 +35,7 @@ type Assignment = {
 export function ScheduleEditor({
   eventId,
   departments,
-  assignments,
+  assignments: initialAssignments,
   currentUserId,
   isAdmin,
   unavailablePeopleMap,
@@ -44,6 +47,35 @@ export function ScheduleEditor({
   isAdmin: boolean;
   unavailablePeopleMap?: Record<string, { isBlocked: boolean; reason?: string | null }>;
 }) {
+  const [assignments, setAssignments] = useState<Assignment[]>(initialAssignments);
+  const [prevInitialAssignments, setPrevInitialAssignments] = useState(initialAssignments);
+
+  if (initialAssignments !== prevInitialAssignments) {
+    setPrevInitialAssignments(initialAssignments);
+    setAssignments(initialAssignments);
+  }
+
+  const handleAssignmentAdded = (newAssignment: Assignment) => {
+    setAssignments((prev) => [
+      ...prev.filter(
+        (a) =>
+          !(
+            a.departmentId === newAssignment.departmentId &&
+            a.functionId === newAssignment.functionId &&
+            a.personId === newAssignment.personId
+          ),
+      ),
+      newAssignment,
+    ]);
+  };
+
+  const handleAssignmentRollback = (tempId: string) => {
+    setAssignments((prev) => prev.filter((a) => a.id !== tempId));
+  };
+
+  const handleRemoveAssignment = (assignmentId: string) => {
+    setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
+  };
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {departments.map((department) => {
@@ -120,6 +152,8 @@ export function ScheduleEditor({
                     personId: assignment.personId,
                   }))}
                   unavailablePeopleMap={unavailablePeopleMap}
+                  onAssignmentAdded={handleAssignmentAdded}
+                  onAssignmentRollback={handleAssignmentRollback}
                 />
               ) : null}
             </CardHeader>
@@ -199,6 +233,8 @@ export function ScheduleEditor({
                                     assignment.person,
                                   )}
                                   functionName={departmentFunction.name}
+                                  onRemove={() => handleRemoveAssignment(assignment.id)}
+                                  onRollback={() => setAssignments(initialAssignments)}
                                 />
                               ) : null}
                             </span>

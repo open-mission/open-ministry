@@ -22,6 +22,7 @@ type DeleteSongDialogProps = {
   onOpenChange: (open: boolean) => void;
   songId: string;
   songTitle: string;
+  onSongDeleted?: (songId: string) => void;
 };
 
 export function DeleteSongDialog({
@@ -29,6 +30,7 @@ export function DeleteSongDialog({
   onOpenChange,
   songId,
   songTitle,
+  onSongDeleted,
 }: DeleteSongDialogProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -44,6 +46,7 @@ export function DeleteSongDialog({
         toast.error(result.error ?? "Erro ao excluir música.");
       } else {
         toast.success("Música removida do repertório.");
+        onSongDeleted?.(songId);
         onOpenChange(false);
         router.refresh();
       }

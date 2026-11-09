@@ -55,6 +55,7 @@ import {
   STANDARD_TONES,
 } from "@/lib/music/chords-utils";
 import { generateStreamingSearchLinks } from "@/lib/music/lyrics-service";
+import type { SongRecord } from "@/lib/songs";
 import { cn } from "@/lib/utils";
 import { CollectionCombobox } from "./collection-combobox";
 
@@ -77,6 +78,8 @@ type SongFormDialogProps = {
     tags?: string[];
   };
   existingCollections?: string[];
+  onSongCreated?: (song: SongRecord) => void;
+  onSongUpdated?: (song: SongRecord) => void;
 };
 
 export function SongFormDialog({
@@ -85,6 +88,8 @@ export function SongFormDialog({
   songId,
   initialData,
   existingCollections = [],
+  onSongCreated,
+  onSongUpdated,
 }: SongFormDialogProps) {
   const router = useRouter();
   const isEditing = Boolean(songId);
@@ -265,6 +270,11 @@ export function SongFormDialog({
             ? "Música atualizada com sucesso!"
             : "Música adicionada ao repertório!",
         );
+        if (isEditing && result.song) {
+          onSongUpdated?.(result.song);
+        } else if (result.song) {
+          onSongCreated?.(result.song);
+        }
         setIsMaximized(false);
         onOpenChange(false);
         router.refresh();

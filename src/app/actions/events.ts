@@ -54,6 +54,19 @@ export type ScheduleFormState =
         personId?: string[];
       };
       success?: boolean;
+      assignment?: {
+        id: string;
+        departmentId: string;
+        functionId: string;
+        personId: string;
+        person: {
+          id: string;
+          name: string;
+          email?: string | null;
+          image?: string | null;
+        };
+        function: { name: string };
+      };
     }
   | undefined;
 
@@ -700,9 +713,11 @@ export async function saveScheduleAssignmentAction(
     return { error: "Não foi possível abrir a escala deste evento." };
   }
 
+  const newAssignmentId = randomUUID();
+
   try {
     await db.insert(schema.scheduleAssignment).values({
-      id: randomUUID(),
+      id: newAssignmentId,
       scheduleId: scheduleRow.id,
       departmentId: parsed.data.departmentId,
       functionId: parsed.data.functionId,
@@ -726,34 +741,47 @@ export async function saveScheduleAssignmentAction(
   });
 
   if (assignedPerson) {
-    try {
-      await dispatchNotification({
-        organizationId: result.context.organization.id,
-        type: "assignment",
-        title: `Você foi escalado em ${result.event.title}`,
-        body: `${result.access.department.name} · ${targetFunction.name} · ${formatEventFullDate(result.event.startsAt)} às ${formatEventTime(result.event.startsAt)}`,
-        href: `/dashboard/events/${result.event.id}`,
-        actorId: result.context.session.user.id,
-        userId: assignedPerson.userId ?? null,
-        personId: parsed.data.personId,
-        phone: assignedPerson.phone ?? assignedPerson.user?.phone ?? null,
-        name: assignedPerson.name,
-        metadata: {
-          churchName: result.context.organization.name,
-          eventTitle: result.event.title,
-          functionName: `${result.access.department.name} - ${targetFunction.name}`,
-          eventDate: formatEventFullDate(result.event.startsAt),
-          eventTime: formatEventTime(result.event.startsAt),
-          link: `/dashboard/events/${result.event.id}`,
-        },
-      });
-    } catch (error) {
+    void dispatchNotification({
+      organizationId: result.context.organization.id,
+      type: "assignment",
+      title: `Você foi escalado em ${result.event.title}`,
+      body: `${result.access.department.name} · ${targetFunction.name} · ${formatEventFullDate(result.event.startsAt)} às ${formatEventTime(result.event.startsAt)}`,
+      href: `/dashboard/events/${result.event.id}`,
+      actorId: result.context.session.user.id,
+      userId: assignedPerson.userId ?? null,
+      personId: parsed.data.personId,
+      phone: assignedPerson.phone ?? assignedPerson.user?.phone ?? null,
+      name: assignedPerson.name,
+      metadata: {
+        churchName: result.context.organization.name,
+        eventTitle: result.event.title,
+        functionName: `${result.access.department.name} - ${targetFunction.name}`,
+        eventDate: formatEventFullDate(result.event.startsAt),
+        eventTime: formatEventTime(result.event.startsAt),
+        link: `/dashboard/events/${result.event.id}`,
+      },
+    }).catch((error) => {
       console.error("Erro ao notificar escala", error);
-    }
+    });
   }
 
   await revalidateEvents(parsed.data.eventId, result.context.organization.id);
-  return { success: true };
+  return {
+    success: true,
+    assignment: {
+      id: newAssignmentId,
+      departmentId: parsed.data.departmentId,
+      functionId: parsed.data.functionId,
+      personId: parsed.data.personId,
+      person: {
+        id: assignedPerson?.id ?? parsed.data.personId,
+        name: assignedPerson?.name ?? "Membro",
+        email: assignedPerson?.email ?? assignedPerson?.user?.email ?? null,
+        image: assignedPerson?.image ?? assignedPerson?.user?.image ?? null,
+      },
+      function: { name: targetFunction.name },
+    },
+  };
 }
 
 export async function removeScheduleAssignmentAction(

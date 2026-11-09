@@ -12,7 +12,11 @@ import {
   type OnlineSongResult,
 } from "@/lib/music/lyrics-service";
 import { requireOrganizationContext } from "@/lib/organizations";
-import { canAccessMusicModule, invalidateSongCache } from "@/lib/songs";
+import {
+  canAccessMusicModule,
+  invalidateSongCache,
+  type SongRecord,
+} from "@/lib/songs";
 
 const songInputSchema = z.object({
   title: z
@@ -68,6 +72,7 @@ export type SongActionResult = {
   ok: boolean;
   error?: string;
   songId?: string;
+  song?: SongRecord;
 };
 
 export async function searchOnlineSongsAction(
@@ -157,30 +162,33 @@ export async function createSongAction(
     const id = crypto.randomUUID();
     const data = parsed.data;
 
-    await db.insert(schema.song).values({
-      id,
-      organizationId: organization.id,
-      title: data.title,
-      artist: data.artist,
-      tone: data.tone,
-      bpm: data.bpm,
-      timeSignature: data.timeSignature,
-      lyrics: data.lyrics,
-      chords: data.chords,
-      youtubeUrl: data.youtubeUrl,
-      youtubeMusicUrl: data.youtubeMusicUrl,
-      spotifyUrl: data.spotifyUrl,
-      collection: data.collection,
-      tags: data.tags,
-      createdById: session.user.id,
-    });
+    const [inserted] = await db
+      .insert(schema.song)
+      .values({
+        id,
+        organizationId: organization.id,
+        title: data.title,
+        artist: data.artist,
+        tone: data.tone,
+        bpm: data.bpm,
+        timeSignature: data.timeSignature,
+        lyrics: data.lyrics,
+        chords: data.chords,
+        youtubeUrl: data.youtubeUrl,
+        youtubeMusicUrl: data.youtubeMusicUrl,
+        spotifyUrl: data.spotifyUrl,
+        collection: data.collection,
+        tags: data.tags,
+        createdById: session.user.id,
+      })
+      .returning();
 
     await invalidateSongCache(organization.id);
 
     revalidatePath("/dashboard/songs");
     revalidatePath("/dashboard/events");
 
-    return { ok: true, songId: id };
+    return { ok: true, songId: id, song: inserted };
   } catch (err) {
     console.error("[createSongAction] Erro ao cadastrar música:", err);
     return { ok: false, error: "Não foi possível cadastrar a música." };
@@ -246,7 +254,7 @@ export async function updateSongAction(
   try {
     const data = parsed.data;
 
-    await db
+    const [updated] = await db
       .update(schema.song)
       .set({
         title: data.title,
@@ -268,7 +276,8 @@ export async function updateSongAction(
           eq(schema.song.id, songId),
           eq(schema.song.organizationId, organization.id),
         ),
-      );
+      )
+      .returning();
 
     await invalidateSongCache(organization.id, songId);
 
@@ -276,7 +285,7 @@ export async function updateSongAction(
     revalidatePath(`/dashboard/songs/${songId}`);
     revalidatePath("/dashboard/events");
 
-    return { ok: true, songId };
+    return { ok: true, songId, song: updated };
   } catch (err) {
     console.error("[updateSongAction] Erro ao editar música:", err);
     return { ok: false, error: "Não foi possível atualizar a música." };
