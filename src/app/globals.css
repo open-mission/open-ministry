@@ -119,15 +119,44 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground antialiased;
+    -webkit-tap-highlight-color: transparent;
   }
   html {
     @apply font-sans;
+    touch-action: pan-x pan-y;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    touch-action: pan-x pan-y;
+    overscroll-behavior-y: none;
+  }
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+  button,
+  nav,
+  header,
+  [role="button"] {
+    -webkit-user-select: none;
+    user-select: none;
   }
   ::selection {
     background: oklch(0.36 0.062 156 / 0.2);
+  }
+}
+
+/* Previne zoom automático do iOS Safari ao focar campos de formulário (<16px dispara zoom) */
+@media screen and (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
   }
 }
 

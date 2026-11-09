@@ -58,7 +58,7 @@ async function SongsContent() {
   ]);
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 min-w-0">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
           Repertório de Músicas

@@ -113,7 +113,7 @@ export function SongsListView({
   }, [songs]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0 max-w-full">
       {/* STATS STRIP */}
       <StatStrip items={statsItems} />
 
@@ -524,7 +524,7 @@ export function SongsListView({
 
       {/* GRID DE MÚSICAS */}
       {filteredSongs.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid min-w-0 max-w-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredSongs.map((song) => (
             <SongCard key={song.id} song={song} canManage={canManage} />
           ))}
