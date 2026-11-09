@@ -115,7 +115,7 @@ export function PastEventsSheet({ count, children }: PastEventsSheetProps) {
       <SheetTrigger asChild>{trigger}</SheetTrigger>
       <SheetContent
         side="right"
-        className="flex h-full w-full flex-col p-0 sm:max-w-lg md:max-w-xl lg:max-w-2xl"
+        className="flex h-full flex-col p-0 data-[side=right]:w-3/4 data-[side=right]:sm:w-3/4 data-[side=right]:sm:max-w-none"
       >
         <SheetHeader className="border-b border-border/70 px-6 py-5 text-left">
           <div className="flex items-center gap-3">
