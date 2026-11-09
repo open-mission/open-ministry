@@ -29,11 +29,15 @@ import type {
 type FullCalendarProps = {
   initialItems: CalendarItem[];
   initialPreferences: CalendarPreferences;
+  isAdmin?: boolean;
+  departments?: { id: string; name: string }[];
 };
 
 export function FullCalendar({
   initialItems,
   initialPreferences,
+  isAdmin,
+  departments,
 }: FullCalendarProps) {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<CalendarViewMode>("month");
@@ -150,6 +154,8 @@ export function FullCalendar({
         onToday={handleToday}
         onPreferencesChange={setPreferences}
         itemsCount={itemsCount}
+        isAdmin={isAdmin}
+        departments={departments}
       />
 
       {/* View Content */}
