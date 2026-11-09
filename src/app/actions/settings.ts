@@ -22,7 +22,7 @@ import {
 } from "@/lib/notification-service";
 import { getOrganizationContext, requireOrganizationContext } from "@/lib/organizations";
 import { syncPersonProfile, listPeople } from "@/lib/people";
-import { listDepartments } from "@/lib/departments";
+import { isUserLeaderInAnyDepartment, listDepartments } from "@/lib/departments";
 import { getOrganizationMessageTemplates } from "@/lib/message-templates-server";
 import { birthdayFieldSchema, updateBirthday } from "@/lib/profile";
 import { getSession } from "@/lib/session";
@@ -546,7 +546,18 @@ export async function getEvolutionMessageLogsAction(options?: {
   type?: string;
 }): Promise<{ logs: EvolutionMessageLogItem[]; total: number }> {
   const context = await getOrganizationContext();
-  if (!context || !context.isAdmin) {
+  if (!context) {
+    return { logs: [], total: 0 };
+  }
+
+  const isLeader = !context.isAdmin
+    ? await isUserLeaderInAnyDepartment(
+        context.organization.id,
+        context.session.user.id,
+      )
+    : false;
+
+  if (!context.isAdmin && !isLeader) {
     return { logs: [], total: 0 };
   }
 
@@ -557,11 +568,26 @@ export async function retryEvolutionMessageAction(
   logId: string,
 ): Promise<{ ok: boolean; error?: string }> {
   const context = await getOrganizationContext();
-  if (!context || !context.isAdmin) {
-    return { ok: false, error: "Apenas administradores podem reenviar mensagens." };
+  if (!context) {
+    return { ok: false, error: "Sua sessão expirou." };
+  }
+
+  const isLeader = !context.isAdmin
+    ? await isUserLeaderInAnyDepartment(
+        context.organization.id,
+        context.session.user.id,
+      )
+    : false;
+
+  if (!context.isAdmin && !isLeader) {
+    return {
+      ok: false,
+      error: "Apenas administradores ou líderes de departamento podem reenviar mensagens.",
+    };
   }
 
   const res = await retryWhatsAppMessage(logId, context.organization.id);
+  revalidatePath("/dashboard/whatsapp");
   revalidatePath("/dashboard/settings");
   revalidatePath("/dashboard/announcements");
   return res;
@@ -571,11 +597,23 @@ export async function retryAllFailedEvolutionMessagesAction(
   batchId?: string,
 ): Promise<{ total: number; sent: number; failed: number }> {
   const context = await getOrganizationContext();
-  if (!context || !context.isAdmin) {
+  if (!context) {
+    return { total: 0, sent: 0, failed: 0 };
+  }
+
+  const isLeader = !context.isAdmin
+    ? await isUserLeaderInAnyDepartment(
+        context.organization.id,
+        context.session.user.id,
+      )
+    : false;
+
+  if (!context.isAdmin && !isLeader) {
     return { total: 0, sent: 0, failed: 0 };
   }
 
   const res = await retryFailedWhatsAppMessages(context.organization.id, batchId);
+  revalidatePath("/dashboard/whatsapp");
   revalidatePath("/dashboard/settings");
   revalidatePath("/dashboard/announcements");
   return res;

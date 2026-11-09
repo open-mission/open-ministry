@@ -73,4 +73,18 @@ describe("Modules System Foundation", () => {
     const opsGroup = adminNav.find((g) => g.title === "Operações");
     expect(opsGroup?.items.some((i) => i.href === "/dashboard/jobs")).toBe(true);
   });
+
+  it("injects WhatsApp nav item in Comunicação group when canAccessWhatsApp is true", () => {
+    const defaultNav = buildAccessibleNavGroups([], { canAccessWhatsApp: false });
+    const defaultCom = defaultNav.find((g) => g.title === "Comunicação");
+    expect(
+      defaultCom?.items.some((i) => i.href === "/dashboard/whatsapp"),
+    ).toBe(false);
+
+    const leaderNav = buildAccessibleNavGroups([], { canAccessWhatsApp: true });
+    const leaderCom = leaderNav.find((g) => g.title === "Comunicação");
+    expect(leaderCom?.items.some((i) => i.href === "/dashboard/whatsapp")).toBe(
+      true,
+    );
+  });
 });

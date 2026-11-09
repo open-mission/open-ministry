@@ -22,7 +22,7 @@ export async function AppSidebarLoader() {
       : Promise.resolve(false),
   ]);
 
-  const canManageJobs = isAdmin || isLeader;
+  const isAdminOrLeader = isAdmin || isLeader;
 
   return (
     <AppSidebar
@@ -35,7 +35,8 @@ export async function AppSidebarLoader() {
         image: session.user.image ?? null,
       }}
       activeModuleKeys={activeModuleKeys}
-      canManageJobs={canManageJobs}
+      canManageJobs={isAdminOrLeader}
+      canAccessWhatsApp={isAdminOrLeader}
     />
   );
 }

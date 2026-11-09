@@ -22,12 +22,13 @@ export async function MobileMenuLoader() {
       : Promise.resolve(false),
   ]);
 
-  const canManageJobs = isAdmin || isLeader;
+  const isAdminOrLeader = isAdmin || isLeader;
 
   return (
     <MobileMenu
       activeModuleKeys={activeModuleKeys}
-      canManageJobs={canManageJobs}
+      canManageJobs={isAdminOrLeader}
+      canAccessWhatsApp={isAdminOrLeader}
     />
   );
 }
