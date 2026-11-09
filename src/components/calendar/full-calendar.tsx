@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   addDays,
   addMonths,
@@ -48,7 +48,7 @@ export function FullCalendar({
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   // Navigation Handlers
-  function handlePrev() {
+  const handlePrev = useCallback(() => {
     setCurrentDate((prev) => {
       switch (viewMode) {
         case "month":
@@ -63,9 +63,9 @@ export function FullCalendar({
           return subMonths(prev, 1);
       }
     });
-  }
+  }, [viewMode]);
 
-  function handleNext() {
+  const handleNext = useCallback(() => {
     setCurrentDate((prev) => {
       switch (viewMode) {
         case "month":
@@ -80,26 +80,26 @@ export function FullCalendar({
           return addMonths(prev, 1);
       }
     });
-  }
+  }, [viewMode]);
 
-  function handleToday() {
+  const handleToday = useCallback(() => {
     setCurrentDate(new Date());
-  }
+  }, []);
 
-  function handleSelectDate(date: Date) {
+  const handleSelectDate = useCallback((date: Date) => {
     setCurrentDate(date);
     setViewMode("day");
-  }
+  }, []);
 
-  function handleSelectMonth(date: Date) {
+  const handleSelectMonth = useCallback((date: Date) => {
     setCurrentDate(date);
     setViewMode("month");
-  }
+  }, []);
 
-  function handleSelectItem(item: CalendarItem) {
+  const handleSelectItem = useCallback((item: CalendarItem) => {
     setSelectedItem(item);
     setIsDetailOpen(true);
-  }
+  }, []);
 
   // Items count
   const itemsCount = useMemo(() => {

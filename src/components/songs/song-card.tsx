@@ -291,34 +291,38 @@ export function SongCard({
         </div>
       </div>
 
-      <SongFormDialog
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        songId={song.id}
-        initialData={{
-          title: song.title,
-          artist: song.artist ?? "",
-          tone: song.tone ?? "",
-          bpm: song.bpm,
-          timeSignature: song.timeSignature ?? "4/4",
-          lyrics: song.lyrics ?? "",
-          chords: song.chords ?? "",
-          youtubeUrl: song.youtubeUrl ?? "",
-          youtubeMusicUrl: song.youtubeMusicUrl ?? "",
-          spotifyUrl: song.spotifyUrl ?? "",
-          collection: song.collection ?? "",
-          tags: song.tags ?? [],
-        }}
-        onSongUpdated={onSongUpdated}
-      />
+      {editOpen && (
+        <SongFormDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          songId={song.id}
+          initialData={{
+            title: song.title,
+            artist: song.artist ?? "",
+            tone: song.tone ?? "",
+            bpm: song.bpm,
+            timeSignature: song.timeSignature ?? "4/4",
+            lyrics: song.lyrics ?? "",
+            chords: song.chords ?? "",
+            youtubeUrl: song.youtubeUrl ?? "",
+            youtubeMusicUrl: song.youtubeMusicUrl ?? "",
+            spotifyUrl: song.spotifyUrl ?? "",
+            collection: song.collection ?? "",
+            tags: song.tags ?? [],
+          }}
+          onSongUpdated={onSongUpdated}
+        />
+      )}
 
-      <DeleteSongDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        songId={song.id}
-        songTitle={song.title}
-        onSongDeleted={onSongDeleted}
-      />
+      {deleteOpen && (
+        <DeleteSongDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          songId={song.id}
+          songTitle={song.title}
+          onSongDeleted={onSongDeleted}
+        />
+      )}
     </>
   );
 }

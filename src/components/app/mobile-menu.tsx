@@ -47,8 +47,10 @@ const getServerSnapshot = () => false;
 export function MobileMenuProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
 
+  const value = useMemo(() => ({ open, setOpen }), [open]);
+
   return (
-    <MobileMenuContext.Provider value={{ open, setOpen }}>
+    <MobileMenuContext.Provider value={value}>
       {children}
     </MobileMenuContext.Provider>
   );
