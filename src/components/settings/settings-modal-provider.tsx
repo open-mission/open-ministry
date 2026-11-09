@@ -129,7 +129,7 @@ export function SettingsModalProvider({ children }: { children: ReactNode }) {
       {isMobile ? (
         <Drawer open={open} onOpenChange={setOpen}>
           <DrawerContent className="h-[92dvh] max-h-[92dvh] data-[vaul-drawer-direction=bottom]:max-h-[92dvh] flex flex-col gap-0 rounded-t-[28px] border-x-0 border-b-0 bg-background p-0">
-            <DrawerHeader className="p-4 border-b flex flex-row items-center justify-between space-y-0 bg-muted/20 text-left">
+            <DrawerHeader className="p-4 border-b border-border/40 flex flex-row items-center justify-between space-y-0 bg-background text-left">
               <div className="flex items-center gap-2">
                 <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <SettingsIcon className="size-4" />
@@ -153,7 +153,7 @@ export function SettingsModalProvider({ children }: { children: ReactNode }) {
       ) : (
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="sm:max-w-5xl p-0 gap-0 overflow-hidden border-border/80 shadow-2xl max-h-[90vh]">
-            <DialogHeader className="p-4 border-b flex flex-row items-center justify-between space-y-0 bg-muted/20">
+            <DialogHeader className="p-4 border-b border-border/40 flex flex-row items-center justify-between space-y-0 bg-background">
               <div className="flex items-center gap-2">
                 <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <SettingsIcon className="size-4" />

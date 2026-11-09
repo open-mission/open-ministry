@@ -103,7 +103,7 @@ export function ThemePreferenceCard() {
                     <Icon className="size-4" />
                   </div>
                   {isSelected ? (
-                    <span className="flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <span className="hidden sm:flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
                       <CheckIcon className="size-3 stroke-[3]" />
                     </span>
                   ) : null}
