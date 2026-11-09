@@ -6,6 +6,66 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [0.9.2] - 2026-11-09
+
+### Adicionado
+- **Fila Persistente e Controle de Envio do WhatsApp (`whatsapp_message_log`)**:
+  - Nova tabela no banco de dados para registrar e gerenciar o ciclo de vida completo de cada mensagem enviada via WhatsApp (`pending`, `sending`, `sent`, `delivered`, `read`, `failed`).
+  - Tratamento resiliente contra instabilidades na Evolution API: caso a API oscile ou falhe, as mensagens não são perdidas, permanecendo na fila para reprocessamento manual ou automático com 1 clique.
+  - Funções de reenvio unitário (`retryWhatsAppMessage`) e em lote (`retryFailedWhatsAppMessages`).
+- **Webhook da Evolution GO (`/api/webhooks/evolution`)**:
+  - Endpoint dedicado para escutar eventos em tempo real do Evolution Go (`MESSAGES_UPDATE`, `messages.update`, `MESSAGES_UPSERT`, `messages.upsert`, `SEND_MESSAGE`).
+  - Atualização automática dos status do WhatsApp:
+    - `SERVER_ACK` / `SENT` ➔ **Enviado** (`sent`)
+    - `DELIVERY_ACK` / `RECEIVED` ➔ **Entregue** (`delivered`) + timestamp de entrega
+    - `READ` / `PLAYED` ➔ **Lido** (`read`) + timestamp de confirmação de leitura
+  - Token de autenticação seguro gerado automaticamente por igreja (`webhookSecret`).
+  - Botão **"Configurar Webhook no Evolution GO Automaticamente"** nas configurações para registrar a URL diretamente no servidor Evolution Go via API.
+- **Tabela de Registros e Logs do Evolution**:
+  - Novo card de histórico em *Configurações > WhatsApp (Evolution API Go)* com busca por destinatário/telefone, filtros por status e contexto (Avisos, Escalas, Boas-vindas, Testes).
+  - Modal com prévia completa do texto, timestamps e ID retornado pelo Evolution.
+  - Ação de reenvio individual e botão global *"Reenviar pendentes/falhas"*.
+- **Aba de Avisos com Métricas Multicanal**:
+  - Indicadores de entrega no WhatsApp no card de cada aviso enviado.
+  - Modal de detalhes aprimorado com filtros dedicados (*Lidos no App*, *WhatsApp OK*, *WhatsApp Fila/Falhas*), status individual de cada membro e botão para reenviar mensagens com falha no WhatsApp.
+- **Blindagem contra Disparos Acidentais**:
+  - Banner visual explícito antes de submeter comunicados informando exatamente quem receberá (*"Destinatário confirmado: 1 pessoa: Fulano"* vs *"Departamento: Louvor (X membros)"*).
+  - Diálogo de aviso na página do membro (`/dashboard/members/[personId]`) travado no membro selecionado com `defaultAudienceType="person"`.
+
+### Corrigido
+- Alinhamento de botões de fechar em modais e sheets.
+- Ajuste de z-index no calendário para prevenir sobreposição em cabeçalhos fixos.
+- Drawer de configurações no mobile e prevenção de overflow no card de membros.
+- Scroll suave na visualização de cifras em tela cheia.
+
+---
+
+## [0.9.1] - 2026-11-08
+
+### Adicionado
+- Atualizações otimistas no gerenciamento de músicas e escalas ministeriais, eliminando latência na interface.
+- Desvinculação do disparo síncrono de notificações para melhorar a responsividade ao salvar escalas.
+
+### Corrigido
+- Ajuste de contraste no estado hover dos atalhos de acesso rápido no dashboard.
+- Remoção de bordas e raio redundantes no modal de configurações.
+- Aumento da largura do sheet de histórico de encontros para 75%.
+- Ajustes de layout no Felicitômetro no dashboard e experiência nativa PWA sem zoom em inputs.
+
+---
+
+## [0.9.0] - 2026-11-08
+
+### Adicionado
+- **Módulo de Músicas & Repertório**:
+  - Cadastro completo de músicas com tom, BPM, compasso e links para YouTube e Spotify.
+  - Transpositor inteligente de tonalidades com suporte a acordes invertidos e notas de baixo.
+  - Importador automático de cifras a partir de arquivos `.txt` (Cifra Club).
+  - Coleções musicais personalizadas para organização do repertório da igreja.
+  - Seletor de músicas integrado ao cronograma de cultos com busca em tempo real.
+
+---
+
 ## [0.4.0] - 2026-11-07
 
 ### Adicionado
