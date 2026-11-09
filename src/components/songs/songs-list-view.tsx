@@ -50,15 +50,36 @@ type SongsListViewProps = {
 };
 
 export function SongsListView({
-  songs,
+  songs: initialSongs,
   existingCollections = [],
   canManage = true,
 }: SongsListViewProps) {
+  const [songs, setSongs] = useState<SongRecord[]>(initialSongs);
+  const [prevInitialSongs, setPrevInitialSongs] = useState(initialSongs);
   const isMobile = useIsMobile();
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [toneFilter, setToneFilter] = useState("");
   const [collectionFilter, setCollectionFilter] = useState("");
+
+  if (initialSongs !== prevInitialSongs) {
+    setPrevInitialSongs(initialSongs);
+    setSongs(initialSongs);
+  }
+
+  const handleSongCreated = (newSong: SongRecord) => {
+    setSongs((prev) => [newSong, ...prev.filter((s) => s.id !== newSong.id)]);
+  };
+
+  const handleSongUpdated = (updatedSong: SongRecord) => {
+    setSongs((prev) =>
+      prev.map((s) => (s.id === updatedSong.id ? updatedSong : s)),
+    );
+  };
+
+  const handleSongDeleted = (songId: string) => {
+    setSongs((prev) => prev.filter((s) => s.id !== songId));
+  };
 
   const filteredSongs = useMemo(() => {
     let result = songs;
@@ -114,6 +135,20 @@ export function SongsListView({
 
   return (
     <div className="space-y-6 min-w-0 max-w-full">
+      {/* HEADER DA PÁGINA */}
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
+          Repertório de Músicas
+        </h1>
+
+        {canManage ? (
+          <AddSongChoiceDialog
+            existingCollections={existingCollections}
+            onSongCreated={handleSongCreated}
+          />
+        ) : null}
+      </header>
+
       {/* STATS STRIP */}
       <StatStrip items={statsItems} />
 
@@ -526,7 +561,13 @@ export function SongsListView({
       {filteredSongs.length > 0 ? (
         <div className="grid min-w-0 max-w-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredSongs.map((song) => (
-            <SongCard key={song.id} song={song} canManage={canManage} />
+            <SongCard
+              key={song.id}
+              song={song}
+              canManage={canManage}
+              onSongUpdated={handleSongUpdated}
+              onSongDeleted={handleSongDeleted}
+            />
           ))}
         </div>
       ) : songs.length === 0 ? (
@@ -543,7 +584,10 @@ export function SongsListView({
           </p>
           <div className="mt-5">
             {canManage ? (
-              <AddSongChoiceDialog existingCollections={existingCollections} />
+              <AddSongChoiceDialog
+                existingCollections={existingCollections}
+                onSongCreated={handleSongCreated}
+              />
             ) : null}
           </div>
         </div>
