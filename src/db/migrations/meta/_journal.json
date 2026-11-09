@@ -190,6 +190,13 @@
       "when": 1794248473495,
       "tag": "0026_little_gambit",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1794251341454,
+      "tag": "0027_supreme_crusher_hogan",
+      "breakpoints": true
     }
   ]
 }

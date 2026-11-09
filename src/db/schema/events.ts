@@ -33,6 +33,10 @@ export const event = pgTable(
     recurrenceInterval: integer("recurrence_interval"),
     recurrenceEndsAt: timestamp("recurrence_ends_at"),
     isOverride: boolean("is_override").default(false).notNull(),
+    isPublicShareEnabled: boolean("is_public_share_enabled").default(false).notNull(),
+    publicShareToken: text("public_share_token").unique(),
+    publicShareAllowPdf: boolean("public_share_allow_pdf").default(true).notNull(),
+    publicShareUpdatedAt: timestamp("public_share_updated_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -46,6 +50,7 @@ export const event = pgTable(
       table.startsAt,
     ),
     index("event_seriesId_idx").on(table.seriesId),
+    index("event_publicShareToken_idx").on(table.publicShareToken),
   ],
 );
 
