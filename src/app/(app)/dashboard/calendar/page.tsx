@@ -51,8 +51,8 @@ async function CalendarContent() {
 function CalendarSkeleton() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6" aria-hidden>
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-9 w-64" />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <Skeleton className="h-10 w-72" />
         <Skeleton className="h-9 w-48" />
       </div>
       <Skeleton className="h-[600px] rounded-xl" />
