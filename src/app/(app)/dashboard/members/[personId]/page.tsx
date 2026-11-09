@@ -25,6 +25,8 @@ import { ptBR } from "date-fns/locale";
 
 import { RoleBadge } from "@/components/members/role-badge";
 import { AnnouncementDialog } from "@/components/notifications/announcement-dialog";
+import { EditPersonDialog } from "@/components/people/edit-person-dialog";
+import { InvitePersonDialog } from "@/components/people/invite-person-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,7 +51,7 @@ import {
   getPersonMoodHistory,
   MOOD_LEVELS,
 } from "@/lib/felicitometro";
-import { getInitials } from "@/lib/format";
+import { getInitials, isExpired } from "@/lib/format";
 import { getOrganizationEvolutionConfig } from "@/lib/notification-service";
 import { requireOrganizationContext } from "@/lib/organizations";
 import {
@@ -124,6 +126,15 @@ async function MemberPageContent({
     (m) => m.userId === person.userId,
   )?.role;
 
+  const pendingInvitation = person.email
+    ? organization.invitations.find(
+        (inv) =>
+          inv.email.toLowerCase() === person.email?.toLowerCase() &&
+          inv.status === "pending" &&
+          !isExpired(inv.expiresAt),
+      )
+    : null;
+
   const phoneClean = person.phone?.replace(/\D/g, "");
 
   // Felicitômetro stats
@@ -176,11 +187,24 @@ async function MemberPageContent({
                   </h1>
                   {role ? (
                     <RoleBadge role={role} />
-                  ) : (
+                  ) : person.userId ? (
                     <Badge variant="outline" className="text-xs">
                       Membro
                     </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-xs font-normal">
+                      Sem conta
+                    </Badge>
                   )}
+                  {pendingInvitation ? (
+                    <Badge
+                      variant="secondary"
+                      className="gap-1 bg-amber-500/10 text-xs font-normal text-amber-700 dark:text-amber-400 border border-amber-500/20"
+                    >
+                      <ClockIcon className="size-3" />
+                      Convite pendente
+                    </Badge>
+                  ) : null}
                   {person.user?.pwaInstalled ? (
                     <Badge
                       variant="secondary"
@@ -240,6 +264,37 @@ async function MemberPageContent({
 
             {/* Ações Rápidas */}
             <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 shrink-0">
+              {isAdmin && !person.userId && person.email ? (
+                <InvitePersonDialog
+                  person={{
+                    id: person.id,
+                    name: personDisplayName(person),
+                    email: person.email,
+                    phone: person.phone,
+                  }}
+                />
+              ) : null}
+
+              {isAdmin ? (
+                <EditPersonDialog
+                  person={{
+                    id: person.id,
+                    name: person.name,
+                    email: person.email,
+                    phone: person.phone,
+                    birthday: person.birthday,
+                    userId: person.userId,
+                    user: person.user
+                      ? {
+                          name: person.user.name,
+                          email: person.user.email,
+                          birthday: person.user.birthday,
+                        }
+                      : null,
+                  }}
+                />
+              ) : null}
+
               {phoneClean && (
                 <Button
                   size="sm"

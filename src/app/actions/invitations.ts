@@ -11,6 +11,7 @@ import * as schema from "@/db/schema";
 import { actionErrorMessage } from "@/lib/auth-errors";
 import { auth } from "@/lib/auth";
 import { syncUserAdminRole } from "@/lib/admin-role";
+import { cacheInvalidateTags } from "@/lib/cache";
 import { findInvitationDetails } from "@/lib/invitations";
 import {
   ensurePersonForEmail,
@@ -183,6 +184,8 @@ export async function inviteMemberAction(
       text: whatsappMessage,
     });
 
+    await cacheInvalidateTags(`org:${orgId}`, `people:${orgId}`);
+
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/members");
 
@@ -298,6 +301,10 @@ export async function cancelInvitationAction(
       body: { invitationId },
       headers: await headers(),
     });
+
+    if (session.session.activeOrganizationId) {
+      await cacheInvalidateTags(`org:${session.session.activeOrganizationId}`);
+    }
   } catch (error) {
     return { ok: false, error: actionErrorMessage(error) };
   }
@@ -352,6 +359,11 @@ export async function acceptInvitationAction(
         image: session.user.image ?? null,
         birthday: parsed.data.birthday ?? session.user.birthday ?? null,
       });
+
+      await cacheInvalidateTags(
+        `org:${invitation.organizationId}`,
+        `people:${invitation.organizationId}`,
+      );
     }
   } catch (error) {
     return { error: actionErrorMessage(error) };
