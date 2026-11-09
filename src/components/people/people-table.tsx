@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CrownIcon, SmartphoneIcon } from "lucide-react";
+import { ClockIcon, CrownIcon, SmartphoneIcon } from "lucide-react";
 
 import { RoleBadge } from "@/components/members/role-badge";
 import { DeletePersonButton } from "@/components/people/delete-person-button";
@@ -47,6 +47,7 @@ export function PeopleTable({
   isAdmin,
   currentUserId,
   terminology,
+  pendingInvitationEmails,
 }: {
   people: PersonRecord[];
   roleByUserId: Record<string, string>;
@@ -54,6 +55,7 @@ export function PeopleTable({
   isAdmin: boolean;
   currentUserId: string;
   terminology?: DepartmentNomenclature;
+  pendingInvitationEmails?: Set<string>;
 }) {
   const groupWord = terminology?.plural.toLowerCase() ?? "departamentos";
   const possessive =
@@ -110,6 +112,10 @@ export function PeopleTable({
                       const role = person.userId
                         ? roleByUserId[person.userId]
                         : undefined;
+                      const email = personDisplayEmail(person)?.toLowerCase();
+                      const isPendingInvite = Boolean(
+                        !role && email && pendingInvitationEmails?.has(email),
+                      );
                       const birthdayLabel = formatOwnBirthday(
                         personDisplayBirthday(person),
                         isAdmin,
@@ -155,12 +161,23 @@ export function PeopleTable({
                               {role ? (
                                 <RoleBadge role={role} />
                               ) : (
-                                <Badge
-                                  variant="outline"
-                                  className="font-normal"
-                                >
-                                  Sem conta
-                                </Badge>
+                                <>
+                                  <Badge
+                                    variant="outline"
+                                    className="font-normal"
+                                  >
+                                    Sem conta
+                                  </Badge>
+                                  {isPendingInvite ? (
+                                    <span
+                                      title="Convite enviado e aguardando resposta"
+                                      className="inline-flex items-center gap-1 text-[0.68rem] font-medium text-amber-600 dark:text-amber-400"
+                                    >
+                                      <ClockIcon className="size-3 shrink-0" />
+                                      Convite pendente
+                                    </span>
+                                  ) : null}
+                                </>
                               )}
                               {person.user?.pwaInstalled ? (
                                 <span
@@ -207,6 +224,10 @@ export function PeopleTable({
                 const role = person.userId
                   ? roleByUserId[person.userId]
                   : undefined;
+                const email = personDisplayEmail(person)?.toLowerCase();
+                const isPendingInvite = Boolean(
+                  !role && email && pendingInvitationEmails?.has(email),
+                );
                 const birthdayLabel = formatOwnBirthday(
                   personDisplayBirthday(person),
                   isAdmin,
@@ -245,6 +266,15 @@ export function PeopleTable({
                               Sem conta
                             </Badge>
                           )}
+                          {isPendingInvite ? (
+                            <span
+                              title="Convite enviado e aguardando resposta"
+                              className="inline-flex items-center gap-0.5 rounded-full bg-amber-50 px-1.5 py-0.5 text-[0.65rem] font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-400"
+                            >
+                              <ClockIcon className="size-2.5 shrink-0" />
+                              Convite pendente
+                            </span>
+                          ) : null}
                           {person.user?.pwaInstalled ? (
                             <span
                               title={`Aplicativo PWA instalado${person.user.pwaPlatform ? ` (${person.user.pwaPlatform.toUpperCase()})` : ""}`}

@@ -256,7 +256,7 @@ export async function linkPersonToUser(
     })
     .where(eq(schema.person.id, personId));
 
-  await cacheInvalidateTags(`people:${organizationId}`);
+  await cacheInvalidateTags(`people:${organizationId}`, `org:${organizationId}`);
 
   return { ok: true, personId };
 }
@@ -282,6 +282,7 @@ export async function ensurePersonForUser(
         .update(schema.person)
         .set({ phone: user.phone })
         .where(eq(schema.person.id, existing.id));
+      await cacheInvalidateTags(`people:${organizationId}`);
     }
     return existing;
   }
@@ -302,6 +303,7 @@ export async function ensurePersonForUser(
           .set({ phone: user.phone })
           .where(eq(schema.person.id, byEmail.id));
       }
+      await cacheInvalidateTags(`people:${organizationId}`, `org:${organizationId}`);
       return getPerson(organizationId, byEmail.id);
     }
   }
@@ -319,7 +321,7 @@ export async function ensurePersonForUser(
     phone: user.phone ?? null,
   });
 
-  await cacheInvalidateTags(`people:${organizationId}`);
+  await cacheInvalidateTags(`people:${organizationId}`, `org:${organizationId}`);
 
   return getPerson(organizationId, id);
 }
@@ -359,6 +361,7 @@ export async function ensurePersonForEmail({
         .set(updates)
         .where(eq(schema.person.id, existing.id));
 
+      await cacheInvalidateTags(`people:${organizationId}`);
       return getPerson(organizationId, existing.id);
     }
 
@@ -374,6 +377,8 @@ export async function ensurePersonForEmail({
     email: normalized,
     phone: phone?.trim() || null,
   });
+
+  await cacheInvalidateTags(`people:${organizationId}`);
 
   return getPerson(organizationId, id);
 }

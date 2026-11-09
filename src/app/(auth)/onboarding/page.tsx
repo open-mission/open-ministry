@@ -4,12 +4,15 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { ArrowRightIcon, ChurchIcon } from "lucide-react";
+import { and, eq } from "drizzle-orm";
 
+import { db } from "@/db";
+import * as schema from "@/db/schema";
 import { setActiveOrganizationAction } from "@/app/actions/organization";
 import { AuthFormSkeleton } from "@/components/auth/auth-form-skeleton";
 import { OnboardingForm } from "@/components/auth/onboarding-form";
 import { Button } from "@/components/ui/button";
-import { roleLabel } from "@/lib/format";
+import { isExpired, roleLabel } from "@/lib/format";
 import {
   getOrganizationContext,
   listUserMemberships,
@@ -42,6 +45,32 @@ async function OnboardingContent() {
 
   if (memberships.length > 0) {
     return <ChooseChurch memberships={memberships} />;
+  }
+
+  const userEmail = session.user.email?.toLowerCase().trim();
+  const pendingInvitations = userEmail
+    ? await db.query.invitation.findMany({
+        where: and(
+          eq(schema.invitation.email, userEmail),
+          eq(schema.invitation.status, "pending"),
+        ),
+        with: {
+          organization: true,
+        },
+      })
+    : [];
+
+  const activeInvitations = pendingInvitations.filter(
+    (inv) => !isExpired(inv.expiresAt),
+  );
+
+  if (activeInvitations.length > 0) {
+    return (
+      <PendingInvitationsOnboarding
+        invitations={activeInvitations}
+        needsBirthday={!session.user.birthday}
+      />
+    );
   }
 
   return (
@@ -122,6 +151,79 @@ function ChooseChurch({
         </Link>
         .
       </p>
+    </div>
+  );
+}
+
+function PendingInvitationsOnboarding({
+  invitations,
+  needsBirthday,
+}: {
+  invitations: Array<{
+    id: string;
+    role: string | null;
+    organization: {
+      name: string;
+    };
+  }>;
+  needsBirthday: boolean;
+}) {
+  return (
+    <div className="space-y-8">
+      <div className="space-y-2">
+        <p className="text-xs font-medium tracking-[0.18em] text-primary uppercase">
+          Convite encontrado
+        </p>
+        <h1 className="font-heading text-4xl leading-none tracking-tight">
+          Você foi convidado!
+        </h1>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Encontramos um convite para você participar de uma igreja no
+          OpenMinistry. Confirme sua participação para entrar no espaço.
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        {invitations.map((inv) => (
+          <div
+            key={inv.id}
+            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border bg-card p-4 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <ChurchIcon className="size-5" />
+              </span>
+              <div>
+                <p className="font-heading text-lg font-bold leading-tight">
+                  {inv.organization.name}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Papel: {roleLabel(inv.role ?? "member")}
+                </p>
+              </div>
+            </div>
+
+            <Button asChild size="default" className="gap-2 shrink-0">
+              <Link href={`/accept-invitation/${inv.id}`}>
+                Aceitar convite
+                <ArrowRightIcon className="size-4" />
+              </Link>
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-6 pt-6 border-t border-border/60">
+        <div className="space-y-1">
+          <p className="text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
+            Ou crie uma nova comunidade
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Se preferir cadastrar sua própria igreja agora:
+          </p>
+        </div>
+        <OnboardingForm needsBirthday={needsBirthday} />
+      </div>
     </div>
   );
 }
