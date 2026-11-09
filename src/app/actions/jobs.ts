@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { getActionContext } from "@/lib/action-context";
+import { getOrganizationContext } from "@/lib/organizations";
 import {
   createBackgroundJob,
   deleteBackgroundJob,
@@ -14,7 +14,7 @@ import {
 } from "@/lib/jobs/service";
 
 export async function enqueueEventPlanPdfJobAction(eventId: string) {
-  const context = await getActionContext();
+  const context = await getOrganizationContext();
   if (!context) {
     return { error: "Sessão expirada." };
   }
@@ -45,7 +45,7 @@ export async function enqueueEventPlanPdfJobAction(eventId: string) {
 }
 
 export async function getBackgroundJobsAction() {
-  const context = await getActionContext();
+  const context = await getOrganizationContext();
   if (!context) {
     return { error: "Sessão expirada.", jobs: [] };
   }
@@ -55,7 +55,7 @@ export async function getBackgroundJobsAction() {
 }
 
 export async function retryBackgroundJobAction(jobId: string) {
-  const context = await getActionContext();
+  const context = await getOrganizationContext();
   if (!context) {
     return { error: "Sessão expirada." };
   }
@@ -70,7 +70,7 @@ export async function retryBackgroundJobAction(jobId: string) {
 }
 
 export async function deleteBackgroundJobAction(jobId: string) {
-  const context = await getActionContext();
+  const context = await getOrganizationContext();
   if (!context) {
     return { error: "Sessão expirada." };
   }

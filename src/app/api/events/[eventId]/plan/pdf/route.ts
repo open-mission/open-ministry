@@ -9,8 +9,6 @@ import { formatEventFullDate, formatEventTimeRange } from "@/lib/events";
 import { eventKindLabels, type EventKind } from "@/lib/event-options";
 import { generateEventPlanPdfStream } from "@/lib/pdf/generator";
 
-export const runtime = "nodejs";
-
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ eventId: string }> },

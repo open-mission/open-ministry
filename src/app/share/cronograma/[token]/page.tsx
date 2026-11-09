@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { and, eq } from "drizzle-orm";
+import { connection } from "next/server";
+import { Suspense } from "react";
+import { eq } from "drizzle-orm";
 import {
   CalendarDaysIcon,
   ClockIcon,
@@ -21,39 +23,31 @@ import { eventKindLabels, type EventKind } from "@/lib/event-options";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export async function generateMetadata({
-  params,
-}: {
+export const metadata: Metadata = {
+  title: "Cronograma do Culto ou Evento | OpenMinistry",
+  description: "Acompanhe a ordem litúrgica e os momentos do culto ou evento.",
+};
+
+type PublicCronogramaPageProps = {
   params: Promise<{ token: string }>;
-}): Promise<Metadata> {
-  const { token } = await params;
-  const event = await db.query.event.findFirst({
-    where: and(
-      eq(schema.event.publicShareToken, token),
-      eq(schema.event.isPublicShareEnabled, true),
-    ),
-    columns: { title: true },
-    with: { organization: { columns: { name: true } } },
-  });
+};
 
-  if (!event) {
-    return {
-      title: "Cronograma não encontrado | OpenMinistry",
-    };
-  }
-
-  return {
-    title: `Cronograma: ${event.title} • ${event.organization.name}`,
-    description: `Acompanhe a ordem litúrgica e os momentos de ${event.title} em ${event.organization.name}.`,
-  };
+export default function PublicCronogramaPage({
+  params,
+}: PublicCronogramaPageProps) {
+  return (
+    <Suspense fallback={<CronogramaLoadingSkeleton />}>
+      <PublicCronogramaContent params={params} />
+    </Suspense>
+  );
 }
 
-export default async function PublicCronogramaPage({
+async function PublicCronogramaContent({
   params,
-}: {
-  params: Promise<{ token: string }>;
-}) {
+}: PublicCronogramaPageProps) {
+  await connection();
   const { token } = await params;
 
   const event = await db.query.event.findFirst({
@@ -342,6 +336,46 @@ export default async function PublicCronogramaPage({
             Atualizado em tempo real pelos líderes de departamento.
           </p>
         </footer>
+      </main>
+    </div>
+  );
+}
+
+function CronogramaLoadingSkeleton() {
+  return (
+    <div className="min-h-screen bg-muted/20 pb-20">
+      <header className="sticky top-0 z-30 border-b bg-background/90 px-4 py-3 sm:px-8">
+        <div className="mx-auto flex max-w-4xl items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Skeleton className="size-8 rounded-lg" />
+            <Skeleton className="h-5 w-32" />
+          </div>
+          <Skeleton className="h-8 w-24 rounded-md" />
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-4xl px-4 pt-8 sm:px-8 space-y-8">
+        <div className="space-y-3">
+          <Skeleton className="h-5 w-28 rounded-full" />
+          <Skeleton className="h-9 w-3/4 max-w-md" />
+          <div className="flex gap-4">
+            <Skeleton className="h-4 w-36" />
+            <Skeleton className="h-4 w-28" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+        </div>
+
+        <div className="space-y-4">
+          <Skeleton className="h-24 rounded-2xl" />
+          <Skeleton className="h-24 rounded-2xl" />
+          <Skeleton className="h-24 rounded-2xl" />
+        </div>
       </main>
     </div>
   );

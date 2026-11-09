@@ -257,6 +257,7 @@ export function EventPlanPdfDocument({
           <View style={styles.headerTopRow}>
             <View style={styles.orgInfo}>
               {organizationLogo ? (
+                /* eslint-disable-next-line jsx-a11y/alt-text */
                 <Image src={organizationLogo} style={styles.orgLogo} />
               ) : null}
               <Text style={styles.orgName}>{organizationName}</Text>
@@ -345,11 +346,11 @@ export function EventPlanPdfDocument({
               <View style={styles.songCol}>
                 {item.song ? (
                   <>
-                    <Text style={styles.songTitle} numberOfLines={1}>
+                    <Text style={styles.songTitle}>
                       🎵 {item.song.title}
                     </Text>
                     {item.song.artist ? (
-                      <Text style={styles.songArtist} numberOfLines={1}>
+                      <Text style={styles.songArtist}>
                         {item.song.artist}
                       </Text>
                     ) : null}
@@ -367,7 +368,7 @@ export function EventPlanPdfDocument({
 
               {/* Responsável */}
               <View style={styles.respCol}>
-                <Text style={styles.respName} numberOfLines={2}>
+                <Text style={styles.respName}>
                   {responsibleName}
                 </Text>
               </View>

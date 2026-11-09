@@ -1446,7 +1446,7 @@ export async function importPlanItemsAction(
 }
 
 export async function getEventPublicShareInfoAction(eventId: string) {
-  const context = await getActionContext();
+  const context = await getOrganizationContext();
   if (!context) {
     return { error: "Sessão expirada." };
   }
@@ -1483,7 +1483,7 @@ export async function toggleEventPublicShareAction(input: {
   enabled: boolean;
   allowPdf?: boolean;
 }) {
-  const context = await getActionContext();
+  const context = await getOrganizationContext();
   if (!context) {
     return { error: "Sessão expirada." };
   }
@@ -1544,7 +1544,7 @@ export async function toggleEventPublicShareAction(input: {
 }
 
 export async function regenerateEventPublicShareTokenAction(eventId: string) {
-  const context = await getActionContext();
+  const context = await getOrganizationContext();
   if (!context) {
     return { error: "Sessão expirada." };
   }

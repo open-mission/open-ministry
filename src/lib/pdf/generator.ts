@@ -12,7 +12,9 @@ import {
  */
 export async function generateEventPlanPdfStream(data: EventPlanPdfData) {
   const element = React.createElement(EventPlanPdfDocument, data);
-  return await renderToStream(element);
+  return await renderToStream(
+    element as unknown as Parameters<typeof renderToStream>[0],
+  );
 }
 
 /**
@@ -22,5 +24,7 @@ export async function generateEventPlanPdfBuffer(
   data: EventPlanPdfData,
 ): Promise<Buffer> {
   const element = React.createElement(EventPlanPdfDocument, data);
-  return await renderToBuffer(element);
+  return await renderToBuffer(
+    element as unknown as Parameters<typeof renderToBuffer>[0],
+  );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
   CheckIcon,
@@ -61,29 +61,26 @@ export function SharePlanDialog({
   const [allowPdf, setAllowPdf] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  const fetchStatus = () => {
-    setLoading(true);
-    getEventPublicShareInfoAction(eventId)
-      .then((res) => {
-        if (res.ok) {
-          setIsEnabled(Boolean(res.isPublicShareEnabled));
-          setToken(res.publicShareToken ?? null);
-          setAllowPdf(res.publicShareAllowPdf ?? true);
-        }
-      })
-      .catch((err) => {
-        console.error("Erro ao carregar dados de compartilhamento", err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  };
-
-  useEffect(() => {
-    if (open) {
-      fetchStatus();
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (nextOpen) {
+      setLoading(true);
+      getEventPublicShareInfoAction(eventId)
+        .then((res) => {
+          if (res.ok) {
+            setIsEnabled(Boolean(res.isPublicShareEnabled));
+            setToken(res.publicShareToken ?? null);
+            setAllowPdf(res.publicShareAllowPdf ?? true);
+          }
+        })
+        .catch((err) => {
+          console.error("Erro ao carregar dados de compartilhamento", err);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
-  }, [open]);
+  };
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const shareUrl = token ? `${origin}/share/cronograma/${token}` : "";
@@ -168,7 +165,7 @@ export function SharePlanDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger || (
           <Button variant="outline" size="sm" className="gap-1.5 h-9">

@@ -6,8 +6,6 @@ import * as schema from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getJobFile } from "@/lib/jobs/storage";
 
-export const runtime = "nodejs";
-
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ jobId: string }> },
@@ -66,7 +64,7 @@ export async function GET(
       (job.result as { fileName?: string })?.fileName ||
       `download-${jobId}.pdf`;
 
-    return new Response(buffer, {
+    return new Response(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${fileName}"`,
