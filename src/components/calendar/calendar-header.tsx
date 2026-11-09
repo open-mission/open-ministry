@@ -13,7 +13,6 @@ import {
   ListIcon,
 } from "lucide-react";
 
-import { CalendarPreferencesDialog } from "@/components/calendar/calendar-preferences-dialog";
 import { CreateEventDialog } from "@/components/events/create-event-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,7 +37,6 @@ type CalendarHeaderProps = {
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
-  onPreferencesChange: (preferences: CalendarPreferences) => void;
   itemsCount: {
     total: number;
     events: number;
@@ -59,7 +57,6 @@ export function CalendarHeader({
   onPrev,
   onNext,
   onToday,
-  onPreferencesChange,
   itemsCount,
   isAdmin,
   departments,
@@ -95,10 +92,14 @@ export function CalendarHeader({
   return (
     <div className="flex flex-col gap-4">
       {/* Top Bar: Title & Navigation + View Switcher */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        {/* Navigation Controls */}
-        <div className="flex w-full flex-wrap items-center justify-between gap-2 lg:w-auto lg:flex-nowrap lg:justify-start lg:gap-3">
-          <div className="order-last flex shrink-0 items-center gap-1.5 lg:order-first">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        {/* Page Title & Navigation Controls */}
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+          <h1 className="font-heading text-3xl font-semibold capitalize tracking-tight text-foreground sm:text-4xl">
+            {getTitle()}
+          </h1>
+
+          <div className="flex shrink-0 items-center gap-1.5">
             <div className="flex shrink-0 items-center gap-1 rounded-lg border bg-card p-0.5 shadow-2xs">
               <Button
                 variant="ghost"
@@ -127,16 +128,7 @@ export function CalendarHeader({
                 <ChevronRightIcon className="size-4" />
               </Button>
             </div>
-
-            <CalendarPreferencesDialog
-              preferences={preferences}
-              onPreferencesChange={onPreferencesChange}
-            />
           </div>
-
-          <h2 className="order-first min-w-0 font-heading text-lg font-bold capitalize tracking-tight text-foreground sm:text-2xl lg:order-none">
-            {getTitle()}
-          </h2>
         </div>
 
         {/* View Switcher & Actions */}

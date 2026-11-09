@@ -42,8 +42,7 @@ export function FullCalendar({
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<CalendarViewMode>("month");
   const [filterType, setFilterType] = useState<CalendarFilterType>("all");
-  const [preferences, setPreferences] =
-    useState<CalendarPreferences>(initialPreferences);
+  const preferences = initialPreferences;
 
   const [selectedItem, setSelectedItem] = useState<CalendarItem | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -152,7 +151,6 @@ export function FullCalendar({
         onPrev={handlePrev}
         onNext={handleNext}
         onToday={handleToday}
-        onPreferencesChange={setPreferences}
         itemsCount={itemsCount}
         isAdmin={isAdmin}
         departments={departments}

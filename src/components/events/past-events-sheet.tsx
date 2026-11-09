@@ -7,7 +7,6 @@ import {
   HistoryIcon,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -47,14 +46,6 @@ export function PastEventsSheet({ count, children }: PastEventsSheetProps) {
     >
       <HistoryIcon className="size-4 text-primary transition-transform group-hover:rotate-[-20deg]" />
       <span>Histórico</span>
-      {count > 0 && (
-        <Badge
-          variant="secondary"
-          className="rounded-full px-1.5 py-0 text-[10px] font-semibold tracking-tight"
-        >
-          {count}
-        </Badge>
-      )}
       <ArrowRightIcon className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
     </Button>
   );

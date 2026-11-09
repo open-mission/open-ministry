@@ -64,8 +64,8 @@ export function PastoralCarePreview({
       </CardHeader>
 
       <CardContent className="space-y-5 p-5 sm:p-6">
-        {/* Métricas rápidas */}
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+        {/* Métricas rápidas (2x2) */}
+        <div className="grid grid-cols-2 gap-2.5">
           <div className="space-y-1 rounded-xl border border-border/60 bg-muted/40 p-3.5">
             <p className="text-[11px] font-medium text-muted-foreground">
               Média de humor
