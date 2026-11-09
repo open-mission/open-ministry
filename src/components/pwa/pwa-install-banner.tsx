@@ -15,12 +15,14 @@ export function PwaInstallBanner() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    if (isStandalone || isDismissed) return;
+
     // Slight delay to avoid layout shift on initial load
     const timer = setTimeout(() => {
       setMounted(true);
     }, 1200);
     return () => clearTimeout(timer);
-  }, []);
+  }, [isStandalone, isDismissed]);
 
   if (!mounted || isStandalone || isDismissed) {
     return null;

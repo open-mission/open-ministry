@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useMemo,
   useState,
   useTransition,
   type ReactNode,
@@ -84,6 +85,11 @@ export function SettingsModalProvider({ children }: { children: ReactNode }) {
     setOpen(false);
   }, []);
 
+  const value = useMemo(
+    () => ({ open, openSettings, closeSettings }),
+    [open, openSettings, closeSettings],
+  );
+
   const renderContent = () => {
     if (isLoading || !data) {
       return (
@@ -121,9 +127,7 @@ export function SettingsModalProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <SettingsModalContext.Provider
-      value={{ open, openSettings, closeSettings }}
-    >
+    <SettingsModalContext.Provider value={value}>
       {children}
 
       {isMobile ? (

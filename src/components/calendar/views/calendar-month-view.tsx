@@ -1,10 +1,10 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   eachDayOfInterval,
   endOfWeek,
   format,
-  isSameDay,
   isSameMonth,
   isToday,
   parseISO,
@@ -33,18 +33,42 @@ export function CalendarMonthView({
   onSelectDate,
   onSelectItem,
 }: CalendarMonthViewProps) {
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
-  const calendarStart = startOfWeek(monthStart, { weekStartsOn });
-  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn });
+  const { days, weekDays } = useMemo(() => {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+    const calendarStart = startOfWeek(monthStart, { weekStartsOn });
+    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn });
 
-  const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+    const computedDays = eachDayOfInterval({
+      start: calendarStart,
+      end: calendarEnd,
+    });
 
-  // Generate weekday headers
-  const weekDays = eachDayOfInterval({
-    start: calendarStart,
-    end: endOfWeek(calendarStart, { weekStartsOn }),
-  }).map((d) => format(d, "EEE", { locale: ptBR }));
+    const computedWeekDays = eachDayOfInterval({
+      start: calendarStart,
+      end: endOfWeek(calendarStart, { weekStartsOn }),
+    }).map((d) => format(d, "EEE", { locale: ptBR }));
+
+    return { days: computedDays, weekDays: computedWeekDays };
+  }, [currentDate, weekStartsOn]);
+
+  const itemsByDay = useMemo(() => {
+    const map = new Map<string, CalendarItem[]>();
+    for (const item of items) {
+      try {
+        const dayKey = format(parseISO(item.startsAt), "yyyy-MM-dd");
+        const list = map.get(dayKey);
+        if (list) {
+          list.push(item);
+        } else {
+          map.set(dayKey, [item]);
+        }
+      } catch {
+        // Ignora itens com data mal formatada
+      }
+    }
+    return map;
+  }, [items]);
 
   return (
     <div className="flex flex-col rounded-xl border bg-card shadow-xs overflow-hidden">
@@ -63,9 +87,8 @@ export function CalendarMonthView({
           const isCurrentMonth = isSameMonth(day, currentDate);
           const isDayToday = isToday(day);
 
-          const dayItems = items.filter((item) =>
-            isSameDay(parseISO(item.startsAt), day),
-          );
+          const dayKey = format(day, "yyyy-MM-dd");
+          const dayItems = itemsByDay.get(dayKey) ?? [];
 
           const maxVisible = 3;
           const visibleItems = dayItems.slice(0, maxVisible);

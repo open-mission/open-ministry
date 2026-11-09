@@ -3,6 +3,7 @@
 import {
   createContext,
   useContext,
+  useMemo,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
@@ -62,10 +63,13 @@ export function OpenMinistryRealtimeProvider({
     getServerSnapshot,
   );
 
-  const value: RealtimeContextValue = {
-    isEnabled: Boolean(client),
-    client,
-  };
+  const value = useMemo<RealtimeContextValue>(
+    () => ({
+      isEnabled: Boolean(client),
+      client,
+    }),
+    [client],
+  );
 
   if (!client) {
     return (
