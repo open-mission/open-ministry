@@ -10,14 +10,19 @@ export function RemoveAssignmentButton({
   assignmentId,
   userName,
   functionName,
+  onRemove,
+  onRollback,
 }: {
   assignmentId: string;
   userName: string;
   functionName: string;
+  onRemove?: () => void;
+  onRollback?: () => void;
 }) {
   const [pending, startTransition] = useTransition();
 
   function handleRemove() {
+    onRemove?.();
     startTransition(async () => {
       const result = await removeScheduleAssignmentAction(assignmentId);
 
@@ -26,6 +31,7 @@ export function RemoveAssignmentButton({
         return;
       }
 
+      onRollback?.();
       toast.error(result.error ?? "Não foi possível remover da escala.");
     });
   }

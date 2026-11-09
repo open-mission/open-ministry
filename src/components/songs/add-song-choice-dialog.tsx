@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { ParsedCifraTxt } from "@/lib/music/chords-utils";
+import type { SongRecord } from "@/lib/songs";
 import { ImportSongDialog } from "./import-song-dialog";
 import { OnlineSearchDialog } from "./online-search-dialog";
 import { SongFormDialog } from "./song-form-dialog";
@@ -37,11 +38,13 @@ import { SongFormDialog } from "./song-form-dialog";
 type AddSongChoiceDialogProps = {
   trigger?: React.ReactNode;
   existingCollections?: string[];
+  onSongCreated?: (song: SongRecord) => void;
 };
 
 export function AddSongChoiceDialog({
   trigger,
   existingCollections = [],
+  onSongCreated,
 }: AddSongChoiceDialogProps) {
   const isMobile = useIsMobile();
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -248,6 +251,7 @@ export function AddSongChoiceDialog({
         onOpenChange={setManualOpen}
         initialData={manualInitialData}
         existingCollections={existingCollections}
+        onSongCreated={onSongCreated}
       />
     </>
   );

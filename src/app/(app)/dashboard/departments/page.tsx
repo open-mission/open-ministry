@@ -3,10 +3,8 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { HandHeartIcon } from "lucide-react";
 
-import { PageInfo } from "@/components/app/page-info";
 import { CreateDepartmentDialog } from "@/components/departments/create-department-dialog";
 import { DepartmentCard } from "@/components/departments/department-card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listDepartments } from "@/lib/departments";
 import { requireOrganizationContext } from "@/lib/organizations";
@@ -32,26 +30,9 @@ async function DepartmentsContent() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="font-heading text-4xl leading-none tracking-tight">
-            Departamentos
-          </h1>
-          <Badge variant="outline" className="font-normal">
-            {departments.length}
-          </Badge>
-          <PageInfo
-            title="Departamentos"
-            description={
-              <>
-                Cada ministério reúne as funções e as pessoas que servem em{" "}
-                <span className="font-medium text-foreground">
-                  {organization.name}
-                </span>
-                .
-              </>
-            }
-          />
-        </div>
+        <h1 className="font-heading text-4xl leading-none tracking-tight">
+          Departamentos
+        </h1>
         {isAdmin ? <CreateDepartmentDialog /> : null}
       </header>
 
@@ -86,9 +67,9 @@ async function DepartmentsContent() {
 function DepartmentsSkeleton() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8" aria-hidden>
-      <div className="space-y-2">
+      <div className="flex items-center justify-between">
         <Skeleton className="h-10 w-64" />
-        <Skeleton className="h-4 w-96 max-w-full" />
+        <Skeleton className="h-9 w-40" />
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <Skeleton className="h-56 rounded-xl" />

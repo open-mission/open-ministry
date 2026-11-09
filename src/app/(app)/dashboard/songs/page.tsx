@@ -3,7 +3,6 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { ShieldAlertIcon } from "lucide-react";
 
-import { AddSongChoiceDialog } from "@/components/songs/add-song-choice-dialog";
 import { SongsListView } from "@/components/songs/songs-list-view";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrganizationContext } from "@/lib/organizations";
@@ -58,15 +57,7 @@ async function SongsContent() {
   ]);
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
-          Repertório de Músicas
-        </h1>
-
-        <AddSongChoiceDialog existingCollections={collections} />
-      </header>
-
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 min-w-0">
       <SongsListView
         songs={songs}
         existingCollections={collections}

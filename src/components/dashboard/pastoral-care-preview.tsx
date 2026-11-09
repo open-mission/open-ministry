@@ -25,8 +25,10 @@ import { cn } from "@/lib/utils";
 
 export function PastoralCarePreview({
   overview,
+  className,
 }: {
   overview: MoodOverview;
+  className?: string;
 }) {
   const roundedScore = Math.min(
     5,
@@ -37,7 +39,7 @@ export function PastoralCarePreview({
   const topRequests = overview.recentCareRequests.slice(0, 3);
 
   return (
-    <Card className="overflow-hidden border-border/70 bg-card">
+    <Card className={cn("overflow-hidden border-border/70 bg-card", className)}>
       <CardHeader className="flex flex-col gap-2 border-b border-border/60 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -62,8 +64,8 @@ export function PastoralCarePreview({
       </CardHeader>
 
       <CardContent className="space-y-5 p-5 sm:p-6">
-        {/* Métricas rápidas */}
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        {/* Métricas rápidas (2x2) */}
+        <div className="grid grid-cols-2 gap-2.5">
           <div className="space-y-1 rounded-xl border border-border/60 bg-muted/40 p-3.5">
             <p className="text-[11px] font-medium text-muted-foreground">
               Média de humor
@@ -156,7 +158,7 @@ export function PastoralCarePreview({
                     key={req.id}
                     className="flex flex-col gap-3 rounded-xl border border-border/70 bg-card/60 p-3.5 transition-all hover:border-primary/30 sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <div className="flex items-start gap-3">
+                    <div className="flex min-w-0 items-start gap-3">
                       <Avatar className="size-10 shrink-0 border">
                         <AvatarImage
                           src={req.personImage ?? undefined}
@@ -169,7 +171,7 @@ export function PastoralCarePreview({
 
                       <div className="min-w-0 space-y-1">
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <p className="text-sm font-semibold text-foreground">
+                          <p className="truncate text-sm font-semibold text-foreground">
                             {req.personName}
                           </p>
                           <span

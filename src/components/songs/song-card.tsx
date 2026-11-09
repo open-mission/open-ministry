@@ -16,12 +16,23 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { SongRecord } from "@/lib/songs";
 import { DeleteSongDialog } from "./delete-song-dialog";
 import { SongFormDialog } from "./song-form-dialog";
@@ -29,9 +40,18 @@ import { SongFormDialog } from "./song-form-dialog";
 type SongCardProps = {
   song: SongRecord;
   canManage?: boolean;
+  onSongUpdated?: (song: SongRecord) => void;
+  onSongDeleted?: (songId: string) => void;
 };
 
-export function SongCard({ song, canManage = true }: SongCardProps) {
+export function SongCard({
+  song,
+  canManage = true,
+  onSongUpdated,
+  onSongDeleted,
+}: SongCardProps) {
+  const isMobile = useIsMobile();
+  const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -40,14 +60,14 @@ export function SongCard({ song, canManage = true }: SongCardProps) {
 
   return (
     <>
-      <div className="group relative flex flex-col justify-between rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs transition-all hover:border-primary/40 hover:shadow-md">
-        <div className="space-y-3">
-          <div className="flex items-start justify-between gap-2">
+      <div className="group relative flex min-w-0 max-w-full flex-col justify-between rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs transition-all hover:border-primary/40 hover:shadow-md overflow-hidden">
+        <div className="space-y-3 min-w-0">
+          <div className="flex items-start justify-between gap-2 min-w-0">
             <Link
               href={`/dashboard/songs/${song.id}`}
               className="group-hover:text-primary transition-colors min-w-0 flex-1"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Music2Icon className="size-3.5" />
                 </span>
@@ -61,38 +81,118 @@ export function SongCard({ song, canManage = true }: SongCardProps) {
             </Link>
 
             {canManage ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    className="shrink-0 text-muted-foreground"
-                  >
-                    <MoreVerticalIcon className="size-4" />
-                    <span className="sr-only">Opções da música</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem asChild>
-                    <Link href={`/dashboard/songs/${song.id}`}>
-                      <FileTextIcon className="size-4 mr-2" />
-                      Ver detalhes
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setEditOpen(true)}>
-                    <PencilIcon className="size-4 mr-2" />
-                    Editar música
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => setDeleteOpen(true)}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Trash2Icon className="size-4 mr-2" />
-                    Excluir
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              isMobile ? (
+                <Drawer open={menuOpen} onOpenChange={setMenuOpen}>
+                  <DrawerTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      className="shrink-0 text-muted-foreground"
+                    >
+                      <MoreVerticalIcon className="size-4" />
+                      <span className="sr-only">Opções da música</span>
+                    </Button>
+                  </DrawerTrigger>
+                  <DrawerContent className="max-h-[80dvh] rounded-t-[24px] p-0">
+                    <DrawerHeader className="border-b px-5 pt-4 pb-3 text-left">
+                      <div className="flex items-center gap-2">
+                        <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <Music2Icon className="size-4" />
+                        </span>
+                        <DrawerTitle className="font-heading text-base font-bold truncate">
+                          {song.title}
+                        </DrawerTitle>
+                      </div>
+                      <DrawerDescription className="text-xs text-muted-foreground truncate">
+                        {song.artist || "Opções da música"}
+                      </DrawerDescription>
+                    </DrawerHeader>
+
+                    <div className="flex flex-col gap-1 p-3">
+                      <Button
+                        variant="ghost"
+                        asChild
+                        className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium"
+                      >
+                        <Link
+                          href={`/dashboard/songs/${song.id}`}
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          <FileTextIcon className="size-4 text-muted-foreground" />
+                          <span>Ver detalhes</span>
+                        </Link>
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          setEditOpen(true);
+                        }}
+                        className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium"
+                      >
+                        <PencilIcon className="size-4 text-muted-foreground" />
+                        <span>Editar música</span>
+                      </Button>
+
+                      <div className="my-1 border-t border-border/60" />
+
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          setDeleteOpen(true);
+                        }}
+                        className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2Icon className="size-4" />
+                        <span>Excluir</span>
+                      </Button>
+                    </div>
+
+                    <DrawerFooter className="border-t pt-2 pb-4">
+                      <DrawerClose asChild>
+                        <Button variant="outline" className="w-full">
+                          Cancelar
+                        </Button>
+                      </DrawerClose>
+                    </DrawerFooter>
+                  </DrawerContent>
+                </Drawer>
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      className="shrink-0 text-muted-foreground"
+                    >
+                      <MoreVerticalIcon className="size-4" />
+                      <span className="sr-only">Opções da música</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem asChild>
+                      <Link href={`/dashboard/songs/${song.id}`}>
+                        <FileTextIcon className="size-4 mr-2" />
+                        Ver detalhes
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setEditOpen(true)}>
+                      <PencilIcon className="size-4 mr-2" />
+                      Editar música
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setDeleteOpen(true)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2Icon className="size-4 mr-2" />
+                      Excluir
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )
             ) : null}
           </div>
 
@@ -101,37 +201,37 @@ export function SongCard({ song, canManage = true }: SongCardProps) {
             {song.collection ? (
               <Badge
                 variant="outline"
-                className="gap-1 border-primary/30 bg-primary/10 text-[11px] font-semibold text-primary"
+                className="max-w-full gap-1 border-primary/30 bg-primary/10 text-[11px] font-semibold text-primary truncate shrink-0"
               >
-                <FolderIcon className="size-3 text-primary" />
-                <span>{song.collection}</span>
+                <FolderIcon className="size-3 text-primary shrink-0" />
+                <span className="truncate">{song.collection}</span>
               </Badge>
             ) : null}
             {song.tone ? (
-              <Badge variant="outline" className="font-semibold text-primary">
+              <Badge variant="outline" className="shrink-0 font-semibold text-primary">
                 Tom {song.tone}
               </Badge>
             ) : null}
             {song.bpm ? (
-              <Badge variant="secondary" className="font-mono text-[11px]">
+              <Badge variant="secondary" className="shrink-0 font-mono text-[11px]">
                 {song.bpm} BPM
               </Badge>
             ) : null}
             {song.timeSignature ? (
-              <Badge variant="secondary" className="text-[11px]">
+              <Badge variant="secondary" className="shrink-0 text-[11px]">
                 {song.timeSignature}
               </Badge>
             ) : null}
 
             {hasChords ? (
-              <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
                 <FileMusicIcon className="size-3" />
                 Cifra
               </span>
             ) : null}
 
             {hasLyrics ? (
-              <span className="inline-flex items-center gap-1 rounded-md bg-sky-500/10 px-1.5 py-0.5 text-[11px] font-medium text-sky-700 dark:text-sky-300">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-sky-500/10 px-1.5 py-0.5 text-[11px] font-medium text-sky-700 dark:text-sky-300">
                 <FileTextIcon className="size-3" />
                 Letra
               </span>
@@ -140,14 +240,14 @@ export function SongCard({ song, canManage = true }: SongCardProps) {
         </div>
 
         {/* RODAPÉ COM LINKS PARA PLATAFORMAS */}
-        <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3 text-xs">
-          <div className="flex items-center gap-2">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-3 text-xs">
+          <div className="flex flex-wrap items-center gap-1.5 min-w-0">
             {song.youtubeUrl ? (
               <a
                 href={song.youtubeUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 rounded-md bg-red-500/10 px-2 py-1 text-[11px] font-medium text-red-600 transition-colors hover:bg-red-500/20 dark:text-red-400"
+                className="inline-flex shrink-0 items-center gap-1 rounded-md bg-red-500/10 px-2 py-1 text-[11px] font-medium text-red-600 transition-colors hover:bg-red-500/20 dark:text-red-400"
                 title="Abrir no YouTube"
               >
                 <span>YouTube</span>
@@ -160,7 +260,7 @@ export function SongCard({ song, canManage = true }: SongCardProps) {
                 href={song.spotifyUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400"
+                className="inline-flex shrink-0 items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400"
                 title="Abrir no Spotify"
               >
                 <span>Spotify</span>
@@ -173,7 +273,7 @@ export function SongCard({ song, canManage = true }: SongCardProps) {
                 href={song.youtubeMusicUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 rounded-md bg-red-600/10 px-2 py-1 text-[11px] font-medium text-red-700 transition-colors hover:bg-red-600/20 dark:text-red-300"
+                className="inline-flex shrink-0 items-center gap-1 rounded-md bg-red-600/10 px-2 py-1 text-[11px] font-medium text-red-700 transition-colors hover:bg-red-600/20 dark:text-red-300"
                 title="Abrir no YouTube Music"
               >
                 <span>YT Music</span>
@@ -184,7 +284,7 @@ export function SongCard({ song, canManage = true }: SongCardProps) {
 
           <Link
             href={`/dashboard/songs/${song.id}`}
-            className="font-medium text-primary hover:underline text-xs"
+            className="shrink-0 font-medium text-primary hover:underline text-xs ml-auto"
           >
             Acessar ›
           </Link>
@@ -209,6 +309,7 @@ export function SongCard({ song, canManage = true }: SongCardProps) {
           collection: song.collection ?? "",
           tags: song.tags ?? [],
         }}
+        onSongUpdated={onSongUpdated}
       />
 
       <DeleteSongDialog
@@ -216,6 +317,7 @@ export function SongCard({ song, canManage = true }: SongCardProps) {
         onOpenChange={setDeleteOpen}
         songId={song.id}
         songTitle={song.title}
+        onSongDeleted={onSongDeleted}
       />
     </>
   );
