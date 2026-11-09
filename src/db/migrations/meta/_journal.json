@@ -183,6 +183,13 @@
       "when": 1794159879687,
       "tag": "0025_medical_raider",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794248473495,
+      "tag": "0026_little_gambit",
+      "breakpoints": true
     }
   ]
 }

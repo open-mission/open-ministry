@@ -59,6 +59,8 @@ export function getQStashReceiver(): Receiver | null {
 }
 
 export type NotificationJob = {
+  whatsappLogId?: string;
+  batchId?: string;
   organizationId: string;
   type: "welcome" | "assignment" | "announcement" | "monthly_availability";
   recipientPhone?: string | null;

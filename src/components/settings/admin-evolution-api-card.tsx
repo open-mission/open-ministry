@@ -5,22 +5,28 @@ import { toast } from "sonner";
 import {
   CheckCircle2Icon,
   CheckIcon,
+  CopyIcon,
   ExternalLinkIcon,
   Loader2Icon,
   MessageSquareIcon,
+  RadioIcon,
   SendIcon,
   ServerIcon,
+  WebhookIcon,
   WifiIcon,
   XCircleIcon,
 } from "lucide-react";
 
 import {
+  configureEvolutionWebhookAction,
   saveEvolutionSettingsAction,
   sendTestEvolutionMessageAction,
   testEvolutionConnectionAction,
   type EvolutionSettingsFormState,
   type EvolutionSettingsView,
 } from "@/app/actions/settings";
+import { EvolutionMessageLogsCard } from "@/components/settings/evolution-message-logs";
+import { copyToClipboard } from "@/lib/clipboard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -72,6 +78,29 @@ export function AdminEvolutionApiCard({
   // Test message state
   const [testPhone, setTestPhone] = useState("");
   const [isSendingTest, startSendingTest] = useTransition();
+  const [isConfiguringWebhook, startConfiguringWebhook] = useTransition();
+
+  function handleConfigureWebhook() {
+    startConfiguringWebhook(async () => {
+      const res = await configureEvolutionWebhookAction();
+      if (res.ok) {
+        toast.success(
+          "Webhook registrado com sucesso no seu servidor Evolution GO!",
+        );
+      } else {
+        toast.error(
+          res.error || "Não foi possível registrar o webhook automaticamente.",
+        );
+      }
+    });
+  }
+
+  function handleCopyWebhookUrl() {
+    if (initialSettings.webhookUrl) {
+      copyToClipboard(initialSettings.webhookUrl);
+      toast.success("URL do webhook copiada para a área de transferência!");
+    }
+  }
 
   const [state, formAction, isSaving] = useActionState<
     EvolutionSettingsFormState,
@@ -138,7 +167,8 @@ export function AdminEvolutionApiCard({
   }
 
   return (
-    <Card>
+    <div className="space-y-6">
+      <Card>
       <CardHeader>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
@@ -388,13 +418,90 @@ export function AdminEvolutionApiCard({
           </div>
         </div>
 
+        {/* Webhook Configuration for Evolution GO */}
+        <div className="border-t pt-5 space-y-3">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <WebhookIcon className="size-4 text-primary" />
+              <h4 className="text-sm font-semibold text-foreground">
+                Webhook do Evolution GO (Confirmação de Entrega e Leitura)
+              </h4>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Receba notificações em tempo real quando as mensagens forem enviadas,
+              entregues ou lidas pelos membros no WhatsApp.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <FieldLabel htmlFor="webhookUrl">
+              URL do Webhook do OpenMinistry
+            </FieldLabel>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Input
+                id="webhookUrl"
+                readOnly
+                value={initialSettings.webhookUrl || ""}
+                className="h-9 font-mono text-xs bg-muted/30"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCopyWebhookUrl}
+                disabled={!initialSettings.webhookUrl}
+                className="gap-1.5 h-9 shrink-0"
+              >
+                <CopyIcon className="size-3.5" />
+                Copiar URL
+              </Button>
+            </div>
+            <FieldDescription>
+              Cole esta URL nas configurações da sua instância no Evolution Go ou
+              utilize o botão abaixo para configurar automaticamente.
+            </FieldDescription>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={
+                isConfiguringWebhook ||
+                !initialSettings.apiUrl ||
+                !initialSettings.apiKey
+              }
+              onClick={handleConfigureWebhook}
+              className="gap-1.5 h-8 text-xs"
+            >
+              {isConfiguringWebhook ? (
+                <Loader2Icon className="size-3.5 animate-spin" />
+              ) : (
+                <RadioIcon className="size-3.5" />
+              )}
+              Configurar Webhook no Evolution GO Automaticamente
+            </Button>
+
+            <a
+              href="https://docs.evolutionfoundation.com.br/evolution-go/webhooks"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
+            >
+              Manual de Webhooks do Evolution Go
+              <ExternalLinkIcon className="size-3" />
+            </a>
+          </div>
+        </div>
+
         {/* Helpful docs link and Upstash Queue Info */}
         <div className="rounded-lg border border-dashed bg-muted/20 p-3 text-xs text-muted-foreground flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <span>
             Documentação da Evolution API Go: instâncias, QR Code e Webhooks.
           </span>
           <a
-            href="https://docs.evolutionfoundation.com.br/evolution-go/get-all-instances"
+            href="https://docs.evolutionfoundation.com.br/evolution-go/webhooks"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
@@ -405,5 +512,9 @@ export function AdminEvolutionApiCard({
         </div>
       </CardContent>
     </Card>
+
+    {/* Message Logs Table for Evolution Go */}
+    <EvolutionMessageLogsCard />
+  </div>
   );
 }

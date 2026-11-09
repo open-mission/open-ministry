@@ -270,7 +270,8 @@ async function MemberPageContent({
                 ]}
                 canBroadcastAll={false}
                 isWhatsAppConfigured={Boolean(evolutionResult.config)}
-                defaultDepartmentId=""
+                defaultAudienceType="person"
+                defaultPersonId={person.id}
                 trigger={
                   <Button size="sm" variant="default" className="h-9">
                     Enviar aviso
