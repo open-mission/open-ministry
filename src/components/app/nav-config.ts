@@ -9,6 +9,7 @@ import {
   LayersIcon,
   LayoutDashboardIcon,
   MegaphoneIcon,
+  MessageSquareIcon,
   UsersIcon,
 } from "lucide-react";
 
@@ -111,6 +112,13 @@ export const jobsNavItem: NavItem = {
 export const jobsNavGroup: NavGroup = {
   title: "Operações",
   items: [jobsNavItem],
+};
+
+export const whatsappNavItem: NavItem = {
+  href: "/dashboard/whatsapp",
+  label: "WhatsApp",
+  icon: MessageSquareIcon,
+  exact: false,
 };
 
 export const mobileNavItems: NavItem[] = [

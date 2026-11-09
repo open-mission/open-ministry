@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useActionState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import {
   CheckCircle2Icon,
@@ -25,7 +26,6 @@ import {
   type EvolutionSettingsFormState,
   type EvolutionSettingsView,
 } from "@/app/actions/settings";
-import { EvolutionMessageLogsCard } from "@/components/settings/evolution-message-logs";
 import { copyToClipboard } from "@/lib/clipboard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -513,8 +513,24 @@ export function AdminEvolutionApiCard({
       </CardContent>
     </Card>
 
-    {/* Message Logs Table for Evolution Go */}
-    <EvolutionMessageLogsCard />
+    {/* Link to Dedicated WhatsApp Messages Page */}
+    <div className="rounded-xl border bg-muted/20 p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="space-y-0.5">
+        <h4 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+          <MessageSquareIcon className="size-4 text-emerald-600 dark:text-emerald-400" />
+          Histórico de Mensagens do WhatsApp
+        </h4>
+        <p className="text-xs text-muted-foreground">
+          O monitoramento de mensagens, status de entrega e reenvio de falhas agora possui uma página dedicada no menu lateral.
+        </p>
+      </div>
+      <Button variant="outline" size="sm" asChild className="gap-1.5 shrink-0 h-8 text-xs">
+        <Link href="/dashboard/whatsapp">
+          <span>Abrir mensagens</span>
+          <ExternalLinkIcon className="size-3.5 text-muted-foreground" />
+        </Link>
+      </Button>
+    </div>
   </div>
   );
 }
