@@ -64,4 +64,27 @@ describe("Modules System Foundation", () => {
       repertoGroup[0]?.items.filter((i) => i.href === "/dashboard/songs").length,
     ).toBe(1);
   });
+
+  it("injects operations nav group when canManageJobs option is true", () => {
+    const adminNav = buildAccessibleNavGroups([], { canManageJobs: true });
+    const titles = adminNav.map((g) => g.title);
+    expect(titles).toContain("Operações");
+
+    const opsGroup = adminNav.find((g) => g.title === "Operações");
+    expect(opsGroup?.items.some((i) => i.href === "/dashboard/jobs")).toBe(true);
+  });
+
+  it("injects WhatsApp nav item in Comunicação group when canAccessWhatsApp is true", () => {
+    const defaultNav = buildAccessibleNavGroups([], { canAccessWhatsApp: false });
+    const defaultCom = defaultNav.find((g) => g.title === "Comunicação");
+    expect(
+      defaultCom?.items.some((i) => i.href === "/dashboard/whatsapp"),
+    ).toBe(false);
+
+    const leaderNav = buildAccessibleNavGroups([], { canAccessWhatsApp: true });
+    const leaderCom = leaderNav.find((g) => g.title === "Comunicação");
+    expect(leaderCom?.items.some((i) => i.href === "/dashboard/whatsapp")).toBe(
+      true,
+    );
+  });
 });

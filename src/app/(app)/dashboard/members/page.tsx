@@ -15,8 +15,13 @@ import { getPersonMemberships } from "@/lib/agenda";
 import { getDepartmentTerminology, parseChurchMetadata } from "@/lib/church";
 import { listUserLeaderDepartments } from "@/lib/departments";
 import { getOrganizationMoodOverview } from "@/lib/felicitometro";
+import { isExpired } from "@/lib/format";
 import { requireOrganizationContext } from "@/lib/organizations";
-import { findPersonByUserId, listPeople } from "@/lib/people";
+import {
+  ensurePersonForUser,
+  findPersonByUserId,
+  listPeople,
+} from "@/lib/people";
 
 export const metadata: Metadata = {
   title: "Pessoas",
@@ -44,12 +49,41 @@ async function MembersContent() {
       })
     : null;
 
-  const [allPeople, leaderDepartments] = await Promise.all([
+  const [initialPeople, leaderDepartments] = await Promise.all([
     listPeople(organization.id),
     isAdmin
       ? Promise.resolve([])
       : listUserLeaderDepartments(organization.id, session.user.id),
   ]);
+
+  let allPeople = initialPeople;
+
+  // Auto-link any organization member who does not have a linked person record yet
+  const linkedUserIds = new Set(
+    allPeople
+      .map((person) => person.userId)
+      .filter((userId): userId is string => Boolean(userId)),
+  );
+  const unlinkedMembers = organization.members.filter(
+    (member) => !linkedUserIds.has(member.userId),
+  );
+
+  if (unlinkedMembers.length > 0) {
+    let synced = false;
+    for (const member of unlinkedMembers) {
+      await ensurePersonForUser(organization.id, {
+        id: member.userId,
+        name: member.user.name,
+        email: member.user.email,
+        image: member.user.image,
+        birthday: member.user.birthday,
+      });
+      synced = true;
+    }
+    if (synced) {
+      allPeople = await listPeople(organization.id);
+    }
+  }
 
   const churchMeta = parseChurchMetadata(organization.metadata);
   const terminology = getDepartmentTerminology(churchMeta);
@@ -108,19 +142,25 @@ async function MembersContent() {
       member.role,
     ]),
   );
-  const linkedUserIds = new Set(
+  const currentLinkedUserIds = new Set(
     people
       .map((person) => person.userId)
       .filter((userId): userId is string => Boolean(userId)),
   );
   const linkableMembers = organization.members
-    .filter((member) => !linkedUserIds.has(member.userId))
+    .filter((member) => !currentLinkedUserIds.has(member.userId))
     .map((member) => ({
       id: member.userId,
       name: member.user.name,
       email: member.user.email,
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+
+  const pendingInvitationEmails = new Set(
+    organization.invitations
+      .filter((inv) => inv.status === "pending" && !isExpired(inv.expiresAt))
+      .map((inv) => inv.email.toLowerCase()),
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
@@ -169,6 +209,7 @@ async function MembersContent() {
               isAdmin={isAdmin}
               currentUserId={session.user.id}
               terminology={terminology}
+              pendingInvitationEmails={pendingInvitationEmails}
             />
 
             {isAdmin ? (
@@ -189,6 +230,7 @@ async function MembersContent() {
             isAdmin={isAdmin}
             currentUserId={session.user.id}
             terminology={terminology}
+            pendingInvitationEmails={pendingInvitationEmails}
           />
 
           {isAdmin ? (

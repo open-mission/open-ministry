@@ -6,8 +6,10 @@ import {
   CalendarRangeIcon,
   ClipboardListIcon,
   HandHeartIcon,
+  LayersIcon,
   LayoutDashboardIcon,
   MegaphoneIcon,
+  MessageSquareIcon,
   UsersIcon,
 } from "lucide-react";
 
@@ -99,6 +101,25 @@ export const navGroups: NavGroup[] = [
     ],
   },
 ];
+
+export const jobsNavItem: NavItem = {
+  href: "/dashboard/jobs",
+  label: "Tarefas agendadas",
+  icon: LayersIcon,
+  exact: false,
+};
+
+export const jobsNavGroup: NavGroup = {
+  title: "Operações",
+  items: [jobsNavItem],
+};
+
+export const whatsappNavItem: NavItem = {
+  href: "/dashboard/whatsapp",
+  label: "WhatsApp",
+  icon: MessageSquareIcon,
+  exact: false,
+};
 
 export const mobileNavItems: NavItem[] = [
   {

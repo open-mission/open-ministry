@@ -116,7 +116,10 @@ async function revalidatePeople(organizationId?: string) {
   revalidatePath("/dashboard/schedules");
 
   if (organizationId) {
-    await cacheInvalidateTags(`people:${organizationId}`);
+    await cacheInvalidateTags(
+      `people:${organizationId}`,
+      `org:${organizationId}`,
+    );
   }
 }
 
@@ -423,6 +426,11 @@ export async function invitePersonAction(
       phone: person.phone,
       text: whatsappMessage,
     });
+
+    await cacheInvalidateTags(
+      `org:${organizationId}`,
+      `people:${organizationId}`,
+    );
 
     revalidatePath("/dashboard/members");
     revalidatePath("/dashboard");

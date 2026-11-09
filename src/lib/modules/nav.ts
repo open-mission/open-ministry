@@ -1,14 +1,23 @@
-import { navGroups, type NavGroup } from "@/components/app/nav-config";
+import {
+  jobsNavGroup,
+  navGroups,
+  whatsappNavItem,
+  type NavGroup,
+} from "@/components/app/nav-config";
 import { SYSTEM_MODULES } from "./registry";
 import type { ModuleKey } from "./types";
 
 /**
  * Constrói a lista combinada de grupos de navegação (Sidebar e MobileMenu)
- * injetando os itens/grupos dos módulos ativos.
+ * injetando os itens/grupos dos módulos ativos, WhatsApp e grupos operacionais (como tarefas agendadas).
  * Executa de forma segura no cliente ou no servidor.
  */
 export function buildAccessibleNavGroups(
   activeModuleKeys: ModuleKey[] = [],
+  options?: {
+    canManageJobs?: boolean;
+    canAccessWhatsApp?: boolean;
+  },
 ): NavGroup[] {
   // Copia os grupos base
   const result: NavGroup[] = navGroups.map((group) => ({
@@ -47,6 +56,29 @@ export function buildAccessibleNavGroups(
         }
       }
     }
+  }
+
+  // Se o usuário puder acessar WhatsApp (Admin ou Líder de departamento), adiciona no grupo Comunicação
+  if (options?.canAccessWhatsApp) {
+    const comGroup = result.find((g) => g.title === "Comunicação");
+    if (comGroup) {
+      if (!comGroup.items.some((i) => i.href === whatsappNavItem.href)) {
+        comGroup.items.push(whatsappNavItem);
+      }
+    } else {
+      result.push({
+        title: "Comunicação",
+        items: [whatsappNavItem],
+      });
+    }
+  }
+
+  // Se o usuário puder gerenciar tarefas (Admin ou Líder de departamento), adiciona a seção de Operações
+  if (options?.canManageJobs) {
+    result.push({
+      title: jobsNavGroup.title,
+      items: [...jobsNavGroup.items],
+    });
   }
 
   return result;
