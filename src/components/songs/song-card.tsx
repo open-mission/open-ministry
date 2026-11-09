@@ -16,12 +16,23 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { SongRecord } from "@/lib/songs";
 import { DeleteSongDialog } from "./delete-song-dialog";
 import { SongFormDialog } from "./song-form-dialog";
@@ -32,6 +43,8 @@ type SongCardProps = {
 };
 
 export function SongCard({ song, canManage = true }: SongCardProps) {
+  const isMobile = useIsMobile();
+  const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -61,38 +74,118 @@ export function SongCard({ song, canManage = true }: SongCardProps) {
             </Link>
 
             {canManage ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    className="shrink-0 text-muted-foreground"
-                  >
-                    <MoreVerticalIcon className="size-4" />
-                    <span className="sr-only">Opções da música</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem asChild>
-                    <Link href={`/dashboard/songs/${song.id}`}>
-                      <FileTextIcon className="size-4 mr-2" />
-                      Ver detalhes
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setEditOpen(true)}>
-                    <PencilIcon className="size-4 mr-2" />
-                    Editar música
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => setDeleteOpen(true)}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Trash2Icon className="size-4 mr-2" />
-                    Excluir
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              isMobile ? (
+                <Drawer open={menuOpen} onOpenChange={setMenuOpen}>
+                  <DrawerTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      className="shrink-0 text-muted-foreground"
+                    >
+                      <MoreVerticalIcon className="size-4" />
+                      <span className="sr-only">Opções da música</span>
+                    </Button>
+                  </DrawerTrigger>
+                  <DrawerContent className="max-h-[80dvh] rounded-t-[24px] p-0">
+                    <DrawerHeader className="border-b px-5 pt-4 pb-3 text-left">
+                      <div className="flex items-center gap-2">
+                        <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <Music2Icon className="size-4" />
+                        </span>
+                        <DrawerTitle className="font-heading text-base font-bold truncate">
+                          {song.title}
+                        </DrawerTitle>
+                      </div>
+                      <DrawerDescription className="text-xs text-muted-foreground truncate">
+                        {song.artist || "Opções da música"}
+                      </DrawerDescription>
+                    </DrawerHeader>
+
+                    <div className="flex flex-col gap-1 p-3">
+                      <Button
+                        variant="ghost"
+                        asChild
+                        className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium"
+                      >
+                        <Link
+                          href={`/dashboard/songs/${song.id}`}
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          <FileTextIcon className="size-4 text-muted-foreground" />
+                          <span>Ver detalhes</span>
+                        </Link>
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          setEditOpen(true);
+                        }}
+                        className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium"
+                      >
+                        <PencilIcon className="size-4 text-muted-foreground" />
+                        <span>Editar música</span>
+                      </Button>
+
+                      <div className="my-1 border-t border-border/60" />
+
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          setDeleteOpen(true);
+                        }}
+                        className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2Icon className="size-4" />
+                        <span>Excluir</span>
+                      </Button>
+                    </div>
+
+                    <DrawerFooter className="border-t pt-2 pb-4">
+                      <DrawerClose asChild>
+                        <Button variant="outline" className="w-full">
+                          Cancelar
+                        </Button>
+                      </DrawerClose>
+                    </DrawerFooter>
+                  </DrawerContent>
+                </Drawer>
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      className="shrink-0 text-muted-foreground"
+                    >
+                      <MoreVerticalIcon className="size-4" />
+                      <span className="sr-only">Opções da música</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem asChild>
+                      <Link href={`/dashboard/songs/${song.id}`}>
+                        <FileTextIcon className="size-4 mr-2" />
+                        Ver detalhes
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setEditOpen(true)}>
+                      <PencilIcon className="size-4 mr-2" />
+                      Editar música
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setDeleteOpen(true)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2Icon className="size-4 mr-2" />
+                      Excluir
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )
             ) : null}
           </div>
 

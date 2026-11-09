@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import {
-  ArrowLeftIcon,
   CalendarDaysIcon,
   ExternalLinkIcon,
   FileMusicIcon,
@@ -23,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDate } from "@/lib/format";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { canAccessMusicModule, getSong } from "@/lib/songs";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Detalhes da Música",
@@ -65,58 +65,52 @@ async function SongDetailContent({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-      <div>
-        <Link
-          href="/dashboard/songs"
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground sm:text-sm"
-        >
-          <ArrowLeftIcon className="size-4" />
-          Voltar para Músicas & Repertório
-        </Link>
-      </div>
-
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 min-w-0">
       {/* HEADER DA MÚSICA */}
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between border-b border-border/70 pb-6">
-        <div className="space-y-2.5">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Music2Icon className="size-4" />
-            </span>
-            <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              {song.title}
-            </h1>
+      <header className="flex flex-col gap-4 border-b border-border/70 pb-6 min-w-0">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-2.5 min-w-0 flex-1">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Music2Icon className="size-4" />
+              </span>
+              <h1 className="truncate font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
+                {song.title}
+              </h1>
+            </div>
+
+            <p className="truncate text-sm text-muted-foreground sm:text-base">
+              {song.artist || "Artista não informado"}
+            </p>
+
+            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+              {song.tone ? (
+                <Badge variant="outline" className="font-semibold text-primary">
+                  Tom: {song.tone}
+                </Badge>
+              ) : null}
+              {song.bpm ? (
+                <Badge variant="secondary" className="font-mono">
+                  {song.bpm} BPM
+                </Badge>
+              ) : null}
+              {song.timeSignature ? (
+                <Badge variant="secondary">Compasso: {song.timeSignature}</Badge>
+              ) : null}
+            </div>
+
+            {/* TAGS DA MÚSICA (MAX 3 + DIALOG/DRAWER) */}
+            <SongTagsList tags={song.tags ?? []} />
           </div>
 
-          <p className="text-base text-muted-foreground">
-            {song.artist || "Artista não informado"}
-          </p>
-
-          <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
-            {song.tone ? (
-              <Badge variant="outline" className="font-semibold text-primary">
-                Tom: {song.tone}
-              </Badge>
-            ) : null}
-            {song.bpm ? (
-              <Badge variant="secondary" className="font-mono">
-                {song.bpm} BPM
-              </Badge>
-            ) : null}
-            {song.timeSignature ? (
-              <Badge variant="secondary">Compasso: {song.timeSignature}</Badge>
-            ) : null}
+          <div className="flex items-center gap-2 shrink-0">
+            <SongDetailHeaderActions song={song} />
           </div>
-
-          {/* TAGS DA MÚSICA (MAX 3 + DIALOG/DRAWER) */}
-          <SongTagsList tags={song.tags ?? []} />
         </div>
 
-        <div className="flex flex-col items-start gap-3 sm:items-end">
-          <SongDetailHeaderActions song={song} />
-
-          {/* LINKS DE STREAMING */}
-          <div className="flex flex-wrap items-center gap-2">
+        {/* LINKS DE STREAMING */}
+        {(song.youtubeUrl || song.spotifyUrl || song.youtubeMusicUrl) && (
+          <div className="flex flex-wrap items-center gap-2 pt-1">
             {song.youtubeUrl ? (
               <a
                 href={song.youtubeUrl}
@@ -153,24 +147,33 @@ async function SongDetailContent({
               </a>
             ) : null}
           </div>
-        </div>
+        )}
       </header>
 
       {/* ABAS DE CIFRA E LETRA */}
-      <Tabs defaultValue={song.chords ? "cifra" : "letra"} className="w-full">
-        <TabsList className="h-10">
-          <TabsTrigger value="cifra" className="gap-1.5">
-            <FileMusicIcon className="size-4" />
-            Cifra com Transposição
+      <Tabs defaultValue={song.chords ? "cifra" : "letra"} className="w-full min-w-0">
+        <TabsList
+          className={cn(
+            "h-10 w-full max-w-full overflow-x-auto scrollbar-none sm:w-fit sm:inline-flex",
+            song.planItems && song.planItems.length > 0
+              ? "grid grid-cols-3 sm:flex"
+              : "grid grid-cols-2 sm:flex",
+          )}
+        >
+          <TabsTrigger value="cifra" className="gap-1.5 px-2.5 text-xs sm:text-sm">
+            <FileMusicIcon className="size-4 shrink-0" />
+            <span>Cifra</span>
+            <span className="hidden sm:inline">com Transposição</span>
           </TabsTrigger>
-          <TabsTrigger value="letra" className="gap-1.5">
-            <FileTextIcon className="size-4" />
-            Letra Completa
+          <TabsTrigger value="letra" className="gap-1.5 px-2.5 text-xs sm:text-sm">
+            <FileTextIcon className="size-4 shrink-0" />
+            <span>Letra</span>
+            <span className="hidden sm:inline">Completa</span>
           </TabsTrigger>
           {song.planItems && song.planItems.length > 0 ? (
-            <TabsTrigger value="cultos" className="gap-1.5">
-              <CalendarDaysIcon className="size-4" />
-              Cultos ({song.planItems.length})
+            <TabsTrigger value="cultos" className="gap-1.5 px-2.5 text-xs sm:text-sm">
+              <CalendarDaysIcon className="size-4 shrink-0" />
+              <span>Cultos ({song.planItems.length})</span>
             </TabsTrigger>
           ) : null}
         </TabsList>
@@ -246,8 +249,7 @@ async function SongDetailContent({
 
 function SongDetailSkeleton() {
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6" aria-hidden>
-      <Skeleton className="h-4 w-32" />
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 min-w-0" aria-hidden>
       <div className="space-y-2 border-b border-border/60 pb-6">
         <Skeleton className="h-10 w-72" />
         <Skeleton className="h-5 w-48" />
