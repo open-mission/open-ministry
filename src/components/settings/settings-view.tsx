@@ -42,6 +42,12 @@ import type { OrganizationPermissionSettingsData } from "@/app/actions/permissio
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import type { CalendarPreferences } from "@/lib/calendar";
 import { getDepartmentTerminology, parseChurchMetadata } from "@/lib/church";
 import { getInitials, roleLabel } from "@/lib/format";
@@ -300,7 +306,16 @@ export function SettingsView({
       case "whatsapp":
         return evolutionSettings ? (
           <AdminEvolutionApiCard initialSettings={evolutionSettings} />
-        ) : null;
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-heading text-lg">WhatsApp (Evolution API)</CardTitle>
+              <CardDescription>
+                A integração do WhatsApp ainda não está configurada para esta igreja.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        );
       case "templates":
         return (
           <MessageTemplatesCard
@@ -326,11 +341,29 @@ export function SettingsView({
       case "permissions":
         return permissionSettings ? (
           <ModulePermissionsCard initialSettings={permissionSettings} />
-        ) : null;
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-heading text-lg">Módulos & Permissões</CardTitle>
+              <CardDescription>
+                Não foi possível carregar as configurações de permissões no momento.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        );
       case "about":
         return <AboutCard />;
       default:
-        return null;
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-heading text-lg">Configurações</CardTitle>
+              <CardDescription>
+                Selecione uma opção na lista ao lado para visualizar e editar as preferências.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        );
     }
   }
 

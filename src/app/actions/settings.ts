@@ -26,6 +26,7 @@ import { isUserLeaderInAnyDepartment, listDepartments } from "@/lib/departments"
 import { getOrganizationMessageTemplates } from "@/lib/message-templates-server";
 import { birthdayFieldSchema, updateBirthday } from "@/lib/profile";
 import { getSession } from "@/lib/session";
+import { getOrganizationPermissionSettingsAction } from "@/app/actions/permissions";
 
 export type SessionItem = {
   id: string;
@@ -635,12 +636,18 @@ export async function getSettingsDialogDataAction() {
       listDepartments(organization.id),
     ]);
 
-  const [evolutionSettings, messageTemplates] = isAdmin
+  const [evolutionSettings, messageTemplates, permissionSettingsResult] = isAdmin
     ? await Promise.all([
         getEvolutionSettingsAction(),
         getOrganizationMessageTemplates(organization.id),
+        getOrganizationPermissionSettingsAction(),
       ])
-    : [null, []];
+    : [null, [], null];
+
+  const permissionSettings =
+    permissionSettingsResult && permissionSettingsResult.ok
+      ? permissionSettingsResult.data
+      : null;
 
   return {
     organization: {
@@ -671,6 +678,7 @@ export async function getSettingsDialogDataAction() {
     departmentsCount: departments.length,
     evolutionSettings,
     messageTemplates,
+    permissionSettings,
   };
 }
 
