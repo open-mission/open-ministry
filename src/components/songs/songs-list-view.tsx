@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   CheckIcon,
   ChevronDownIcon,
@@ -37,7 +38,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useSongsQuery } from "@/hooks/use-songs";
+import { songKeys, useSongsQuery } from "@/hooks/use-songs";
 import { STANDARD_TONES } from "@/lib/music/chords-utils";
 import type { SongRecord } from "@/lib/songs";
 import { cn } from "@/lib/utils";
@@ -63,6 +64,17 @@ export function SongsListView({
   const collections = data?.collections?.length
     ? data.collections
     : existingCollections;
+
+  const queryClient = useQueryClient();
+
+  // Pré-alimenta o cache de detalhes com os dados básicos já carregados na listagem
+  useEffect(() => {
+    for (const song of songs) {
+      if (!queryClient.getQueryData(songKeys.detail(song.id))) {
+        queryClient.setQueryData(songKeys.detail(song.id), { song });
+      }
+    }
+  }, [songs, queryClient]);
 
   const isMobile = useIsMobile();
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);

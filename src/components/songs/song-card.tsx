@@ -65,6 +65,7 @@ export function SongCard({
           <div className="flex items-start justify-between gap-2 min-w-0">
             <Link
               href={`/dashboard/songs/${song.id}`}
+              prefetch={true}
               className="group-hover:text-primary transition-colors min-w-0 flex-1"
             >
               <div className="flex min-w-0 items-center gap-2">
@@ -116,6 +117,7 @@ export function SongCard({
                       >
                         <Link
                           href={`/dashboard/songs/${song.id}`}
+                          prefetch={true}
                           onClick={() => setMenuOpen(false)}
                         >
                           <FileTextIcon className="size-4 text-muted-foreground" />
@@ -173,7 +175,7 @@ export function SongCard({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-40">
                     <DropdownMenuItem asChild>
-                      <Link href={`/dashboard/songs/${song.id}`}>
+                      <Link href={`/dashboard/songs/${song.id}`} prefetch={true}>
                         <FileTextIcon className="size-4 mr-2" />
                         Ver detalhes
                       </Link>
@@ -284,6 +286,7 @@ export function SongCard({
 
           <Link
             href={`/dashboard/songs/${song.id}`}
+            prefetch={true}
             className="shrink-0 font-medium text-primary hover:underline text-xs ml-auto"
           >
             Acessar ›

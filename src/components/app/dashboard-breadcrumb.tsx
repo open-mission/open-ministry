@@ -26,6 +26,7 @@ const routeLabels: Record<string, string> = {
   settings: "Configurações",
   profile: "Meu perfil",
   notifications: "Notificações",
+  songs: "Músicas",
 };
 
 export function DashboardBreadcrumbFallback() {
@@ -70,6 +71,8 @@ export function DashboardBreadcrumb() {
         label = "Detalhes do culto";
       } else if (prev === "departments") {
         label = "Detalhes da equipe";
+      } else if (prev === "songs") {
+        label = "Detalhes da música";
       } else {
         label = "Detalhes";
       }
@@ -100,7 +103,7 @@ export function DashboardBreadcrumb() {
                   </BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink asChild>
-                    <Link href={item.href}>{item.label}</Link>
+                    <Link href={item.href} prefetch={true}>{item.label}</Link>
                   </BreadcrumbLink>
                 )}
               </BreadcrumbItem>
