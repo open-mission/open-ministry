@@ -206,6 +206,7 @@ mock.module("@/lib/people", () => ({
 
 mock.module("@/lib/notifications", () => ({
   createNotifications: async () => {},
+  listNotifications: async () => [],
 }));
 
 mock.module("@/lib/notification-service", () => ({

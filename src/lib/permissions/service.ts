@@ -36,9 +36,17 @@ export class PermissionDeniedError extends Error {
 export async function loadOrganizationPolicy(
   organizationId: string,
 ): Promise<FullPermissionPolicy> {
-  const rows = await db.query.organizationRolePermission.findMany({
-    where: eq(schema.organizationRolePermission.organizationId, organizationId),
-  });
+  let rows: (typeof schema.organizationRolePermission.$inferSelect)[] = [];
+  try {
+    rows = await db.query.organizationRolePermission.findMany({
+      where: eq(schema.organizationRolePermission.organizationId, organizationId),
+    });
+  } catch (error) {
+    console.warn(
+      "[permissions] Falha ao consultar organization_role_permission; usando defaults:",
+      error,
+    );
+  }
 
   // Clona os defaults
   const policy: FullPermissionPolicy = JSON.parse(
@@ -65,12 +73,20 @@ export async function isOrganizationModuleEnabled(
   organizationId: string,
   moduleKey: ModuleKey,
 ): Promise<boolean> {
-  const row = await db.query.organizationModule.findFirst({
-    where: and(
-      eq(schema.organizationModule.organizationId, organizationId),
-      eq(schema.organizationModule.moduleKey, moduleKey),
-    ),
-  });
+  let row: typeof schema.organizationModule.$inferSelect | undefined;
+  try {
+    row = await db.query.organizationModule.findFirst({
+      where: and(
+        eq(schema.organizationModule.organizationId, organizationId),
+        eq(schema.organizationModule.moduleKey, moduleKey),
+      ),
+    });
+  } catch (error) {
+    console.warn(
+      "[permissions] Falha ao verificar organization_module; assumindo padrão:",
+      error,
+    );
+  }
 
   // Se a linha ainda não existir (banco sem seed inicial), assume habilitado para os 4 módulos iniciais
   if (!row) {
@@ -161,16 +177,18 @@ export async function can(
       }
 
       // Consulta de grant ativo
-      const activeGrant = await db.query.departmentPermissionGrant.findFirst({
-        where: and(
-          eq(schema.departmentPermissionGrant.organizationId, organizationId),
-          eq(schema.departmentPermissionGrant.departmentId, dept.id),
-          eq(schema.departmentPermissionGrant.granteeUserId, userId),
-          eq(schema.departmentPermissionGrant.moduleKey, moduleKey),
-          eq(schema.departmentPermissionGrant.action, action),
-          isNull(schema.departmentPermissionGrant.revokedAt),
-        ),
-      });
+      const activeGrant = await db.query.departmentPermissionGrant
+        .findFirst({
+          where: and(
+            eq(schema.departmentPermissionGrant.organizationId, organizationId),
+            eq(schema.departmentPermissionGrant.departmentId, dept.id),
+            eq(schema.departmentPermissionGrant.granteeUserId, userId),
+            eq(schema.departmentPermissionGrant.moduleKey, moduleKey),
+            eq(schema.departmentPermissionGrant.action, action),
+            isNull(schema.departmentPermissionGrant.revokedAt),
+          ),
+        })
+        .catch(() => null);
 
       departmentContext = {
         departmentId: dept.id,
@@ -239,16 +257,18 @@ export async function can(
           ),
         });
 
-        const activeGrant = await db.query.departmentPermissionGrant.findFirst({
-          where: and(
-            eq(schema.departmentPermissionGrant.organizationId, organizationId),
-            eq(schema.departmentPermissionGrant.departmentId, dept.id),
-            eq(schema.departmentPermissionGrant.granteeUserId, userId),
-            eq(schema.departmentPermissionGrant.moduleKey, moduleKey),
-            eq(schema.departmentPermissionGrant.action, action),
-            isNull(schema.departmentPermissionGrant.revokedAt),
-          ),
-        });
+        const activeGrant = await db.query.departmentPermissionGrant
+          .findFirst({
+            where: and(
+              eq(schema.departmentPermissionGrant.organizationId, organizationId),
+              eq(schema.departmentPermissionGrant.departmentId, dept.id),
+              eq(schema.departmentPermissionGrant.granteeUserId, userId),
+              eq(schema.departmentPermissionGrant.moduleKey, moduleKey),
+              eq(schema.departmentPermissionGrant.action, action),
+              isNull(schema.departmentPermissionGrant.revokedAt),
+            ),
+          })
+          .catch(() => null);
 
         if (actorMembership?.isLeader || activeGrant) {
           departmentContext = {
@@ -311,8 +331,8 @@ export async function can(
           }
         }
 
-        const activeGrant =
-          await db.query.departmentPermissionGrant.findFirst({
+        const activeGrant = await db.query.departmentPermissionGrant
+          .findFirst({
             where: and(
               eq(
                 schema.departmentPermissionGrant.organizationId,
@@ -327,7 +347,8 @@ export async function can(
               eq(schema.departmentPermissionGrant.action, action),
               isNull(schema.departmentPermissionGrant.revokedAt),
             ),
-          });
+          })
+          .catch(() => null);
 
         departmentSnapshots.push({
           departmentId: ed.departmentId,
