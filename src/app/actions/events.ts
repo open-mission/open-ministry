@@ -9,7 +9,6 @@ import { z } from "zod";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { cacheInvalidateTags } from "@/lib/cache";
-import { getDepartmentAccess } from "@/lib/departments";
 import { EVENT_KINDS, RECURRENCE_OPTIONS } from "@/lib/event-options";
 import {
   applyTimeOfDay,
@@ -24,7 +23,7 @@ import {
 import { createNotifications } from "@/lib/notifications";
 import { dispatchNotification } from "@/lib/notification-service";
 import { getOrganizationContext } from "@/lib/organizations";
-import { can, requirePermission } from "@/lib/permissions/service";
+import { can } from "@/lib/permissions/service";
 
 export type EventFormState =
   | {
@@ -217,24 +216,6 @@ function departmentsFromForm(formData: FormData) {
         .filter(Boolean),
     ),
   ];
-}
-
-async function getAdminContext() {
-  const context = await getOrganizationContext();
-
-  if (!context) {
-    return {
-      error: "Sua sessão expirou ou você não tem uma igreja ativa.",
-    } as const;
-  }
-
-  if (!context.isAdmin) {
-    return {
-      error: "Só administradores da igreja podem gerenciar cultos e eventos.",
-    } as const;
-  }
-
-  return { context } as const;
 }
 
 async function validateDepartments(
@@ -916,10 +897,10 @@ export async function removeScheduleAssignmentAction(
 }
 
 async function canManageEventPlan(
-  organizationId: string,
+  _organizationId: string,
   eventId: string,
-  userId: string,
-  isAdmin: boolean,
+  _userId: string,
+  _isAdmin: boolean,
 ): Promise<boolean> {
   return can("schedules", "editPlan", { eventId });
 }

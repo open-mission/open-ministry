@@ -8,7 +8,7 @@ mock.module("next/cache", () => ({
 
 // Context state for testing
 let mockUser = { id: "user-leader", name: "Leader" };
-let mockOrg = { id: "org-1", name: "Church" };
+const mockOrg = { id: "org-1", name: "Church" };
 let mockIsAdmin = false;
 
 mock.module("@/lib/organizations", () => ({

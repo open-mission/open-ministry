@@ -14,7 +14,6 @@ import {
   type PermissionRole,
 } from "@/lib/permissions/catalog";
 import {
-  DEFAULT_PERMISSION_POLICY,
   type FullPermissionPolicy,
 } from "@/lib/permissions/defaults";
 import { loadOrganizationPolicy } from "@/lib/permissions/service";

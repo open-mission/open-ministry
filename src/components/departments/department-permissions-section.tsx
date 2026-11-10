@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import {
   KeyRoundIcon,
   PlusIcon,
-  ShieldAlertIcon,
   Trash2Icon,
   UserCheckIcon,
 } from "lucide-react";
@@ -288,7 +287,7 @@ export function DepartmentPermissionsSection({
             {grants.map((grant) => {
               const modDef = PERMISSION_CATALOG[grant.moduleKey];
               const actDef = modDef
-                ? (modDef.actions as Record<string, any>)[grant.action]
+                ? (modDef.actions as Record<string, { label: string }>)[grant.action]
                 : null;
 
               return (

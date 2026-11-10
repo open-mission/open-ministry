@@ -6,8 +6,8 @@ mock.module("next/cache", () => ({
   revalidateTag: () => {},
 }));
 
-let mockUser = { id: "user-leader", name: "Leader" };
-let mockOrg = { id: "org-1", name: "Church" };
+const mockUser = { id: "user-leader", name: "Leader" };
+const mockOrg = { id: "org-1", name: "Church" };
 let mockIsAdmin = false;
 let mockOrgAgendaEnabled = true;
 

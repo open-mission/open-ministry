@@ -10,9 +10,9 @@ import { can } from "@/lib/permissions/service";
 export type SongRecord = typeof schema.song.$inferSelect;
 
 export async function canAccessMusicModule(
-  organizationId?: string,
-  userId?: string,
-  isAdmin?: boolean,
+  _organizationId?: string,
+  _userId?: string,
+  _isAdmin?: boolean,
 ): Promise<boolean> {
   return can("music", "read");
 }

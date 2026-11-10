@@ -19,7 +19,7 @@ import { listDepartmentGrantsAction } from "@/app/actions/department-permissions
 import { getDepartmentAccess } from "@/lib/departments";
 import { getOrganizationEvolutionConfig } from "@/lib/notification-service";
 import { requireOrganizationContext } from "@/lib/organizations";
-import { MODULE_KEYS, type ModuleKey } from "@/lib/permissions/catalog";
+import { MODULE_KEYS } from "@/lib/permissions/catalog";
 import { isOrganizationModuleEnabled } from "@/lib/permissions/service";
 import {
   listPeople,

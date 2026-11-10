@@ -5,7 +5,7 @@ mock.module("server-only", () => ({}));
 mock.module("next/cache", () => ({
   revalidatePath: () => {},
   revalidateTag: () => {},
-  unstable_cache: (fn: any) => fn,
+  unstable_cache: <T extends (...args: unknown[]) => unknown>(fn: T) => fn,
 }));
 
 mock.module("next/headers", () => ({

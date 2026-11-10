@@ -51,6 +51,8 @@ async function NotificationsContent() {
     allDepartments,
     people,
     evolutionResult,
+    isAnnouncementsActive,
+    canBroadcastAll,
   ] = await Promise.all([
     listNotifications(organization.id, session.user.id, 50),
     countUnreadNotifications(organization.id, session.user.id),

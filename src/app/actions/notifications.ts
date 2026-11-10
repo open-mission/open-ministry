@@ -8,7 +8,6 @@ import { z } from "zod";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { cacheInvalidateTags } from "@/lib/cache";
-import { listUserLeaderDepartments } from "@/lib/departments";
 import {
   createNotifications,
   listNotifications,
