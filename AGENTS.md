@@ -8,6 +8,22 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+<!-- BEGIN:turborepo-agent-rules -->
+
+## Turborepo Monorepo & AI Guidance
+
+Este projeto é gerenciado por **Turborepo** (`turbo.json`) em monorepo com Bun (`workspaces: ["apps/*", "packages/*"]`).
+- O código da aplicação web reside em `apps/web` e segue a arquitetura **Feature-Based** em `apps/web/src/features/*`.
+- Pacotes internos reutilizáveis estão em `packages/`:
+  - `@openministry/db`: Modelos Drizzle ORM, conexão Neon e migrações SQL.
+  - `@openministry/ui`: Componentes primitivos Shadcn UI / Radix.
+  - `@openministry/typescript-config`: Configurações compartilhadas de TypeScript.
+  - `@openministry/eslint-config`: Configurações compartilhadas de ESLint.
+- Ao adicionar novas tarefas ou pacotes, consulte a documentação com `turbo docs "[termo]"` ou acesse `https://turborepo.dev/docs.md`.
+- No `turbo.json`, mantenha sempre a propriedade `"description"` preenchida em cada task para documentar explicitamente o propósito para IAs e desenvolvedores.
+
+<!-- END:turborepo-agent-rules -->
+
 ## Git Flow
 
 Este projeto segue o Git Flow. Respeite estas regras em qualquer alteração:
