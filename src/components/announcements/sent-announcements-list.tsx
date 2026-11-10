@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   AlertCircleIcon,
   CheckCheckIcon,
@@ -70,10 +71,108 @@ export function SentAnnouncementsList({
   announcements: SentAnnouncementReceipt[];
   canRetry?: boolean;
 }) {
-  const [selectedAnnouncement, setSelectedAnnouncement] =
-    useState<SentAnnouncementReceipt | null>(null);
+  const [prevAnnouncements, setPrevAnnouncements] = useState(announcements);
+  const [items, setItems] = useState(announcements);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
-  if (announcements.length === 0) {
+  if (prevAnnouncements !== announcements) {
+    setPrevAnnouncements(announcements);
+    setItems(announcements);
+  }
+
+  const selectedAnnouncement = selectedKey
+    ? items.find((i) => i.key === selectedKey) ?? null
+    : null;
+
+  function handleOptimisticRetrySingle(announcementKey: string, logId: string) {
+    setItems((currentItems) =>
+      currentItems.map((item) => {
+        if (item.key !== announcementKey) return item;
+        const oldRecipient = item.recipients.find(
+          (r) => r.whatsapp?.logId === logId,
+        );
+        const oldStatus = oldRecipient?.whatsapp?.status;
+
+        const updatedRecipients = item.recipients.map((r) => {
+          if (r.whatsapp?.logId !== logId) return r;
+          return {
+            ...r,
+            whatsapp: {
+              ...r.whatsapp,
+              status: "sending" as const,
+              lastError: null,
+            },
+          };
+        });
+
+        const currentSummary = item.whatsappSummary;
+        const updatedSummary = currentSummary
+          ? {
+              ...currentSummary,
+              failed:
+                oldStatus === "failed"
+                  ? Math.max(0, currentSummary.failed - 1)
+                  : currentSummary.failed,
+              pending:
+                oldStatus === "pending"
+                  ? Math.max(0, currentSummary.pending - 1)
+                  : currentSummary.pending,
+              sending: currentSummary.sending + 1,
+            }
+          : currentSummary;
+
+        return {
+          ...item,
+          recipients: updatedRecipients,
+          whatsappSummary: updatedSummary,
+        };
+      }),
+    );
+  }
+
+  function handleOptimisticRetryAll(announcementKey: string) {
+    setItems((currentItems) =>
+      currentItems.map((item) => {
+        if (item.key !== announcementKey) return item;
+        const updatedRecipients = item.recipients.map((r) => {
+          if (
+            r.whatsapp &&
+            (r.whatsapp.status === "failed" || r.whatsapp.status === "pending")
+          ) {
+            return {
+              ...r,
+              whatsapp: {
+                ...r.whatsapp,
+                status: "sending" as const,
+                lastError: null,
+              },
+            };
+          }
+          return r;
+        });
+
+        const currentSummary = item.whatsappSummary;
+        const retryCount =
+          (currentSummary?.failed ?? 0) + (currentSummary?.pending ?? 0);
+        const updatedSummary = currentSummary
+          ? {
+              ...currentSummary,
+              failed: 0,
+              pending: 0,
+              sending: currentSummary.sending + retryCount,
+            }
+          : currentSummary;
+
+        return {
+          ...item,
+          recipients: updatedRecipients,
+          whatsappSummary: updatedSummary,
+        };
+      }),
+    );
+  }
+
+  if (items.length === 0) {
     return null;
   }
 
@@ -91,7 +190,7 @@ export function SentAnnouncementsList({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {announcements.map((item) => {
+        {items.map((item) => {
           const readRate =
             item.totalRecipients > 0
               ? Math.round((item.readRecipients / item.totalRecipients) * 100)
@@ -177,7 +276,7 @@ export function SentAnnouncementsList({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setSelectedAnnouncement(item)}
+                      onClick={() => setSelectedKey(item.key)}
                       className="h-7 gap-1 px-2.5 text-xs"
                     >
                       <EyeIcon className="size-3" />
@@ -193,9 +292,11 @@ export function SentAnnouncementsList({
 
       <SentAnnouncementDetailDialog
         open={Boolean(selectedAnnouncement)}
-        onOpenChange={(open) => !open && setSelectedAnnouncement(null)}
+        onOpenChange={(open) => !open && setSelectedKey(null)}
         announcement={selectedAnnouncement}
         canRetry={canRetry}
+        onOptimisticRetrySingle={handleOptimisticRetrySingle}
+        onOptimisticRetryAll={handleOptimisticRetryAll}
       />
     </section>
   );
@@ -206,12 +307,17 @@ function SentAnnouncementDetailDialog({
   onOpenChange,
   announcement,
   canRetry = true,
+  onOptimisticRetrySingle,
+  onOptimisticRetryAll,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   announcement: SentAnnouncementReceipt | null;
   canRetry?: boolean;
+  onOptimisticRetrySingle?: (announcementKey: string, logId: string) => void;
+  onOptimisticRetryAll?: (announcementKey: string) => void;
 }) {
+  const router = useRouter();
   const [filter, setFilter] = useState<
     "all" | "read" | "unread" | "wa_ok" | "wa_pending"
   >("all");
@@ -226,13 +332,21 @@ function SentAnnouncementDetailDialog({
       if (filter === "unread" && r.readAt) return false;
       if (filter === "wa_ok") {
         if (!r.whatsapp) return false;
-        if (r.whatsapp.status !== "delivered" && r.whatsapp.status !== "read" && r.whatsapp.status !== "sent") {
+        if (
+          r.whatsapp.status !== "delivered" &&
+          r.whatsapp.status !== "read" &&
+          r.whatsapp.status !== "sent"
+        ) {
           return false;
         }
       }
       if (filter === "wa_pending") {
         if (!r.whatsapp) return false;
-        if (r.whatsapp.status !== "failed" && r.whatsapp.status !== "pending" && r.whatsapp.status !== "sending") {
+        if (
+          r.whatsapp.status !== "failed" &&
+          r.whatsapp.status !== "pending" &&
+          r.whatsapp.status !== "sending"
+        ) {
           return false;
         }
       }
@@ -252,14 +366,19 @@ function SentAnnouncementDetailDialog({
 
   const waSummary = announcement.whatsappSummary;
   const waFailedOrPending =
-    (waSummary?.failed ?? 0) + (waSummary?.pending ?? 0) + (waSummary?.sending ?? 0);
+    (waSummary?.failed ?? 0) +
+    (waSummary?.pending ?? 0) +
+    (waSummary?.sending ?? 0);
 
   function handleRetrySingle(logId: string) {
+    if (!announcement) return;
     setRetryingLogId(logId);
+    onOptimisticRetrySingle?.(announcement.key, logId);
     startRetrying(async () => {
       const res = await retryAnnouncementSingleWhatsAppAction(logId);
       if (res.ok) {
         toast.success("Mensagem reenviada com sucesso!");
+        router.refresh();
       } else {
         toast.error(res.error || "Não foi possível reenviar a mensagem.");
       }
@@ -268,12 +387,15 @@ function SentAnnouncementDetailDialog({
   }
 
   function handleRetryAll() {
+    if (!announcement) return;
+    onOptimisticRetryAll?.(announcement.key);
     startRetrying(async () => {
       const res = await retryAnnouncementWhatsAppAction(
         announcement?.batchId ?? undefined,
       );
       if (res.ok) {
-        toast.success(`Reenvio acionado para as mensagens pendentes.`);
+        toast.success("Reenvio acionado para as mensagens pendentes.");
+        router.refresh();
       } else {
         toast.error(res.error || "Não foi possível acionar o reenvio.");
       }

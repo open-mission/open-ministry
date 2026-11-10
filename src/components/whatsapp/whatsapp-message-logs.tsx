@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useId, useState } from "react";
 import {
   AlertCircleIcon,
   CheckCheckIcon,
@@ -15,14 +15,7 @@ import {
   SendIcon,
   XCircleIcon,
 } from "lucide-react";
-import { toast } from "sonner";
 
-import {
-  getEvolutionMessageLogsAction,
-  retryAllFailedEvolutionMessagesAction,
-  retryEvolutionMessageAction,
-} from "@/app/actions/settings";
-import type { EvolutionMessageLogItem } from "@/lib/notification-service";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,6 +37,12 @@ import {
   NativeSelect,
   NativeSelectOption,
 } from "@/components/ui/native-select";
+import {
+  useRetryAllFailedWhatsAppMessagesMutation,
+  useRetryWhatsAppMessageMutation,
+  useWhatsAppLogsQuery,
+} from "@/hooks/use-whatsapp-logs";
+import type { EvolutionMessageLogItem } from "@/lib/notification-service";
 
 function formatDateTime(date: Date | string | null): string {
   if (!date) return "-";
@@ -123,86 +122,52 @@ function statusBadge(status: EvolutionMessageLogItem["status"], lastError?: stri
 }
 
 export function WhatsAppMessageLogsCard() {
-  const [logs, setLogs] = useState<EvolutionMessageLogItem[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const searchInputId = useId();
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
-  const [selectedLog, setSelectedLog] = useState<EvolutionMessageLogItem | null>(null);
+  const [submittedSearch, setSubmittedSearch] = useState("");
+  const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
 
-  const [isRetrying, startRetrying] = useTransition();
-  const [retryingLogId, setRetryingLogId] = useState<string | null>(null);
+  const {
+    data,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useWhatsAppLogsQuery({
+    status: statusFilter,
+    search: submittedSearch,
+    limit: 50,
+  });
 
-  const loadLogs = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await getEvolutionMessageLogsAction({
-        status: statusFilter,
-        search: search.trim(),
-        limit: 50,
-      });
-      setLogs(data.logs);
-      setTotal(data.total);
-    } catch {
-      toast.error("Erro ao carregar histórico de mensagens.");
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter, search]);
+  const retrySingleMutation = useRetryWhatsAppMessageMutation();
+  const retryAllMutation = useRetryAllFailedWhatsAppMessagesMutation();
 
-  useEffect(() => {
-    let ignore = false;
-    getEvolutionMessageLogsAction({
-      status: statusFilter,
-      search: "",
-      limit: 50,
-    })
-      .then((data) => {
-        if (!ignore) {
-          setLogs(data.logs);
-          setTotal(data.total);
-          setLoading(false);
-        }
-      })
-      .catch(() => {
-        if (!ignore) {
-          toast.error("Erro ao carregar histórico de mensagens.");
-          setLoading(false);
-        }
-      });
+  const logs = data?.logs ?? [];
+  const total = data?.total ?? 0;
 
-    return () => {
-      ignore = true;
-    };
-  }, [statusFilter]);
+  const selectedLog = selectedLogId
+    ? logs.find((l) => l.id === selectedLogId) ?? null
+    : null;
 
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
-    loadLogs();
+    setSubmittedSearch(search.trim());
+  }
+
+  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value;
+    setSearch(val);
+    if (!val.trim() && submittedSearch) {
+      setSubmittedSearch("");
+    }
   }
 
   function handleRetry(logId: string) {
-    setRetryingLogId(logId);
-    startRetrying(async () => {
-      const res = await retryEvolutionMessageAction(logId);
-      if (res.ok) {
-        toast.success("Mensagem reenviada com sucesso!");
-        await loadLogs();
-      } else {
-        toast.error(res.error || "Não foi possível reenviar a mensagem.");
-      }
-      setRetryingLogId(null);
-    });
+    retrySingleMutation.mutate(logId);
   }
 
   function handleRetryAll() {
-    startRetrying(async () => {
-      const res = await retryAllFailedEvolutionMessagesAction();
-      toast.success(
-        `Reprocessamento concluído: ${res.sent} enviada(s), ${res.failed} falha(s).`,
-      );
-      await loadLogs();
-    });
+    retryAllMutation.mutate();
   }
 
   const failedCount = logs.filter(
@@ -234,10 +199,10 @@ export function WhatsAppMessageLogsCard() {
                 variant="outline"
                 size="sm"
                 onClick={handleRetryAll}
-                disabled={isRetrying}
+                disabled={retryAllMutation.isPending}
                 className="h-8 gap-1.5 text-xs border-destructive/40 text-destructive hover:bg-destructive/10"
               >
-                {isRetrying ? (
+                {retryAllMutation.isPending ? (
                   <Loader2Icon className="size-3.5 animate-spin" />
                 ) : (
                   <RotateCcwIcon className="size-3.5" />
@@ -249,12 +214,12 @@ export function WhatsAppMessageLogsCard() {
             <Button
               variant="outline"
               size="sm"
-              onClick={loadLogs}
-              disabled={loading}
+              onClick={() => refetch()}
+              disabled={isFetching}
               className="h-8 gap-1.5 text-xs"
             >
               <RefreshCwIcon
-                className={`size-3.5 ${loading ? "animate-spin" : ""}`}
+                className={`size-3.5 ${isFetching ? "animate-spin" : ""}`}
               />
               Atualizar
             </Button>
@@ -267,11 +232,15 @@ export function WhatsAppMessageLogsCard() {
             onSubmit={handleSearchSubmit}
             className="relative flex-1 max-w-sm"
           >
+            <label htmlFor={searchInputId} className="sr-only">
+              Buscar mensagens
+            </label>
             <SearchIcon className="absolute top-2.5 left-2.5 size-3.5 text-muted-foreground" />
             <Input
+              id={searchInputId}
               placeholder="Buscar por nome, telefone ou mensagem..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={handleSearchChange}
               className="h-8 pl-8 text-xs font-mono"
             />
           </form>
@@ -294,7 +263,7 @@ export function WhatsAppMessageLogsCard() {
       </CardHeader>
 
       <CardContent>
-        {loading && logs.length === 0 ? (
+        {isLoading && logs.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-muted-foreground text-xs gap-2">
             <Loader2Icon className="size-5 animate-spin text-primary" />
             <span>Carregando registros...</span>
@@ -325,7 +294,8 @@ export function WhatsAppMessageLogsCard() {
               <tbody className="divide-y divide-border/60">
                 {logs.map((log) => {
                   const isCurrentRetrying =
-                    isRetrying && retryingLogId === log.id;
+                    retrySingleMutation.isPending &&
+                    retrySingleMutation.variables === log.id;
 
                   return (
                     <tr
@@ -375,7 +345,7 @@ export function WhatsAppMessageLogsCard() {
                           <Button
                             variant="ghost"
                             size="icon-xs"
-                            onClick={() => setSelectedLog(log)}
+                            onClick={() => setSelectedLogId(log.id)}
                             title="Ver mensagem completa"
                             className="h-7 w-7"
                           >
@@ -420,7 +390,7 @@ export function WhatsAppMessageLogsCard() {
       {/* Detail Dialog */}
       <Dialog
         open={Boolean(selectedLog)}
-        onOpenChange={(open) => !open && setSelectedLog(null)}
+        onOpenChange={(open) => !open && setSelectedLogId(null)}
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

@@ -25,6 +25,7 @@ type NotificationStoreState = {
   dismissedBarIds: Set<string>;
   lastFetchedAt: number;
   isLoading: boolean;
+  allReadAt: number | null;
 };
 
 let state: NotificationStoreState = {
@@ -33,6 +34,7 @@ let state: NotificationStoreState = {
   dismissedBarIds: new Set<string>(),
   lastFetchedAt: 0,
   isLoading: false,
+  allReadAt: null,
 };
 
 const listeners = new Set<() => void>();
@@ -100,6 +102,7 @@ export const notificationStore = {
       dismissedBarIds: new Set<string>(),
       lastFetchedAt: 0,
       isLoading: false,
+      allReadAt: null,
     };
     emitChange();
   },
@@ -238,6 +241,7 @@ export const notificationStore = {
       count: state.count,
       items: state.items,
       dismissedBarIds: new Set(state.dismissedBarIds),
+      allReadAt: state.allReadAt,
     };
 
     const allIds = new Set(state.dismissedBarIds);
@@ -249,6 +253,7 @@ export const notificationStore = {
       count: 0,
       dismissedBarIds: allIds,
       items: state.items.map((i) => ({ ...i, read: true })),
+      allReadAt: Date.now(),
     };
     emitChange();
     toast.success("Todas as notificações foram marcadas como lidas.");
@@ -261,6 +266,7 @@ export const notificationStore = {
             count: previousState.count,
             items: previousState.items,
             dismissedBarIds: previousState.dismissedBarIds,
+            allReadAt: previousState.allReadAt,
           };
           emitChange();
           toast.error(res.error ?? "Não foi possível marcar todas como lidas.");
@@ -272,6 +278,7 @@ export const notificationStore = {
           count: previousState.count,
           items: previousState.items,
           dismissedBarIds: previousState.dismissedBarIds,
+          allReadAt: previousState.allReadAt,
         };
         emitChange();
         toast.error("Erro de conexão.");
@@ -291,7 +298,15 @@ export function useNotificationStore() {
     items: store.items,
     isLoading: store.isLoading,
     dismissedBarIds: store.dismissedBarIds,
+    allReadAt: store.allReadAt,
     isDismissed: (id: string) => store.dismissedBarIds.has(id),
+    isNotificationRead: (id: string, initialRead: boolean) => {
+      if (store.allReadAt !== null) return true;
+      if (initialRead) return true;
+      if (store.dismissedBarIds.has(id)) return true;
+      const found = store.items.find((item) => item.id === id);
+      return found ? found.read : false;
+    },
     init: notificationStore.init,
     revalidate: notificationStore.revalidate,
     dismissBar: notificationStore.dismissBar,

@@ -70,6 +70,7 @@ describe("Optimistic Notification Store", () => {
     expect(snapshot.items.every((i) => i.read)).toBe(true);
     expect(snapshot.dismissedBarIds.has("notif-1")).toBe(true);
     expect(snapshot.dismissedBarIds.has("notif-2")).toBe(true);
+    expect(snapshot.allReadAt).not.toBeNull();
   });
 
   it("does not revalidate when cached items are fresh (within 30s TTL)", async () => {

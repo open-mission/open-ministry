@@ -110,6 +110,7 @@ export function NavUser({
               <DropdownMenuItem asChild>
                 <Link
                   href="/dashboard/notifications"
+                  prefetch={true}
                   className="cursor-pointer gap-2"
                 >
                   <BellIcon className="size-4" />

@@ -290,7 +290,7 @@ function NotificationPanel({
             isDrawer ? "h-11 text-sm" : "h-8",
           )}
         >
-          <Link href="/dashboard/notifications" onClick={onClose}>
+          <Link href="/dashboard/notifications" prefetch={true} onClick={onClose}>
             <span>Ver todas as notificações</span>
             <ArrowRightIcon className="size-3.5" />
           </Link>
