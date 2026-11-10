@@ -115,13 +115,30 @@ describe("buildLogEntry", () => {
     expect(serialized).not.toContain("Bearer secret");
     expect(serialized).not.toContain("token=secret");
   });
+
+  it("strips a fragment as well as a query string", () => {
+    const entry = buildLogEntry(
+      {
+        message: "Request failed",
+        request: { path: "/api/churches#frag?token=secret", method: "GET" },
+      },
+      config,
+    );
+
+    expect(entry.request).toEqual({ path: "/api/churches", method: "GET" });
+    expect(JSON.stringify(entry)).not.toContain("token=secret");
+  });
 });
 
 describe("logServerEvent", () => {
   it("does not call fetch without DD_API_KEY", async () => {
     delete process.env.DD_API_KEY;
     const fetchMock = mock(
-      async (_url: string, _init?: RequestInit) => new Response("{}"),
+      async (_url: string, _init?: RequestInit) => {
+        void _url;
+        void _init;
+        return new Response("{}");
+      },
     );
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 
@@ -132,8 +149,11 @@ describe("logServerEvent", () => {
 
   it("posts a JSON array to the site-specific intake", async () => {
     const fetchMock = mock(
-      async (_url: string, _init?: RequestInit) =>
-        new Response("{}", { status: 202 }),
+      async (_url: string, _init?: RequestInit) => {
+        void _url;
+        void _init;
+        return new Response("{}", { status: 202 });
+      },
     );
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 
@@ -148,7 +168,9 @@ describe("logServerEvent", () => {
         "Content-Type": "application/json",
         "DD-API-KEY": "secret",
       },
+      cache: "no-store",
     });
+    expect(init?.signal).toBeInstanceOf(AbortSignal);
 
     const body = JSON.parse(String(init?.body));
     expect(body).toHaveLength(1);
@@ -156,34 +178,60 @@ describe("logServerEvent", () => {
   });
 
   it("swallows intake failures", async () => {
-    globalThis.fetch = mock(
-      async (_url: string, _init?: RequestInit) => {
-        throw new Error("network down");
-      },
-    ) as unknown as typeof fetch;
+    const warnSpy = mock(() => {});
+    const originalWarn = console.warn;
+    console.warn = warnSpy as unknown as typeof console.warn;
 
-    await expect(
-      logServerEvent({ message: "hello" }),
-    ).resolves.toBeUndefined();
+    try {
+      globalThis.fetch = mock(
+        async (_url: string, _init?: RequestInit) => {
+          void _url;
+          void _init;
+          throw new Error("network down");
+        },
+      ) as unknown as typeof fetch;
+
+      await expect(
+        logServerEvent({ message: "hello" }),
+      ).resolves.toBeUndefined();
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      console.warn = originalWarn;
+    }
   });
 
   it("swallows non-ok responses", async () => {
-    globalThis.fetch = mock(
-      async (_url: string, _init?: RequestInit) =>
-        new Response("nope", { status: 500 }),
-    ) as unknown as typeof fetch;
+    const warnSpy = mock(() => {});
+    const originalWarn = console.warn;
+    console.warn = warnSpy as unknown as typeof console.warn;
 
-    await expect(
-      logServerEvent({ message: "hello" }),
-    ).resolves.toBeUndefined();
+    try {
+      globalThis.fetch = mock(
+        async (_url: string, _init?: RequestInit) => {
+          void _url;
+          void _init;
+          return new Response("nope", { status: 500 });
+        },
+      ) as unknown as typeof fetch;
+
+      await expect(
+        logServerEvent({ message: "hello" }),
+      ).resolves.toBeUndefined();
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      console.warn = originalWarn;
+    }
   });
 });
 
 describe("logServerError", () => {
   it("delegates to the log intake with error context", async () => {
     const fetchMock = mock(
-      async (_url: string, _init?: RequestInit) =>
-        new Response("{}", { status: 202 }),
+      async (_url: string, _init?: RequestInit) => {
+        void _url;
+        void _init;
+        return new Response("{}", { status: 202 });
+      },
     );
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 
@@ -211,8 +259,11 @@ describe("logServerError", () => {
 
   it("logs non-Error values without throwing", async () => {
     const fetchMock = mock(
-      async (_url: string, _init?: RequestInit) =>
-        new Response("{}", { status: 202 }),
+      async (_url: string, _init?: RequestInit) => {
+        void _url;
+        void _init;
+        return new Response("{}", { status: 202 });
+      },
     );
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 

@@ -19,6 +19,9 @@ export default function GlobalError({
 
   return (
     <html lang="pt-BR">
+      <head>
+        <title>Erro | OpenMinistry</title>
+      </head>
       <body
         style={{
           margin: 0,
@@ -31,7 +34,7 @@ export default function GlobalError({
           color: "#1f2933",
         }}
       >
-        <main style={{ padding: 24, textAlign: "center" }}>
+        <main role="alert" style={{ padding: 24, textAlign: "center" }}>
           <h1 style={{ fontSize: 24, marginBottom: 8 }}>Algo deu errado</h1>
           <p style={{ marginBottom: 16, color: "#52606d" }}>
             Não foi possível carregar o OpenMinistry. Tente novamente.

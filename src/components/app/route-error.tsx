@@ -20,7 +20,10 @@ export function RouteError({
   }, [error]);
 
   return (
-    <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 p-6 text-center">
+    <div
+      role="alert"
+      className="flex min-h-[50vh] flex-col items-center justify-center gap-4 p-6 text-center"
+    >
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">
           Algo deu errado

@@ -63,10 +63,31 @@ describe("getRumConfig", () => {
       version: APP_VERSION,
     });
   });
+
+  it("treats whitespace-only values as missing", () => {
+    process.env.NEXT_PUBLIC_DD_APPLICATION_ID = "   ";
+    process.env.NEXT_PUBLIC_DD_CLIENT_TOKEN = "  ";
+    expect(getRumConfig()).toBeNull();
+
+    process.env.NEXT_PUBLIC_DD_APPLICATION_ID = "app-id";
+    process.env.NEXT_PUBLIC_DD_CLIENT_TOKEN = "client-token";
+    process.env.NEXT_PUBLIC_DD_SITE = "   ";
+    process.env.NEXT_PUBLIC_DD_SERVICE = "\t";
+
+    expect(getRumConfig()).toMatchObject({
+      site: DEFAULT_DD_SITE,
+      service: DEFAULT_DD_SERVICE,
+    });
+  });
 });
 
 describe("getServerConfig", () => {
   it("returns null without DD_API_KEY", () => {
+    expect(getServerConfig()).toBeNull();
+  });
+
+  it("treats a whitespace-only DD_API_KEY as missing", () => {
+    process.env.DD_API_KEY = "   ";
     expect(getServerConfig()).toBeNull();
   });
 
