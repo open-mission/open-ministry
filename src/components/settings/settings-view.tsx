@@ -37,6 +37,8 @@ import { OfflineCacheCard } from "@/components/settings/offline-cache-card";
 import { PasskeysCard } from "@/components/settings/passkeys-card";
 import { PwaInstallCard } from "@/components/settings/pwa-install-card";
 import { ThemePreferenceCard } from "@/components/settings/theme-preference-card";
+import { ModulePermissionsCard } from "@/components/settings/module-permissions-card";
+import type { OrganizationPermissionSettingsData } from "@/app/actions/permissions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -73,6 +75,7 @@ export type SettingsViewProps = {
   departmentsCount: number;
   evolutionSettings: EvolutionSettingsView | null;
   messageTemplates: ResolvedTemplate[];
+  permissionSettings?: OrganizationPermissionSettingsData | null;
   isModal?: boolean;
 };
 
@@ -88,6 +91,7 @@ export type SettingsSection =
   | "templates"
   | "church"
   | "nomenclature"
+  | "permissions"
   | "about";
 
 type SettingsNavItem = {
@@ -117,6 +121,7 @@ export function SettingsView({
   departmentsCount,
   evolutionSettings,
   messageTemplates,
+  permissionSettings,
   isModal = false,
 }: SettingsViewProps) {
   const churchMeta = parseChurchMetadata(organization.metadata);
@@ -240,6 +245,13 @@ export function SettingsView({
                 icon: LayersIcon,
                 color: "bg-orange-500 text-white",
               },
+              {
+                id: "permissions" as const,
+                label: "Módulos & Permissões",
+                subtitle: "Disponibilidade e papéis",
+                icon: ShieldCheckIcon,
+                color: "bg-indigo-600 text-white",
+              },
             ]
           : []),
       ],
@@ -311,6 +323,10 @@ export function SettingsView({
             initialNomenclature={churchMeta.departmentNomenclature}
           />
         );
+      case "permissions":
+        return permissionSettings ? (
+          <ModulePermissionsCard initialSettings={permissionSettings} />
+        ) : null;
       case "about":
         return <AboutCard />;
       default:
