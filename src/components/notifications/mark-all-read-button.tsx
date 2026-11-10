@@ -3,7 +3,6 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCheckIcon } from "lucide-react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { useNotificationStore } from "@/lib/notification-store";
@@ -15,7 +14,6 @@ export function MarkAllReadButton() {
 
   function handleMarkAll() {
     markAllAsRead();
-    toast.success("Todas as notificações foram marcadas como lidas.");
     startTransition(() => {
       router.refresh();
     });
