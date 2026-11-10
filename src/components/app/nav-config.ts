@@ -8,6 +8,7 @@ import {
   HandHeartIcon,
   LayersIcon,
   LayoutDashboardIcon,
+  MailIcon,
   MegaphoneIcon,
   MessageSquareIcon,
   UsersIcon,
@@ -118,6 +119,13 @@ export const whatsappNavItem: NavItem = {
   href: "/dashboard/whatsapp",
   label: "WhatsApp",
   icon: MessageSquareIcon,
+  exact: false,
+};
+
+export const emailsNavItem: NavItem = {
+  href: "/dashboard/emails",
+  label: "Emails",
+  icon: MailIcon,
   exact: false,
 };
 

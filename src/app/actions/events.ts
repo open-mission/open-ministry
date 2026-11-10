@@ -798,6 +798,7 @@ export async function saveScheduleAssignmentAction(
       userId: assignedPerson.userId ?? null,
       personId: parsed.data.personId,
       phone: assignedPerson.phone ?? assignedPerson.user?.phone ?? null,
+      email: assignedPerson.email ?? assignedPerson.user?.email ?? null,
       name: assignedPerson.name,
       metadata: {
         churchName: result.context.organization.name,
