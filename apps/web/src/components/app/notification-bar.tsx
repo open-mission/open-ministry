@@ -23,9 +23,13 @@ export function NotificationBar({
   const effectiveCount = Math.max(1, storeCount || count);
 
   return (
-    <div className="border-b bg-accent/50 px-4 py-2.5 transition-all duration-200 animate-in fade-in sm:px-6">
+    <aside
+      role="status"
+      aria-label="Aviso fixo"
+      className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-10 border-b bg-accent/95 backdrop-blur-md px-4 py-2.5 shadow-xs transition-all duration-200 animate-in fade-in sm:px-6"
+    >
       <div className="mx-auto flex w-full max-w-6xl items-center gap-3">
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-background/70 text-accent-foreground">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-background/80 text-accent-foreground shadow-xs">
           <BellIcon className="size-3.5" />
         </span>
 
@@ -54,6 +58,6 @@ export function NotificationBar({
 
         <DismissNotificationButton notificationId={notification.id} />
       </div>
-    </div>
+    </aside>
   );
 }
