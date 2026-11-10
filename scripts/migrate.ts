@@ -1,6 +1,7 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { migrate } from "drizzle-orm/neon-http/migrator";
+import path from "node:path";
 
 const connectionString =
   process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
@@ -13,9 +14,11 @@ if (!connectionString) {
 const sql = neon(connectionString);
 const db = drizzle(sql);
 
+const migrationsFolder = path.resolve(process.cwd(), "packages/db/src/migrations");
+
 console.log("Applying database migrations with Neon HTTP driver...");
 try {
-  await migrate(db, { migrationsFolder: "./src/db/migrations" });
+  await migrate(db, { migrationsFolder });
   console.log("✓ Migrations applied successfully!");
 } catch (error) {
   console.error("Migration failed:", error);

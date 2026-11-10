@@ -1,0 +1,46 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "agentGuidance": true,
+  "tasks": {
+    "build": {
+      "description": "Compiles TypeScript and bundles production Next.js applications and packages",
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "dev": {
+      "description": "Starts local development servers with hot reloading",
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "description": "Checks code style and catches common errors across all workspaces",
+      "dependsOn": ["^build"]
+    },
+    "typecheck": {
+      "description": "Validates TypeScript types across all workspaces without emitting output",
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "description": "Runs test suites across workspaces using bun test",
+      "dependsOn": ["^build"]
+    },
+    "db:generate": {
+      "description": "Generates database migrations from Drizzle ORM schema",
+      "cache": false
+    },
+    "db:migrate": {
+      "description": "Applies pending database migrations to PostgreSQL database",
+      "cache": false
+    },
+    "db:push": {
+      "description": "Pushes schema changes directly to PostgreSQL database",
+      "cache": false
+    },
+    "db:studio": {
+      "description": "Opens Drizzle Studio database inspection GUI",
+      "cache": false,
+      "persistent": true
+    }
+  }
+}
