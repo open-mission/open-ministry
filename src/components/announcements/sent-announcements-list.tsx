@@ -65,8 +65,10 @@ function getInitials(name: string): string {
 
 export function SentAnnouncementsList({
   announcements,
+  canRetry = true,
 }: {
   announcements: SentAnnouncementReceipt[];
+  canRetry?: boolean;
 }) {
   const [selectedAnnouncement, setSelectedAnnouncement] =
     useState<SentAnnouncementReceipt | null>(null);
@@ -193,6 +195,7 @@ export function SentAnnouncementsList({
         open={Boolean(selectedAnnouncement)}
         onOpenChange={(open) => !open && setSelectedAnnouncement(null)}
         announcement={selectedAnnouncement}
+        canRetry={canRetry}
       />
     </section>
   );
@@ -202,10 +205,12 @@ function SentAnnouncementDetailDialog({
   open,
   onOpenChange,
   announcement,
+  canRetry = true,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   announcement: SentAnnouncementReceipt | null;
+  canRetry?: boolean;
 }) {
   const [filter, setFilter] = useState<
     "all" | "read" | "unread" | "wa_ok" | "wa_pending"
@@ -345,7 +350,7 @@ function SentAnnouncementDetailDialog({
               )}
             </div>
 
-            {waFailedOrPending > 0 && (
+            {canRetry && waFailedOrPending > 0 && (
               <Button
                 variant="outline"
                 size="sm"
@@ -514,24 +519,26 @@ function SentAnnouncementDetailDialog({
                                 <XCircleIcon className="size-3" />
                                 Falha
                               </Badge>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  handleRetrySingle(
-                                    recipient.whatsapp!.logId,
-                                  )
-                                }
-                                disabled={isSingleRetrying}
-                                className="h-6 px-1.5 text-[10px] gap-1"
-                              >
-                                {isSingleRetrying ? (
-                                  <Loader2Icon className="size-2.5 animate-spin" />
-                                ) : (
-                                  <RotateCcwIcon className="size-2.5" />
-                                )}
-                                Reenviar
-                              </Button>
+                              {canRetry && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleRetrySingle(
+                                      recipient.whatsapp!.logId,
+                                    )
+                                  }
+                                  disabled={isSingleRetrying}
+                                  className="h-6 px-1.5 text-[10px] gap-1"
+                                >
+                                  {isSingleRetrying ? (
+                                    <Loader2Icon className="size-2.5 animate-spin" />
+                                  ) : (
+                                    <RotateCcwIcon className="size-2.5" />
+                                  )}
+                                  Reenviar
+                                </Button>
+                              )}
                             </div>
                           )}
                         </div>

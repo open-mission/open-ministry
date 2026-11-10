@@ -183,6 +183,88 @@ export async function can(
     }
   }
 
+  // 4b. Se scope.targetPersonId foi informado sem departmentId (ex: avisos individuais sendPerson)
+  if (!departmentContext && scope?.targetPersonId) {
+    const targetPerson = await db.query.person.findFirst({
+      where: and(
+        eq(schema.person.id, scope.targetPersonId),
+        eq(schema.person.organizationId, organizationId),
+      ),
+    });
+
+    if (!targetPerson) {
+      departmentContext = {
+        departmentId: "unknown",
+        departmentBelongsToOrganization: false,
+        isModuleActiveInDepartment: false,
+        isUserMember: false,
+        isUserLeader: false,
+        hasActiveGrant: false,
+      };
+    } else if (isAdmin) {
+      departmentContext = {
+        departmentId: "church-wide",
+        departmentBelongsToOrganization: true,
+        isModuleActiveInDepartment: true,
+        isUserMember: true,
+        isUserLeader: true,
+        hasActiveGrant: false,
+      };
+    } else if (userPersonId) {
+      const targetMemberships = await db.query.departmentMember.findMany({
+        where: eq(schema.departmentMember.personId, scope.targetPersonId),
+      });
+
+      for (const tm of targetMemberships) {
+        const dept = await db.query.department.findFirst({
+          where: and(
+            eq(schema.department.id, tm.departmentId),
+            eq(schema.department.organizationId, organizationId),
+          ),
+        });
+        if (!dept) continue;
+
+        const activeModule = await db.query.departmentModule.findFirst({
+          where: and(
+            eq(schema.departmentModule.departmentId, dept.id),
+            eq(schema.departmentModule.moduleKey, moduleKey),
+          ),
+        });
+        if (!activeModule) continue;
+
+        const actorMembership = await db.query.departmentMember.findFirst({
+          where: and(
+            eq(schema.departmentMember.departmentId, dept.id),
+            eq(schema.departmentMember.personId, userPersonId),
+          ),
+        });
+
+        const activeGrant = await db.query.departmentPermissionGrant.findFirst({
+          where: and(
+            eq(schema.departmentPermissionGrant.organizationId, organizationId),
+            eq(schema.departmentPermissionGrant.departmentId, dept.id),
+            eq(schema.departmentPermissionGrant.granteeUserId, userId),
+            eq(schema.departmentPermissionGrant.moduleKey, moduleKey),
+            eq(schema.departmentPermissionGrant.action, action),
+            isNull(schema.departmentPermissionGrant.revokedAt),
+          ),
+        });
+
+        if (actorMembership?.isLeader || activeGrant) {
+          departmentContext = {
+            departmentId: dept.id,
+            departmentBelongsToOrganization: true,
+            isModuleActiveInDepartment: true,
+            isUserMember: Boolean(actorMembership),
+            isUserLeader: Boolean(actorMembership?.isLeader),
+            hasActiveGrant: Boolean(activeGrant),
+          };
+          break;
+        }
+      }
+    }
+  }
+
   // 5. Resolver contexto de evento se scope.eventId foi informado
   let eventContext: EventSnapshot | null = null;
   if (scope?.eventId) {
