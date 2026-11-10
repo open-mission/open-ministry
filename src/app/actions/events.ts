@@ -24,6 +24,7 @@ import {
 import { createNotifications } from "@/lib/notifications";
 import { dispatchNotification } from "@/lib/notification-service";
 import { getOrganizationContext } from "@/lib/organizations";
+import { can, requirePermission } from "@/lib/permissions/service";
 
 export type EventFormState =
   | {
@@ -323,13 +324,47 @@ export async function createEventAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const result = await getAdminContext();
+  const context = await getOrganizationContext();
 
-  if ("error" in result) {
-    return { error: result.error };
+  if (!context) {
+    return {
+      error: "Sua sessão expirou ou você não tem uma igreja ativa.",
+    };
   }
 
-  const organizationId = result.context.organization.id;
+  const organizationId = context.organization.id;
+
+  const validDepartmentIds = await validateDepartments(
+    organizationId,
+    parsed.data.departments,
+  );
+
+  if (validDepartmentIds.length !== parsed.data.departments.length) {
+    return {
+      fieldErrors: {
+        departments: ["Um dos departamentos selecionados não foi encontrado."],
+      },
+    };
+  }
+
+  if (validDepartmentIds.length === 0) {
+    const allowed = await can("agenda", "createEvent");
+    if (!allowed) {
+      return {
+        error: "Você não tem permissão para criar eventos gerais da igreja.",
+      };
+    }
+  } else {
+    for (const departmentId of validDepartmentIds) {
+      const allowed = await can("agenda", "createEvent", { departmentId });
+      if (!allowed) {
+        return {
+          error: "Você não tem permissão para criar eventos neste departamento.",
+        };
+      }
+    }
+  }
+
   const { recurrence } = parsed.data;
   let recurrenceEndsAt: Date | null = null;
 
@@ -368,18 +403,6 @@ export async function createEventAction(
 
   const durationMs = parsed.data.durationMinutes * 60_000;
   const endsAt = new Date(startsAt.getTime() + durationMs);
-  const validDepartmentIds = await validateDepartments(
-    organizationId,
-    parsed.data.departments,
-  );
-
-  if (validDepartmentIds.length !== parsed.data.departments.length) {
-    return {
-      fieldErrors: {
-        departments: ["Um dos departamentos selecionados não foi encontrado."],
-      },
-    };
-  }
 
   const nthFromDate = getNthWeekdayInfo(startsAt).nth;
   const recurrenceInterval =
@@ -462,17 +485,22 @@ export async function updateEventAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const result = await getAdminContext();
+  const context = await getOrganizationContext();
 
-  if ("error" in result) {
-    return { error: result.error };
+  if (!context) {
+    return { error: "Sua sessão expirou ou você não tem uma igreja ativa." };
   }
 
-  const organizationId = result.context.organization.id;
+  const organizationId = context.organization.id;
   const event = await getEvent(organizationId, parsed.data.eventId);
 
   if (!event) {
     return { error: "Evento não encontrado." };
+  }
+
+  const allowed = await can("agenda", "updateEvent", { eventId: event.id });
+  if (!allowed) {
+    return { error: "Você não tem permissão para editar este evento." };
   }
 
   const validDepartmentIds = await validateDepartments(
@@ -486,6 +514,15 @@ export async function updateEventAction(
         departments: ["Um dos departamentos selecionados não foi encontrado."],
       },
     };
+  }
+
+  for (const departmentId of validDepartmentIds) {
+    const allowedDept = await can("agenda", "updateEvent", { departmentId });
+    if (!allowedDept) {
+      return {
+        error: "Você não tem permissão para vincular este departamento ao evento.",
+      };
+    }
   }
 
   const startsAt = zonedDateTimeToUtc(parsed.data.date, parsed.data.startTime);
@@ -555,23 +592,40 @@ export async function updateEventAction(
 }
 
 export async function deleteEventAction(
-  eventId: string,
-  scope: "single" | "series",
+  input: string | FormData,
+  scopeInput: "single" | "series" = "single",
 ): Promise<EventActionResult> {
-  if (!eventId) {
+  const eventId = typeof input === "string" ? input : input.get("eventId");
+  const scope =
+    typeof input === "string"
+      ? scopeInput
+      : ((input.get("scope") as "single" | "series") || scopeInput);
+
+  if (!eventId || typeof eventId !== "string") {
     return { ok: false, error: "Evento inválido." };
   }
 
-  const result = await getAdminContext();
+  const context = await getOrganizationContext();
 
-  if ("error" in result) {
-    return { ok: false, error: result.error };
+  if (!context) {
+    return {
+      ok: false,
+      error: "Sua sessão expirou ou você não tem uma igreja ativa.",
+    };
   }
 
-  const event = await getEvent(result.context.organization.id, eventId);
+  const event = await getEvent(context.organization.id, eventId);
 
   if (!event) {
     return { ok: false, error: "Evento não encontrado." };
+  }
+
+  const allowed = await can("agenda", "deleteEvent", { eventId: event.id });
+  if (!allowed) {
+    return {
+      ok: false,
+      error: "Você não tem permissão para excluir este evento.",
+    };
   }
 
   try {
@@ -580,7 +634,7 @@ export async function deleteEventAction(
         .delete(schema.event)
         .where(
           and(
-            eq(schema.event.organizationId, result.context.organization.id),
+            eq(schema.event.organizationId, context.organization.id),
             eq(schema.event.seriesId, event.seriesId),
           ),
         );
@@ -592,7 +646,7 @@ export async function deleteEventAction(
     return { ok: false, error: "Não foi possível excluir o evento." };
   }
 
-  await revalidateEvents(event.id, result.context.organization.id);
+  await revalidateEvents(event.id, context.organization.id);
   return { ok: true };
 }
 

@@ -9,6 +9,7 @@ import type { CalendarItem, CalendarPreferences } from "@/lib/calendar";
 import { listEvents } from "@/lib/events";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { ensurePersonForUser } from "@/lib/people";
+import { requirePermission } from "@/lib/permissions/service";
 
 export async function getCalendarDataAction(): Promise<{
   items: CalendarItem[];
@@ -21,6 +22,8 @@ export async function getCalendarDataAction(): Promise<{
       preferences: { weekStartsOn: 0, timezone: "America/Sao_Paulo" },
     };
   }
+
+  await requirePermission("agenda", "read");
 
   const { organization, session } = context;
 

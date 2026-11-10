@@ -15,6 +15,15 @@ let mockOrgMusicEnabled = true;
 
 mock.module("@/db", () => ({
   db: {
+    query: new Proxy(
+      {},
+      {
+        get: () => ({
+          findFirst: async () => null,
+          findMany: async () => [],
+        }),
+      },
+    ),
     insert: () => ({
       values: () => ({
         returning: async () => [{ id: "song-1" }],
