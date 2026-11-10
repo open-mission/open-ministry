@@ -35,6 +35,7 @@ export function RecentPeopleCarousel({
         </h2>
         <Link
           href="/dashboard/members"
+          prefetch={true}
           className="group inline-flex items-center gap-1 pb-0.5 text-xs font-medium text-primary hover:underline"
         >
           Ver todas as pessoas
@@ -53,6 +54,7 @@ export function RecentPeopleCarousel({
             <Link
               key={person.id}
               href={`/dashboard/members/${person.id}`}
+              prefetch={true}
               className={cn(
                 "group flex min-w-[240px] shrink-0 snap-start items-center gap-3.5 rounded-2xl border border-border/60 bg-card p-4",
                 "transition-[transform,border-color,box-shadow] duration-150 active:scale-[0.99] hover:border-primary/35 hover:shadow-sm sm:min-w-0",

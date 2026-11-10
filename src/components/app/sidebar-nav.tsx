@@ -57,7 +57,7 @@ export function SidebarNav({
                       isActive={isActive}
                       tooltip={item.label}
                     >
-                      <Link href={item.href}>
+                      <Link href={item.href} prefetch={true}>
                         <item.icon />
                         <span>{item.label}</span>
                       </Link>

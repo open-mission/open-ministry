@@ -216,6 +216,7 @@ async function EventContent({
               <Link
                 key={item.id}
                 href={`/dashboard/departments/${item.departmentId}`}
+                prefetch={true}
                 className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-secondary-foreground"
               >
                 {item.department.name}

@@ -223,6 +223,7 @@ async function DashboardContent() {
           </h2>
           <Link
             href="/dashboard/events"
+            prefetch={true}
             className="group inline-flex items-center gap-1 pb-0.5 text-xs font-medium text-primary hover:underline"
           >
             Ver agenda

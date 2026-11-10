@@ -107,6 +107,7 @@ export function ScheduleEditor({
                 <CardTitle className="font-heading text-lg tracking-tight">
                   <Link
                     href={`/dashboard/departments/${department.id}`}
+                    prefetch={true}
                     className="underline-offset-4 hover:underline"
                   >
                     {department.name}
@@ -166,6 +167,7 @@ export function ScheduleEditor({
                       Nenhuma função cadastrada.{" "}
                       <Link
                         href={`/dashboard/departments/${department.id}`}
+                        prefetch={true}
                         className="font-medium text-foreground underline underline-offset-4"
                       >
                         Configurar funções

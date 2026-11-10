@@ -141,6 +141,7 @@ export function MobileMenu({
                         <Link
                           key={item.href}
                           href={item.href}
+                          prefetch={true}
                           onClick={() => setOpen(false)}
                           aria-current={isActive ? "page" : undefined}
                           className={cn(
