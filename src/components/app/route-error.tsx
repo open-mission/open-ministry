@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 
 export function RouteError({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }) {
   useEffect(() => {
     if (datadogRum.getInitConfiguration()) {
@@ -29,7 +29,7 @@ export function RouteError({
           Não foi possível carregar esta página. Tente novamente.
         </p>
       </div>
-      <Button onClick={reset}>Tentar novamente</Button>
+      <Button onClick={retry}>Tentar novamente</Button>
     </div>
   );
 }

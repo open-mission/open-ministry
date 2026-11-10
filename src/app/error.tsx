@@ -4,7 +4,7 @@ import { RouteError } from "@/components/app/route-error";
 
 export default function Error(props: {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }) {
   return <RouteError {...props} />;
 }

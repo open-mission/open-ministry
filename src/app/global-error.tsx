@@ -6,10 +6,10 @@ import { useEffect } from "react";
 
 export default function GlobalError({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }) {
   useEffect(() => {
     if (datadogRum.getInitConfiguration()) {
@@ -37,7 +37,7 @@ export default function GlobalError({
             Não foi possível carregar o OpenMinistry. Tente novamente.
           </p>
           <button
-            onClick={reset}
+            onClick={retry}
             style={{
               borderRadius: 8,
               border: "1px solid #264a3a",
