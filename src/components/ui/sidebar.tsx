@@ -515,7 +515,7 @@ function SidebarMenuButton({
     />
   )
 
-  if (!tooltip) {
+  if (!tooltip || state !== "collapsed" || isMobile) {
     return button
   }
 

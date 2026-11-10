@@ -5,6 +5,7 @@ import {
   DashboardBreadcrumb,
   DashboardBreadcrumbFallback,
 } from "@/components/app/dashboard-breadcrumb";
+import { DatadogUserLoader } from "@/components/app/datadog-user-loader";
 import { ImpersonationBannerLoader } from "@/components/app/impersonation-banner-loader";
 import {
   MobileHeaderLeadingFallback,
@@ -72,6 +73,9 @@ export default function DashboardLayout({
                 </div>
               </header>
               <OfflineBanner />
+              <Suspense fallback={null}>
+                <DatadogUserLoader />
+              </Suspense>
               <Suspense fallback={null}>
                 <ImpersonationBannerLoader />
               </Suspense>

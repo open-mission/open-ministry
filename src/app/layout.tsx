@@ -1,3 +1,4 @@
+import { DatadogAppRouter } from "@datadog/browser-rum-nextjs";
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Geist } from "next/font/google";
 import { Suspense } from "react";
@@ -58,6 +59,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={cn("font-sans", geist.variable, fraunces.variable)}
     >
       <body>
+        <Suspense fallback={null}>
+          <DatadogAppRouter />
+        </Suspense>
         <Suspense fallback={null}>
           <UploadThingSSR />
         </Suspense>
