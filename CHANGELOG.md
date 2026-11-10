@@ -6,6 +6,34 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [0.9.8] - 2026-11-10
+
+### Adicionado
+- **Emails Transacionais com Brevo API (Sendinblue)**:
+  - Integração oficial com a API v3 do Brevo (`https://api.brevo.com/v3/smtp/email`) para envio de emails transacionais e notificações.
+  - Tabela `email_message_log` no Neon PostgreSQL para auditoria, histórico de envios, rastreamento de IDs de mensagem do Brevo e registro de tentativas e falhas.
+  - Funções de envio transacional e reenvio unitário de emails com feedback em tempo real.
+- **Modelos de Email Padronizados em React Email (`@react-email/components`)**:
+  - `WelcomeEmail`: Boas-vindas para novos membros cadastrados no OpenMinistry.
+  - `ScheduleAssignedEmail`: Notificação detalhada de voluntário escalado para culto/evento (ministério, data, horário, notas e link direto).
+  - `AnnouncementEmail`: Comunicados e avisos oficiais da igreja enviados pela liderança.
+  - `ResetPasswordEmail`: Redefinição segura de senha com link temporário de expiração.
+  - `MagicLinkEmail`: Link de acesso direto seguro e descartável.
+  - `EmailVerificationEmail`: Confirmação do endereço de email cadastrado.
+- **Aba de Gestão de Emails no Sidebar e Painel Completo (`/dashboard/emails`)**:
+  - Novo item de navegação "Emails" sob o grupo "Comunicação" acessível para administradores e líderes de ministério.
+  - Visão geral com métricas (Total de disparos, Entregues, Falhas e Taxa de sucesso).
+  - Aba de **Histórico de Envios** com busca em tempo real por destinatário ou assunto, filtros por status e tipo de email, visualização em sandbox iframe do conteúdo renderizado e botão de reenvio.
+  - Aba de **Modelos de Email** com catálogo interativo de templates, prévia com alternador Desktop/Mobile e modal para envio de email de teste real para qualquer endereço via Brevo.
+- **Autenticação & Avisos Multicanal com E-mail**:
+  - Vinculação com o Better Auth para envio automático de emails em eventos de criação de conta (`user.create.after`), recuperação de senha (`sendResetPassword`), magic link e confirmação de email.
+  - Adição do canal de E-mail nos formulários de criação de Avisos (`AnnouncementDialog` e `AnnouncementsConsole`).
+  - Notificação por email disparada automaticamente ao escalar voluntários na criação ou edição de escalas de culto.
+- **Documentação de API OpenAPI 3.1.0 (Scalar)**:
+  - Atualização da versão da API para `0.9.8`.
+
+---
+
 ## [0.9.7] - 2026-11-10
 
 ### Adicionado
