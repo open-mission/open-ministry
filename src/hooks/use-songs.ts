@@ -131,6 +131,26 @@ export function useCreateSongMutation() {
         songKeys.detail(result.song.id),
         { song: result.song },
       );
+
+      const previousLists = queryClient.getQueriesData<SongsApiResponse>({
+        queryKey: songKeys.lists(),
+      });
+      for (const [key, cachedList] of previousLists) {
+        if (cachedList) {
+          const nextCollections = new Set(cachedList.collections ?? []);
+          if (result.song.collection?.trim()) {
+            nextCollections.add(result.song.collection.trim());
+          }
+          queryClient.setQueryData<SongsApiResponse>(key, {
+            ...cachedList,
+            songs: [result.song, ...(cachedList.songs ?? [])],
+            collections: Array.from(nextCollections).sort((a, b) =>
+              a.localeCompare(b, "pt-BR"),
+            ),
+          });
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: songKeys.lists() });
     },
   });
@@ -169,6 +189,11 @@ export function useUpdateSongMutation() {
       // 4. Atualização otimista de todas as listas em cache (0ms na listagem)
       for (const [key, cachedList] of previousLists) {
         if (cachedList?.songs) {
+          const nextCollections = new Set(cachedList.collections ?? []);
+          if (data.collection?.trim()) {
+            nextCollections.add(data.collection.trim());
+          }
+
           queryClient.setQueryData<SongsApiResponse>(key, {
             ...cachedList,
             songs: cachedList.songs.map((s) =>
@@ -179,6 +204,9 @@ export function useUpdateSongMutation() {
                     updatedAt: new Date(),
                   }
                 : s,
+            ),
+            collections: Array.from(nextCollections).sort((a, b) =>
+              a.localeCompare(b, "pt-BR"),
             ),
           });
         }

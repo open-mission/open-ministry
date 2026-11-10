@@ -16,7 +16,11 @@ import {
   XIcon,
 } from "lucide-react";
 
-import { useCreateSongMutation, useUpdateSongMutation } from "@/hooks/use-songs";
+import {
+  useCreateSongMutation,
+  useSongsQuery,
+  useUpdateSongMutation,
+} from "@/hooks/use-songs";
 import type { SongInput } from "@/lib/music/songs-schema";
 import {
   AlertDialog,
@@ -97,6 +101,29 @@ export function SongFormDialog({
   const createMutation = useCreateSongMutation();
   const updateMutation = useUpdateSongMutation();
   const isPending = createMutation.isPending || updateMutation.isPending;
+
+  const { data: songsData } = useSongsQuery();
+  const initialCollection = initialData?.collection;
+  const availableCollections = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of existingCollections) {
+      if (c?.trim()) set.add(c.trim());
+    }
+    if (songsData?.collections) {
+      for (const c of songsData.collections) {
+        if (c?.trim()) set.add(c.trim());
+      }
+    }
+    if (songsData?.songs) {
+      for (const s of songsData.songs) {
+        if (s.collection?.trim()) set.add(s.collection.trim());
+      }
+    }
+    if (initialCollection?.trim()) {
+      set.add(initialCollection.trim());
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [existingCollections, songsData, initialCollection]);
 
   // Estados de confirmação e visualização
   const [showDiscardAlert, setShowDiscardAlert] = useState(false);
@@ -368,7 +395,7 @@ export function SongFormDialog({
 
       {/* 2. TABS CONTAINER FIXO COM SCROLL DENTRO DOS CAMPOS */}
       <Tabs
-        defaultValue="cifra-letra"
+        defaultValue="dados"
         className="flex flex-1 min-h-0 flex-col overflow-hidden"
       >
         {/* TABS LIST FIXO NO TOPO COM SUPORTE A ROLAGEM HORIZONTAL NO MOBILE */}
@@ -376,18 +403,18 @@ export function SongFormDialog({
           <div className="w-full overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <TabsList className="inline-flex h-9.5 w-max min-w-full items-center justify-start gap-1 rounded-lg bg-muted/80 p-1 sm:grid sm:h-10 sm:w-full sm:grid-cols-3">
               <TabsTrigger
-                value="cifra-letra"
-                className="shrink-0 gap-1.5 px-3 py-1.5 text-xs font-medium sm:text-sm"
-              >
-                <FileMusicIcon className="size-3.5" />
-                <span>Cifra & Letra</span>
-              </TabsTrigger>
-              <TabsTrigger
                 value="dados"
                 className="shrink-0 gap-1.5 px-3 py-1.5 text-xs font-medium sm:text-sm"
               >
                 <GuitarIcon className="size-3.5" />
                 <span>Dados Gerais</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="cifra-letra"
+                className="shrink-0 gap-1.5 px-3 py-1.5 text-xs font-medium sm:text-sm"
+              >
+                <FileMusicIcon className="size-3.5" />
+                <span>Cifra & Letra</span>
               </TabsTrigger>
               <TabsTrigger
                 value="links"
@@ -400,7 +427,113 @@ export function SongFormDialog({
           </div>
         </div>
 
-        {/* ABA 1: CIFRA & LETRA (MODAL SEM SCROLL; SCROLL DENTRO DOS TEXTAREAS; ABAS NO MOBILE) */}
+        {/* ABA 1: DADOS GERAIS */}
+        <TabsContent
+          value="dados"
+          className="mt-0 flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 data-[state=inactive]:hidden"
+        >
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="song-title">
+                Título da música <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="song-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Ex: A Casa É Sua"
+                required
+                className="h-10"
+              />
+            </div>
+
+            <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
+              <Label htmlFor="song-artist">Artista / Ministério</Label>
+              <Input
+                id="song-artist"
+                value={artist}
+                onChange={(e) => setArtist(e.target.value)}
+                placeholder="Ex: Casa Worship, Morada..."
+                className="h-10"
+              />
+            </div>
+
+            {/* GRUPO OU COLEÇÃO */}
+            <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
+              <Label>Coleção ou Grupo</Label>
+              <CollectionCombobox
+                value={collection}
+                onChange={setCollection}
+                existingCollections={availableCollections}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="song-tone">Tom principal</Label>
+              <NativeSelect
+                id="song-tone"
+                value={tone}
+                onChange={(e) => setTone(e.target.value)}
+                className="h-10"
+              >
+                <option value="">Selecione o tom...</option>
+                {STANDARD_TONES.map((t) => (
+                  <option key={t} value={t}>
+                    Tom {t}
+                  </option>
+                ))}
+              </NativeSelect>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="song-bpm">BPM (Andamento)</Label>
+              <Input
+                id="song-bpm"
+                type="number"
+                min={20}
+                max={300}
+                value={bpm}
+                onChange={(e) => setBpm(e.target.value)}
+                placeholder="Ex: 72"
+                className="h-10"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="song-time-signature">Compasso</Label>
+              <NativeSelect
+                id="song-time-signature"
+                value={timeSignature}
+                onChange={(e) => setTimeSignature(e.target.value)}
+                className="h-10"
+              >
+                {STANDARD_TIME_SIGNATURES.map((ts) => (
+                  <option key={ts} value={ts}>
+                    {ts}
+                  </option>
+                ))}
+              </NativeSelect>
+            </div>
+
+            <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
+              <Label htmlFor="song-tags">
+                Tags / Temas (separadas por vírgula)
+              </Label>
+              <Input
+                id="song-tags"
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
+                placeholder="Ex: Adoração, Celebração, Ceia, Gratidão"
+                className="h-10"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Use vírgula para separar múltiplos temas. Até 3 tags aparecerão em destaque no cabeçalho.
+              </p>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* ABA 2: CIFRA & LETRA (MODAL SEM SCROLL; SCROLL DENTRO DOS TEXTAREAS; ABAS NO MOBILE) */}
         <TabsContent
           value="cifra-letra"
           className="mt-0 flex flex-1 min-h-0 flex-col overflow-hidden p-3 sm:p-5 data-[state=inactive]:hidden"
@@ -527,112 +660,6 @@ export function SongFormDialog({
             </div>
           </div>
         </TabsContent>
-
-        {/* ABA 2: DADOS GERAIS */}
-        <TabsContent
-          value="dados"
-          className="mt-0 flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 data-[state=inactive]:hidden"
-        >
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="song-title">
-                  Título da música <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="song-title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ex: A Casa É Sua"
-                  required
-                  className="h-10"
-                />
-              </div>
-
-              <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
-                <Label htmlFor="song-artist">Artista / Ministério</Label>
-                <Input
-                  id="song-artist"
-                  value={artist}
-                  onChange={(e) => setArtist(e.target.value)}
-                  placeholder="Ex: Casa Worship, Morada..."
-                  className="h-10"
-                />
-              </div>
-
-              {/* GRUPO OU COLEÇÃO */}
-              <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
-                <Label>Coleção ou Grupo</Label>
-                <CollectionCombobox
-                  value={collection}
-                  onChange={setCollection}
-                  existingCollections={existingCollections}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="song-tone">Tom principal</Label>
-                <NativeSelect
-                  id="song-tone"
-                  value={tone}
-                  onChange={(e) => setTone(e.target.value)}
-                  className="h-10"
-                >
-                  <option value="">Selecione o tom...</option>
-                  {STANDARD_TONES.map((t) => (
-                    <option key={t} value={t}>
-                      Tom {t}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="song-bpm">BPM (Andamento)</Label>
-                <Input
-                  id="song-bpm"
-                  type="number"
-                  min={20}
-                  max={300}
-                  value={bpm}
-                  onChange={(e) => setBpm(e.target.value)}
-                  placeholder="Ex: 72"
-                  className="h-10"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="song-time-signature">Compasso</Label>
-                <NativeSelect
-                  id="song-time-signature"
-                  value={timeSignature}
-                  onChange={(e) => setTimeSignature(e.target.value)}
-                  className="h-10"
-                >
-                  {STANDARD_TIME_SIGNATURES.map((ts) => (
-                    <option key={ts} value={ts}>
-                      {ts}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </div>
-
-              <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
-                <Label htmlFor="song-tags">
-                  Tags / Temas (separadas por vírgula)
-                </Label>
-                <Input
-                  id="song-tags"
-                  value={tagsInput}
-                  onChange={(e) => setTagsInput(e.target.value)}
-                  placeholder="Ex: Adoração, Celebração, Ceia, Gratidão"
-                  className="h-10"
-                />
-                <p className="text-[11px] text-muted-foreground">
-                  Use vírgula para separar múltiplos temas. Até 3 tags aparecerão em destaque no cabeçalho.
-                </p>
-              </div>
-            </div>
-          </TabsContent>
 
           {/* ABA 3: PLATAFORMAS & LINKS */}
           <TabsContent value="links" className="space-y-4 pt-1">

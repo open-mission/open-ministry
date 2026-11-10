@@ -22,12 +22,9 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSongsQuery } from "@/hooks/use-songs";
 import { cn } from "@/lib/utils";
 
 type CollectionComboboxProps = {
@@ -40,12 +37,37 @@ type CollectionComboboxProps = {
 export function CollectionCombobox({
   value,
   onChange,
-  existingCollections = [],
+  existingCollections: propCollections = [],
   disabled = false,
 }: CollectionComboboxProps) {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+
+  const { data: songsData } = useSongsQuery();
+
+  const existingCollections = useMemo(() => {
+    const set = new Set<string>();
+    if (propCollections) {
+      for (const c of propCollections) {
+        if (c?.trim()) set.add(c.trim());
+      }
+    }
+    if (songsData?.collections) {
+      for (const c of songsData.collections) {
+        if (c?.trim()) set.add(c.trim());
+      }
+    }
+    if (songsData?.songs) {
+      for (const s of songsData.songs) {
+        if (s.collection?.trim()) set.add(s.collection.trim());
+      }
+    }
+    if (value?.trim()) {
+      set.add(value.trim());
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [propCollections, songsData, value]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
