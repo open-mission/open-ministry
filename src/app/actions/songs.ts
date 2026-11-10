@@ -12,8 +12,8 @@ import {
   type OnlineSongResult,
 } from "@/lib/music/lyrics-service";
 import { requireOrganizationContext } from "@/lib/organizations";
+import { can, requirePermission } from "@/lib/permissions/service";
 import {
-  canAccessMusicModule,
   invalidateSongCache,
   type SongRecord,
 } from "@/lib/songs";
@@ -78,48 +78,28 @@ export type SongActionResult = {
 export async function searchOnlineSongsAction(
   query: string,
 ): Promise<OnlineSongResult[]> {
-  const { organization, session, isAdmin } = await requireOrganizationContext();
-  const hasAccess = await canAccessMusicModule(
-    organization.id,
-    session.user.id,
-    isAdmin,
-  );
-  if (!hasAccess) {
-    throw new Error("Módulo de música não liberado para seu perfil.");
-  }
-
+  await requireOrganizationContext();
+  await requirePermission("music", "createSong");
   return searchSongsOnline(query);
 }
 
 export async function fetchLyricsDetailsAction(
   item: OnlineSongResult,
 ): Promise<string> {
-  const { organization, session, isAdmin } = await requireOrganizationContext();
-  const hasAccess = await canAccessMusicModule(
-    organization.id,
-    session.user.id,
-    isAdmin,
-  );
-  if (!hasAccess) {
-    throw new Error("Módulo de música não liberado para seu perfil.");
-  }
-
+  await requireOrganizationContext();
+  await requirePermission("music", "createSong");
   return fetchLyricsDetails(item);
 }
 
 export async function createSongAction(
   formData: FormData,
 ): Promise<SongActionResult> {
-  const { organization, session, isAdmin } = await requireOrganizationContext();
-  const hasAccess = await canAccessMusicModule(
-    organization.id,
-    session.user.id,
-    isAdmin,
-  );
-  if (!hasAccess) {
+  const { organization, session } = await requireOrganizationContext();
+  const allowed = await can("music", "createSong");
+  if (!allowed) {
     return {
       ok: false,
-      error: "O módulo de música não está ativo para seu perfil ou departamento.",
+      error: "Você não tem permissão para cadastrar músicas.",
     };
   }
 
@@ -198,16 +178,12 @@ export async function createSongAction(
 export async function updateSongAction(
   formData: FormData,
 ): Promise<SongActionResult> {
-  const { organization, session, isAdmin } = await requireOrganizationContext();
-  const hasAccess = await canAccessMusicModule(
-    organization.id,
-    session.user.id,
-    isAdmin,
-  );
-  if (!hasAccess) {
+  const { organization } = await requireOrganizationContext();
+  const allowed = await can("music", "updateSong");
+  if (!allowed) {
     return {
       ok: false,
-      error: "O módulo de música não está ativo para seu perfil ou departamento.",
+      error: "Você não tem permissão para editar músicas.",
     };
   }
 
@@ -293,22 +269,18 @@ export async function updateSongAction(
 }
 
 export async function deleteSongAction(
-  formData: FormData,
+  input: FormData | string,
 ): Promise<SongActionResult> {
-  const { organization, session, isAdmin } = await requireOrganizationContext();
-  const hasAccess = await canAccessMusicModule(
-    organization.id,
-    session.user.id,
-    isAdmin,
-  );
-  if (!hasAccess) {
+  const { organization } = await requireOrganizationContext();
+  const allowed = await can("music", "deleteSong");
+  if (!allowed) {
     return {
       ok: false,
-      error: "O módulo de música não está ativo para seu perfil ou departamento.",
+      error: "Você não tem permissão para excluir músicas.",
     };
   }
 
-  const songId = formData.get("songId");
+  const songId = typeof input === "string" ? input : input.get("songId");
   if (typeof songId !== "string" || !songId) {
     return { ok: false, error: "Música inválida." };
   }

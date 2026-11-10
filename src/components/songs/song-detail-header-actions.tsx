@@ -32,12 +32,24 @@ import type { SongRecord } from "@/lib/songs";
 import { DeleteSongDialog } from "./delete-song-dialog";
 import { SongFormDialog } from "./song-form-dialog";
 
-export function SongDetailHeaderActions({ song }: { song: SongRecord }) {
+export function SongDetailHeaderActions({
+  song,
+  canUpdate = true,
+  canDelete = true,
+}: {
+  song: SongRecord;
+  canUpdate?: boolean;
+  canDelete?: boolean;
+}) {
   const router = useRouter();
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  if (!canUpdate && !canDelete) {
+    return null;
+  }
 
   return (
     <>
@@ -70,31 +82,37 @@ export function SongDetailHeaderActions({ song }: { song: SongRecord }) {
             </DrawerHeader>
 
             <div className="flex flex-col gap-1 p-3">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setMenuOpen(false);
-                  setEditOpen(true);
-                }}
-                className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium"
-              >
-                <PencilIcon className="size-4 text-muted-foreground" />
-                <span>Editar música</span>
-              </Button>
+              {canUpdate ? (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setEditOpen(true);
+                  }}
+                  className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium"
+                >
+                  <PencilIcon className="size-4 text-muted-foreground" />
+                  <span>Editar música</span>
+                </Button>
+              ) : null}
 
-              <div className="my-1 border-t border-border/60" />
+              {canUpdate && canDelete ? (
+                <div className="my-1 border-t border-border/60" />
+              ) : null}
 
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setMenuOpen(false);
-                  setDeleteOpen(true);
-                }}
-                className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive"
-              >
-                <Trash2Icon className="size-4" />
-                <span>Excluir música</span>
-              </Button>
+              {canDelete ? (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setDeleteOpen(true);
+                  }}
+                  className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2Icon className="size-4" />
+                  <span>Excluir música</span>
+                </Button>
+              ) : null}
             </div>
 
             <DrawerFooter className="border-t pt-2 pb-4">
@@ -120,18 +138,22 @@ export function SongDetailHeaderActions({ song }: { song: SongRecord }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem onClick={() => setEditOpen(true)}>
-              <PencilIcon className="size-4 mr-2" />
-              Editar música
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => setDeleteOpen(true)}
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2Icon className="size-4 mr-2" />
-              Excluir música
-            </DropdownMenuItem>
+            {canUpdate ? (
+              <DropdownMenuItem onClick={() => setEditOpen(true)}>
+                <PencilIcon className="size-4 mr-2" />
+                Editar música
+              </DropdownMenuItem>
+            ) : null}
+            {canUpdate && canDelete ? <DropdownMenuSeparator /> : null}
+            {canDelete ? (
+              <DropdownMenuItem
+                onClick={() => setDeleteOpen(true)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2Icon className="size-4 mr-2" />
+                Excluir música
+              </DropdownMenuItem>
+            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
       )}
