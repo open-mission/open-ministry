@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import type { NavGroup } from "@/components/app/nav-config";
 
-export type ModuleKey = "music";
+export type ModuleKey = "agenda" | "schedules" | "music" | "announcements";
 
 export type SystemModule = {
   key: ModuleKey;
@@ -11,4 +11,5 @@ export type SystemModule = {
   badge?: string;
   icon: LucideIcon;
   navGroups: NavGroup[];
+  routePrefixes: string[];
 };

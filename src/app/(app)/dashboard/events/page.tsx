@@ -14,6 +14,7 @@ import {
   toInputDate,
 } from "@/lib/events";
 import { requireOrganizationContext } from "@/lib/organizations";
+import { can } from "@/lib/permissions/service";
 
 export const metadata: Metadata = {
   title: "Cultos e eventos",
@@ -31,6 +32,23 @@ async function EventsContent() {
   await connection();
 
   const { organization, isAdmin } = await requireOrganizationContext();
+
+  const hasAccess = await can("agenda", "read");
+  if (!hasAccess) {
+    return (
+      <div className="mx-auto flex w-full max-w-4xl flex-col items-center justify-center gap-4 py-16 text-center">
+        <div className="space-y-1.5">
+          <h1 className="font-heading text-2xl font-bold tracking-tight">
+            Módulo de Agenda não disponível
+          </h1>
+          <p className="max-w-md text-sm text-muted-foreground">
+            O módulo de Agenda não está liberado para sua igreja ou departamento.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const [events, departments] = await Promise.all([
     listEvents(organization.id),
     listDepartments(organization.id),
@@ -42,6 +60,21 @@ async function EventsContent() {
   }));
   const defaultDate = toInputDate(new Date());
 
+  const allowedDepartments = isAdmin
+    ? departmentOptions
+    : (
+        await Promise.all(
+          departmentOptions.map(async (d) => ({
+            d,
+            allowed: await can("agenda", "createEvent", { departmentId: d.id }),
+          })),
+        )
+      )
+        .filter((item) => item.allowed)
+        .map((item) => item.d);
+
+  const canCreate = isAdmin || allowedDepartments.length > 0;
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -50,9 +83,9 @@ async function EventsContent() {
             Cultos e eventos
           </h1>
         </div>
-        {isAdmin ? (
+        {canCreate ? (
           <CreateEventDialog
-            departments={departmentOptions}
+            departments={allowedDepartments}
             defaultDate={defaultDate}
           />
         ) : null}

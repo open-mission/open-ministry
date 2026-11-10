@@ -9,7 +9,10 @@ import { listDepartments } from "@/lib/departments";
 import { SYSTEM_MODULES } from "./registry";
 import type { ModuleKey } from "./types";
 
-export { buildAccessibleNavGroups } from "./nav";
+export {
+  buildAccessibleNavGroups,
+  buildAccessibleMobileNavItems,
+} from "./nav";
 
 /**
  * Retorna as chaves dos módulos ativos de um departamento.
@@ -78,32 +81,59 @@ export async function getUserAccessibleModuleKeys(
   userId: string,
   isAdmin: boolean,
 ): Promise<ModuleKey[]> {
-  // Administradores e owners têm acesso irrestrito a todos os módulos disponíveis
-  if (isAdmin) {
-    return Object.keys(SYSTEM_MODULES) as ModuleKey[];
-  }
-
   return remember(
-    `org:${organizationId}:user:${userId}:modules`,
+    `org:${organizationId}:user:${userId}:modules:${isAdmin ? "admin" : "member"}`,
     120,
     async () => {
+      // 1. Obter módulos habilitados na organização
+      const orgModuleRows = await db.query.organizationModule.findMany({
+        where: eq(schema.organizationModule.organizationId, organizationId),
+      });
+
+      // Se não houver registros gravados, assume os 4 iniciais habilitados
+      const enabledOrgModules = new Set<ModuleKey>(
+        orgModuleRows.length > 0
+          ? orgModuleRows
+              .filter((r) => r.enabled)
+              .map((r) => r.moduleKey as ModuleKey)
+          : (Object.keys(SYSTEM_MODULES) as ModuleKey[]),
+      );
+
+      if (isAdmin) {
+        return Array.from(enabledOrgModules);
+      }
+
+      // 2. Para membro comum:
       const departments = await listDepartments(organizationId);
       const userDepartments = departments.filter((dept) =>
         dept.members.some((m) => m.person?.userId === userId),
       );
 
       const activeKeys = new Set<ModuleKey>();
+
+      // Se Música estiver ativa na igreja, membro tem acesso à leitura
+      if (enabledOrgModules.has("music")) {
+        activeKeys.add("music");
+      }
+
       for (const dept of userDepartments) {
         if (dept.modules) {
           for (const mod of dept.modules) {
-            activeKeys.add(mod.moduleKey as ModuleKey);
+            const key = mod.moduleKey as ModuleKey;
+            if (enabledOrgModules.has(key)) {
+              activeKeys.add(key);
+            }
           }
         }
       }
 
       return Array.from(activeKeys);
     },
-    [`departments:${organizationId}`, `modules:${organizationId}`],
+    [
+      `departments:${organizationId}`,
+      `modules:${organizationId}`,
+      `permissions:${organizationId}`,
+    ],
   );
 }
 
@@ -116,9 +146,6 @@ export async function isModuleActiveForUser(
   moduleKey: ModuleKey,
   isAdmin: boolean,
 ): Promise<boolean> {
-  if (isAdmin) {
-    return true;
-  }
   const accessibleKeys = await getUserAccessibleModuleKeys(
     organizationId,
     userId,

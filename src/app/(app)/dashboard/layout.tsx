@@ -14,7 +14,7 @@ import {
 import { MobileMenuLoader } from "@/components/app/mobile-menu-loader";
 import { MobileMenuProvider } from "@/components/app/mobile-menu";
 import { SettingsModalProvider } from "@/components/settings/settings-modal-provider";
-import { MobileNav } from "@/components/app/mobile-nav";
+import { MobileNavLoader } from "@/components/app/mobile-nav-loader";
 import { MobileNavShell } from "@/components/app/mobile-nav-shell";
 import { NotificationBarLoader } from "@/components/app/notification-bar-loader";
 import { NotificationBellFallback, NotificationBellLoader } from "@/components/app/notification-bell-loader";
@@ -86,7 +86,7 @@ export default function DashboardLayout({
                 {children}
               </div>
               <Suspense fallback={<MobileNavShell />}>
-                <MobileNav />
+                <MobileNavLoader />
               </Suspense>
               <Suspense fallback={null}>
                 <MobileMenuLoader />

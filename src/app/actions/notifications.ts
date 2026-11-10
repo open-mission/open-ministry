@@ -8,7 +8,6 @@ import { z } from "zod";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { cacheInvalidateTags } from "@/lib/cache";
-import { listUserLeaderDepartments } from "@/lib/departments";
 import {
   createNotifications,
   listNotifications,
@@ -23,6 +22,7 @@ import {
 } from "@/lib/notification-service";
 import { sendWebPushToUser } from "@/lib/push-notifications";
 import { getOrganizationContext } from "@/lib/organizations";
+import { can } from "@/lib/permissions/service";
 
 export type AnnouncementFormState =
   | {
@@ -175,54 +175,38 @@ export async function sendAnnouncementAction(
     };
   }
 
-  const isChurchAdmin = context.isAdmin;
-  const userLeaderDepartments = await listUserLeaderDepartments(
-    context.organization.id,
-    context.session.user.id,
-  );
-  const isLeader = userLeaderDepartments.length > 0;
-
-  if (!isChurchAdmin && !isLeader) {
-    return {
-      error:
-        "Você precisa ser administrador ou líder de departamento para enviar avisos.",
-    };
-  }
-
-  // Permission checks by audience type
+  // Permission checks by audience type via centralized permission evaluator
   const { data } = parsed;
 
   if (data.audienceType === "all") {
-    if (!isChurchAdmin) {
+    const allowed = await can("announcements", "sendAll");
+    if (!allowed) {
       return {
         error:
-          "Apenas administradores da igreja podem enviar avisos para toda a comunidade.",
+          "Você não tem permissão para enviar avisos para toda a comunidade.",
       };
     }
   } else if (data.audienceType === "department") {
     const targetDeptId = data.departmentId!;
-    const isLeaderOfTarget = userLeaderDepartments.some(
-      (dept) => dept.id === targetDeptId,
-    );
-    if (!isChurchAdmin && !isLeaderOfTarget) {
+    const allowed = await can("announcements", "sendDepartment", {
+      departmentId: targetDeptId,
+    });
+    if (!allowed) {
       return {
         error:
-          "Você só pode enviar avisos para os departamentos que você lidera.",
+          "Você não tem permissão para enviar avisos para este departamento.",
       };
     }
   } else if (data.audienceType === "person") {
     const targetPersonId = data.personId!;
-    if (!isChurchAdmin) {
-      // Must be a member of one of the departments led by current user
-      const isMemberOfLedDept = userLeaderDepartments.some((dept) =>
-        dept.members.some((m) => m.personId === targetPersonId),
-      );
-      if (!isMemberOfLedDept) {
-        return {
-          error:
-            "Você só pode enviar avisos para membros dos departamentos que você lidera.",
-        };
-      }
+    const allowed = await can("announcements", "sendPerson", {
+      targetPersonId,
+    });
+    if (!allowed) {
+      return {
+        error:
+          "Você não tem permissão para enviar avisos para esta pessoa.",
+      };
     }
   }
 
@@ -472,6 +456,15 @@ export async function getRecentNotificationsAction(
 export async function retryAnnouncementWhatsAppAction(
   batchId?: string,
 ): Promise<{ ok: boolean; count: number; error?: string }> {
+  const allowed = await can("announcements", "retryDelivery");
+  if (!allowed) {
+    return {
+      ok: false,
+      count: 0,
+      error: "Você não tem permissão para reenviar avisos.",
+    };
+  }
+
   const context = await getOrganizationContext();
   if (!context) {
     return { ok: false, count: 0, error: "Sua sessão expirou." };
@@ -485,6 +478,14 @@ export async function retryAnnouncementWhatsAppAction(
 export async function retryAnnouncementSingleWhatsAppAction(
   logId: string,
 ): Promise<{ ok: boolean; error?: string }> {
+  const allowed = await can("announcements", "retryDelivery");
+  if (!allowed) {
+    return {
+      ok: false,
+      error: "Você não tem permissão para reenviar avisos.",
+    };
+  }
+
   const context = await getOrganizationContext();
   if (!context) {
     return { ok: false, error: "Sua sessão expirou." };

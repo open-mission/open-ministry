@@ -16,11 +16,13 @@ import {
 } from "@/lib/availability";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { ensurePersonForUser } from "@/lib/people";
+import { requirePermission } from "@/lib/permissions/service";
 import type { AvailabilityPeriod } from "@/db/schema/people";
 
 export async function getMyAvailabilityAction(): Promise<MyAvailabilityResult | null> {
   const context = await requireOrganizationContext();
   if (!context) return null;
+  await requirePermission("schedules", "manageOwnAvailability");
 
   const person = await ensurePersonForUser(context.organization.id, {
     id: context.session.user.id,
@@ -71,6 +73,7 @@ export async function saveMyAvailabilityAction(payload: {
   if (!context) {
     return { ok: false, error: "Sua sessão expirou." };
   }
+  await requirePermission("schedules", "manageOwnAvailability");
 
   const person = await ensurePersonForUser(context.organization.id, {
     id: context.session.user.id,
@@ -131,6 +134,15 @@ export async function getPersonAvailabilityAction(
 ): Promise<DayAvailability[]> {
   const context = await requireOrganizationContext();
   if (!context) return [];
+  await requirePermission("schedules", "read");
+
+  const person = await db.query.person.findFirst({
+    where: and(
+      eq(schema.person.id, personId),
+      eq(schema.person.organizationId, context.organization.id),
+    ),
+  });
+  if (!person) return [];
 
   const rows = await db.query.personAvailability.findMany({
     where: and(
@@ -154,6 +166,7 @@ export async function getPersonAvailabilityAction(
 export async function getMyUnavailabilitiesAction(): Promise<PersonUnavailabilityItem[]> {
   const context = await requireOrganizationContext();
   if (!context) return [];
+  await requirePermission("schedules", "manageOwnAvailability");
 
   const person = await ensurePersonForUser(context.organization.id, {
     id: context.session.user.id,
@@ -196,6 +209,7 @@ export async function saveUnavailabilityAction(payload: {
   if (!context) {
     return { ok: false, error: "Sua sessão expirou." };
   }
+  await requirePermission("schedules", "manageOwnAvailability");
 
   const dateTrimmed = payload.date?.trim();
   if (!dateTrimmed || !/^\d{4}-\d{2}-\d{2}$/.test(dateTrimmed)) {
@@ -265,6 +279,7 @@ export async function deleteUnavailabilityAction(
   if (!context) {
     return { ok: false, error: "Sua sessão expirou." };
   }
+  await requirePermission("schedules", "manageOwnAvailability");
 
   const person = await ensurePersonForUser(context.organization.id, {
     id: context.session.user.id,
@@ -311,6 +326,9 @@ export async function checkPersonAvailabilityForEventAction(
   period: AvailabilityPeriod;
   notes?: string | null;
 }> {
+  await requireOrganizationContext();
+  await requirePermission("schedules", "read");
+
   const dateStr = formatDateToYYYYMMDD(eventStartsAt);
   const dayOfWeek = eventStartsAt.getDay();
   const period = getPeriodFromDate(eventStartsAt);
@@ -367,6 +385,7 @@ export async function getEventUnavailablePeopleAction(
 ): Promise<Record<string, { isBlocked: boolean; reason?: string | null }>> {
   const context = await requireOrganizationContext();
   if (!context) return {};
+  await requirePermission("schedules", "read");
 
   const event = await db.query.event.findFirst({
     where: and(

@@ -4,6 +4,7 @@ import { MenuIcon } from "lucide-react";
 import {
   isNavItemActive,
   mobileNavItems,
+  type NavItem,
 } from "@/components/app/nav-config";
 import { cn } from "@/lib/utils";
 
@@ -11,18 +12,28 @@ export function MobileNavShell({
   activeHref,
   onMenuClick,
   isMenuOpen = false,
+  items = mobileNavItems,
 }: {
   activeHref?: string;
   onMenuClick?: () => void;
   isMenuOpen?: boolean;
+  items?: NavItem[];
 }) {
+  const colCount = items.length + 1; // +1 para o botão Menu
+  const gridColsClass =
+    colCount === 2
+      ? "grid-cols-2"
+      : colCount === 3
+        ? "grid-cols-3"
+        : "grid-cols-4";
+
   return (
     <nav
       aria-label="Navegação principal"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_-18px_rgba(23,38,31,0.35)] backdrop-blur-xl md:hidden"
     >
-      <div className="grid grid-cols-4 items-stretch px-1 pt-1 pb-1.5">
-        {mobileNavItems.map((item) => {
+      <div className={cn("grid items-stretch px-1 pt-1 pb-1.5", gridColsClass)}>
+        {items.map((item) => {
           const isActive = activeHref
             ? isNavItemActive(item, activeHref)
             : false;

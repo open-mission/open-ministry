@@ -35,6 +35,7 @@ import { eventKindLabels, type EventKind } from "@/lib/event-options";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { listPeople } from "@/lib/people";
 import { personDisplayImage } from "@/lib/person-format";
+import { can } from "@/lib/permissions/service";
 import { listSongs } from "@/lib/songs";
 
 export const metadata: Metadata = {
@@ -63,11 +64,22 @@ async function EventContent({
   const { eventId } = await params;
   const { organization, session, isAdmin } =
     await requireOrganizationContext();
+
+  const hasAccess = await can("agenda", "read");
+  if (!hasAccess) {
+    notFound();
+  }
+
   const event = await getEvent(organization.id, eventId);
 
   if (!event) {
     notFound();
   }
+
+  const [canEditEvent, canDeleteEvent] = await Promise.all([
+    can("agenda", "updateEvent", { eventId: event.id }),
+    can("agenda", "deleteEvent", { eventId: event.id }),
+  ]);
 
   const [departments, people, unavailablePeopleMap, songs] = await Promise.all([
     listDepartments(organization.id),
@@ -87,14 +99,9 @@ async function EventContent({
   const defaultDuration = Math.round(
     (event.endsAt.getTime() - event.startsAt.getTime()) / 60_000,
   );
-  const canManagePlan =
-    isAdmin ||
-    actingDepartments.some((department) =>
-      department.members.some(
-        (member) =>
-          member.person?.userId === session.user.id && member.isLeader,
-      ),
-    );
+  const canManagePlan = await can("schedules", "editPlan", {
+    eventId: event.id,
+  });
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
@@ -164,31 +171,35 @@ async function EventContent({
             </div>
           </div>
 
-          {isAdmin ? (
+          {canEditEvent || canDeleteEvent ? (
             <div className="flex shrink-0 items-center gap-1.5">
-              <EditEventDialog
-                event={{
-                  id: event.id,
-                  title: event.title,
-                  description: event.description,
-                  kind: event.kind,
-                  location: event.location,
-                  seriesId: event.seriesId,
-                }}
-                departments={departments.map((department) => ({
-                  id: department.id,
-                  name: department.name,
-                }))}
-                selectedDepartmentIds={[...actingIds]}
-                defaultDate={toInputDate(event.startsAt)}
-                defaultTime={toInputTime(event.startsAt)}
-                defaultDuration={defaultDuration}
-              />
-              <DeleteEventButton
-                eventId={event.id}
-                eventTitle={event.title}
-                seriesId={event.seriesId}
-              />
+              {canEditEvent ? (
+                <EditEventDialog
+                  event={{
+                    id: event.id,
+                    title: event.title,
+                    description: event.description,
+                    kind: event.kind,
+                    location: event.location,
+                    seriesId: event.seriesId,
+                  }}
+                  departments={departments.map((department) => ({
+                    id: department.id,
+                    name: department.name,
+                  }))}
+                  selectedDepartmentIds={[...actingIds]}
+                  defaultDate={toInputDate(event.startsAt)}
+                  defaultTime={toInputTime(event.startsAt)}
+                  defaultDuration={defaultDuration}
+                />
+              ) : null}
+              {canDeleteEvent ? (
+                <DeleteEventButton
+                  eventId={event.id}
+                  eventTitle={event.title}
+                  seriesId={event.seriesId}
+                />
+              ) : null}
             </div>
           ) : null}
         </div>

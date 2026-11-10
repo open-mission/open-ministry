@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { BellIcon, MegaphoneIcon } from "lucide-react";
+import { BellIcon, MegaphoneIcon, ShieldAlertIcon } from "lucide-react";
 
 import { PageInfo } from "@/components/app/page-info";
 import { AnnouncementsConsole } from "@/components/announcements/announcements-console";
@@ -21,6 +21,7 @@ import {
 import { getOrganizationEvolutionConfig } from "@/lib/notification-service";
 import { listPeople, personDisplayName } from "@/lib/people";
 import { requireOrganizationContext } from "@/lib/organizations";
+import { can } from "@/lib/permissions/service";
 
 export const metadata: Metadata = {
   title: "Avisos & Comunicados",
@@ -40,6 +41,25 @@ async function AnnouncementsContent() {
   const { organization, session, isAdmin } =
     await requireOrganizationContext();
 
+  const hasAccess = await can("announcements", "read");
+  if (!hasAccess) {
+    return (
+      <div className="mx-auto flex w-full max-w-4xl flex-col items-center justify-center gap-4 py-16 text-center">
+        <span className="flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+          <ShieldAlertIcon className="size-7" />
+        </span>
+        <div className="space-y-1.5">
+          <h1 className="font-heading text-2xl font-bold tracking-tight">
+            Módulo de Avisos não disponível
+          </h1>
+          <p className="max-w-md text-sm text-muted-foreground">
+            O módulo de Avisos não está liberado para sua igreja ou departamento.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const [
     notifications,
     unreadCount,
@@ -47,6 +67,8 @@ async function AnnouncementsContent() {
     allDepartments,
     people,
     evolutionResult,
+    canSendAll,
+    canRetryDelivery,
   ] = await Promise.all([
     listNotifications(organization.id, session.user.id, 50),
     countUnreadNotifications(organization.id, session.user.id),
@@ -54,9 +76,11 @@ async function AnnouncementsContent() {
     isAdmin ? listDepartments(organization.id) : Promise.resolve([]),
     listPeople(organization.id),
     getOrganizationEvolutionConfig(organization.id),
+    can("announcements", "sendAll"),
+    can("announcements", "retryDelivery"),
   ]);
 
-  const canSendAnnouncement = isAdmin || leaderDepartments.length > 0;
+  const canSendAnnouncement = canSendAll || leaderDepartments.length > 0;
   const sentAnnouncements = canSendAnnouncement
     ? await listSentAnnouncementsWithReadReceipts(
         organization.id,
@@ -111,11 +135,11 @@ async function AnnouncementsContent() {
         </div>
       </header>
 
-      {/* Console de Envio (Apenas se for Admin ou Líder de Departamento) */}
+      {/* Console de Envio (Apenas se tiver capacidade de envio) */}
       {canSendAnnouncement ? (
         <section className="space-y-4">
           <AnnouncementsConsole
-            isAdmin={isAdmin}
+            isAdmin={canSendAll}
             departments={departmentOptions}
             people={availablePeople}
             isWhatsAppConfigured={Boolean(evolutionResult.config)}
@@ -127,7 +151,10 @@ async function AnnouncementsContent() {
 
       {/* Confirmações de Leitura e Histórico de Envios */}
       {canSendAnnouncement && sentAnnouncements.length > 0 ? (
-        <SentAnnouncementsList announcements={sentAnnouncements} />
+        <SentAnnouncementsList
+          announcements={sentAnnouncements}
+          canRetry={canRetryDelivery}
+        />
       ) : null}
 
       {/* Feed de Avisos e Notificações Recentes */}

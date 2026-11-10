@@ -5,16 +5,16 @@ import { and, asc, eq, ilike, or } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { cacheInvalidateTags, remember } from "@/lib/cache";
-import { isModuleActiveForUser } from "@/lib/modules/service";
+import { can } from "@/lib/permissions/service";
 
 export type SongRecord = typeof schema.song.$inferSelect;
 
 export async function canAccessMusicModule(
-  organizationId: string,
-  userId: string,
-  isAdmin: boolean,
+  _organizationId?: string,
+  _userId?: string,
+  _isAdmin?: boolean,
 ): Promise<boolean> {
-  return isModuleActiveForUser(organizationId, userId, "music", isAdmin);
+  return can("music", "read");
 }
 
 export async function listSongs(
