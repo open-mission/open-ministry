@@ -86,9 +86,17 @@ export async function getUserAccessibleModuleKeys(
     120,
     async () => {
       // 1. Obter módulos habilitados na organização
-      const orgModuleRows = await db.query.organizationModule.findMany({
-        where: eq(schema.organizationModule.organizationId, organizationId),
-      });
+      let orgModuleRows: (typeof schema.organizationModule.$inferSelect)[] = [];
+      try {
+        orgModuleRows = await db.query.organizationModule.findMany({
+          where: eq(schema.organizationModule.organizationId, organizationId),
+        });
+      } catch (error) {
+        console.warn(
+          "[modules] Falha ao consultar organization_module; assumindo módulos padrão:",
+          error,
+        );
+      }
 
       // Se não houver registros gravados, assume os 4 iniciais habilitados
       const enabledOrgModules = new Set<ModuleKey>(

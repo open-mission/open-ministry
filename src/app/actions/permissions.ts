@@ -50,9 +50,17 @@ export async function getOrganizationPermissionSettingsAction(): Promise<
   const orgId = context.organization.id;
 
   // Carrega disponibilidade dos módulos
-  const moduleRows = await db.query.organizationModule.findMany({
-    where: eq(schema.organizationModule.organizationId, orgId),
-  });
+  let moduleRows: (typeof schema.organizationModule.$inferSelect)[] = [];
+  try {
+    moduleRows = await db.query.organizationModule.findMany({
+      where: eq(schema.organizationModule.organizationId, orgId),
+    });
+  } catch (error) {
+    console.warn(
+      "[permissions] Falha ao consultar organizationModule; assumindo padrão:",
+      error,
+    );
+  }
 
   const modules: OrganizationModuleSetting[] = MODULE_KEYS.map((key) => {
     const row = moduleRows.find((r) => r.moduleKey === key);
