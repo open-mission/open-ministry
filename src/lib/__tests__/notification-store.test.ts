@@ -7,6 +7,7 @@ const { notificationStore } = await import("@/lib/notification-store");
 
 describe("Optimistic Notification Store", () => {
   beforeEach(() => {
+    notificationStore.resetForTesting();
     // Reset store state
     notificationStore.init({
       count: 3,

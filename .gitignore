@@ -43,6 +43,9 @@ next-env.d.ts
 
 # agent tooling
 /.commandcode/
+/.agents/
+skills-lock.json
+*report.md
 
 # design review artifacts
 /.impeccable/review/

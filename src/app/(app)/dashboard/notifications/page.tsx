@@ -25,6 +25,7 @@ import {
 import { getOrganizationEvolutionConfig } from "@/lib/notification-service";
 import { listPeople, personDisplayName } from "@/lib/people";
 import { requireOrganizationContext } from "@/lib/organizations";
+import { can, isOrganizationModuleEnabled } from "@/lib/permissions/service";
 
 export const metadata: Metadata = {
   title: "Notificações",
@@ -50,6 +51,8 @@ async function NotificationsContent() {
     allDepartments,
     people,
     evolutionResult,
+    isAnnouncementsActive,
+    canBroadcastAll,
   ] = await Promise.all([
     listNotifications(organization.id, session.user.id, 50),
     countUnreadNotifications(organization.id, session.user.id),
@@ -57,9 +60,12 @@ async function NotificationsContent() {
     isAdmin ? listDepartments(organization.id) : Promise.resolve([]),
     listPeople(organization.id),
     getOrganizationEvolutionConfig(organization.id),
+    isOrganizationModuleEnabled(organization.id, "announcements"),
+    can("announcements", "sendAll"),
   ]);
 
-  const canSendAnnouncement = isAdmin || leaderDepartments.length > 0;
+  const canSendAnnouncement =
+    isAnnouncementsActive && (canBroadcastAll || leaderDepartments.length > 0);
   const availableDepartments = isAdmin ? allDepartments : leaderDepartments;
 
   const ledDeptIds = new Set(leaderDepartments.map((d) => d.id));
@@ -118,7 +124,7 @@ async function NotificationsContent() {
             <AnnouncementDialog
               departments={departmentOptions}
               people={availablePeople}
-              canBroadcastAll={isAdmin}
+              canBroadcastAll={canBroadcastAll}
               isWhatsAppConfigured={Boolean(evolutionResult.config)}
             />
           ) : null}

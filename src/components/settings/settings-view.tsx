@@ -37,9 +37,17 @@ import { OfflineCacheCard } from "@/components/settings/offline-cache-card";
 import { PasskeysCard } from "@/components/settings/passkeys-card";
 import { PwaInstallCard } from "@/components/settings/pwa-install-card";
 import { ThemePreferenceCard } from "@/components/settings/theme-preference-card";
+import { ModulePermissionsCard } from "@/components/settings/module-permissions-card";
+import type { OrganizationPermissionSettingsData } from "@/app/actions/permissions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import type { CalendarPreferences } from "@/lib/calendar";
 import { getDepartmentTerminology, parseChurchMetadata } from "@/lib/church";
 import { getInitials, roleLabel } from "@/lib/format";
@@ -73,6 +81,7 @@ export type SettingsViewProps = {
   departmentsCount: number;
   evolutionSettings: EvolutionSettingsView | null;
   messageTemplates: ResolvedTemplate[];
+  permissionSettings?: OrganizationPermissionSettingsData | null;
   isModal?: boolean;
 };
 
@@ -88,6 +97,7 @@ export type SettingsSection =
   | "templates"
   | "church"
   | "nomenclature"
+  | "permissions"
   | "about";
 
 type SettingsNavItem = {
@@ -117,6 +127,7 @@ export function SettingsView({
   departmentsCount,
   evolutionSettings,
   messageTemplates,
+  permissionSettings,
   isModal = false,
 }: SettingsViewProps) {
   const churchMeta = parseChurchMetadata(organization.metadata);
@@ -240,6 +251,13 @@ export function SettingsView({
                 icon: LayersIcon,
                 color: "bg-orange-500 text-white",
               },
+              {
+                id: "permissions" as const,
+                label: "Módulos & Permissões",
+                subtitle: "Disponibilidade e papéis",
+                icon: ShieldCheckIcon,
+                color: "bg-indigo-600 text-white",
+              },
             ]
           : []),
       ],
@@ -288,7 +306,16 @@ export function SettingsView({
       case "whatsapp":
         return evolutionSettings ? (
           <AdminEvolutionApiCard initialSettings={evolutionSettings} />
-        ) : null;
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-heading text-lg">WhatsApp (Evolution API)</CardTitle>
+              <CardDescription>
+                A integração do WhatsApp ainda não está configurada para esta igreja.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        );
       case "templates":
         return (
           <MessageTemplatesCard
@@ -311,10 +338,32 @@ export function SettingsView({
             initialNomenclature={churchMeta.departmentNomenclature}
           />
         );
+      case "permissions":
+        return permissionSettings ? (
+          <ModulePermissionsCard initialSettings={permissionSettings} />
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-heading text-lg">Módulos & Permissões</CardTitle>
+              <CardDescription>
+                Não foi possível carregar as configurações de permissões no momento.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        );
       case "about":
         return <AboutCard />;
       default:
-        return null;
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-heading text-lg">Configurações</CardTitle>
+              <CardDescription>
+                Selecione uma opção na lista ao lado para visualizar e editar as preferências.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        );
     }
   }
 

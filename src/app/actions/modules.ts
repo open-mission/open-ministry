@@ -6,6 +6,7 @@ import { getDepartmentAccess } from "@/lib/departments";
 import type { ModuleKey } from "@/lib/modules";
 import { setDepartmentModuleEnabled } from "@/lib/modules/service";
 import { requireOrganizationContext } from "@/lib/organizations";
+import { isValidModule } from "@/lib/permissions/catalog";
 
 export type ToggleDepartmentModuleResult = {
   ok: boolean;
@@ -23,7 +24,7 @@ export async function toggleDepartmentModuleAction(
     return { ok: false, error: "Departamento inválido." };
   }
 
-  if (typeof moduleKey !== "string" || !moduleKey) {
+  if (typeof moduleKey !== "string" || !moduleKey || !isValidModule(moduleKey)) {
     return { ok: false, error: "Módulo inválido." };
   }
 

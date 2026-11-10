@@ -6,7 +6,8 @@ import { ShieldAlertIcon } from "lucide-react";
 import { SongsListView } from "@/components/songs/songs-list-view";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrganizationContext } from "@/lib/organizations";
-import { canAccessMusicModule, listSongCollections, listSongs } from "@/lib/songs";
+import { can } from "@/lib/permissions/service";
+import { listSongCollections, listSongs } from "@/lib/songs";
 
 export const metadata: Metadata = {
   title: "Músicas & Repertório",
@@ -24,12 +25,11 @@ export default function SongsPage() {
 async function SongsContent() {
   await connection();
 
-  const { organization, session, isAdmin } = await requireOrganizationContext();
-  const hasAccess = await canAccessMusicModule(
-    organization.id,
-    session.user.id,
-    isAdmin,
-  );
+  const { organization } = await requireOrganizationContext();
+  const [hasAccess, canCreate] = await Promise.all([
+    can("music", "read"),
+    can("music", "createSong"),
+  ]);
 
   if (!hasAccess) {
     return (
@@ -42,9 +42,8 @@ async function SongsContent() {
             Módulo de Música não ativado
           </h1>
           <p className="max-w-md text-sm text-muted-foreground">
-            O módulo de Repertório Musical não está liberado para seus
-            departamentos. Um líder de departamento ou administrador da igreja
-            pode ativá-lo na página de Departamentos.
+            O módulo de Repertório Musical não está liberado para sua igreja ou
+            departamento.
           </p>
         </div>
       </div>
@@ -61,7 +60,7 @@ async function SongsContent() {
       <SongsListView
         songs={songs}
         existingCollections={collections}
-        canManage={true}
+        canManage={canCreate}
       />
     </div>
   );

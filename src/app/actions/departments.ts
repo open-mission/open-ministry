@@ -15,6 +15,7 @@ import {
   getDepartmentMemberWithDepartment,
   getFunctionWithDepartment,
 } from "@/lib/departments";
+import { seedDepartmentModules } from "@/lib/permissions/provisioning";
 import { EXPERIENCE_LEVELS } from "@/lib/experience";
 import { getOrganizationContext } from "@/lib/organizations";
 import { getPerson } from "@/lib/people";
@@ -244,6 +245,7 @@ export async function createDepartmentAction(
       name: parsed.data.name,
       description: parsed.data.description ?? null,
     });
+    await seedDepartmentModules(result.context.organization.id, departmentId);
   } catch (error) {
     if (isUniqueViolation(error)) {
       return {

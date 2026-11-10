@@ -21,7 +21,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDate } from "@/lib/format";
 import { requireOrganizationContext } from "@/lib/organizations";
-import { canAccessMusicModule, getSong } from "@/lib/songs";
+import { can } from "@/lib/permissions/service";
+import { getSong } from "@/lib/songs";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -48,13 +49,13 @@ async function SongDetailContent({
   await connection();
 
   const { songId } = await params;
-  const { organization, session, isAdmin } = await requireOrganizationContext();
+  const { organization } = await requireOrganizationContext();
 
-  const hasAccess = await canAccessMusicModule(
-    organization.id,
-    session.user.id,
-    isAdmin,
-  );
+  const [hasAccess, canUpdate, canDelete] = await Promise.all([
+    can("music", "read"),
+    can("music", "updateSong"),
+    can("music", "deleteSong"),
+  ]);
   if (!hasAccess) {
     notFound();
   }
@@ -104,7 +105,11 @@ async function SongDetailContent({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <SongDetailHeaderActions song={song} />
+            <SongDetailHeaderActions
+              song={song}
+              canUpdate={canUpdate}
+              canDelete={canDelete}
+            />
           </div>
         </div>
 

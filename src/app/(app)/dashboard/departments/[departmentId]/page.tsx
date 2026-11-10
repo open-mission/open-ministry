@@ -7,6 +7,7 @@ import { ArrowLeftIcon, CrownIcon, MegaphoneIcon } from "lucide-react";
 
 import { DeleteDepartmentButton } from "@/components/departments/delete-department-button";
 import { DepartmentModulesSection } from "@/components/departments/department-modules-section";
+import { DepartmentPermissionsSection } from "@/components/departments/department-permissions-section";
 import { EditDepartmentDialog } from "@/components/departments/edit-department-dialog";
 import { FunctionsSection } from "@/components/departments/functions-section";
 import { PeopleSection } from "@/components/departments/people-section";
@@ -14,9 +15,12 @@ import { AnnouncementDialog } from "@/components/notifications/announcement-dial
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { listDepartmentGrantsAction } from "@/app/actions/department-permissions";
 import { getDepartmentAccess } from "@/lib/departments";
 import { getOrganizationEvolutionConfig } from "@/lib/notification-service";
 import { requireOrganizationContext } from "@/lib/organizations";
+import { MODULE_KEYS } from "@/lib/permissions/catalog";
+import { isOrganizationModuleEnabled } from "@/lib/permissions/service";
 import {
   listPeople,
   personDisplayEmail,
@@ -48,20 +52,30 @@ async function DepartmentContent({
 
   const { departmentId } = await params;
   const context = await requireOrganizationContext();
-  const [access, people, evolutionResult] = await Promise.all([
-    getDepartmentAccess(
-      context.organization.id,
-      departmentId,
-      context.session.user.id,
-      context.isAdmin,
-    ),
-    listPeople(context.organization.id),
-    getOrganizationEvolutionConfig(context.organization.id),
-  ]);
+  const [access, people, evolutionResult, grantsResult, ...moduleAvailabilities] =
+    await Promise.all([
+      getDepartmentAccess(
+        context.organization.id,
+        departmentId,
+        context.session.user.id,
+        context.isAdmin,
+      ),
+      listPeople(context.organization.id),
+      getOrganizationEvolutionConfig(context.organization.id),
+      listDepartmentGrantsAction(departmentId),
+      ...MODULE_KEYS.map((key) =>
+        isOrganizationModuleEnabled(context.organization.id, key),
+      ),
+    ]);
 
   if (!access) {
     notFound();
   }
+
+  const churchModuleAvailability: Record<string, boolean> = {};
+  MODULE_KEYS.forEach((key, index) => {
+    churchModuleAvailability[key] = moduleAvailabilities[index];
+  });
 
   const { department } = access;
   const leaders = department.members.filter((member) => member.isLeader);
@@ -178,6 +192,15 @@ async function DepartmentContent({
       <DepartmentModulesSection
         departmentId={department.id}
         activeModuleKeys={(department.modules ?? []).map((m) => m.moduleKey)}
+        churchModuleAvailability={churchModuleAvailability}
+        canManage={access.canManage}
+      />
+
+      <DepartmentPermissionsSection
+        departmentId={department.id}
+        departmentName={department.name}
+        members={department.members}
+        initialGrants={grantsResult.ok ? grantsResult.data : []}
         canManage={access.canManage}
       />
 

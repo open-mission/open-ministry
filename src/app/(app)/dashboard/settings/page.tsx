@@ -8,6 +8,7 @@ import {
   getUserPasskeysAction,
   getUserSessionsAction,
 } from "@/app/actions/settings";
+import { getOrganizationPermissionSettingsAction } from "@/app/actions/permissions";
 import { SettingsView } from "@/components/settings/settings-view";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
@@ -47,12 +48,18 @@ async function SettingsContent() {
       listDepartments(organization.id),
     ]);
 
-  const [evolutionSettings, messageTemplates] = isAdmin
+  const [evolutionSettings, messageTemplates, permissionSettingsResult] = isAdmin
     ? await Promise.all([
         getEvolutionSettingsAction(),
         getOrganizationMessageTemplates(organization.id),
+        getOrganizationPermissionSettingsAction(),
       ])
-    : [null, []];
+    : [null, [], null];
+
+  const permissionSettings =
+    permissionSettingsResult && permissionSettingsResult.ok
+      ? permissionSettingsResult.data
+      : null;
 
   const userData = {
     name: userRecord?.name ?? session.user.name,
@@ -81,6 +88,7 @@ async function SettingsContent() {
       departmentsCount={departments.length}
       evolutionSettings={evolutionSettings}
       messageTemplates={messageTemplates}
+      permissionSettings={permissionSettings}
     />
   );
 }

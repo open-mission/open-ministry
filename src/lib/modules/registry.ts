@@ -1,8 +1,35 @@
-import { Music2Icon } from "lucide-react";
+import {
+  CalendarRangeIcon,
+  ClipboardListIcon,
+  MegaphoneIcon,
+  Music2Icon,
+} from "lucide-react";
 
 import type { ModuleKey, SystemModule } from "./types";
 
 export const SYSTEM_MODULES: Record<ModuleKey, SystemModule> = {
+  agenda: {
+    key: "agenda",
+    name: "Agenda & Eventos",
+    shortName: "Agenda",
+    description:
+      "Planeje cultos, ensaios, reuniões e eventos especiais no calendário unificado da igreja.",
+    badge: "Cultos",
+    icon: CalendarRangeIcon,
+    navGroups: [],
+    routePrefixes: ["/dashboard/calendar", "/dashboard/events"],
+  },
+  schedules: {
+    key: "schedules",
+    name: "Escalas & Liturgia",
+    shortName: "Escalas",
+    description:
+      "Gerencie equipes ministeriais, confirme disponibilidade de voluntários e estruture o plano dos cultos.",
+    badge: "Equipes",
+    icon: ClipboardListIcon,
+    navGroups: [],
+    routePrefixes: ["/dashboard/schedules", "/dashboard/availability"],
+  },
   music: {
     key: "music",
     name: "Música & Repertório",
@@ -24,6 +51,18 @@ export const SYSTEM_MODULES: Record<ModuleKey, SystemModule> = {
         ],
       },
     ],
+    routePrefixes: ["/dashboard/songs"],
+  },
+  announcements: {
+    key: "announcements",
+    name: "Avisos & Notificações",
+    shortName: "Avisos",
+    description:
+      "Envie comunicados gerais, avisos por departamento e acompanhe o status de entrega aos membros.",
+    badge: "Comunicação",
+    icon: MegaphoneIcon,
+    navGroups: [],
+    routePrefixes: ["/dashboard/announcements"],
   },
 };
 

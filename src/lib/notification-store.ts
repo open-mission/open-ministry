@@ -93,6 +93,17 @@ export const notificationStore = {
     }
   },
 
+  resetForTesting() {
+    state = {
+      count: 0,
+      items: [],
+      dismissedBarIds: new Set<string>(),
+      lastFetchedAt: 0,
+      isLoading: false,
+    };
+    emitChange();
+  },
+
   async revalidate(force = false) {
     const now = Date.now();
     // Cache TTL: 30 segundos

@@ -9,7 +9,6 @@ import { z } from "zod";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { cacheInvalidateTags } from "@/lib/cache";
-import { getDepartmentAccess } from "@/lib/departments";
 import { EVENT_KINDS, RECURRENCE_OPTIONS } from "@/lib/event-options";
 import {
   applyTimeOfDay,
@@ -24,6 +23,7 @@ import {
 import { createNotifications } from "@/lib/notifications";
 import { dispatchNotification } from "@/lib/notification-service";
 import { getOrganizationContext } from "@/lib/organizations";
+import { can } from "@/lib/permissions/service";
 
 export type EventFormState =
   | {
@@ -218,24 +218,6 @@ function departmentsFromForm(formData: FormData) {
   ];
 }
 
-async function getAdminContext() {
-  const context = await getOrganizationContext();
-
-  if (!context) {
-    return {
-      error: "Sua sessão expirou ou você não tem uma igreja ativa.",
-    } as const;
-  }
-
-  if (!context.isAdmin) {
-    return {
-      error: "Só administradores da igreja podem gerenciar cultos e eventos.",
-    } as const;
-  }
-
-  return { context } as const;
-}
-
 async function validateDepartments(
   organizationId: string,
   departmentIds: string[],
@@ -323,13 +305,47 @@ export async function createEventAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const result = await getAdminContext();
+  const context = await getOrganizationContext();
 
-  if ("error" in result) {
-    return { error: result.error };
+  if (!context) {
+    return {
+      error: "Sua sessão expirou ou você não tem uma igreja ativa.",
+    };
   }
 
-  const organizationId = result.context.organization.id;
+  const organizationId = context.organization.id;
+
+  const validDepartmentIds = await validateDepartments(
+    organizationId,
+    parsed.data.departments,
+  );
+
+  if (validDepartmentIds.length !== parsed.data.departments.length) {
+    return {
+      fieldErrors: {
+        departments: ["Um dos departamentos selecionados não foi encontrado."],
+      },
+    };
+  }
+
+  if (validDepartmentIds.length === 0) {
+    const allowed = await can("agenda", "createEvent");
+    if (!allowed) {
+      return {
+        error: "Você não tem permissão para criar eventos gerais da igreja.",
+      };
+    }
+  } else {
+    for (const departmentId of validDepartmentIds) {
+      const allowed = await can("agenda", "createEvent", { departmentId });
+      if (!allowed) {
+        return {
+          error: "Você não tem permissão para criar eventos neste departamento.",
+        };
+      }
+    }
+  }
+
   const { recurrence } = parsed.data;
   let recurrenceEndsAt: Date | null = null;
 
@@ -368,18 +384,6 @@ export async function createEventAction(
 
   const durationMs = parsed.data.durationMinutes * 60_000;
   const endsAt = new Date(startsAt.getTime() + durationMs);
-  const validDepartmentIds = await validateDepartments(
-    organizationId,
-    parsed.data.departments,
-  );
-
-  if (validDepartmentIds.length !== parsed.data.departments.length) {
-    return {
-      fieldErrors: {
-        departments: ["Um dos departamentos selecionados não foi encontrado."],
-      },
-    };
-  }
 
   const nthFromDate = getNthWeekdayInfo(startsAt).nth;
   const recurrenceInterval =
@@ -462,17 +466,22 @@ export async function updateEventAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const result = await getAdminContext();
+  const context = await getOrganizationContext();
 
-  if ("error" in result) {
-    return { error: result.error };
+  if (!context) {
+    return { error: "Sua sessão expirou ou você não tem uma igreja ativa." };
   }
 
-  const organizationId = result.context.organization.id;
+  const organizationId = context.organization.id;
   const event = await getEvent(organizationId, parsed.data.eventId);
 
   if (!event) {
     return { error: "Evento não encontrado." };
+  }
+
+  const allowed = await can("agenda", "updateEvent", { eventId: event.id });
+  if (!allowed) {
+    return { error: "Você não tem permissão para editar este evento." };
   }
 
   const validDepartmentIds = await validateDepartments(
@@ -486,6 +495,15 @@ export async function updateEventAction(
         departments: ["Um dos departamentos selecionados não foi encontrado."],
       },
     };
+  }
+
+  for (const departmentId of validDepartmentIds) {
+    const allowedDept = await can("agenda", "updateEvent", { departmentId });
+    if (!allowedDept) {
+      return {
+        error: "Você não tem permissão para vincular este departamento ao evento.",
+      };
+    }
   }
 
   const startsAt = zonedDateTimeToUtc(parsed.data.date, parsed.data.startTime);
@@ -555,23 +573,40 @@ export async function updateEventAction(
 }
 
 export async function deleteEventAction(
-  eventId: string,
-  scope: "single" | "series",
+  input: string | FormData,
+  scopeInput: "single" | "series" = "single",
 ): Promise<EventActionResult> {
-  if (!eventId) {
+  const eventId = typeof input === "string" ? input : input.get("eventId");
+  const scope =
+    typeof input === "string"
+      ? scopeInput
+      : ((input.get("scope") as "single" | "series") || scopeInput);
+
+  if (!eventId || typeof eventId !== "string") {
     return { ok: false, error: "Evento inválido." };
   }
 
-  const result = await getAdminContext();
+  const context = await getOrganizationContext();
 
-  if ("error" in result) {
-    return { ok: false, error: result.error };
+  if (!context) {
+    return {
+      ok: false,
+      error: "Sua sessão expirou ou você não tem uma igreja ativa.",
+    };
   }
 
-  const event = await getEvent(result.context.organization.id, eventId);
+  const event = await getEvent(context.organization.id, eventId);
 
   if (!event) {
     return { ok: false, error: "Evento não encontrado." };
+  }
+
+  const allowed = await can("agenda", "deleteEvent", { eventId: event.id });
+  if (!allowed) {
+    return {
+      ok: false,
+      error: "Você não tem permissão para excluir este evento.",
+    };
   }
 
   try {
@@ -580,7 +615,7 @@ export async function deleteEventAction(
         .delete(schema.event)
         .where(
           and(
-            eq(schema.event.organizationId, result.context.organization.id),
+            eq(schema.event.organizationId, context.organization.id),
             eq(schema.event.seriesId, event.seriesId),
           ),
         );
@@ -592,7 +627,7 @@ export async function deleteEventAction(
     return { ok: false, error: "Não foi possível excluir o evento." };
   }
 
-  await revalidateEvents(event.id, result.context.organization.id);
+  await revalidateEvents(event.id, context.organization.id);
   return { ok: true };
 }
 
@@ -621,21 +656,26 @@ async function getScheduleAccess(eventId: string, departmentId: string) {
     } as const;
   }
 
-  const access = await getDepartmentAccess(
-    context.organization.id,
+  const allowed = await can("schedules", "assign", {
+    eventId: event.id,
     departmentId,
-    context.session.user.id,
-    context.isAdmin,
-  );
+  });
 
-  if (!access || !access.canManage) {
+  if (!allowed) {
     return {
       error:
-        "Só administradores e líderes deste departamento podem montar a escala.",
+        "Você não tem permissão para gerenciar a escala deste departamento.",
     } as const;
   }
 
-  return { context, event, access } as const;
+  const dept = await db.query.department.findFirst({
+    where: and(
+      eq(schema.department.id, departmentId),
+      eq(schema.department.organizationId, context.organization.id),
+    ),
+  });
+
+  return { context, event, department: dept } as const;
 }
 
 async function getOrCreateSchedule(eventId: string) {
@@ -741,11 +781,18 @@ export async function saveScheduleAssignmentAction(
   });
 
   if (assignedPerson) {
+    const departmentName =
+      result.department?.name ||
+      result.event.departments.find(
+        (d) => d.departmentId === parsed.data.departmentId,
+      )?.department?.name ||
+      "Departamento";
+
     void dispatchNotification({
       organizationId: result.context.organization.id,
       type: "assignment",
       title: `Você foi escalado em ${result.event.title}`,
-      body: `${result.access.department.name} · ${targetFunction.name} · ${formatEventFullDate(result.event.startsAt)} às ${formatEventTime(result.event.startsAt)}`,
+      body: `${departmentName} · ${targetFunction.name} · ${formatEventFullDate(result.event.startsAt)} às ${formatEventTime(result.event.startsAt)}`,
       href: `/dashboard/events/${result.event.id}`,
       actorId: result.context.session.user.id,
       userId: assignedPerson.userId ?? null,
@@ -755,7 +802,7 @@ export async function saveScheduleAssignmentAction(
       metadata: {
         churchName: result.context.organization.name,
         eventTitle: result.event.title,
-        functionName: `${result.access.department.name} - ${targetFunction.name}`,
+        functionName: `${departmentName} - ${targetFunction.name}`,
         eventDate: formatEventFullDate(result.event.startsAt),
         eventTime: formatEventTime(result.event.startsAt),
         link: `/dashboard/events/${result.event.id}`,
@@ -850,33 +897,12 @@ export async function removeScheduleAssignmentAction(
 }
 
 async function canManageEventPlan(
-  organizationId: string,
+  _organizationId: string,
   eventId: string,
-  userId: string,
-  isAdmin: boolean,
+  _userId: string,
+  _isAdmin: boolean,
 ): Promise<boolean> {
-  if (isAdmin) {
-    return true;
-  }
-
-  const event = await getEvent(organizationId, eventId);
-  if (!event) {
-    return false;
-  }
-
-  for (const dep of event.departments) {
-    const access = await getDepartmentAccess(
-      organizationId,
-      dep.departmentId,
-      userId,
-      false,
-    );
-    if (access?.canManage) {
-      return true;
-    }
-  }
-
-  return false;
+  return can("schedules", "editPlan", { eventId });
 }
 
 const planItemSchema = z.object({
@@ -1184,6 +1210,14 @@ export async function savePlanAsTemplateAction(
     return { ok: false, error: "Permissão insuficiente para salvar modelo." };
   }
 
+  const canManageTemplates = await can("schedules", "manageTemplates");
+  if (!canManageTemplates) {
+    return {
+      ok: false,
+      error: "Você não tem permissão para gerenciar modelos de cronograma.",
+    };
+  }
+
   if (!name || !name.trim()) {
     return { ok: false, error: "Informe um nome para o modelo." };
   }
@@ -1252,6 +1286,14 @@ export async function listPlanTemplatesAction(): Promise<{
   const context = await getOrganizationContext();
   if (!context) {
     return { ok: false, error: "Sua sessão expirou." };
+  }
+
+  const canRead = await can("schedules", "read");
+  if (!canRead) {
+    return {
+      ok: false,
+      error: "Você não tem permissão para visualizar modelos de cronograma.",
+    };
   }
 
   try {
@@ -1339,6 +1381,14 @@ export async function deletePlanTemplateAction(
   const context = await getOrganizationContext();
   if (!context) {
     return { ok: false, error: "Sua sessão expirou." };
+  }
+
+  const canManageTemplates = await can("schedules", "manageTemplates");
+  if (!canManageTemplates) {
+    return {
+      ok: false,
+      error: "Você não tem permissão para excluir modelos de cronograma.",
+    };
   }
 
   try {

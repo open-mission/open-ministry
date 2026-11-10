@@ -5,7 +5,10 @@ import {
   getSystemModule,
   SYSTEM_MODULES,
 } from "@/lib/modules";
-import { buildAccessibleNavGroups } from "@/lib/modules/service";
+import {
+  buildAccessibleMobileNavItems,
+  buildAccessibleNavGroups,
+} from "@/lib/modules/service";
 
 describe("Modules System Foundation", () => {
   it("registers system modules properly", () => {
@@ -26,8 +29,12 @@ describe("Modules System Foundation", () => {
     expect(invalidMod).toBeNull();
   });
 
-  it("builds navigation groups without active modules", () => {
-    const defaultNav = buildAccessibleNavGroups([]);
+  it("builds navigation groups with active modules", () => {
+    const defaultNav = buildAccessibleNavGroups([
+      "agenda",
+      "schedules",
+      "announcements",
+    ]);
     const titles = defaultNav.map((g) => g.title);
     expect(titles).toContain("Principal");
     expect(titles).toContain("Cultos & Escalas");
@@ -35,7 +42,12 @@ describe("Modules System Foundation", () => {
   });
 
   it("injects module nav groups dynamically when module is active", () => {
-    const activeNav = buildAccessibleNavGroups(["music"]);
+    const activeNav = buildAccessibleNavGroups([
+      "agenda",
+      "schedules",
+      "announcements",
+      "music",
+    ]);
     const titles = activeNav.map((g) => g.title);
 
     expect(titles).toContain("Repertório");
@@ -75,16 +87,53 @@ describe("Modules System Foundation", () => {
   });
 
   it("injects WhatsApp nav item in Comunicação group when canAccessWhatsApp is true", () => {
-    const defaultNav = buildAccessibleNavGroups([], { canAccessWhatsApp: false });
+    const defaultNav = buildAccessibleNavGroups(["announcements"], {
+      canAccessWhatsApp: false,
+    });
     const defaultCom = defaultNav.find((g) => g.title === "Comunicação");
     expect(
-      defaultCom?.items.some((i) => i.href === "/dashboard/whatsapp"),
+      defaultCom?.items.some((i) => i.href === "/dashboard/whatsapp") ?? false,
     ).toBe(false);
 
-    const leaderNav = buildAccessibleNavGroups([], { canAccessWhatsApp: true });
+    const leaderNav = buildAccessibleNavGroups(["announcements"], {
+      canAccessWhatsApp: true,
+    });
     const leaderCom = leaderNav.find((g) => g.title === "Comunicação");
     expect(leaderCom?.items.some((i) => i.href === "/dashboard/whatsapp")).toBe(
       true,
     );
+  });
+
+  it("hidesRoutesForUnavailableModules", () => {
+    // Only agenda is active
+    const nav = buildAccessibleNavGroups(["agenda"]);
+    const allHrefs = nav.flatMap((g) => g.items.map((i) => i.href));
+
+    expect(allHrefs).toContain("/dashboard/calendar");
+    expect(allHrefs).toContain("/dashboard/events");
+    expect(allHrefs).not.toContain("/dashboard/schedules");
+    expect(allHrefs).not.toContain("/dashboard/availability");
+    expect(allHrefs).not.toContain("/dashboard/songs");
+    expect(allHrefs).not.toContain("/dashboard/announcements");
+  });
+
+  it("keepsSettingsAccessibleWhenModuleIsOff", () => {
+    // Even with 0 modules active, core pages (Visão geral, Pessoas, Departamentos) stay accessible
+    const nav = buildAccessibleNavGroups([]);
+    const allHrefs = nav.flatMap((g) => g.items.map((i) => i.href));
+
+    expect(allHrefs).toContain("/dashboard");
+    expect(allHrefs).toContain("/dashboard/members");
+    expect(allHrefs).toContain("/dashboard/departments");
+  });
+
+  it("mobileNavigationUsesSameAccessProjection", () => {
+    // With only agenda active, mobile nav keeps Início and Agenda, hides Escalas
+    const items = buildAccessibleMobileNavItems(["agenda"]);
+    const hrefs = items.map((i) => i.href);
+
+    expect(hrefs).toContain("/dashboard");
+    expect(hrefs).toContain("/dashboard/calendar");
+    expect(hrefs).not.toContain("/dashboard/schedules");
   });
 });
