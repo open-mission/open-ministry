@@ -6,6 +6,34 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [0.9.7] - 2026-11-10
+
+### Adicionado
+- **Otimização Global com React Query e Router Cache**:
+  - Integração do `@tanstack/react-query` v5 para cache client-side, consultas em background e deduplicação de requisições.
+  - Habilitação do Next.js Router Cache dinâmico (`staleTimes: { dynamic: 30, static: 180 }`).
+  - Navegação instantânea com prefetch proativo em menus laterais, gaveta de usuário e atalhos rápidos do dashboard.
+- **Módulo de Músicas com Estado Otimista (0ms)**:
+  - Migração para endpoints REST dedicados (`/api/songs`, `/api/songs/[songId]`).
+  - Atualizações otimistas imediatas ao salvar cifras, tom e tags, eliminando atrasos visuais e skeletons repetitivos ao navegar entre páginas.
+- **Módulos de Cultos, Escalas, Pessoas e Departamentos Otimizados**:
+  - Criação de hooks especializados (`useEventsQuery`, `usePeopleQuery`, `useDepartmentsQuery`).
+  - Eliminação de carregamentos redundantes e navegação fluida entre listagens e páginas de detalhes.
+- **Módulo de WhatsApp (Evolution API)**:
+  - Criação de endpoint REST `/api/whatsapp/logs` e hook reativo `useWhatsAppLogsQuery`.
+  - Polling inteligente que roda apenas enquanto houver mensagens com status `sending` ou `pending` (desliga automaticamente quando ociosas).
+  - Reenvio otimista de mensagens unitárias e em lote com feedback visual imediato em 0ms.
+  - Manutenção do histórico anterior visível (`keepPreviousData`) durante filtros e pesquisas.
+- **Módulo de Avisos e Notificações**:
+  - Marcação de todas as notificações como lidas com atualização visual imediata a 0ms em toda a interface.
+  - Reenvio de mensagens do WhatsApp no modal de confirmação de avisos com atualização local instantânea.
+  - Otimização do intervalo de verificação de notificações em background de 45s para 5 minutos com pausa quando a aba estiver inativa.
+- **Documentação de API Interativa (Scalar)**:
+  - Atualização do `@scalar/nextjs-api-reference` para a versão mais recente (`0.12.17`).
+  - Especificação OpenAPI 3.1.0 completa cobrindo todos os endpoints REST de Músicas, Cultos, Voluntários, Departamentos, WhatsApp e Notificações.
+
+---
+
 ## [0.9.2] - 2026-11-09
 
 ### Adicionado
