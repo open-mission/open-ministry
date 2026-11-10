@@ -675,21 +675,26 @@ async function getScheduleAccess(eventId: string, departmentId: string) {
     } as const;
   }
 
-  const access = await getDepartmentAccess(
-    context.organization.id,
+  const allowed = await can("schedules", "assign", {
+    eventId: event.id,
     departmentId,
-    context.session.user.id,
-    context.isAdmin,
-  );
+  });
 
-  if (!access || !access.canManage) {
+  if (!allowed) {
     return {
       error:
-        "Só administradores e líderes deste departamento podem montar a escala.",
+        "Você não tem permissão para gerenciar a escala deste departamento.",
     } as const;
   }
 
-  return { context, event, access } as const;
+  const dept = await db.query.department.findFirst({
+    where: and(
+      eq(schema.department.id, departmentId),
+      eq(schema.department.organizationId, context.organization.id),
+    ),
+  });
+
+  return { context, event, department: dept } as const;
 }
 
 async function getOrCreateSchedule(eventId: string) {
@@ -795,11 +800,18 @@ export async function saveScheduleAssignmentAction(
   });
 
   if (assignedPerson) {
+    const departmentName =
+      result.department?.name ||
+      result.event.departments.find(
+        (d) => d.departmentId === parsed.data.departmentId,
+      )?.department?.name ||
+      "Departamento";
+
     void dispatchNotification({
       organizationId: result.context.organization.id,
       type: "assignment",
       title: `Você foi escalado em ${result.event.title}`,
-      body: `${result.access.department.name} · ${targetFunction.name} · ${formatEventFullDate(result.event.startsAt)} às ${formatEventTime(result.event.startsAt)}`,
+      body: `${departmentName} · ${targetFunction.name} · ${formatEventFullDate(result.event.startsAt)} às ${formatEventTime(result.event.startsAt)}`,
       href: `/dashboard/events/${result.event.id}`,
       actorId: result.context.session.user.id,
       userId: assignedPerson.userId ?? null,
@@ -809,7 +821,7 @@ export async function saveScheduleAssignmentAction(
       metadata: {
         churchName: result.context.organization.name,
         eventTitle: result.event.title,
-        functionName: `${result.access.department.name} - ${targetFunction.name}`,
+        functionName: `${departmentName} - ${targetFunction.name}`,
         eventDate: formatEventFullDate(result.event.startsAt),
         eventTime: formatEventTime(result.event.startsAt),
         link: `/dashboard/events/${result.event.id}`,
@@ -909,28 +921,7 @@ async function canManageEventPlan(
   userId: string,
   isAdmin: boolean,
 ): Promise<boolean> {
-  if (isAdmin) {
-    return true;
-  }
-
-  const event = await getEvent(organizationId, eventId);
-  if (!event) {
-    return false;
-  }
-
-  for (const dep of event.departments) {
-    const access = await getDepartmentAccess(
-      organizationId,
-      dep.departmentId,
-      userId,
-      false,
-    );
-    if (access?.canManage) {
-      return true;
-    }
-  }
-
-  return false;
+  return can("schedules", "editPlan", { eventId });
 }
 
 const planItemSchema = z.object({
@@ -1238,6 +1229,14 @@ export async function savePlanAsTemplateAction(
     return { ok: false, error: "Permissão insuficiente para salvar modelo." };
   }
 
+  const canManageTemplates = await can("schedules", "manageTemplates");
+  if (!canManageTemplates) {
+    return {
+      ok: false,
+      error: "Você não tem permissão para gerenciar modelos de cronograma.",
+    };
+  }
+
   if (!name || !name.trim()) {
     return { ok: false, error: "Informe um nome para o modelo." };
   }
@@ -1306,6 +1305,14 @@ export async function listPlanTemplatesAction(): Promise<{
   const context = await getOrganizationContext();
   if (!context) {
     return { ok: false, error: "Sua sessão expirou." };
+  }
+
+  const canRead = await can("schedules", "read");
+  if (!canRead) {
+    return {
+      ok: false,
+      error: "Você não tem permissão para visualizar modelos de cronograma.",
+    };
   }
 
   try {
@@ -1393,6 +1400,14 @@ export async function deletePlanTemplateAction(
   const context = await getOrganizationContext();
   if (!context) {
     return { ok: false, error: "Sua sessão expirou." };
+  }
+
+  const canManageTemplates = await can("schedules", "manageTemplates");
+  if (!canManageTemplates) {
+    return {
+      ok: false,
+      error: "Você não tem permissão para excluir modelos de cronograma.",
+    };
   }
 
   try {

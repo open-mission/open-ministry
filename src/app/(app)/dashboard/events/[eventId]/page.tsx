@@ -99,14 +99,9 @@ async function EventContent({
   const defaultDuration = Math.round(
     (event.endsAt.getTime() - event.startsAt.getTime()) / 60_000,
   );
-  const canManagePlan =
-    isAdmin ||
-    actingDepartments.some((department) =>
-      department.members.some(
-        (member) =>
-          member.person?.userId === session.user.id && member.isLeader,
-      ),
-    );
+  const canManagePlan = await can("schedules", "editPlan", {
+    eventId: event.id,
+  });
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">

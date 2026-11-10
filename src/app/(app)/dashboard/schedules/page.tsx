@@ -19,6 +19,7 @@ import {
 } from "@/lib/events";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { findPersonByUserId } from "@/lib/people";
+import { can } from "@/lib/permissions/service";
 
 export const metadata: Metadata = {
   title: "Escalas",
@@ -37,6 +38,22 @@ async function SchedulesContent() {
 
   const { organization, session, isAdmin } =
     await requireOrganizationContext();
+
+  const hasAccess = await can("schedules", "read");
+  if (!hasAccess) {
+    return (
+      <div className="mx-auto flex w-full max-w-4xl flex-col items-center justify-center gap-4 py-16 text-center">
+        <div className="space-y-1.5">
+          <h1 className="font-heading text-2xl font-bold tracking-tight">
+            Módulo de Escalas não disponível
+          </h1>
+          <p className="max-w-md text-sm text-muted-foreground">
+            O módulo de Escalas não está liberado para sua igreja ou departamento.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     const person = await findPersonByUserId(
