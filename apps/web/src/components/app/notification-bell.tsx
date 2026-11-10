@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -31,6 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   type NotificationItem,
+  notificationStore,
   useNotificationStore,
 } from "@/lib/notification-store";
 import {
@@ -64,6 +65,7 @@ function LiveNotificationsSubscriber({
   });
 
   const { init } = useNotificationStore();
+  const previousIdsRef = useRef<Set<string> | null>(null);
 
   useEffect(() => {
     if (liveRows) {
@@ -79,6 +81,27 @@ function LiveNotificationsSubscriber({
             ? n.createdAt.toISOString()
             : String(n.createdAt),
       }));
+
+      // Dispara toast para notificações novas em tempo real
+      if (previousIdsRef.current !== null) {
+        for (const item of items) {
+          if (!item.read && !previousIdsRef.current.has(item.id)) {
+            toast(item.title, {
+              description: item.body ?? undefined,
+              action: item.href
+                ? {
+                    label: "Ver",
+                    onClick: () => {
+                      window.location.href = item.href!;
+                    },
+                  }
+                : undefined,
+            });
+          }
+        }
+      }
+
+      previousIdsRef.current = new Set(items.map((i) => i.id));
 
       init({
         count: items.filter((i) => !i.read).length,
@@ -355,6 +378,24 @@ export function NotificationBell({
 
         const data = (await response.json()) as { count?: number };
         if (active && typeof data.count === "number") {
+          if (data.count > count && count >= 0) {
+            void revalidate(true).then(() => {
+              const latest = notificationStore.getSnapshot().items[0];
+              if (latest && !latest.read) {
+                toast(latest.title, {
+                  description: latest.body ?? undefined,
+                  action: latest.href
+                    ? {
+                        label: "Ver",
+                        onClick: () => {
+                          window.location.href = latest.href!;
+                        },
+                      }
+                    : undefined,
+                });
+              }
+            });
+          }
           setCount(data.count);
         }
       } catch {
@@ -381,7 +422,44 @@ export function NotificationBell({
       window.removeEventListener("focus", handleVisibilityOrFocus);
       document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
     };
-  }, [setCount, isRealtimeActive, sealedQuery]);
+  }, [count, revalidate, setCount, isRealtimeActive, sealedQuery]);
+
+  // Escuta notificações disparadas diretamente no app
+  useEffect(() => {
+    const handleInAppNotification = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        title: string;
+        body?: string | null;
+        href?: string | null;
+      }>;
+      const detail = customEvent.detail;
+      if (detail) {
+        toast(detail.title, {
+          description: detail.body ?? undefined,
+          action: detail.href
+            ? {
+                label: "Ver",
+                onClick: () => {
+                  window.location.href = detail.href!;
+                },
+              }
+            : undefined,
+        });
+        void revalidate(true);
+      }
+    };
+
+    window.addEventListener(
+      "openministry:notification",
+      handleInAppNotification,
+    );
+    return () => {
+      window.removeEventListener(
+        "openministry:notification",
+        handleInAppNotification,
+      );
+    };
+  }, [revalidate]);
 
   // Fetch recent notifications when the panel opens (stale-while-revalidate cached)
   const handleOpenChange = (nextOpen: boolean) => {

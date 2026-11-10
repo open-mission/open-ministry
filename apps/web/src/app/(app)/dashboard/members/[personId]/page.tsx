@@ -167,7 +167,6 @@ async function MemberPageContent({
 
       {/* Header do Membro */}
       <Card className="rounded-2xl border-border/70 shadow-xs overflow-hidden">
-        <div className="h-3 bg-gradient-to-r from-primary/80 via-primary to-accent" />
         <CardContent className="p-6">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
