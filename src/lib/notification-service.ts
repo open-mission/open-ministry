@@ -18,6 +18,7 @@ import { getAppBaseUrl } from "@/lib/app-url";
 import { sendWebPushToUser } from "@/lib/push-notifications";
 import type { MessageTemplateType } from "@/lib/message-templates";
 import { renderOrganizationMessageText } from "@/lib/message-templates-server";
+import { sendTransactionalEmail } from "@/lib/email/service";
 
 export type DispatchNotificationOptions = {
   organizationId: string;
@@ -29,6 +30,7 @@ export type DispatchNotificationOptions = {
   userId?: string | null;
   personId?: string | null;
   phone?: string | null;
+  email?: string | null;
   name?: string | null;
   batchId?: string;
   notificationId?: string;
@@ -155,9 +157,15 @@ export function buildWhatsAppMessageText(
  */
 export async function dispatchNotification(
   options: DispatchNotificationOptions,
-): Promise<{ inAppSent: boolean; whatsappSent: boolean; error?: string }> {
+): Promise<{
+  inAppSent: boolean;
+  whatsappSent: boolean;
+  emailSent: boolean;
+  error?: string;
+}> {
   let inAppSent = false;
   let whatsappSent = false;
+  let emailSent = false;
 
   const {
     organizationId,
@@ -175,6 +183,7 @@ export async function dispatchNotification(
   const shouldSendInApp = !channels || channels.includes("in_app");
   const shouldSendWhatsApp = !channels || channels.includes("whatsapp");
   const shouldSendPush = !channels || channels.includes("push");
+  const shouldSendEmail = !channels || channels.includes("email");
 
   // 1. Deliver in-app notification if userId is known and in_app enabled
   if (shouldSendInApp && userId) {
@@ -205,57 +214,122 @@ export async function dispatchNotification(
     });
   }
 
-  if (!shouldSendWhatsApp) {
-    return { inAppSent, whatsappSent: false };
-  }
-
-  // 2. Fetch Church Organization details and Evolution API Config
+  // 2. Fetch Church Organization details
   const church = await db.query.organization.findFirst({
     where: eq(schema.organization.id, organizationId),
     columns: { name: true },
   });
   const churchName = church?.name || metadata?.churchName || "Sua Igreja";
 
-  const { config: evolutionConfig } = await getOrganizationEvolutionConfig(
-    organizationId,
-  );
-
-  // 3. Resolve phone and name
+  // 3. Resolve phone, email and name
   let targetPhone = options.phone;
+  let targetEmail = options.email;
   let targetName = options.name;
 
-  if (!targetPhone && personId) {
+  if ((!targetPhone || !targetEmail || !targetName) && personId) {
     const person = await db.query.person.findFirst({
       where: eq(schema.person.id, personId),
-      columns: { phone: true, name: true, userId: true },
+      columns: { phone: true, email: true, name: true, userId: true },
     });
     if (person) {
-      targetPhone = person.phone;
+      if (!targetPhone) targetPhone = person.phone;
+      if (!targetEmail) targetEmail = person.email;
       if (!targetName) targetName = person.name;
     }
   }
 
-  if (!targetPhone && userId) {
+  if ((!targetPhone || !targetEmail || !targetName) && userId) {
     const userRec = await db.query.user.findFirst({
       where: eq(schema.user.id, userId),
-      columns: { phone: true, name: true },
+      columns: { phone: true, email: true, name: true },
     });
     if (userRec) {
-      targetPhone = userRec.phone;
+      if (!targetPhone) targetPhone = userRec.phone;
+      if (!targetEmail) targetEmail = userRec.email;
       if (!targetName) targetName = userRec.name;
     }
-  }
-
-  if (!targetPhone) {
-    // No phone number found for recipient
-    return { inAppSent, whatsappSent: false };
   }
 
   const recipientName = targetName || "Membro";
   const baseUrl = getAppBaseUrl();
   const fullLink = href
-    ? (href.startsWith("http") ? href : `${baseUrl}${href}`)
+    ? href.startsWith("http")
+      ? href
+      : `${baseUrl}${href}`
     : (metadata?.link as string) || baseUrl;
+
+  // 4. Deliver Email notification via Brevo (if email enabled and targetEmail exists)
+  if (shouldSendEmail && targetEmail) {
+    try {
+      if (type === "assignment") {
+        const res = await sendTransactionalEmail({
+          type: "assignment",
+          to: { email: targetEmail, name: recipientName },
+          organizationId,
+          userId: userId ?? null,
+          personId: personId ?? null,
+          notificationId: options.notificationId ?? null,
+          batchId: options.batchId ?? null,
+          subject: title,
+          data: {
+            name: recipientName,
+            churchName,
+            eventTitle: (metadata?.eventTitle as string) || title,
+            functionName: (metadata?.functionName as string) || "",
+            eventDate: (metadata?.eventDate as string) || "",
+            eventTime: (metadata?.eventTime as string) || "",
+            eventUrl: fullLink,
+            notes: body || undefined,
+          },
+        });
+        emailSent = res.ok;
+      } else if (type === "announcement") {
+        const res = await sendTransactionalEmail({
+          type: "announcement",
+          to: { email: targetEmail, name: recipientName },
+          organizationId,
+          userId: userId ?? null,
+          personId: personId ?? null,
+          notificationId: options.notificationId ?? null,
+          batchId: options.batchId ?? null,
+          subject: title,
+          data: {
+            name: recipientName,
+            churchName,
+            title,
+            body: body || "",
+            authorName: (metadata?.authorName as string) || undefined,
+            announcementUrl: fullLink,
+          },
+        });
+        emailSent = res.ok;
+      } else if (type === "welcome") {
+        const res = await sendTransactionalEmail({
+          type: "welcome",
+          to: { email: targetEmail, name: recipientName },
+          organizationId,
+          userId: userId ?? null,
+          personId: personId ?? null,
+          data: {
+            name: recipientName,
+            churchName,
+            dashboardUrl: fullLink,
+          },
+        });
+        emailSent = res.ok;
+      }
+    } catch (err) {
+      console.error("Falha ao disparar email de notificação:", err);
+    }
+  }
+
+  if (!shouldSendWhatsApp || !targetPhone) {
+    return { inAppSent, whatsappSent: false, emailSent };
+  }
+
+  const { config: evolutionConfig } = await getOrganizationEvolutionConfig(
+    organizationId,
+  );
 
   let messageText = "";
   try {
@@ -315,6 +389,7 @@ export async function dispatchNotification(
     return {
       inAppSent,
       whatsappSent: false,
+      emailSent,
       error: "Canal do WhatsApp inativo ou não configurado na igreja.",
     };
   }
@@ -388,7 +463,7 @@ export async function dispatchNotification(
     }
   });
 
-  return { inAppSent, whatsappSent };
+  return { inAppSent, whatsappSent, emailSent };
 }
 
 /**

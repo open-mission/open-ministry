@@ -37,6 +37,7 @@ export async function AppSidebarLoader() {
       activeModuleKeys={activeModuleKeys}
       canManageJobs={isAdminOrLeader}
       canAccessWhatsApp={isAdminOrLeader}
+      canAccessEmails={isAdminOrLeader}
     />
   );
 }

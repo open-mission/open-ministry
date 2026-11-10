@@ -1,4 +1,5 @@
 import {
+  emailsNavItem,
   jobsNavGroup,
   mobileNavItems,
   navGroups,
@@ -39,6 +40,7 @@ export function buildAccessibleNavGroups(
   options?: {
     canManageJobs?: boolean;
     canAccessWhatsApp?: boolean;
+    canAccessEmails?: boolean;
   },
 ): NavGroup[] {
   // Filtra os itens dos grupos base segundo os módulos ativos
@@ -94,6 +96,21 @@ export function buildAccessibleNavGroups(
       result.push({
         title: "Comunicação",
         items: [whatsappNavItem],
+      });
+    }
+  }
+
+  // Se o usuário puder acessar Emails (Admin ou Líder de departamento), adiciona no grupo Comunicação
+  if (options?.canAccessEmails ?? options?.canAccessWhatsApp) {
+    const comGroup = result.find((g) => g.title === "Comunicação");
+    if (comGroup) {
+      if (!comGroup.items.some((i) => i.href === emailsNavItem.href)) {
+        comGroup.items.push(emailsNavItem);
+      }
+    } else {
+      result.push({
+        title: "Comunicação",
+        items: [emailsNavItem],
       });
     }
   }

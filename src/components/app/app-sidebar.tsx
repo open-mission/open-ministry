@@ -31,6 +31,7 @@ type AppSidebarProps = {
   groups?: NavGroup[];
   canManageJobs?: boolean;
   canAccessWhatsApp?: boolean;
+  canAccessEmails?: boolean;
 };
 
 export function AppSidebar({
@@ -42,6 +43,7 @@ export function AppSidebar({
   groups,
   canManageJobs,
   canAccessWhatsApp,
+  canAccessEmails,
 }: AppSidebarProps) {
   return (
     <Sidebar collapsible="offcanvas">
@@ -85,6 +87,7 @@ export function AppSidebar({
           activeModuleKeys={activeModuleKeys}
           canManageJobs={canManageJobs}
           canAccessWhatsApp={canAccessWhatsApp}
+          canAccessEmails={canAccessEmails}
         />
       </SidebarContent>
 

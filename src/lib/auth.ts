@@ -5,6 +5,7 @@ import { passkey } from "@better-auth/passkey";
 import {
   admin,
   lastLoginMethod,
+  magicLink,
   multiSession,
   openAPI,
   organization,
@@ -16,6 +17,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { getAppBaseUrl } from "@/lib/app-url";
+import { sendTransactionalEmail } from "@/lib/email/service";
 
 export const auth = betterAuth({
   appName: "OpenMinistry",
@@ -27,6 +29,35 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    sendResetPassword: async ({ user, url }) => {
+      await sendTransactionalEmail({
+        type: "reset_password",
+        to: { email: user.email, name: user.name },
+        userId: user.id,
+        data: {
+          name: user.name,
+          resetUrl: url,
+          expiresInMinutes: 60,
+        },
+      }).catch((err) => {
+        console.error("Erro ao enviar email de recuperação de senha:", err);
+      });
+    },
+  },
+  emailVerification: {
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendTransactionalEmail({
+        type: "email_verification",
+        to: { email: user.email, name: user.name },
+        userId: user.id,
+        data: {
+          name: user.name,
+          verifyUrl: url,
+        },
+      }).catch((err) => {
+        console.error("Erro ao enviar email de verificação:", err);
+      });
+    },
   },
   user: {
     additionalFields: {
@@ -89,6 +120,23 @@ export const auth = betterAuth({
     },
   },
   databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          await sendTransactionalEmail({
+            type: "welcome",
+            to: { email: user.email, name: user.name },
+            userId: user.id,
+            data: {
+              name: user.name,
+              dashboardUrl: `${getAppBaseUrl()}/dashboard`,
+            },
+          }).catch((err) => {
+            console.error("Erro ao enviar email de boas-vindas:", err);
+          });
+        },
+      },
+    },
     session: {
       create: {
         before: async (session) => {
@@ -143,6 +191,26 @@ export const auth = betterAuth({
           name: user.name,
           org_id: session.activeOrganizationId ?? null,
         }),
+      },
+    }),
+    magicLink({
+      sendMagicLink: async ({ email, url }) => {
+        const existingUser = await db.query.user.findFirst({
+          where: eq(schema.user.email, email),
+          columns: { id: true, name: true },
+        });
+
+        await sendTransactionalEmail({
+          type: "magic_link",
+          to: { email, name: existingUser?.name || "Membro" },
+          userId: existingUser?.id,
+          data: {
+            name: existingUser?.name || "Membro",
+            magicLinkUrl: url,
+          },
+        }).catch((err) => {
+          console.error("Erro ao enviar magic link por email:", err);
+        });
       },
     }),
     openAPI(),

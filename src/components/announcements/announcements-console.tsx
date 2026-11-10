@@ -141,6 +141,7 @@ export function AnnouncementsConsole({
   const [sendInApp, setSendInApp] = useState(true);
   const [sendWhatsApp, setSendWhatsApp] = useState(isWhatsAppConfigured);
   const [sendPush, setSendPush] = useState(true);
+  const [sendEmail, setSendEmail] = useState(true);
 
   const [previewTab, setPreviewTab] = useState<"app" | "push" | "whatsapp">(
     "app",
@@ -153,6 +154,7 @@ export function AnnouncementsConsole({
         sendInApp && "App",
         sendPush && "Push",
         sendWhatsApp && "WhatsApp",
+        sendEmail && "E-mail (Brevo)",
       ]
         .filter(Boolean)
         .join(", ");
@@ -167,7 +169,7 @@ export function AnnouncementsConsole({
         handled.current = false;
       }, 1000);
     }
-  }, [state, sendInApp, sendPush, sendWhatsApp]);
+  }, [state, sendInApp, sendPush, sendWhatsApp, sendEmail]);
 
   function applyPreset(presetId: string) {
     const preset = ANNOUNCEMENT_PRESETS.find((p) => p.id === presetId);
@@ -240,6 +242,7 @@ export function AnnouncementsConsole({
                 <input type="hidden" name="sendWhatsApp" value="true" />
               )}
               {sendPush && <input type="hidden" name="sendPush" value="true" />}
+              {sendEmail && <input type="hidden" name="sendEmail" value="true" />}
 
               {/* Seletor de Destinatário */}
               <FieldGroup className="space-y-3">
@@ -483,25 +486,39 @@ export function AnnouncementsConsole({
                     </div>
                   </label>
 
-                  {/* Canal 4: E-mail (Futuramente) */}
-                  <div className="flex items-start gap-2.5 rounded-lg border border-border/40 bg-muted/20 p-2.5 opacity-60">
-                    <Checkbox id="console-channel-email" disabled className="mt-0.5" />
+                  {/* Canal 4: E-mail (Brevo) */}
+                  <label
+                    htmlFor="console-channel-email"
+                    className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 transition-colors ${
+                      sendEmail
+                        ? "border-blue-500/50 bg-background shadow-xs"
+                        : "border-border/60 bg-card/60 opacity-60"
+                    }`}
+                  >
+                    <Checkbox
+                      id="console-channel-email"
+                      checked={sendEmail}
+                      onCheckedChange={(checked) =>
+                        setSendEmail(Boolean(checked))
+                      }
+                      className="mt-0.5 data-checked:border-blue-600 data-checked:bg-blue-600"
+                    />
                     <div className="flex-1 space-y-0.5 text-xs">
-                      <div className="flex items-center gap-1.5 font-medium text-muted-foreground">
-                        <MailIcon className="size-3.5" />
+                      <div className="flex items-center gap-1.5 font-medium text-foreground">
+                        <MailIcon className="size-3.5 text-blue-600" />
                         <span>E-mail</span>
                         <Badge
-                          variant="outline"
-                          className="ml-auto text-[10px] py-0 px-1 border-dashed"
+                          variant="secondary"
+                          className="ml-auto text-[10px] py-0 px-1 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400"
                         >
-                          Em breve
+                          Brevo
                         </Badge>
                       </div>
-                      <p className="text-[11px] text-muted-foreground/80 leading-snug">
-                        Envio por correio eletrônico
+                      <p className="text-[11px] text-muted-foreground leading-snug">
+                        Disparo transacional via Brevo
                       </p>
                     </div>
-                  </div>
+                  </label>
                 </div>
 
                 {state?.fieldErrors?.channels ? (

@@ -174,6 +174,7 @@ function AnnouncementForm({
   const [sendInApp, setSendInApp] = useState(true);
   const [sendWhatsApp, setSendWhatsApp] = useState(isWhatsAppConfigured);
   const [sendPush, setSendPush] = useState(true);
+  const [sendEmail, setSendEmail] = useState(true);
 
   useEffect(() => {
     if (state?.success && !handled.current) {
@@ -191,6 +192,7 @@ function AnnouncementForm({
       {sendInApp && <input type="hidden" name="sendInApp" value="true" />}
       {sendWhatsApp && <input type="hidden" name="sendWhatsApp" value="true" />}
       {sendPush && <input type="hidden" name="sendPush" value="true" />}
+      {sendEmail && <input type="hidden" name="sendEmail" value="true" />}
 
       {/* Seletor de Destinatário */}
       <FieldGroup className="space-y-3">
@@ -390,22 +392,37 @@ function AnnouncementForm({
             </div>
           </label>
 
-          {/* Canal 3: E-mail (Futuramente) */}
-          <div className="flex items-start gap-2.5 rounded-lg border border-border/40 bg-muted/20 p-2.5 opacity-60">
-            <Checkbox id="channel-email" disabled className="mt-0.5" />
+          {/* Canal 3: E-mail (Brevo) */}
+          <label
+            htmlFor="channel-email"
+            className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 transition-colors ${
+              sendEmail
+                ? "border-primary/50 bg-background shadow-xs"
+                : "border-border/60 bg-card/60 opacity-70"
+            }`}
+          >
+            <Checkbox
+              id="channel-email"
+              checked={sendEmail}
+              onCheckedChange={(checked) => setSendEmail(Boolean(checked))}
+              className="mt-0.5"
+            />
             <div className="flex-1 space-y-0.5 text-xs">
-              <div className="flex items-center gap-1.5 font-medium text-muted-foreground">
-                <MailIcon className="size-3.5" />
+              <div className="flex items-center gap-1.5 font-medium text-foreground">
+                <MailIcon className="size-3.5 text-blue-600" />
                 <span>E-mail</span>
-                <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1 border-dashed">
-                  Em breve
+                <Badge
+                  variant="secondary"
+                  className="ml-auto text-[10px] py-0 px-1 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400"
+                >
+                  Brevo
                 </Badge>
               </div>
-              <p className="text-[11px] text-muted-foreground/80 leading-snug">
-                Envio transacional por email
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                Envio transacional com React Email
               </p>
             </div>
-          </div>
+          </label>
 
           {/* Canal 4: Push */}
           <label

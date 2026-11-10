@@ -29,6 +29,7 @@ export async function MobileMenuLoader() {
       activeModuleKeys={activeModuleKeys}
       canManageJobs={isAdminOrLeader}
       canAccessWhatsApp={isAdminOrLeader}
+      canAccessEmails={isAdminOrLeader}
     />
   );
 }
