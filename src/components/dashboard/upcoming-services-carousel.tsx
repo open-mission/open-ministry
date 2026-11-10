@@ -34,6 +34,7 @@ export function UpcomingServicesCarousel({
         </h2>
         <Link
           href="/dashboard/events"
+          prefetch={true}
           className="group inline-flex items-center gap-1 pb-0.5 text-xs font-medium text-primary hover:underline"
         >
           Ver todos na agenda
@@ -52,6 +53,7 @@ export function UpcomingServicesCarousel({
             <Link
               key={event.id}
               href={`/dashboard/events/${event.id}`}
+              prefetch={true}
               className={cn(
                 "group flex min-w-[280px] shrink-0 snap-start flex-col justify-between gap-3 rounded-2xl border border-border/60 bg-card p-4",
                 "transition-[transform,border-color,box-shadow] duration-150 active:scale-[0.99] hover:border-primary/35 hover:shadow-sm sm:min-w-0 sm:p-5",

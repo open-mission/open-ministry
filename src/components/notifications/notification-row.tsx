@@ -40,8 +40,17 @@ export function NotificationRow({
   notification: NotificationItem;
 }) {
   const [detailOpen, setDetailOpen] = useState(false);
-  const [isRead, setIsRead] = useState(notification.read);
-  const { markAsRead } = useNotificationStore();
+  const [prevPropRead, setPrevPropRead] = useState(notification.read);
+  const [localRead, setLocalRead] = useState(notification.read);
+  const { markAsRead, isNotificationRead } = useNotificationStore();
+
+  if (prevPropRead !== notification.read) {
+    setPrevPropRead(notification.read);
+    setLocalRead(notification.read);
+  }
+
+  const isRead =
+    localRead || isNotificationRead(notification.id, notification.read);
 
   function handleOpen() {
     setDetailOpen(true);
@@ -117,7 +126,7 @@ export function NotificationRow({
           createdAtLabel: notification.createdAtLabel,
         }}
         onMarkAsRead={(id) => {
-          setIsRead(true);
+          setLocalRead(true);
           markAsRead(id);
         }}
       />

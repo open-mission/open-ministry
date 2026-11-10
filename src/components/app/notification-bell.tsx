@@ -290,7 +290,7 @@ function NotificationPanel({
             isDrawer ? "h-11 text-sm" : "h-8",
           )}
         >
-          <Link href="/dashboard/notifications" onClick={onClose}>
+          <Link href="/dashboard/notifications" prefetch={true} onClick={onClose}>
             <span>Ver todas as notificações</span>
             <ArrowRightIcon className="size-3.5" />
           </Link>
@@ -331,7 +331,8 @@ export function NotificationBell({
     init({ count: initialCount, items: initialItems });
   }, [init, initialCount, initialItems]);
 
-  // Periodically refresh unread count (skipped when Realtime WebSocket is active)
+  // Periodicamente atualiza a contagem de não lidas (5 minutos + detecção de visibilidade da aba)
+  // Ignorado quando o WebSocket do Neon Realtime estiver ativo.
   useEffect(() => {
     if (isRealtimeActive && sealedQuery) {
       return;
@@ -340,6 +341,11 @@ export function NotificationBell({
     let active = true;
 
     async function loadCount() {
+      // Evita requisições se a aba estiver em segundo plano ou minimizada
+      if (typeof document !== "undefined" && document.hidden) {
+        return;
+      }
+
       try {
         const response = await fetch("/api/notifications/unread-count", {
           cache: "no-store",
@@ -352,14 +358,28 @@ export function NotificationBell({
           setCount(data.count);
         }
       } catch {
-        // Retry next cycle
+        // Tenta no próximo ciclo
       }
     }
 
-    const interval = window.setInterval(loadCount, 45_000);
+    // Intervalo de 5 minutos (300.000 ms) para evitar spam de requisições nos logs
+    const interval = window.setInterval(loadCount, 5 * 60 * 1000);
+
+    // Revalida automaticamente quando o usuário voltar para a aba
+    const handleVisibilityOrFocus = () => {
+      if (typeof document !== "undefined" && !document.hidden) {
+        void loadCount();
+      }
+    };
+
+    window.addEventListener("focus", handleVisibilityOrFocus);
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+
     return () => {
       active = false;
       window.clearInterval(interval);
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
     };
   }, [setCount, isRealtimeActive, sealedQuery]);
 

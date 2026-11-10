@@ -166,6 +166,7 @@ export function UserMenuDrawer({
 
             <Link
               href="/dashboard/notifications"
+              prefetch={true}
               onClick={() => setOpen(false)}
               className="flex min-h-12 items-center gap-3 border-t border-border/50 px-3.5 py-2.5 transition-colors hover:bg-muted/50 active:bg-muted/70"
             >

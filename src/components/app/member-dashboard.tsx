@@ -236,6 +236,7 @@ function MemberDepartments({
         </div>
         <Link
           href="/dashboard/departments"
+          prefetch={true}
           className="group inline-flex shrink-0 items-center gap-1 pb-0.5 text-xs font-medium text-primary hover:underline"
         >
           Ver todos
@@ -258,7 +259,7 @@ function MemberDepartments({
             </p>
           </div>
           <Button asChild variant="outline" size="sm" className="h-10">
-            <Link href="/dashboard/departments">
+            <Link href="/dashboard/departments" prefetch={true}>
               Conhecer departamentos
             </Link>
           </Button>
@@ -274,6 +275,7 @@ function MemberDepartments({
               <Link
                 key={membership.id}
                 href={`/dashboard/departments/${membership.department.id}`}
+                prefetch={true}
                 className="group flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-4 transition-[transform,border-color,box-shadow] duration-150 active:scale-[0.99] hover:border-primary/35 hover:shadow-sm motion-reduce:transition-none motion-reduce:active:scale-100"
               >
                 <div className="flex items-start justify-between gap-3">

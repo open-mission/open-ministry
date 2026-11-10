@@ -169,6 +169,7 @@ export function QuickActions({
 
             <Link
               href="/dashboard/schedules"
+              prefetch={true}
               className={tileClassName}
               aria-label="Gerenciar escalas"
             >
@@ -182,6 +183,7 @@ export function QuickActions({
 
             <Link
               href="/dashboard/calendar"
+              prefetch={true}
               className={tileClassName}
               aria-label="Abrir agenda"
             >
@@ -195,6 +197,7 @@ export function QuickActions({
 
             <Link
               href="/dashboard/departments"
+              prefetch={true}
               className={tileClassName}
               aria-label={`Abrir ${terminology.plural.toLowerCase()}`}
             >
@@ -208,6 +211,7 @@ export function QuickActions({
 
             <Link
               href="/dashboard/members?tab=felicitometro"
+              prefetch={true}
               className={tileClassName}
               aria-label="Abrir cuidado pastoral"
             >
@@ -223,6 +227,7 @@ export function QuickActions({
           <>
             <Link
               href="/dashboard/schedules"
+              prefetch={true}
               className={tileClassName}
               aria-label="Ver minhas escalas"
             >
@@ -236,6 +241,7 @@ export function QuickActions({
 
             <Link
               href="/dashboard/calendar"
+              prefetch={true}
               className={tileClassName}
               aria-label="Abrir agenda"
             >
@@ -249,6 +255,7 @@ export function QuickActions({
 
             <Link
               href="/dashboard/departments"
+              prefetch={true}
               className={tileClassName}
               aria-label={`Abrir ${terminology.plural.toLowerCase()}`}
             >
@@ -262,6 +269,7 @@ export function QuickActions({
 
             <Link
               href="/dashboard/members"
+              prefetch={true}
               className={tileClassName}
               aria-label="Ver pessoas"
             >
@@ -275,6 +283,7 @@ export function QuickActions({
 
             <Link
               href="/dashboard/notifications"
+              prefetch={true}
               className={tileClassName}
               aria-label="Ver avisos"
             >
@@ -288,6 +297,7 @@ export function QuickActions({
 
             <Link
               href="/dashboard/profile"
+              prefetch={true}
               className={tileClassName}
               aria-label="Abrir meu perfil"
             >

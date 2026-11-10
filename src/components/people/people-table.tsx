@@ -126,6 +126,7 @@ export function PeopleTable({
                           <TableCell>
                             <Link
                               href={`/dashboard/members/${person.id}`}
+                              prefetch={true}
                               className="group flex min-w-56 items-center gap-3"
                             >
                               <Avatar className="size-9 ring-1 ring-border group-hover:ring-primary transition-all">
@@ -240,6 +241,7 @@ export function PeopleTable({
                   >
                     <Link
                       href={`/dashboard/members/${person.id}`}
+                      prefetch={true}
                       className="group flex items-start gap-3"
                     >
                       <Avatar className="size-10 shrink-0 ring-1 ring-border transition-all group-hover:ring-primary">
