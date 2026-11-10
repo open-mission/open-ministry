@@ -86,20 +86,28 @@ describe("Modules System Foundation", () => {
     expect(opsGroup?.items.some((i) => i.href === "/dashboard/jobs")).toBe(true);
   });
 
-  it("injects WhatsApp nav item in Comunicação group when canAccessWhatsApp is true", () => {
+  it("injects WhatsApp and Emails nav items in Comunicação group when permitted", () => {
     const defaultNav = buildAccessibleNavGroups(["announcements"], {
       canAccessWhatsApp: false,
+      canAccessEmails: false,
     });
     const defaultCom = defaultNav.find((g) => g.title === "Comunicação");
     expect(
       defaultCom?.items.some((i) => i.href === "/dashboard/whatsapp") ?? false,
     ).toBe(false);
+    expect(
+      defaultCom?.items.some((i) => i.href === "/dashboard/emails") ?? false,
+    ).toBe(false);
 
     const leaderNav = buildAccessibleNavGroups(["announcements"], {
       canAccessWhatsApp: true,
+      canAccessEmails: true,
     });
     const leaderCom = leaderNav.find((g) => g.title === "Comunicação");
     expect(leaderCom?.items.some((i) => i.href === "/dashboard/whatsapp")).toBe(
+      true,
+    );
+    expect(leaderCom?.items.some((i) => i.href === "/dashboard/emails")).toBe(
       true,
     );
   });

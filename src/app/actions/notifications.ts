@@ -64,12 +64,17 @@ const announcementSchema = z
     sendInApp: z.boolean(),
     sendWhatsApp: z.boolean(),
     sendPush: z.boolean().default(false),
+    sendEmail: z.boolean().default(false),
   })
-  .refine((data) => data.sendInApp || data.sendWhatsApp || data.sendPush, {
-    message:
-      "Selecione ao menos um canal ativo (Aplicativo, WhatsApp ou Push).",
-    path: ["channels"],
-  })
+  .refine(
+    (data) =>
+      data.sendInApp || data.sendWhatsApp || data.sendPush || data.sendEmail,
+    {
+      message:
+        "Selecione ao menos um canal ativo (Aplicativo, WhatsApp, Push ou Email).",
+      path: ["channels"],
+    },
+  )
   .refine(
     (data) => {
       if (data.audienceType === "department") {
@@ -127,6 +132,12 @@ export async function sendAnnouncementAction(
     sendPushParam === "on" ||
     sendPushParam === "true";
 
+  const sendEmailParam = formData.get("sendEmail");
+  const sendEmail =
+    channelsValues.includes("email") ||
+    sendEmailParam === "on" ||
+    sendEmailParam === "true";
+
   const rawAudienceType = formData.get("audienceType");
   const rawAudience = formData.get("audience"); // fallback for legacy select
 
@@ -161,6 +172,7 @@ export async function sendAnnouncementAction(
     sendInApp,
     sendWhatsApp,
     sendPush,
+    sendEmail,
   });
 
   if (!parsed.success) {
@@ -230,6 +242,7 @@ export async function sendAnnouncementAction(
     id: string;
     userId: string | null;
     phone: string | null;
+    email: string | null;
     name: string | null;
   };
 
@@ -241,37 +254,72 @@ export async function sendAnnouncementAction(
         eq(schema.person.id, data.personId!),
         eq(schema.person.organizationId, context.organization.id),
       ),
-      columns: { id: true, userId: true, phone: true, name: true },
+      columns: { id: true, userId: true, phone: true, email: true, name: true },
+      with: {
+        user: {
+          columns: { email: true },
+        },
+      },
     });
 
     if (!target) {
       return { error: "Pessoa destinatária não foi encontrada." };
     }
 
-    recipients = [target];
+    recipients = [
+      {
+        id: target.id,
+        userId: target.userId,
+        phone: target.phone,
+        email: target.email || target.user?.email || null,
+        name: target.name,
+      },
+    ];
   } else if (data.audienceType === "department") {
     const members = await db.query.departmentMember.findMany({
       where: eq(schema.departmentMember.departmentId, data.departmentId!),
       with: {
         person: {
-          columns: { id: true, userId: true, phone: true, name: true },
+          columns: { id: true, userId: true, phone: true, email: true, name: true },
+          with: {
+            user: {
+              columns: { email: true },
+            },
+          },
         },
       },
     });
 
     recipients = members
-      .map((m) => m.person)
+      .map((m) => ({
+        id: m.person.id,
+        userId: m.person.userId,
+        phone: m.person.phone,
+        email: m.person.email || m.person.user?.email || null,
+        name: m.person.name,
+      }))
       .filter((p) => p.userId !== context.session.user.id);
   } else {
     // all church members
     const allPeople = await db.query.person.findMany({
       where: eq(schema.person.organizationId, context.organization.id),
-      columns: { id: true, userId: true, phone: true, name: true },
+      columns: { id: true, userId: true, phone: true, email: true, name: true },
+      with: {
+        user: {
+          columns: { email: true },
+        },
+      },
     });
 
-    recipients = allPeople.filter(
-      (p) => p.userId !== context.session.user.id,
-    );
+    recipients = allPeople
+      .map((p) => ({
+        id: p.id,
+        userId: p.userId,
+        phone: p.phone,
+        email: p.email || p.user?.email || null,
+        name: p.name,
+      }))
+      .filter((p) => p.userId !== context.session.user.id);
   }
 
   if (recipients.length === 0) {
@@ -328,6 +376,7 @@ export async function sendAnnouncementAction(
             userId: recipient.userId,
             personId: recipient.id,
             phone: recipient.phone,
+            email: recipient.email,
             name: recipient.name,
             batchId: announcementBatchId,
             channels: ["whatsapp"],
@@ -336,6 +385,33 @@ export async function sendAnnouncementAction(
             },
           });
         }
+      }
+    }
+
+    // 2.1 Send Email notifications via Brevo
+    if (data.sendEmail) {
+      const recipientsWithEmail = recipients.filter((r) => Boolean(r.email));
+
+      for (const recipient of recipientsWithEmail) {
+        await dispatchNotification({
+          organizationId: context.organization.id,
+          type: "announcement",
+          title: data.title,
+          body: data.body,
+          href: "/dashboard/notifications",
+          actorId: context.session.user.id,
+          userId: recipient.userId,
+          personId: recipient.id,
+          phone: recipient.phone,
+          email: recipient.email,
+          name: recipient.name,
+          batchId: announcementBatchId,
+          channels: ["email"],
+          metadata: {
+            churchName: context.organization.name,
+            authorName: context.session.user.name,
+          },
+        });
       }
     }
 

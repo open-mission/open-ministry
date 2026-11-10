@@ -88,11 +88,13 @@ export function MobileMenu({
   activeModuleKeys = [],
   canManageJobs,
   canAccessWhatsApp,
+  canAccessEmails,
 }: {
   groups?: NavGroup[];
   activeModuleKeys?: ModuleKey[];
   canManageJobs?: boolean;
   canAccessWhatsApp?: boolean;
+  canAccessEmails?: boolean;
 } = {}) {
   const pathname = usePathname();
   const { open, setOpen } = useMobileMenu();
@@ -108,8 +110,15 @@ export function MobileMenu({
       buildAccessibleNavGroups(activeModuleKeys, {
         canManageJobs,
         canAccessWhatsApp,
+        canAccessEmails,
       }),
-    [customGroups, activeModuleKeys, canManageJobs, canAccessWhatsApp],
+    [
+      customGroups,
+      activeModuleKeys,
+      canManageJobs,
+      canAccessWhatsApp,
+      canAccessEmails,
+    ],
   );
   const isDark = mounted && resolvedTheme === "dark";
   const themeValue = isDark ? "Escuro" : "Claro";

@@ -234,3 +234,71 @@ export const whatsappMessageLogRelations = relations(
   }),
 );
 
+export const emailMessageLog = pgTable(
+  "email_message_log",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id").references(
+      () => organization.id,
+      { onDelete: "cascade" },
+    ),
+    notificationId: text("notification_id").references(
+      () => notification.id,
+      { onDelete: "set null" },
+    ),
+    batchId: text("batch_id"),
+    type: text("type").notNull().default("transactional"),
+    recipientEmail: text("recipient_email").notNull(),
+    recipientName: text("recipient_name"),
+    subject: text("subject").notNull(),
+    htmlContent: text("html_content").notNull(),
+    textContent: text("text_content"),
+    personId: text("person_id").references(() => person.id, {
+      onDelete: "set null",
+    }),
+    userId: text("user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    status: text("status").notNull().default("sent"),
+    brevoMessageId: text("brevo_message_id"),
+    attempts: integer("attempts").default(1).notNull(),
+    lastError: text("last_error"),
+    sentAt: timestamp("sent_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("email_log_org_idx").on(table.organizationId),
+    index("email_log_org_status_idx").on(table.organizationId, table.status),
+    index("email_log_recipient_idx").on(table.recipientEmail),
+    index("email_log_type_idx").on(table.type),
+    index("email_log_created_at_idx").on(table.createdAt),
+  ],
+);
+
+export const emailMessageLogRelations = relations(
+  emailMessageLog,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [emailMessageLog.organizationId],
+      references: [organization.id],
+    }),
+    notification: one(notification, {
+      fields: [emailMessageLog.notificationId],
+      references: [notification.id],
+    }),
+    person: one(person, {
+      fields: [emailMessageLog.personId],
+      references: [person.id],
+    }),
+    user: one(user, {
+      fields: [emailMessageLog.userId],
+      references: [user.id],
+    }),
+  }),
+);
+
+

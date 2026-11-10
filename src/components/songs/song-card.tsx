@@ -40,6 +40,7 @@ import { SongFormDialog } from "./song-form-dialog";
 type SongCardProps = {
   song: SongRecord;
   canManage?: boolean;
+  existingCollections?: string[];
   onSongUpdated?: (song: SongRecord) => void;
   onSongDeleted?: (songId: string) => void;
 };
@@ -47,6 +48,7 @@ type SongCardProps = {
 export function SongCard({
   song,
   canManage = true,
+  existingCollections = [],
   onSongUpdated,
   onSongDeleted,
 }: SongCardProps) {
@@ -299,6 +301,7 @@ export function SongCard({
           open={editOpen}
           onOpenChange={setEditOpen}
           songId={song.id}
+          existingCollections={existingCollections}
           initialData={{
             title: song.title,
             artist: song.artist ?? "",
