@@ -15,6 +15,7 @@ import { dispatchNotification } from "@/lib/notification-service";
 import { ensurePersonForUser } from "@/lib/people";
 import { birthdayFieldSchema, updateBirthday } from "@/lib/profile";
 import { getSession } from "@/lib/session";
+import { seedOrganizationPermissions } from "@/lib/permissions/provisioning";
 
 export type ChurchFormState =
   | {
@@ -86,6 +87,7 @@ export async function createChurchAction(
         phone: cleanPhone,
       });
       await syncUserAdminRole(session.user.id);
+      await seedOrganizationPermissions(organization.id);
 
       // Dispatch welcome notification
       await dispatchNotification({

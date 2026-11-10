@@ -33,6 +33,10 @@ export const department = pgTable(
       table.organizationId,
       table.name,
     ),
+    uniqueIndex("department_id_organizationId_uidx").on(
+      table.id,
+      table.organizationId,
+    ),
   ],
 );
 

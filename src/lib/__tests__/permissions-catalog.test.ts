@@ -23,7 +23,7 @@ describe("Permissions and Module Catalog", () => {
     ];
 
     expect(MODULE_KEYS).toHaveLength(4);
-    expect(MODULE_KEYS.sort()).toEqual([...expectedKeys].sort());
+    expect([...MODULE_KEYS].sort()).toEqual([...expectedKeys].sort());
 
     const registeredKeys = Object.keys(SYSTEM_MODULES);
     expect(registeredKeys.sort()).toEqual([...expectedKeys].sort());
