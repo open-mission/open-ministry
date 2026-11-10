@@ -8,6 +8,7 @@ import { cacheInvalidateTags, remember } from "@/lib/cache";
 import { can } from "@/lib/permissions/service";
 
 export type SongRecord = typeof schema.song.$inferSelect;
+export type SongWithDetails = NonNullable<Awaited<ReturnType<typeof getSong>>>;
 
 export async function canAccessMusicModule(
   _organizationId?: string,

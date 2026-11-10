@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Fraunces, Geist } from "next/font/google";
 import { Suspense } from "react";
 
+import { QueryProvider } from "@/components/providers/query-provider";
 import { PwaMobileZoomLock } from "@/components/pwa/pwa-mobile-zoom-lock";
 import { ServiceWorker } from "@/components/app/service-worker";
 import { UploadThingSSR } from "@/components/app/uploadthing-ssr";
@@ -71,12 +72,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           enableSystem
           disableTransitionOnChange
         >
-          <TooltipProvider>
-            {children}
-            <Toaster mobileOffset={{ bottom: 80 }} />
-            <ServiceWorker />
-            <PwaMobileZoomLock />
-          </TooltipProvider>
+          <QueryProvider>
+            <TooltipProvider>
+              {children}
+              <Toaster mobileOffset={{ bottom: 80 }} />
+              <ServiceWorker />
+              <PwaMobileZoomLock />
+            </TooltipProvider>
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

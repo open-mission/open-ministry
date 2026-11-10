@@ -26,6 +26,7 @@
         "@scalar/nextjs-api-reference": "^0.12.16",
         "@shadcn/react": "^0.3.1",
         "@tabler/icons-react": "^3.50.0",
+        "@tanstack/react-query": "^5.107.1",
         "@uploadthing/react": "^7.3.3",
         "@upstash/qstash": "^2.12.1",
         "@upstash/redis": "^1.41.0",
@@ -719,6 +720,10 @@
     "@tailwindcss/oxide-win32-x64-msvc": ["@tailwindcss/oxide-win32-x64-msvc@4.3.4", "", { "os": "win32", "cpu": "x64" }, "sha512-cge1wcedn1FrRSXL22lF5sNDYr8c9+VImk7zFYLPs12jkDmchSrZNfzWqOKub+5Hb/aYRdDEqERGGDKONBlOzQ=="],
 
     "@tailwindcss/turbopack": ["@tailwindcss/turbopack@4.3.4", "", { "dependencies": { "@alloc/quick-lru": "^5.2.0", "@tailwindcss/node": "4.3.4", "@tailwindcss/oxide": "4.3.4", "tailwindcss": "4.3.4" } }, "sha512-zaGyyqTe+7Leowbp5HZ6SXBQ/XFbGK4sV/I5ZPwiO/bWD1j/ukJGzyKOZLj9//uD11790obelpdQHjXJRTpORA=="],
+
+    "@tanstack/query-core": ["@tanstack/query-core@5.107.1", "", {}, "sha512-PSyAik11oQBEVOiVy5hjZWHmoUqOXqK1WYy4v55mcxozEfKaQgpUMsgnXhWjuESzSht8JfzqMS1m6M/9CpNgvg=="],
+
+    "@tanstack/react-query": ["@tanstack/react-query@5.107.1", "", { "dependencies": { "@tanstack/query-core": "5.107.1" }, "peerDependencies": { "@types/react": "^18 || ^19", "react": "^18 || ^19" }, "optionalPeers": ["@types/react"] }, "sha512-udCOOLp3ZAheUrIHLCe+ZZge6nr2ZUrGMSWcCuXsjY1Bf2JeeE09oxst97PILiCY6N8xo/7bIo3Hvz13zh06FA=="],
 
     "@ts-morph/common": ["@ts-morph/common@0.27.0", "", { "dependencies": { "fast-glob": "^3.3.3", "minimatch": "^10.0.1", "path-browserify": "^1.0.1" } }, "sha512-Wf29UqxWDpc+i61k3oIOzcUfQt79PIT9y/MWfAGlrkjg6lBC1hwDECLXPVJAhWjiGbfBCxZd65F/LIZF3+jeJQ=="],
 

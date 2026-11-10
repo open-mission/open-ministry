@@ -1,11 +1,9 @@
 "use client";
 
-import { useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2Icon } from "lucide-react";
 
-import { deleteSongAction } from "@/app/actions/songs";
+import { useDeleteSongMutation } from "@/hooks/use-songs";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -32,25 +30,20 @@ export function DeleteSongDialog({
   songTitle,
   onSongDeleted,
 }: DeleteSongDialogProps) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const deleteMutation = useDeleteSongMutation();
+  const isPending = deleteMutation.isPending;
 
-  const handleDelete = () => {
-    startTransition(async () => {
-      const formData = new FormData();
-      formData.append("songId", songId);
-
-      const result = await deleteSongAction(formData);
-
-      if (!result.ok) {
-        toast.error(result.error ?? "Erro ao excluir música.");
-      } else {
-        toast.success("Música removida do repertório.");
-        onSongDeleted?.(songId);
-        onOpenChange(false);
-        router.refresh();
-      }
-    });
+  const handleDelete = async () => {
+    try {
+      await deleteMutation.mutateAsync(songId);
+      toast.success("Música removida do repertório.");
+      onSongDeleted?.(songId);
+      onOpenChange(false);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Erro ao excluir música.";
+      toast.error(message);
+    }
   };
 
   return (

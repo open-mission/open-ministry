@@ -37,6 +37,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSongsQuery } from "@/hooks/use-songs";
 import { STANDARD_TONES } from "@/lib/music/chords-utils";
 import type { SongRecord } from "@/lib/songs";
 import { cn } from "@/lib/utils";
@@ -54,32 +55,20 @@ export function SongsListView({
   existingCollections = [],
   canManage = true,
 }: SongsListViewProps) {
-  const [songs, setSongs] = useState<SongRecord[]>(initialSongs);
-  const [prevInitialSongs, setPrevInitialSongs] = useState(initialSongs);
+  const { data } = useSongsQuery({
+    initialData: { songs: initialSongs, collections: existingCollections },
+  });
+
+  const songs = data?.songs ?? initialSongs;
+  const collections = data?.collections?.length
+    ? data.collections
+    : existingCollections;
+
   const isMobile = useIsMobile();
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [toneFilter, setToneFilter] = useState("");
   const [collectionFilter, setCollectionFilter] = useState("");
-
-  if (initialSongs !== prevInitialSongs) {
-    setPrevInitialSongs(initialSongs);
-    setSongs(initialSongs);
-  }
-
-  const handleSongCreated = (newSong: SongRecord) => {
-    setSongs((prev) => [newSong, ...prev.filter((s) => s.id !== newSong.id)]);
-  };
-
-  const handleSongUpdated = (updatedSong: SongRecord) => {
-    setSongs((prev) =>
-      prev.map((s) => (s.id === updatedSong.id ? updatedSong : s)),
-    );
-  };
-
-  const handleSongDeleted = (songId: string) => {
-    setSongs((prev) => prev.filter((s) => s.id !== songId));
-  };
 
   const filteredSongs = useMemo(() => {
     let result = songs;
@@ -143,8 +132,7 @@ export function SongsListView({
 
         {canManage ? (
           <AddSongChoiceDialog
-            existingCollections={existingCollections}
-            onSongCreated={handleSongCreated}
+            existingCollections={collections}
           />
         ) : null}
       </header>
@@ -565,8 +553,6 @@ export function SongsListView({
               key={song.id}
               song={song}
               canManage={canManage}
-              onSongUpdated={handleSongUpdated}
-              onSongDeleted={handleSongDeleted}
             />
           ))}
         </div>
@@ -585,8 +571,7 @@ export function SongsListView({
           <div className="mt-5">
             {canManage ? (
               <AddSongChoiceDialog
-                existingCollections={existingCollections}
-                onSongCreated={handleSongCreated}
+                existingCollections={collections}
               />
             ) : null}
           </div>
