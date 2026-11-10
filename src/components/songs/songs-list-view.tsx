@@ -61,9 +61,24 @@ export function SongsListView({
   });
 
   const songs = data?.songs ?? initialSongs;
-  const collections = data?.collections?.length
-    ? data.collections
-    : existingCollections;
+  const dataCollections = data?.collections;
+  const collections = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of existingCollections) {
+      if (c?.trim()) set.add(c.trim());
+    }
+    if (dataCollections) {
+      for (const c of dataCollections) {
+        if (c?.trim()) set.add(c.trim());
+      }
+    }
+    if (songs) {
+      for (const s of songs) {
+        if (s.collection?.trim()) set.add(s.collection.trim());
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [existingCollections, dataCollections, songs]);
 
   const queryClient = useQueryClient();
 
@@ -452,7 +467,7 @@ export function SongsListView({
       </div>
 
       {/* SELETOR RÁPIDO DE COLEÇÃO / GRUPO */}
-      {existingCollections.length > 0 ? (
+      {collections.length > 0 ? (
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           <button
             type="button"
@@ -468,7 +483,7 @@ export function SongsListView({
             <span>Todos os Grupos ({songs.length})</span>
           </button>
 
-          {existingCollections.map((col) => {
+          {collections.map((col) => {
             const count = songs.filter((s) => s.collection === col).length;
             const isSelected = collectionFilter === col;
             return (
@@ -565,6 +580,7 @@ export function SongsListView({
               key={song.id}
               song={song}
               canManage={canManage}
+              existingCollections={collections}
             />
           ))}
         </div>
