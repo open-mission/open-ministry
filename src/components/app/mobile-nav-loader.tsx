@@ -1,10 +1,7 @@
 import { connection } from "next/server";
 
 import { MobileNav } from "@/components/app/mobile-nav";
-import {
-  buildAccessibleMobileNavItems,
-  getUserAccessibleModuleKeys,
-} from "@/lib/modules/service";
+import { getUserAccessibleModuleKeys } from "@/lib/modules/service";
 import { requireOrganizationContext } from "@/lib/organizations";
 
 export async function MobileNavLoader() {
@@ -18,7 +15,5 @@ export async function MobileNavLoader() {
     isAdmin,
   );
 
-  const items = buildAccessibleMobileNavItems(activeModuleKeys);
-
-  return <MobileNav items={items} />;
+  return <MobileNav activeModuleKeys={activeModuleKeys} />;
 }
