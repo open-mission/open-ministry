@@ -1,4 +1,4 @@
-export const APP_VERSION = "0.9.5";
+export const APP_VERSION = "0.9.6";
 export const APP_NAME = "OpenMinistry";
 export const APP_TAGLINE = "Organize. Planeje. Sirva.";
 export const APP_DESCRIPTION =
