@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   AlertTriangleIcon,
@@ -17,7 +16,8 @@ import {
   XIcon,
 } from "lucide-react";
 
-import { createSongAction, updateSongAction } from "@/app/actions/songs";
+import { useCreateSongMutation, useUpdateSongMutation } from "@/hooks/use-songs";
+import type { SongInput } from "@/lib/music/songs-schema";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -91,10 +91,12 @@ export function SongFormDialog({
   onSongCreated,
   onSongUpdated,
 }: SongFormDialogProps) {
-  const router = useRouter();
   const isEditing = Boolean(songId);
   const isMobile = useIsMobile();
-  const [isPending, startTransition] = useTransition();
+
+  const createMutation = useCreateSongMutation();
+  const updateMutation = useUpdateSongMutation();
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
   // Estados de confirmação e visualização
   const [showDiscardAlert, setShowDiscardAlert] = useState(false);
@@ -127,6 +129,24 @@ export function SongFormDialog({
   const [tagsInput, setTagsInput] = useState(
     initialData?.tags?.join(", ") ?? "",
   );
+
+  // Sincroniza os campos quando initialData mudar
+  const [prevInitialData, setPrevInitialData] = useState(initialData);
+  if (initialData !== prevInitialData) {
+    setPrevInitialData(initialData);
+    setTitle(initialData?.title ?? "");
+    setArtist(initialData?.artist ?? "");
+    setTone(initialData?.tone ?? "");
+    setBpm(initialData?.bpm ? String(initialData.bpm) : "");
+    setTimeSignature(initialData?.timeSignature ?? "4/4");
+    setLyrics(initialData?.lyrics ?? "");
+    setChords(initialData?.chords ?? "");
+    setYoutubeUrl(initialData?.youtubeUrl ?? "");
+    setYoutubeMusicUrl(initialData?.youtubeMusicUrl ?? "");
+    setSpotifyUrl(initialData?.spotifyUrl ?? "");
+    setCollection(initialData?.collection ?? "");
+    setTagsInput(initialData?.tags?.join(", ") ?? "");
+  }
 
   // Detecção de alterações não salvas (Dirty State)
   const isDirty = useMemo(() => {
@@ -230,56 +250,57 @@ export function SongFormDialog({
     toast.success("Letra sincronizada com sucesso a partir da cifra!");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
       toast.error("O título da música é obrigatório.");
       return;
     }
 
-    startTransition(async () => {
-      const formData = new FormData();
-      if (songId) formData.append("songId", songId);
-      formData.append("title", title);
-      formData.append("artist", artist);
-      formData.append("tone", tone);
-      formData.append("bpm", bpm);
-      formData.append("timeSignature", timeSignature);
-      formData.append("lyrics", lyrics);
-      formData.append("chords", chords);
-      formData.append("youtubeUrl", youtubeUrl);
-      formData.append("youtubeMusicUrl", youtubeMusicUrl);
-      formData.append("spotifyUrl", spotifyUrl);
-      if (collection.trim()) formData.append("collection", collection.trim());
+    const parsedTags = tagsInput
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
 
-      const parsedTags = tagsInput
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
-      formData.append("tags", JSON.stringify(parsedTags));
+    const payload: SongInput = {
+      title: title.trim(),
+      artist: artist.trim() || null,
+      tone: tone.trim() || null,
+      bpm: bpm ? Number(bpm) : null,
+      timeSignature: timeSignature.trim() || null,
+      lyrics: lyrics.trim() || null,
+      chords: chords.trim() || null,
+      youtubeUrl: youtubeUrl.trim() || null,
+      youtubeMusicUrl: youtubeMusicUrl.trim() || null,
+      spotifyUrl: spotifyUrl.trim() || null,
+      collection: collection.trim() || null,
+      tags: parsedTags,
+    };
 
-      const result = isEditing
-        ? await updateSongAction(formData)
-        : await createSongAction(formData);
-
-      if (!result.ok) {
-        toast.error(result.error ?? "Erro ao salvar música.");
+    try {
+      if (isEditing && songId) {
+        const result = await updateMutation.mutateAsync({
+          songId,
+          data: payload,
+        });
+        toast.success("Música atualizada com sucesso!");
+        if (result.song) {
+          onSongUpdated?.(result.song as SongRecord);
+        }
       } else {
-        toast.success(
-          isEditing
-            ? "Música atualizada com sucesso!"
-            : "Música adicionada ao repertório!",
-        );
-        if (isEditing && result.song) {
-          onSongUpdated?.(result.song);
-        } else if (result.song) {
+        const result = await createMutation.mutateAsync(payload);
+        toast.success("Música adicionada ao repertório!");
+        if (result.song) {
           onSongCreated?.(result.song);
         }
-        setIsMaximized(false);
-        onOpenChange(false);
-        router.refresh();
       }
-    });
+      setIsMaximized(false);
+      onOpenChange(false);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Erro ao salvar música.";
+      toast.error(message);
+    }
   };
 
   // Formulário compartilhado entre Sheet (mobile) e Dialog (desktop)
