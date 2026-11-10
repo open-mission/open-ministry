@@ -33,6 +33,7 @@ export function DepartmentCard({
   return (
     <Link
       href={`/dashboard/departments/${department.id}`}
+      prefetch={true}
       className="group relative flex h-full flex-col justify-between gap-5 overflow-hidden rounded-xl bg-card p-5 ring-1 ring-foreground/10 transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 hover:ring-primary/25 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
     >
       <span

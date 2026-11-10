@@ -87,6 +87,7 @@ function EventRow({
   return (
     <Link
       href={`/dashboard/events/${event.id}`}
+      prefetch={true}
       className="group grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 rounded-xl border border-border/60 bg-card p-3 transition-[border-color,background-color] hover:border-primary/30 active:bg-muted/40 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:gap-3 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:px-2 sm:py-4 sm:hover:bg-muted/50"
     >
       <div className="flex size-12 shrink-0 flex-col items-center justify-center rounded-lg bg-secondary text-secondary-foreground sm:size-14 sm:rounded-xl">

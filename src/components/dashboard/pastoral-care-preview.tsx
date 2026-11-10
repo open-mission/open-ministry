@@ -56,7 +56,7 @@ export function PastoralCarePreview({
         </div>
 
         <Button asChild variant="ghost" size="sm" className="h-8 gap-1 self-start text-xs sm:self-auto">
-          <Link href="/dashboard/members?tab=felicitometro">
+          <Link href="/dashboard/members?tab=felicitometro" prefetch={true}>
             <span>Painel completo</span>
             <ArrowRightIcon className="size-3.5" />
           </Link>
@@ -233,7 +233,7 @@ export function PastoralCarePreview({
                       )}
 
                       <Button size="sm" variant="ghost" asChild className="h-8 gap-1 text-xs">
-                        <Link href={`/dashboard/members/${req.personId}`}>
+                        <Link href={`/dashboard/members/${req.personId}`} prefetch={true}>
                           <span>Perfil</span>
                           <ArrowRightIcon className="size-3" />
                         </Link>

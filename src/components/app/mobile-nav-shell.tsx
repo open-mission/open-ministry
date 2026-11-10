@@ -42,6 +42,7 @@ export function MobileNavShell({
             <Link
               key={item.href}
               href={item.href}
+              prefetch={true}
               aria-current={isActive ? "page" : undefined}
               className={cn(
                 "group flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[0.62rem] font-medium transition-[color,transform] duration-200 select-none active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100",

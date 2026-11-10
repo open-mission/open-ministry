@@ -345,6 +345,7 @@ export function FelicitometroDashboard({
                       <div className="flex items-center gap-2 flex-wrap">
                         <Link
                           href={`/dashboard/members/${req.personId}`}
+                          prefetch={true}
                           className="font-medium text-sm text-foreground hover:underline"
                         >
                           {req.personName}
@@ -415,7 +416,7 @@ export function FelicitometroDashboard({
                       asChild
                       className="h-8 text-xs gap-1"
                     >
-                      <Link href={`/dashboard/members/${req.personId}`}>
+                      <Link href={`/dashboard/members/${req.personId}`} prefetch={true}>
                         <span>Ver Perfil</span>
                         <ArrowRightIcon className="size-3" />
                       </Link>

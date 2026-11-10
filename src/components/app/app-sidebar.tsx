@@ -49,7 +49,7 @@ export function AppSidebar({
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild size="lg" tooltip="OpenMinistry">
-              <Link href="/dashboard">
+              <Link href="/dashboard" prefetch={true}>
                 {organizationLogo ? (
                   <Avatar className="size-8 shrink-0 rounded-lg">
                     <AvatarImage
