@@ -13,7 +13,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## Turborepo Monorepo & AI Guidance
 
 Este projeto é gerenciado por **Turborepo** (`turbo.json`) em monorepo com Bun (`workspaces: ["apps/*", "packages/*"]`).
-- O código da aplicação web reside em `apps/web` e segue a arquitetura **Feature-Based** em `apps/web/src/features/*`.
+- O código da aplicação principal reside em `apps/app` (servindo `app.openministry.online`) e segue a arquitetura **Feature-Based** em `apps/app/src/features/*`.
+- O site institucional e de apresentação reside em `apps/site` (servindo `openministry.online`).
+- A documentação futura residirá em `apps/docs` (servindo `docs.openministry.online`).
 - Pacotes internos reutilizáveis estão em `packages/`:
   - `@openministry/db`: Modelos Drizzle ORM, conexão Neon e migrações SQL.
   - `@openministry/ui`: Componentes primitivos Shadcn UI / Radix.

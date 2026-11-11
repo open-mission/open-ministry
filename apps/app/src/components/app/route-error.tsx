@@ -1,0 +1,35 @@
+"use client";
+
+import * as Sentry from "@sentry/nextjs";
+import { useEffect } from "react";
+
+import { Button } from "@/components/ui/button";
+
+export function RouteError({
+  error,
+  retry,
+}: {
+  error: Error & { digest?: string };
+  retry: () => void;
+}) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
+  return (
+    <div
+      role="alert"
+      className="flex min-h-[50vh] flex-col items-center justify-center gap-4 p-6 text-center"
+    >
+      <div className="space-y-2">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Algo deu errado
+        </h1>
+        <p className="text-muted-foreground text-sm">
+          Não foi possível carregar esta página. Tente novamente.
+        </p>
+      </div>
+      <Button onClick={retry}>Tentar novamente</Button>
+    </div>
+  );
+}
