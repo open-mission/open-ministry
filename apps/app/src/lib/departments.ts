@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
@@ -31,6 +31,61 @@ export async function listDepartments(organizationId: string) {
     },
     [`departments:${organizationId}`],
   );
+}
+
+/**
+ * Lean department list for menus, selects and calendar filters. Avoids loading
+ * every member, assignment and module when only id/name are needed.
+ */
+export async function listDepartmentOptions(organizationId: string) {
+  return remember(
+    `org:${organizationId}:department-options`,
+    300,
+    async () => {
+      return db.query.department.findMany({
+        where: eq(schema.department.organizationId, organizationId),
+        columns: { id: true, name: true },
+        orderBy: (departments, { asc }) => [asc(departments.name)],
+      });
+    },
+    [`departments:${organizationId}`],
+  );
+}
+
+/**
+ * Loads the full records for a specific set of departments. Event screens only
+ * need the departments acting in that event, not every department in the
+ * church.
+ */
+export async function listDepartmentsByIds(
+  organizationId: string,
+  departmentIds: string[],
+) {
+  if (departmentIds.length === 0) {
+    return [];
+  }
+
+  return db.query.department.findMany({
+    where: and(
+      eq(schema.department.organizationId, organizationId),
+      inArray(schema.department.id, departmentIds),
+    ),
+    with: {
+      functions: {
+        orderBy: (functions, { asc }) => [asc(functions.createdAt)],
+      },
+      members: {
+        with: {
+          person: { with: { user: true } },
+          assignments: {
+            with: { function: true },
+          },
+        },
+      },
+      modules: true,
+    },
+    orderBy: (departments, { asc }) => [asc(departments.name)],
+  });
 }
 
 export async function listUserLeaderDepartments(
