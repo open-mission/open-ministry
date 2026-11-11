@@ -80,6 +80,23 @@ export async function listEvents(organizationId: string) {
   );
 }
 
+export async function getSeriesOccurrenceCount(
+  organizationId: string,
+  seriesId: string,
+) {
+  const rows = await db
+    .select({ id: schema.event.id })
+    .from(schema.event)
+    .where(
+      and(
+        eq(schema.event.organizationId, organizationId),
+        eq(schema.event.seriesId, seriesId),
+      ),
+    );
+
+  return rows.length;
+}
+
 export async function getEvent(
   organizationId: string,
   eventId: string,
@@ -157,6 +174,213 @@ export function scheduleProgress(event: {
           ? ("complete" as const)
           : ("partial" as const),
   };
+}
+
+export type CoverageFilter = "attention" | "complete" | "all";
+
+export function parseCoverageFilter(
+  value?: string | string[],
+): CoverageFilter | null {
+  const candidate = Array.isArray(value) ? value[0] : value;
+
+  return candidate === "attention" ||
+    candidate === "complete" ||
+    candidate === "all"
+    ? candidate
+    : null;
+}
+
+type CoverageEvent = {
+  id: string;
+  title: string;
+  location: string | null;
+  startsAt: Date;
+  departments: {
+    departmentId: string;
+    department: { functions: { id: string; name: string }[] };
+  }[];
+  schedule?: {
+    assignments: { functionId: string; departmentId: string }[];
+  } | null;
+};
+
+/**
+ * A function counts as covered when at least one person is assigned to it.
+ * Events with no functions are treated as setup work, not as complete.
+ */
+export function coverageStatus(event: CoverageEvent) {
+  const progress = scheduleProgress(event);
+
+  if (progress.totalFunctions === 0) {
+    return "setup" as const;
+  }
+
+  if (progress.filledFunctions >= progress.totalFunctions) {
+    return "complete" as const;
+  }
+
+  return progress.assignmentsCount === 0 ? ("empty" as const) : ("partial" as const);
+}
+
+export function needsAttention(event: CoverageEvent) {
+  return coverageStatus(event) !== "complete";
+}
+
+export function isScaleComplete(event: CoverageEvent) {
+  return coverageStatus(event) === "complete";
+}
+
+export function eventMatchesQuery(event: CoverageEvent, query: string) {
+  const term = query.trim().toLocaleLowerCase("pt-BR");
+
+  if (!term) {
+    return true;
+  }
+
+  const haystack = [event.title, event.location ?? ""]
+    .join(" ")
+    .toLocaleLowerCase("pt-BR");
+
+  return haystack.includes(term);
+}
+
+export function eventActsInDepartment(
+  event: CoverageEvent,
+  departmentId?: string,
+) {
+  if (!departmentId) {
+    return true;
+  }
+
+  return event.departments.some((item) => item.departmentId === departmentId);
+}
+
+export function filterEvents<T extends CoverageEvent>(
+  events: T[],
+  filters: { coverage?: CoverageFilter; departmentId?: string; query?: string },
+) {
+  const coverage = filters.coverage ?? "all";
+
+  return events.filter((event) => {
+    if (coverage === "attention" && !needsAttention(event)) {
+      return false;
+    }
+
+    if (coverage === "complete" && !isScaleComplete(event)) {
+      return false;
+    }
+
+    if (!eventActsInDepartment(event, filters.departmentId)) {
+      return false;
+    }
+
+    if (filters.query && !eventMatchesQuery(event, filters.query)) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+export function coverageCounts(events: CoverageEvent[]) {
+  return events.reduce(
+    (counts, event) => {
+      if (isScaleComplete(event)) {
+        counts.complete += 1;
+      } else {
+        counts.attention += 1;
+      }
+
+      counts.all += 1;
+      return counts;
+    },
+    { attention: 0, complete: 0, all: 0 },
+  );
+}
+
+export type DepartmentCoverage = {
+  departmentId: string;
+  departmentName: string;
+  eventsCount: number;
+  totalSlots: number;
+  coveredSlots: number;
+  eventsWithGaps: number;
+  nextGap: {
+    eventId: string;
+    eventTitle: string;
+    startsAt: Date;
+    missingFunctions: string[];
+  } | null;
+};
+
+/**
+ * Summarises, per department, how many function slots in upcoming events have
+ * at least one person. This powers the coverage board on the Escalas page.
+ */
+export function buildDepartmentCoverage(
+  events: CoverageEvent[],
+  departments: { id: string; name: string }[],
+): DepartmentCoverage[] {
+  return departments
+    .map((department) => {
+      const actingEvents = events
+        .filter((event) =>
+          event.departments.some(
+            (item) => item.departmentId === department.id,
+          ),
+        )
+        .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+
+      let totalSlots = 0;
+      let coveredSlots = 0;
+      let eventsWithGaps = 0;
+      let nextGap: DepartmentCoverage["nextGap"] = null;
+
+      for (const event of actingEvents) {
+        const departmentFunctions =
+          event.departments.find(
+            (item) => item.departmentId === department.id,
+          )?.department.functions ?? [];
+        const assignedFunctionIds = new Set(
+          (event.schedule?.assignments ?? [])
+            .filter((assignment) => assignment.departmentId === department.id)
+            .map((assignment) => assignment.functionId),
+        );
+        const missingFunctions = departmentFunctions.filter(
+          (departmentFunction) =>
+            !assignedFunctionIds.has(departmentFunction.id),
+        );
+
+        totalSlots += departmentFunctions.length;
+        coveredSlots += departmentFunctions.length - missingFunctions.length;
+
+        if (missingFunctions.length > 0) {
+          eventsWithGaps += 1;
+
+          if (!nextGap) {
+            nextGap = {
+              eventId: event.id,
+              eventTitle: event.title,
+              startsAt: event.startsAt,
+              missingFunctions: missingFunctions.map(
+                (departmentFunction) => departmentFunction.name,
+              ),
+            };
+          }
+        }
+      }
+
+      return {
+        departmentId: department.id,
+        departmentName: department.name,
+        eventsCount: actingEvents.length,
+        totalSlots,
+        coveredSlots,
+        eventsWithGaps,
+        nextGap,
+      };
+    })
+    .filter((department) => department.eventsCount > 0);
 }
 
 const dayFormatter = new Intl.DateTimeFormat("pt-BR", {
@@ -237,6 +461,34 @@ export function formatEventTime(date: Date) {
 
 export function formatEventTimeRange(startsAt: Date, endsAt: Date) {
   return `${formatEventTime(startsAt)} – ${formatEventTime(endsAt)}`;
+}
+
+/**
+ * Human-friendly day label for the next few days. Returns null for dates
+ * outside the yesterday/today/tomorrow window so callers can fall back to the
+ * formatted weekday.
+ */
+export function relativeDayLabel(date: Date, now: Date = new Date()) {
+  const target = toInputDate(date);
+  const today = toInputDate(now);
+  const difference = Math.round(
+    (Date.parse(`${target}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) /
+      86_400_000,
+  );
+
+  if (difference === 0) {
+    return "Hoje";
+  }
+
+  if (difference === 1) {
+    return "Amanhã";
+  }
+
+  if (difference === -1) {
+    return "Ontem";
+  }
+
+  return null;
 }
 
 export function toInputDate(date: Date) {

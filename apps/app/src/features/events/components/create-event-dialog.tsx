@@ -45,13 +45,20 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   RECURRENCE_OPTIONS,
   recurrenceLabels,
+  type RecurrenceOption,
 } from "@/lib/event-options";
 import {
-  findNthWeekdayOfMonth,
+  endOfDayInZone,
   formatNthWeekdayLabel,
+  generateOccurrences,
   getNthWeekdayInfo,
+  zonedDateTimeToUtc,
 } from "@/lib/recurrence-utils";
-import { computeDurationMinutes, computeEndTime } from "@/lib/plan-utils";
+import {
+  computeDurationMinutes,
+  computeEndTime,
+  EVENT_TIME_ZONE,
+} from "@/lib/plan-utils";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -157,7 +164,7 @@ function CreateEventForm({
     undefined,
   );
   const [selectedDate, setSelectedDate] = useState(defaultDate);
-  const [recurrence, setRecurrence] = useState("none");
+  const [recurrence, setRecurrence] = useState<RecurrenceOption>("none");
   const [startTime, setStartTime] = useState("19:00");
   const [endTime, setEndTime] = useState("20:30");
   const durationMinutes = computeDurationMinutes(startTime, endTime);
@@ -190,35 +197,59 @@ function CreateEventForm({
     }
   }, [selectedDate, defaultDate]);
 
-  const previewDates = useMemo(() => {
-    if (recurrence !== "monthly_nth_weekday" || !selectedDate) return [];
-    try {
-      const [y, m, d] = selectedDate.split("-").map(Number);
-      const targetWeekday = weekdayInfo.weekday;
-      const nth = nthPosition;
-      const results: string[] = [];
+  const [recurrenceEndsAt, setRecurrenceEndsAt] = useState(defaultEndDate);
+  const [customInterval, setCustomInterval] = useState(2);
 
-      for (let offset = 0; offset < 12; offset++) {
-        const dObj = new Date(y, m - 1 + offset, 1);
-        const year = dObj.getFullYear();
-        const month = dObj.getMonth();
-        const day = findNthWeekdayOfMonth(year, month, targetWeekday, nth);
-        if (!day) continue;
-
-        const dateObj = new Date(year, month, day);
-        const selObj = new Date(y, m - 1, d);
-        if (dateObj.getTime() < selObj.getTime()) continue;
-
-        const formatted = `${String(day).padStart(2, "0")}/${String(month + 1).padStart(2, "0")}/${year}`;
-        results.push(formatted);
-        if (results.length >= 4) break;
-      }
-
-      return results;
-    } catch {
-      return [];
+  const occurrencePreview = useMemo(() => {
+    if (recurrence === "none" || !selectedDate || !recurrenceEndsAt) {
+      return null;
     }
-  }, [recurrence, selectedDate, weekdayInfo.weekday, nthPosition]);
+
+    try {
+      const startsAt = zonedDateTimeToUtc(selectedDate, startTime);
+      const endsAt = new Date(
+        startsAt.getTime() + (durationMinutes || 90) * 60_000,
+      );
+      const occurrences = generateOccurrences({
+        startsAt,
+        endsAt,
+        recurrence: recurrence as RecurrenceOption,
+        recurrenceInterval:
+          recurrence === "custom"
+            ? customInterval
+            : recurrence === "monthly_nth_weekday"
+              ? nthPosition
+              : null,
+        recurrenceEndsAt: endOfDayInZone(recurrenceEndsAt),
+      });
+
+      return {
+        count: occurrences.length,
+        dates: occurrences.slice(0, 4).map((occurrence) =>
+          new Intl.DateTimeFormat("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            timeZone: EVENT_TIME_ZONE,
+          }).format(occurrence.startsAt),
+        ),
+      };
+    } catch {
+      return null;
+    }
+  }, [
+    recurrence,
+    selectedDate,
+    recurrenceEndsAt,
+    startTime,
+    durationMinutes,
+    customInterval,
+    nthPosition,
+  ]);
+
+  const formattedEndDate = (() => {
+    const [year, month, day] = recurrenceEndsAt.split("-");
+    return year && month && day ? `${day}/${month}/${year}` : recurrenceEndsAt;
+  })();
 
   const handleStartTimeChange = (newStartTime: string) => {
     setStartTime(newStartTime);
@@ -353,7 +384,9 @@ function CreateEventForm({
               id="event-recurrence"
               name="recurrence"
               value={recurrence}
-              onChange={(event) => setRecurrence(event.target.value)}
+              onChange={(event) =>
+                setRecurrence(event.target.value as RecurrenceOption)
+              }
               className="w-full [&_select]:h-10"
               aria-invalid={Boolean(state?.fieldErrors?.recurrence)}
             >
@@ -383,7 +416,8 @@ function CreateEventForm({
                 id="event-recurrence-end"
                 name="recurrenceEndsAt"
                 type="date"
-                defaultValue={defaultEndDate}
+                value={recurrenceEndsAt}
+                onChange={(event) => setRecurrenceEndsAt(event.target.value)}
                 className="h-10"
                 aria-invalid={Boolean(state?.fieldErrors?.recurrenceEndsAt)}
                 required
@@ -411,7 +445,10 @@ function CreateEventForm({
                   type="number"
                   min={1}
                   max={12}
-                  defaultValue={2}
+                  value={customInterval}
+                  onChange={(event) =>
+                    setCustomInterval(Number(event.target.value) || 1)
+                  }
                   className="h-10"
                   aria-invalid={Boolean(
                     state?.fieldErrors?.recurrenceInterval,
@@ -472,39 +509,50 @@ function CreateEventForm({
               </Field>
             ) : null}
 
-            {recurrence === "monthly_nth_weekday" ? (
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs space-y-2 sm:col-span-2">
-                <div className="flex items-center gap-1.5 font-medium text-foreground">
-                  <RepeatIcon className="size-3.5 text-primary" />
-                  <span>
-                    {formatNthWeekdayLabel(nthPosition, weekdayInfo.weekday)}
-                  </span>
-                </div>
-                {previewDates.length > 0 ? (
-                  <div className="space-y-1">
-                    <p className="text-[0.72rem] text-muted-foreground">
-                      Próximas ocorrências estimadas:
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {previewDates.map((pDate, idx) => (
-                        <span
-                          key={pDate}
-                          className={cn(
-                            "inline-flex items-center rounded-md px-2 py-0.5 text-[0.7rem] font-medium border shadow-2xs",
-                            idx === 0
-                              ? "bg-primary/15 text-primary border-primary/30"
-                              : "bg-background text-foreground border-border",
-                          )}
-                        >
-                          {pDate}
-                          {idx === 0 ? " (primeiro)" : ""}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
+            <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs sm:col-span-2">
+              <div className="flex items-center gap-1.5 font-medium text-foreground">
+                <RepeatIcon className="size-3.5 text-primary" />
+                <span>
+                  {recurrence === "monthly_nth_weekday"
+                    ? formatNthWeekdayLabel(
+                        nthPosition,
+                        weekdayInfo.weekday,
+                      )
+                    : recurrenceLabels[recurrence]}
+                </span>
               </div>
-            ) : null}
+              {occurrencePreview ? (
+                <div className="space-y-1">
+                  <p className="text-[0.75rem] text-muted-foreground">
+                    {occurrencePreview.count === 1
+                      ? "1 encontro estimado"
+                      : `${occurrencePreview.count} encontros estimados`}{" "}
+                    até {formattedEndDate}. Cada data tem escala própria.
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {occurrencePreview.dates.map((previewDate, index) => (
+                      <span
+                        key={previewDate}
+                        className={cn(
+                          "inline-flex items-center rounded-md border px-2 py-0.5 text-[0.75rem] font-medium shadow-2xs",
+                          index === 0
+                            ? "border-primary/30 bg-primary/15 text-primary"
+                            : "border-border bg-background text-foreground",
+                        )}
+                      >
+                        {previewDate}
+                        {index === 0 ? " (primeiro)" : ""}
+                      </span>
+                    ))}
+                    {occurrencePreview.count > occurrencePreview.dates.length ? (
+                      <span className="inline-flex items-center rounded-md border border-border bg-background px-2 py-0.5 text-[0.75rem] font-medium text-muted-foreground">
+                        +{occurrencePreview.count - occurrencePreview.dates.length}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </div>
         ) : null}
 

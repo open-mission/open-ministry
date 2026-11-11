@@ -11,6 +11,7 @@ import {
 import { FormAlert } from "@/components/auth/form-alert";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -86,6 +87,13 @@ export function AddAssignmentDialog({
           variant="outline"
           size="sm"
           disabled={functions.length === 0 || members.length === 0}
+          title={
+            members.length === 0
+              ? "Este departamento ainda não tem pessoas. Adicione membros ao departamento primeiro."
+              : functions.length === 0
+                ? "Cadastre funções neste departamento antes de escalar."
+                : undefined
+          }
         >
           <UserPlusIcon data-icon="inline-start" />
           Escalar pessoa
@@ -141,6 +149,7 @@ function AssignmentForm({
   );
   const [functionId, setFunctionId] = useState(functions[0]?.id ?? "");
   const [selectedPersonId, setSelectedPersonId] = useState("");
+  const [blockedConfirmed, setBlockedConfirmed] = useState(false);
   const [prevSuccess, setPrevSuccess] = useState(state?.success);
   const formRef = useRef<HTMLFormElement>(null);
   const lastTempIdRef = useRef<string | null>(null);
@@ -149,6 +158,7 @@ function AssignmentForm({
     setPrevSuccess(state?.success);
     if (state?.success) {
       setSelectedPersonId("");
+      setBlockedConfirmed(false);
     }
   }
 
@@ -247,7 +257,10 @@ function AssignmentForm({
             id="assignment-person"
             name="personId"
             value={selectedPersonId}
-            onChange={(event) => setSelectedPersonId(event.target.value)}
+            onChange={(event) => {
+              setSelectedPersonId(event.target.value);
+              setBlockedConfirmed(false);
+            }}
             className="w-full [&_select]:h-10"
             aria-invalid={Boolean(state?.fieldErrors?.personId)}
             disabled={availableMembers.length === 0}
@@ -276,18 +289,38 @@ function AssignmentForm({
       </FieldGroup>
 
       {selectedPersonBlocked?.isBlocked ? (
-        <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200">
-          <AlertTriangleIcon className="size-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
-          <div className="space-y-0.5">
-            <p className="font-semibold">
-              Aviso: Pessoa marcou indisponibilidade nesta data
-            </p>
-            <p className="text-muted-foreground leading-relaxed">
-              {selectedPersonBlocked.reason
-                ? `Observação informada: "${selectedPersonBlocked.reason}"`
-                : "Esta pessoa registrou previamente que não poderá servir nesta data."}
-            </p>
+        <div className="space-y-2.5">
+          <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200">
+            <AlertTriangleIcon className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <div className="space-y-0.5">
+              <p className="font-semibold">
+                Aviso: Pessoa marcou indisponibilidade nesta data
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                {selectedPersonBlocked.reason
+                  ? `Observação informada: "${selectedPersonBlocked.reason}"`
+                  : "Esta pessoa registrou previamente que não poderá servir nesta data."}
+              </p>
+            </div>
           </div>
+
+          <label className="flex items-start gap-2.5 rounded-lg border border-amber-500/30 bg-background px-3 py-2.5 text-[0.8125rem] leading-relaxed">
+            <Checkbox
+              checked={blockedConfirmed}
+              onCheckedChange={(checked) =>
+                setBlockedConfirmed(checked === true)
+              }
+              className="mt-0.5"
+            />
+            <span>
+              Entendo que{" "}
+              <span className="font-medium">
+                {members.find((member) => member.id === selectedPersonId)
+                  ?.name ?? "esta pessoa"}
+              </span>{" "}
+              marcou indisponibilidade e quero escalar mesmo assim.
+            </span>
+          </label>
         </div>
       ) : null}
 
@@ -305,7 +338,10 @@ function AssignmentForm({
         className="h-10 w-full"
         pendingLabel="Escalando..."
         size="lg"
-        disabled={availableMembers.length === 0}
+        disabled={
+          availableMembers.length === 0 ||
+          (Boolean(selectedPersonBlocked?.isBlocked) && !blockedConfirmed)
+        }
       >
         <UserPlusIcon data-icon="inline-start" />
         Escalar nesta função

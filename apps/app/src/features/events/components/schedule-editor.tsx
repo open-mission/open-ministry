@@ -2,11 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CrownIcon } from "lucide-react";
+import { CopyIcon, CrownIcon, Loader2Icon } from "lucide-react";
+import { toast } from "sonner";
 
+import { copyLastScaleAction } from "@/app/actions/events";
 import { AddAssignmentDialog } from "@/components/events/add-assignment-dialog";
+import { InlineAssignmentPicker } from "@/components/events/inline-assignment-picker";
 import { RemoveAssignmentButton } from "@/components/events/remove-assignment-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -23,7 +27,7 @@ import {
   type PersonLike,
 } from "@/lib/person-format";
 
-type Assignment = {
+export type ScheduleAssignment = {
   id: string;
   departmentId: string;
   functionId: string;
@@ -35,47 +39,62 @@ type Assignment = {
 export function ScheduleEditor({
   eventId,
   departments,
-  assignments: initialAssignments,
+  assignments,
   currentUserId,
   isAdmin,
   unavailablePeopleMap,
+  onAddAssignment,
+  onRemoveAssignment,
+  onRestoreAssignment,
 }: {
   eventId: string;
   departments: DepartmentRecord[];
-  assignments: Assignment[];
+  assignments: ScheduleAssignment[];
   currentUserId: string;
   isAdmin: boolean;
-  unavailablePeopleMap?: Record<string, { isBlocked: boolean; reason?: string | null }>;
+  unavailablePeopleMap?: Record<
+    string,
+    { isBlocked: boolean; reason?: string | null }
+  >;
+  onAddAssignment: (assignment: ScheduleAssignment) => void;
+  onRemoveAssignment: (assignmentId: string) => void;
+  onRestoreAssignment: (assignment: ScheduleAssignment) => void;
 }) {
-  const [assignments, setAssignments] = useState<Assignment[]>(initialAssignments);
-  const [prevInitialAssignments, setPrevInitialAssignments] = useState(initialAssignments);
+  const [copyingDepartmentId, setCopyingDepartmentId] = useState<string | null>(
+    null,
+  );
 
-  if (initialAssignments !== prevInitialAssignments) {
-    setPrevInitialAssignments(initialAssignments);
-    setAssignments(initialAssignments);
-  }
+  const handleCopyLastScale = async (departmentId: string) => {
+    setCopyingDepartmentId(departmentId);
 
-  const handleAssignmentAdded = (newAssignment: Assignment) => {
-    setAssignments((prev) => [
-      ...prev.filter(
-        (a) =>
-          !(
-            a.departmentId === newAssignment.departmentId &&
-            a.functionId === newAssignment.functionId &&
-            a.personId === newAssignment.personId
-          ),
-      ),
-      newAssignment,
-    ]);
+    try {
+      const result = await copyLastScaleAction(eventId, departmentId);
+
+      if (!result.ok) {
+        toast.error(result.error ?? "Não foi possível copiar a escala.");
+        return;
+      }
+
+      if (!result.assignments || result.assignments.length === 0) {
+        toast.info("Nenhuma pessoa nova para copiar do último encontro.");
+        return;
+      }
+
+      for (const assignment of result.assignments) {
+        onAddAssignment(assignment);
+      }
+
+      const copiedCount = result.copiedCount ?? result.assignments.length;
+      toast.success(
+        copiedCount === 1
+          ? "1 pessoa copiada do último encontro."
+          : `${copiedCount} pessoas copiadas do último encontro.`,
+      );
+    } finally {
+      setCopyingDepartmentId(null);
+    }
   };
 
-  const handleAssignmentRollback = (tempId: string) => {
-    setAssignments((prev) => prev.filter((a) => a.id !== tempId));
-  };
-
-  const handleRemoveAssignment = (assignmentId: string) => {
-    setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
-  };
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {departments.map((department) => {
@@ -97,13 +116,15 @@ export function ScheduleEditor({
             id: member.personId,
             name: personDisplayName(member.person),
             email: personDisplayEmail(member.person),
+            image: personDisplayImage(member.person),
           }))
           .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+        const isCopying = copyingDepartmentId === department.id;
 
         return (
           <Card key={department.id}>
-            <CardHeader className="flex flex-row items-start justify-between gap-3">
-              <div className="space-y-1.5">
+            <CardHeader className="flex flex-wrap flex-row items-start justify-between gap-3">
+              <div className="min-w-0 space-y-1.5">
                 <CardTitle className="font-heading text-lg tracking-tight">
                   <Link
                     href={`/dashboard/departments/${department.id}`}
@@ -113,7 +134,7 @@ export function ScheduleEditor({
                     {department.name}
                   </Link>
                 </CardTitle>
-                <CardDescription className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                <CardDescription className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[0.8125rem]">
                   <span className="inline-flex items-center gap-1">
                     <CrownIcon className="size-3 text-accent-foreground" />
                     {leaders.length === 0
@@ -129,7 +150,7 @@ export function ScheduleEditor({
                       </span>
                       <span>
                         {filledFunctions} de {department.functions.length}{" "}
-                        funções
+                        funções cobertas
                       </span>
                     </>
                   ) : null}
@@ -137,31 +158,67 @@ export function ScheduleEditor({
               </div>
 
               {canManage && department.functions.length > 0 ? (
-                <AddAssignmentDialog
-                  eventId={eventId}
-                  departmentId={department.id}
-                  departmentName={department.name}
-                  functions={department.functions.map(
-                    (departmentFunction) => ({
-                      id: departmentFunction.id,
-                      name: departmentFunction.name,
-                    }),
-                  )}
-                  members={memberOptions}
-                  assignments={departmentAssignments.map((assignment) => ({
-                    functionId: assignment.functionId,
-                    personId: assignment.personId,
-                  }))}
-                  unavailablePeopleMap={unavailablePeopleMap}
-                  onAssignmentAdded={handleAssignmentAdded}
-                  onAssignmentRollback={handleAssignmentRollback}
-                />
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1 px-2 text-[0.8125rem] text-muted-foreground hover:text-foreground"
+                    title="Copiar a escala do último encontro em que este departamento atuou"
+                    disabled={isCopying}
+                    onClick={() => handleCopyLastScale(department.id)}
+                  >
+                    {isCopying ? (
+                      <Loader2Icon className="size-3.5 animate-spin" />
+                    ) : (
+                      <CopyIcon className="size-3.5" />
+                    )}
+                    <span className="hidden sm:inline">Copiar</span>
+                    <span className="sr-only sm:hidden">
+                      Copiar escala do último encontro
+                    </span>
+                  </Button>
+
+                  <AddAssignmentDialog
+                    eventId={eventId}
+                    departmentId={department.id}
+                    departmentName={department.name}
+                    functions={department.functions.map(
+                      (departmentFunction) => ({
+                        id: departmentFunction.id,
+                        name: departmentFunction.name,
+                      }),
+                    )}
+                    members={memberOptions}
+                    assignments={departmentAssignments.map((assignment) => ({
+                      functionId: assignment.functionId,
+                      personId: assignment.personId,
+                    }))}
+                    unavailablePeopleMap={unavailablePeopleMap}
+                    onAssignmentAdded={onAddAssignment}
+                    onAssignmentRollback={onRemoveAssignment}
+                  />
+                </div>
               ) : null}
             </CardHeader>
 
             <CardContent className="space-y-3">
+              {canManage && department.members.length === 0 ? (
+                <div className="rounded-lg border border-dashed px-3 py-2 text-[0.8125rem] leading-relaxed text-muted-foreground">
+                  Nenhuma pessoa neste departamento ainda.{" "}
+                  <Link
+                    href={`/dashboard/departments/${department.id}`}
+                    prefetch={true}
+                    className="font-medium text-foreground underline underline-offset-4"
+                  >
+                    Adicionar pessoas
+                  </Link>
+                  .
+                </div>
+              ) : null}
+
               {department.functions.length === 0 ? (
-                <div className="rounded-lg border border-dashed px-4 py-6 text-center text-xs leading-relaxed text-muted-foreground">
+                <div className="rounded-lg border border-dashed px-4 py-6 text-center text-[0.8125rem] leading-relaxed text-muted-foreground">
                   {canManage ? (
                     <>
                       Nenhuma função cadastrada.{" "}
@@ -187,31 +244,56 @@ export function ScheduleEditor({
 
                   return (
                     <div key={departmentFunction.id} className="space-y-1.5">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <p className="text-sm font-medium">
-                          {departmentFunction.name}
-                        </p>
-                        <span className="text-[0.7rem] whitespace-nowrap text-muted-foreground">
-                          {functionAssignments.length === 0
-                            ? "vazio"
-                            : functionAssignments.length === 1
-                              ? "1 pessoa"
-                              : `${functionAssignments.length} pessoas`}
-                        </span>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-baseline gap-2">
+                          <p className="text-sm font-medium">
+                            {departmentFunction.name}
+                          </p>
+                          <span className="text-[0.8125rem] whitespace-nowrap text-muted-foreground">
+                            {functionAssignments.length === 0
+                              ? "vazio"
+                              : functionAssignments.length === 1
+                                ? "1 pessoa"
+                                : `${functionAssignments.length} pessoas`}
+                          </span>
+                        </div>
+
+                        {canManage ? (
+                          <InlineAssignmentPicker
+                            eventId={eventId}
+                            departmentId={department.id}
+                            functionId={departmentFunction.id}
+                            functionName={departmentFunction.name}
+                            members={memberOptions}
+                            assignedPersonIds={functionAssignments.map(
+                              (assignment) => assignment.personId,
+                            )}
+                            unavailablePeopleMap={unavailablePeopleMap}
+                            label={
+                              functionAssignments.length === 0
+                                ? "Escalar"
+                                : "Adicionar"
+                            }
+                            onAdded={onAddAssignment}
+                          />
+                        ) : null}
                       </div>
 
                       {functionAssignments.length === 0 ? (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[0.8125rem] text-muted-foreground">
                           Ninguém escalado ainda.
                         </p>
                       ) : (
-                        <div className="flex flex-wrap gap-1.5">
+                        <ul
+                          className="flex flex-wrap gap-1.5"
+                          aria-label={`Pessoas escaladas em ${departmentFunction.name}`}
+                        >
                           {functionAssignments.map((assignment) => (
-                            <span
+                            <li
                               key={assignment.id}
-                              className="inline-flex items-center gap-1.5 rounded-full bg-secondary py-0.5 pr-1.5 pl-0.5 text-xs text-secondary-foreground"
+                              className="inline-flex items-center gap-1.5 rounded-full bg-secondary py-0.5 pr-1 pl-0.5 text-[0.8125rem] text-secondary-foreground"
                             >
-                              <Avatar className="size-5">
+                              <Avatar className="size-6">
                                 <AvatarImage
                                   src={
                                     personDisplayImage(assignment.person) ??
@@ -235,13 +317,17 @@ export function ScheduleEditor({
                                     assignment.person,
                                   )}
                                   functionName={departmentFunction.name}
-                                  onRemove={() => handleRemoveAssignment(assignment.id)}
-                                  onRollback={() => setAssignments(initialAssignments)}
+                                  onRemove={() =>
+                                    onRemoveAssignment(assignment.id)
+                                  }
+                                  onRollback={() =>
+                                    onRestoreAssignment(assignment)
+                                  }
                                 />
                               ) : null}
-                            </span>
+                            </li>
                           ))}
-                        </div>
+                        </ul>
                       )}
                     </div>
                   );
