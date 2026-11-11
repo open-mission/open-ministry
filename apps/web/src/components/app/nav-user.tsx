@@ -1,12 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 import {
+  ArrowRightLeftIcon,
   BellIcon,
   ChevronsUpDownIcon,
   LogOutIcon,
   SettingsIcon,
   UserIcon,
+  UserPlusIcon,
 } from "lucide-react";
 
 import { signOutAction } from "@/app/actions/auth";
@@ -27,6 +32,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { authClient } from "@/lib/auth-client";
+import { useDeviceSessions } from "@/hooks/use-device-sessions";
 import { getInitials, roleLabel } from "@/lib/format";
 
 export function NavUser({
@@ -42,6 +49,44 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar();
   const { openSettings } = useSettingsModal();
+  const router = useRouter();
+  const [switching, setSwitching] = useState(false);
+
+  // Consulta as sessões ativas no dispositivo usando o hook do multiSession
+  const { sessions: deviceSessions } = useDeviceSessions();
+
+  const otherSessions = (deviceSessions ?? []).filter(
+    (s) => s.user.email !== user.email,
+  );
+
+  const handleSwitchSession = async (
+    sessionToken: string,
+    targetName: string,
+  ) => {
+    if (switching) return;
+    setSwitching(true);
+    toast.loading(`Alternando para ${targetName}...`, {
+      id: "switch-account",
+    });
+    try {
+      const res = await authClient.multiSession.setActive({ sessionToken });
+      if (res?.error) {
+        toast.error(res.error.message || "Erro ao alternar conta.", {
+          id: "switch-account",
+        });
+        setSwitching(false);
+        return;
+      }
+      toast.success(`Conectado como ${targetName}!`, { id: "switch-account" });
+      router.push("/dashboard");
+      router.refresh();
+    } catch {
+      toast.error("Erro inesperado ao alternar conta.", {
+        id: "switch-account",
+      });
+      setSwitching(false);
+    }
+  };
 
   return (
     <SidebarMenu>
@@ -82,7 +127,13 @@ export function NavUser({
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="truncate font-medium">{user.name}</span>
+                    <span
+                      className="inline-flex size-2 rounded-full bg-emerald-500"
+                      title="Conta ativa"
+                    />
+                  </div>
                   <span className="truncate text-xs text-muted-foreground">
                     {user.email}
                   </span>
@@ -92,6 +143,63 @@ export function NavUser({
                 </div>
               </div>
             </DropdownMenuLabel>
+
+            {/* Outras contas conectadas no mesmo dispositivo */}
+            {otherSessions.length > 0 ? (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="px-2 py-1 text-[10px] font-semibold tracking-wider text-muted-foreground/80 uppercase">
+                  Alternar Conta
+                </DropdownMenuLabel>
+                <DropdownMenuGroup>
+                  {otherSessions.map((s) => (
+                    <DropdownMenuItem
+                      key={s.session.token}
+                      disabled={switching}
+                      onClick={() =>
+                        handleSwitchSession(s.session.token, s.user.name)
+                      }
+                      className="flex cursor-pointer items-center gap-2.5 px-2 py-2"
+                    >
+                      <Avatar className="size-7 rounded-lg">
+                        <AvatarImage
+                          src={s.user.image ?? undefined}
+                          alt={s.user.name}
+                        />
+                        <AvatarFallback className="rounded-lg bg-muted text-[10px] font-medium">
+                          {getInitials(s.user.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="grid flex-1 text-left text-xs leading-tight">
+                        <span className="truncate font-medium">
+                          {s.user.name}
+                        </span>
+                        <span className="truncate text-[10px] text-muted-foreground">
+                          {s.user.email}
+                        </span>
+                      </div>
+                      <ArrowRightLeftIcon className="size-3.5 text-muted-foreground shrink-0" />
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
+              </>
+            ) : null}
+
+            <DropdownMenuSeparator />
+
+            {/* Opção para conectar outra conta */}
+            <DropdownMenuGroup>
+              <DropdownMenuItem asChild>
+                <Link
+                  href="/login?redirect=/dashboard"
+                  className="flex cursor-pointer items-center gap-2 text-xs"
+                >
+                  <UserPlusIcon className="size-4" />
+                  <span>Conectar outra conta</span>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
