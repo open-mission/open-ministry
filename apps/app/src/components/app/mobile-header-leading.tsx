@@ -23,7 +23,7 @@ export function MobileHeaderLeading({
   if (isMobileNavRoute(pathname)) {
     return (
       <Link
-        href="/dashboard"
+        href="/"
         className="flex items-center gap-2 md:hidden transition-transform active:scale-95 shrink-0"
         aria-label={organizationName ?? "Início"}
       >

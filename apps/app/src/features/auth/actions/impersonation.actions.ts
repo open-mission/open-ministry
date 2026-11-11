@@ -83,7 +83,7 @@ export async function impersonateMemberAction(
   }
 
   revalidatePath("/dashboard");
-  redirect("/dashboard");
+  redirect("/");
 }
 
 export async function stopImpersonatingAction(): Promise<ImpersonationActionResult> {
