@@ -5,11 +5,13 @@ import { drizzle } from "drizzle-orm/neon-http";
 
 import * as schema from "./schema";
 
-const connectionString = process.env.DATABASE_URL;
+const connectionString =
+  process.env.DATABASE_URL ||
+  "postgres://build-fallback:build-fallback@localhost:5432/build-fallback";
 
-if (!connectionString) {
-  throw new Error(
-    "DATABASE_URL is not set. Copy .env.example to .env and fill in your Neon connection string.",
+if (!process.env.DATABASE_URL && process.env.NODE_ENV !== "test") {
+  console.warn(
+    "[db] Warning: DATABASE_URL is not set. Using build-time fallback connection string.",
   );
 }
 
