@@ -21,6 +21,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import {
   Field,
   FieldDescription,
   FieldError,
@@ -36,6 +44,7 @@ import {
 } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { computeDurationMinutes, computeEndTime } from "@/lib/plan-utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type DepartmentOption = {
   id: string;
@@ -70,10 +79,51 @@ export function EditEventDialog({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
+  const isMobile = useIsMobile();
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const setOpen = isControlled ? (setControlledOpen ?? (() => {})) : setUncontrolledOpen;
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={setOpen}>
+        {trigger !== undefined ? (
+          trigger ? <DrawerTrigger asChild>{trigger}</DrawerTrigger> : null
+        ) : (
+          <DrawerTrigger asChild>
+            <Button variant="outline" size="sm">
+              <PencilIcon data-icon="inline-start" />
+              Editar
+            </Button>
+          </DrawerTrigger>
+        )}
+        <DrawerContent className="p-0">
+          <DrawerHeader className="border-b px-5 pt-4 pb-3 !text-left text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+            <DrawerTitle className="font-heading text-xl tracking-tight">
+              Editar culto ou evento
+            </DrawerTitle>
+            <DrawerDescription className="text-xs text-muted-foreground text-left">
+              {event.seriesId
+                ? "Este evento faz parte de uma série recorrente. Escolha se a alteração vale só para esta ocorrência ou para todas."
+                : "Ajuste os dados e os departamentos que atuam neste evento."}
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="max-h-[80vh] overflow-y-auto px-5 py-4 pb-8 [-webkit-overflow-scrolling:touch]">
+            <EditEventForm
+              event={event}
+              departments={departments}
+              selectedDepartmentIds={selectedDepartmentIds}
+              defaultDate={defaultDate}
+              defaultTime={defaultTime}
+              defaultDuration={defaultDuration}
+              onDone={() => setOpen(false)}
+            />
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -136,6 +186,7 @@ function EditEventForm({
   defaultDuration: number;
   onDone: () => void;
 }) {
+  const isMobile = useIsMobile();
   const [state, formAction] = useActionState<EventFormState, FormData>(
     updateEventAction,
     undefined,
@@ -174,7 +225,7 @@ function EditEventForm({
             defaultValue={event.title}
             className="h-10"
             aria-invalid={Boolean(state?.fieldErrors?.title)}
-            autoFocus
+            autoFocus={!isMobile}
             required
           />
           <FieldError
