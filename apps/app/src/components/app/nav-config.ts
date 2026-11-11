@@ -155,6 +155,12 @@ export const mobileNavItems: NavItem[] = [
     icon: CalendarDaysIcon,
     exact: false,
   },
+  {
+    href: "/dashboard/availability",
+    label: "Disponibilidade",
+    icon: CalendarCheckIcon,
+    exact: false,
+  },
 ];
 
 export function isNavItemActive(item: NavItem, pathname: string) {

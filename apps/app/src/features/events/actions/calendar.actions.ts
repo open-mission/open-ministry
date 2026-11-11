@@ -15,12 +15,14 @@ import { requirePermission } from "@/lib/permissions/service";
 export async function getCalendarDataAction(): Promise<{
   items: CalendarItem[];
   preferences: CalendarPreferences;
+  canViewTeamAvailability: boolean;
 }> {
   const context = await requireOrganizationContext();
   if (!context) {
     return {
       items: [],
       preferences: { weekStartsOn: 0, timezone: "America/Sao_Paulo" },
+      canViewTeamAvailability: false,
     };
   }
 
@@ -50,19 +52,41 @@ export async function getCalendarDataAction(): Promise<{
     timezone: userRow?.timezone || "America/Sao_Paulo",
   };
 
-  const [events, unavailabilities, people] = await Promise.all([
+  const [events, people] = await Promise.all([
     listEvents(organization.id),
-    person
-      ? db.query.personUnavailability.findMany({
-          where: and(
-            eq(schema.personUnavailability.organizationId, organization.id),
-            eq(schema.personUnavailability.personId, person.id),
-          ),
-          orderBy: (table, { asc }) => [asc(table.date)],
-        })
-      : Promise.resolve([]),
     listPeople(organization.id),
   ]);
+
+  const peopleById = new Map(people.map((item) => [item.id, item]));
+  const currentPerson = person ? peopleById.get(person.id) : undefined;
+
+  // Admins see the whole church; department leaders see the people they lead.
+  // Members only see their own unavailability.
+  const ledDepartmentIds = context.isAdmin
+    ? null
+    : new Set(
+        (currentPerson?.memberships ?? [])
+          .filter((membership) => membership.isLeader)
+          .map((membership) => membership.departmentId),
+      );
+  const canViewTeamAvailability =
+    context.isAdmin || (ledDepartmentIds?.size ?? 0) > 0;
+
+  const unavailabilities =
+    canViewTeamAvailability || person
+      ? await db.query.personUnavailability.findMany({
+          where: canViewTeamAvailability
+            ? eq(schema.personUnavailability.organizationId, organization.id)
+            : and(
+                eq(
+                  schema.personUnavailability.organizationId,
+                  organization.id,
+                ),
+                eq(schema.personUnavailability.personId, person!.id),
+              ),
+          orderBy: (table, { asc }) => [asc(table.date)],
+        })
+      : [];
 
   const items: CalendarItem[] = [];
 
@@ -146,27 +170,65 @@ export async function getCalendarDataAction(): Promise<{
     }
   }
 
-  // 2. Process user unavailabilities
+  // 2. Process unavailabilities (own + team, when the user leads people)
   for (const unavail of unavailabilities) {
+    const isMine = Boolean(person && unavail.personId === person.id);
+    const owner = peopleById.get(unavail.personId);
+    const ownerDepartmentIds =
+      owner?.memberships?.map((membership) => membership.departmentId) ?? [];
+
+    if (!isMine) {
+      if (!canViewTeamAvailability) continue;
+      if (
+        ledDepartmentIds &&
+        !ownerDepartmentIds.some((departmentId) =>
+          ledDepartmentIds.has(departmentId),
+        )
+      ) {
+        continue;
+      }
+    }
+
     const dateStr = unavail.date; // "YYYY-MM-DD"
     // Use noon UTC to avoid date shifting across global timezones
     const startsAt = `${dateStr}T12:00:00.000Z`;
     const endsAt = `${dateStr}T23:59:59.000Z`;
+    const ownerName = owner ? personDisplayName(owner) : "Membro da equipe";
+    const periods = (unavail.periods as schema.AvailabilityPeriod[]) || [];
+    const periodLabels: Record<schema.AvailabilityPeriod, string> = {
+      morning: "Manhã",
+      afternoon: "Tarde",
+      evening: "Noite",
+    };
+    const periodsLabel = periods
+      .map((period) => periodLabels[period])
+      .join(", ");
 
     items.push({
       id: `unavail-${unavail.id}`,
       type: "unavailability",
-      title: unavail.reason ? `Indisponível: ${unavail.reason}` : "Indisponível",
-      subtitle: unavail.allDay ? "Dia todo" : "Períodos específicos",
-      description: unavail.reason,
+      title: isMine
+        ? unavail.reason
+          ? `Indisponível: ${unavail.reason}`
+          : "Indisponível"
+        : `Indisponível: ${ownerName}`,
+      subtitle: unavail.allDay
+        ? "Dia todo"
+        : periodsLabel || "Períodos específicos",
+      // Reasons stay private: leaders see who is unavailable, never why.
+      description: isMine ? unavail.reason : null,
       startsAt,
       endsAt,
       allDay: unavail.allDay,
       color: "amber",
-      href: "/dashboard/availability",
+      href: isMine ? "/dashboard/availability" : null,
       metadata: {
-        reason: unavail.reason,
-        periods: (unavail.periods as schema.AvailabilityPeriod[]) || [],
+        isMine,
+        reason: isMine ? unavail.reason : null,
+        periods,
+        personId: unavail.personId,
+        personName: ownerName,
+        departmentIds: ownerDepartmentIds,
       },
     });
   }
@@ -220,6 +282,7 @@ export async function getCalendarDataAction(): Promise<{
   return {
     items,
     preferences,
+    canViewTeamAvailability,
   };
 }
 

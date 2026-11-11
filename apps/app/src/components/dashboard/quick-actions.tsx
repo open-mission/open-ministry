@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { Icon } from "@tabler/icons-react";
 import {
+  IconCalendarCheck,
   IconCalendarEvent,
   IconCalendarPlus,
   IconClipboardList,
@@ -236,6 +237,20 @@ export function QuickActions({
                 label="Minhas escalas"
                 hint="Onde sirvo"
                 iconTone="bg-primary/10 text-primary group-hover:bg-primary/20"
+              />
+            </Link>
+
+            <Link
+              href="/dashboard/availability"
+              prefetch={true}
+              className={tileClassName}
+              aria-label="Informar minha disponibilidade"
+            >
+              <QuickActionContent
+                icon={IconCalendarCheck}
+                label="Disponibilidade"
+                hint="Quando posso servir"
+                iconTone="bg-sky-500/10 text-sky-600 dark:text-sky-400 group-hover:bg-sky-500/20"
               />
             </Link>
 
