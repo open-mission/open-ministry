@@ -3,14 +3,12 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { CakeIcon } from "lucide-react";
 
-import { PageInfo } from "@/components/app/page-info";
-import { BirthdayForm } from "@/components/birthdays/birthday-form";
+import { OwnBirthdayCard } from "@/components/birthdays/own-birthday-card";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -134,21 +132,6 @@ async function BirthdaysContent() {
           <h1 className="font-heading text-4xl leading-none tracking-tight">
             Aniversariantes
           </h1>
-          <Badge variant="outline" className="font-normal">
-            {entries.length}
-          </Badge>
-          <PageInfo
-            title="Aniversariantes"
-            description={
-              <>
-                As datas de quem faz parte de{" "}
-                <span className="font-medium text-foreground">
-                  {organization.name}
-                </span>
-                . O dia e o mês ficam visíveis para toda a equipe.
-              </>
-            }
-          />
         </div>
       </header>
 
@@ -240,23 +223,7 @@ async function BirthdaysContent() {
         </div>
 
         <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-heading text-xl tracking-tight">
-                Sua data
-              </CardTitle>
-              <CardDescription>
-                Mantenha a sua data em dia para a equipe celebrar com você.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <BirthdayForm birthday={ownBirthday} maxDate={maxDate} />
-            </CardContent>
-            <CardFooter className="text-xs leading-relaxed text-muted-foreground">
-              A equipe vê o dia e o mês para celebrar junto. O ano fica visível
-              apenas para administradores.
-            </CardFooter>
-          </Card>
+          <OwnBirthdayCard birthday={ownBirthday} maxDate={maxDate} />
 
           {entries.length > 0 ? (
             <Card>

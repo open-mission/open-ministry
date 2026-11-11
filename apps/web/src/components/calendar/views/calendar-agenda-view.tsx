@@ -4,6 +4,7 @@ import Link from "next/link";
 import { format, isSameDay, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
+  CakeIcon,
   CalendarDaysIcon,
   CalendarX2Icon,
   CheckCircle2Icon,
@@ -133,6 +134,7 @@ export function CalendarAgendaView({
                       "flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between transition-colors cursor-pointer hover:bg-muted/10",
                       item.type === "assignment" && "bg-emerald-500/2",
                       item.type === "unavailability" && "bg-amber-500/2",
+                      item.type === "birthday" && "bg-rose-500/2",
                     )}
                   >
                     <div className="space-y-1">
@@ -153,6 +155,12 @@ export function CalendarAgendaView({
                           <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20 text-[10px]">
                             <CalendarX2Icon className="size-3 mr-1" />
                             Indisponível
+                          </Badge>
+                        )}
+                        {item.type === "birthday" && (
+                          <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20 text-[10px]">
+                            <CakeIcon className="size-3 mr-1" />
+                            Aniversariante
                           </Badge>
                         )}
 

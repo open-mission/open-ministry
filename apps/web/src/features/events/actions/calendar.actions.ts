@@ -8,7 +8,8 @@ import * as schema from "@/db/schema";
 import type { CalendarItem, CalendarPreferences } from "@/lib/calendar";
 import { listEvents } from "@/lib/events";
 import { requireOrganizationContext } from "@/lib/organizations";
-import { ensurePersonForUser } from "@/lib/people";
+import { ensurePersonForUser, listPeople } from "@/lib/people";
+import { personDisplayBirthday, personDisplayName } from "@/lib/person-format";
 import { requirePermission } from "@/lib/permissions/service";
 
 export async function getCalendarDataAction(): Promise<{
@@ -49,7 +50,7 @@ export async function getCalendarDataAction(): Promise<{
     timezone: userRow?.timezone || "America/Sao_Paulo",
   };
 
-  const [events, unavailabilities] = await Promise.all([
+  const [events, unavailabilities, people] = await Promise.all([
     listEvents(organization.id),
     person
       ? db.query.personUnavailability.findMany({
@@ -60,6 +61,7 @@ export async function getCalendarDataAction(): Promise<{
           orderBy: (table, { asc }) => [asc(table.date)],
         })
       : Promise.resolve([]),
+    listPeople(organization.id),
   ]);
 
   const items: CalendarItem[] = [];
@@ -70,6 +72,8 @@ export async function getCalendarDataAction(): Promise<{
     const myAssignments = person
       ? assignments.filter((a) => a.personId === person.id)
       : [];
+
+    const eventDeptIds = event.departments.map((d) => d.departmentId);
 
     // Push church event
     items.push({
@@ -86,6 +90,7 @@ export async function getCalendarDataAction(): Promise<{
       metadata: {
         eventId: event.id,
         eventKind: event.kind,
+        departmentIds: eventDeptIds,
         isMyAssignment: myAssignments.length > 0,
       },
     });
@@ -113,15 +118,15 @@ export async function getCalendarDataAction(): Promise<{
           : distinctFunctions.join(", ");
 
       const deptLabel = distinctDepts.join(", ");
-      const subtitle = deptLabel
-        ? `${deptLabel} · ${event.title}`
-        : event.title;
+      const assignmentInfo = deptLabel
+        ? `Escalado: ${functionsLabel} · ${deptLabel}`
+        : `Escalado: ${functionsLabel}`;
 
       items.push({
         id: `assignment-event-${event.id}`,
         type: "assignment",
-        title: `Escalado: ${functionsLabel}`,
-        subtitle,
+        title: event.title,
+        subtitle: assignmentInfo,
         description: `Funções: ${functionsLabel} no evento ${event.title}`,
         startsAt: event.startsAt.toISOString(),
         endsAt: event.endsAt.toISOString(),
@@ -131,6 +136,8 @@ export async function getCalendarDataAction(): Promise<{
         href: `/dashboard/events/${event.id}`,
         metadata: {
           eventId: event.id,
+          departmentId: myAssignments[0]?.departmentId,
+          departmentIds: eventDeptIds,
           departmentName: deptLabel,
           functionName: functionsLabel,
           isMyAssignment: true,
@@ -162,6 +169,52 @@ export async function getCalendarDataAction(): Promise<{
         periods: (unavail.periods as schema.AvailabilityPeriod[]) || [],
       },
     });
+  }
+
+  // 3. Process birthdays based on departments
+  const currentYear = new Date().getFullYear();
+  for (const p of people) {
+    const bdayVal = personDisplayBirthday(p);
+    if (!bdayVal) continue;
+
+    const parts = bdayVal.split("-");
+    if (parts.length < 3) continue;
+    const month = Number(parts[1]);
+    const day = Number(parts[2]);
+    if (!month || !day) continue;
+
+    const deptNames =
+      p.memberships
+        ?.map((m) => m.department?.name)
+        .filter((name): name is string => Boolean(name)) ?? [];
+    const deptIds = p.memberships?.map((m) => m.departmentId) ?? [];
+    const deptSubtitle =
+      deptNames.length > 0 ? deptNames.join(", ") : "Sem departamento";
+
+    const pName = personDisplayName(p);
+
+    for (const year of [currentYear - 1, currentYear, currentYear + 1]) {
+      const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      items.push({
+        id: `birthday-${p.id}-${year}`,
+        type: "birthday",
+        title: `Aniversário: ${pName}`,
+        subtitle: deptSubtitle,
+        description: `Aniversário de ${pName} (${deptSubtitle})`,
+        startsAt: `${dateStr}T00:00:00.000Z`,
+        endsAt: `${dateStr}T23:59:59.000Z`,
+        allDay: true,
+        color: "rose",
+        href: `/dashboard/members/${p.id}`,
+        metadata: {
+          personId: p.id,
+          personName: pName,
+          departmentName: deptSubtitle,
+          departmentNames: deptNames,
+          departmentIds: deptIds,
+        },
+      });
+    }
   }
 
   return {

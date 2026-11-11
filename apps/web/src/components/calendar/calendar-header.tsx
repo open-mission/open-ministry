@@ -3,13 +3,13 @@
 import { endOfWeek, format, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
+  CakeIcon,
   CalendarDaysIcon,
   CalendarIcon,
   CalendarPlusIcon,
   CalendarRangeIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  FilterIcon,
   ListIcon,
 } from "lucide-react";
 
@@ -31,9 +31,11 @@ type CalendarHeaderProps = {
   currentDate: Date;
   viewMode: CalendarViewMode;
   filterType: CalendarFilterType;
+  selectedDepartmentId?: string;
   preferences: CalendarPreferences;
   onViewChange: (view: CalendarViewMode) => void;
   onFilterChange: (filter: CalendarFilterType) => void;
+  onDepartmentChange?: (departmentId: string) => void;
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
@@ -42,6 +44,7 @@ type CalendarHeaderProps = {
     events: number;
     assignments: number;
     unavailabilities: number;
+    birthdays?: number;
   };
   isAdmin?: boolean;
   departments?: { id: string; name: string }[];
@@ -51,9 +54,11 @@ export function CalendarHeader({
   currentDate,
   viewMode,
   filterType,
+  selectedDepartmentId = "all",
   preferences,
   onViewChange,
   onFilterChange,
+  onDepartmentChange,
   onPrev,
   onNext,
   onToday,
@@ -209,14 +214,27 @@ export function CalendarHeader({
         </div>
       </div>
 
-      {/* Filter Chips Bar (Duas linhas: 1ª label Filtrar, 2ª itens) */}
+      {/* Filter Chips Bar */}
       <div className="flex flex-col gap-2 pt-1">
-        <div className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-          <FilterIcon className="size-3.5" />
-          <span>Filtrar</span>
-        </div>
-
         <div className="-mx-4 flex flex-nowrap items-center gap-2 overflow-x-auto px-4 pb-1 text-xs scrollbar-none sm:mx-0 sm:px-0">
+          {departments && departments.length > 0 && onDepartmentChange ? (
+            <div className="shrink-0 flex items-center mr-1">
+              <select
+                aria-label="Filtrar por departamento"
+                value={selectedDepartmentId}
+                onChange={(e) => onDepartmentChange(e.target.value)}
+                className="h-7.5 rounded-full border border-border bg-background px-3 text-xs font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+              >
+                <option value="all">Todos os departamentos</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+
           <button
             type="button"
             onClick={() => onFilterChange("all")}
@@ -267,6 +285,20 @@ export function CalendarHeader({
             )}
           >
             Indisponibilidades ({itemsCount.unavailabilities})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onFilterChange("birthdays")}
+            className={cn(
+              "shrink-0 cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
+              filterType === "birthdays"
+                ? "bg-rose-600 text-white border-rose-600 shadow-2xs font-semibold dark:bg-rose-500"
+                : "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20 hover:bg-rose-500/15",
+            )}
+          >
+            <CakeIcon className="size-3 mr-1 inline-block" />
+            Aniversários ({itemsCount.birthdays ?? 0})
           </button>
         </div>
       </div>

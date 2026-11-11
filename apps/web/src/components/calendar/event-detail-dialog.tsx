@@ -4,6 +4,7 @@ import Link from "next/link";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
+  CakeIcon,
   CalendarDaysIcon,
   CalendarX2Icon,
   ClockIcon,
@@ -82,6 +83,12 @@ export function EventDetailDialog({
           Indisponível
         </Badge>
       )}
+      {item.type === "birthday" && (
+        <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20 font-medium">
+          <CakeIcon className="size-3 mr-1" />
+          Aniversariante
+        </Badge>
+      )}
     </>
   );
 
@@ -148,7 +155,9 @@ export function EventDetailDialog({
                   <ExternalLinkIcon className="size-3.5" />
                   {item.type === "unavailability"
                     ? "Gerenciar ausências"
-                    : "Acessar culto"}
+                    : item.type === "birthday"
+                      ? "Ver membro"
+                      : "Acessar culto"}
                 </Link>
               </Button>
             ) : null}
@@ -196,7 +205,9 @@ export function EventDetailDialog({
                 <ExternalLinkIcon className="size-3.5" />
                 {item.type === "unavailability"
                   ? "Gerenciar ausências"
-                  : "Acessar culto"}
+                  : item.type === "birthday"
+                    ? "Ver membro"
+                    : "Acessar culto"}
               </Link>
             </Button>
           ) : null}

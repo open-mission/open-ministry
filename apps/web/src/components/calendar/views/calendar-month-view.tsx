@@ -13,7 +13,7 @@ import {
   endOfMonth,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarX2Icon, CheckCircle2Icon } from "lucide-react";
+import { CakeIcon, CalendarX2Icon, CheckCircle2Icon } from "lucide-react";
 
 import type { CalendarItem } from "@/lib/calendar";
 import { cn } from "@/lib/utils";
@@ -146,6 +146,8 @@ export function CalendarMonthView({
                           "bg-primary/10 text-primary border border-primary/20",
                         item.type === "unavailability" &&
                           "bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30",
+                        item.type === "birthday" &&
+                          "bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-rose-500/30",
                       )}
                       title={`${item.title} (${item.allDay ? "Dia todo" : startTime})`}
                     >
@@ -154,6 +156,9 @@ export function CalendarMonthView({
                       )}
                       {item.type === "unavailability" && (
                         <CalendarX2Icon className="size-3 shrink-0 text-amber-600 dark:text-amber-400" />
+                      )}
+                      {item.type === "birthday" && (
+                        <CakeIcon className="size-3 shrink-0 text-rose-600 dark:text-rose-400" />
                       )}
                       <span className="truncate font-medium">{item.title}</span>
                     </button>

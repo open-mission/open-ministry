@@ -6,6 +6,7 @@ import { format, isSameDay, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   AlertTriangleIcon,
+  CakeIcon,
   CalendarDaysIcon,
   CheckCircle2Icon,
   ClockIcon,
@@ -49,6 +50,10 @@ export function CalendarDayView({
     return dayItems.filter((item) => item.type === "unavailability");
   }, [dayItems]);
 
+  const birthdays = useMemo(() => {
+    return dayItems.filter((item) => item.type === "birthday");
+  }, [dayItems]);
+
   const timedItems = useMemo(() => {
     return dayItems.filter((item) => !item.allDay);
   }, [dayItems]);
@@ -82,6 +87,27 @@ export function CalendarDayView({
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Birthday banner if birthdays on this day */}
+      {birthdays.length > 0 && (
+        <div className="flex items-start gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-rose-900 dark:text-rose-200 shadow-xs">
+          <CakeIcon className="size-5 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
+          <div className="space-y-1">
+            <h4 className="font-heading font-semibold text-sm">
+              Aniversariante(s) do dia
+            </h4>
+            {birthdays.map((b) => (
+              <p
+                key={b.id}
+                className="text-xs text-muted-foreground leading-relaxed cursor-pointer hover:underline"
+                onClick={() => onSelectItem(b)}
+              >
+                <span className="font-medium text-foreground">{b.title}</span> • {b.subtitle}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Unavailability banner if blocked on this day */}
       {unavailabilities.length > 0 && (
         <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-900 dark:text-amber-200 shadow-xs">

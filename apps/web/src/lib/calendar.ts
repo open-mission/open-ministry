@@ -1,7 +1,7 @@
 import { format, parseISO } from "date-fns";
 import type { AvailabilityPeriod } from "@/db/schema/people";
 
-export type CalendarItemType = "event" | "assignment" | "unavailability";
+export type CalendarItemType = "event" | "assignment" | "unavailability" | "birthday";
 
 export type CalendarItem = {
   id: string;
@@ -17,18 +17,28 @@ export type CalendarItem = {
   href?: string | null;
   metadata?: {
     eventId?: string;
+    departmentId?: string;
+    departmentIds?: string[];
     departmentName?: string;
+    departmentNames?: string[];
     functionName?: string;
     eventKind?: string;
     reason?: string | null;
     periods?: AvailabilityPeriod[];
     isMyAssignment?: boolean;
+    personId?: string;
+    personName?: string;
   };
 };
 
 export type CalendarViewMode = "month" | "week" | "day" | "year" | "agenda";
 
-export type CalendarFilterType = "all" | "events" | "assignments" | "unavailabilities";
+export type CalendarFilterType =
+  | "all"
+  | "events"
+  | "assignments"
+  | "unavailabilities"
+  | "birthdays";
 
 export type CalendarPreferences = {
   weekStartsOn: 0 | 1; // 0 = Domingo, 1 = Segunda-feira
