@@ -19,7 +19,7 @@ import {
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 
-import { signOutAction } from "@/app/actions/auth";
+import { SignOutConfirmDialog } from "@/components/app/sign-out-confirm-dialog";
 import { useSettingsModal } from "@/components/settings/settings-modal-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -74,6 +74,7 @@ export function UserMenuDrawer({
   organizationName,
 }: UserMenuDrawerProps) {
   const [open, setOpen] = useState(false);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [switching, setSwitching] = useState(false);
   const router = useRouter();
   const { openSettings } = useSettingsModal();
@@ -128,7 +129,8 @@ export function UserMenuDrawer({
   };
 
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
+    <>
+      <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>
         <button
           type="button"
@@ -343,19 +345,26 @@ export function UserMenuDrawer({
 
           {/* Sign Out Button */}
           <div className="pt-1">
-            <form action={signOutAction} className="w-full">
-              <input type="hidden" name="redirectTo" value="/" />
-              <button
-                type="submit"
-                className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-2.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 active:bg-destructive/15 cursor-pointer"
-              >
-                <LogOutIcon className="size-4" />
-                <span>Sair da conta</span>
-              </button>
-            </form>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setTimeout(() => setShowSignOutConfirm(true), 150);
+              }}
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-2.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 active:bg-destructive/15 cursor-pointer"
+            >
+              <LogOutIcon className="size-4" />
+              <span>Sair da conta</span>
+            </button>
           </div>
         </div>
       </DrawerContent>
     </Drawer>
+
+    <SignOutConfirmDialog
+      open={showSignOutConfirm}
+      onOpenChange={setShowSignOutConfirm}
+    />
+    </>
   );
 }

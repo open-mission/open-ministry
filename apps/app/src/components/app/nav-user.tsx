@@ -14,7 +14,7 @@ import {
   UserPlusIcon,
 } from "lucide-react";
 
-import { signOutAction } from "@/app/actions/auth";
+import { SignOutConfirmDialog } from "@/components/app/sign-out-confirm-dialog";
 import { useSettingsModal } from "@/components/settings/settings-modal-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -51,6 +51,7 @@ export function NavUser({
   const { openSettings } = useSettingsModal();
   const router = useRouter();
   const [switching, setSwitching] = useState(false);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   // Consulta as sessões ativas no dispositivo usando o hook do multiSession
   const { sessions: deviceSessions } = useDeviceSessions();
@@ -227,21 +228,24 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <form action={signOutAction} className="w-full">
-                <input type="hidden" name="redirectTo" value="/" />
-                <button
-                  type="submit"
-                  className="flex w-full items-center gap-2 text-destructive focus:text-destructive cursor-pointer"
-                >
-                  <LogOutIcon className="size-4" />
-                  <span>Sair da conta</span>
-                </button>
-              </form>
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                setShowSignOutConfirm(true);
+              }}
+              className="flex w-full items-center gap-2 text-destructive focus:text-destructive cursor-pointer"
+            >
+              <LogOutIcon className="size-4" />
+              <span>Sair da conta</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
+
+      <SignOutConfirmDialog
+        open={showSignOutConfirm}
+        onOpenChange={setShowSignOutConfirm}
+      />
     </SidebarMenu>
   );
 }
