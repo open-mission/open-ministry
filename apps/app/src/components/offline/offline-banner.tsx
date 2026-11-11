@@ -8,8 +8,11 @@ import { useOfflineSync } from "@/components/offline/use-offline-sync";
 import { Button } from "@/components/ui/button";
 
 export function OfflineBanner() {
+  // The banner is mounted on every dashboard page. Syncing the full offline
+  // bundle here would add a heavy request to every navigation, so the initial
+  // sync is reserved for the settings card and the user's explicit actions.
   const { isOnline, offlineData, isSyncing, syncNow, hasCachedData } =
-    useOfflineSync();
+    useOfflineSync({ autoSync: false });
   const [showRestoredNotice, setShowRestoredNotice] = useState(false);
 
   useEffect(() => {

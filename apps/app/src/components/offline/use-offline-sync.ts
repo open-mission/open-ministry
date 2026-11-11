@@ -7,7 +7,9 @@ const OFFLINE_STORAGE_KEY = "openministry_offline_bundle";
 const OFFLINE_LAST_SYNC_KEY = "openministry_offline_last_sync";
 const SYNC_INTERVAL_MS = 10 * 60 * 1000; // 10 minutos de cache local
 
-export function useOfflineSync() {
+export function useOfflineSync(
+  { autoSync = true }: { autoSync?: boolean } = {},
+) {
   const [isOnline, setIsOnline] = useState(() => {
     if (typeof window !== "undefined") {
       return navigator.onLine;
@@ -74,31 +76,34 @@ export function useOfflineSync() {
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
-    // Sincronização inicial automática quando online com delay não-bloqueante (evita re-sync frequente)
-    const initialSyncTimer = setTimeout(() => {
-      if (navigator.onLine) {
-        try {
-          const lastSync = localStorage.getItem(OFFLINE_LAST_SYNC_KEY);
-          const lastSyncTime = lastSync ? Number.parseInt(lastSync, 10) : 0;
-          const isFresh =
-            Number.isFinite(lastSyncTime) &&
-            Date.now() - lastSyncTime < SYNC_INTERVAL_MS;
+    // Sincronização inicial automática quando online com delay não-bloqueante (evita re-sync frequente).
+    // O banner global desativa isso para não disparar o bundle offline em toda navegação.
+    const initialSyncTimer = autoSync
+      ? setTimeout(() => {
+          if (navigator.onLine) {
+            try {
+              const lastSync = localStorage.getItem(OFFLINE_LAST_SYNC_KEY);
+              const lastSyncTime = lastSync ? Number.parseInt(lastSync, 10) : 0;
+              const isFresh =
+                Number.isFinite(lastSyncTime) &&
+                Date.now() - lastSyncTime < SYNC_INTERVAL_MS;
 
-          if (!isFresh) {
-            void syncNow();
+              if (!isFresh) {
+                void syncNow();
+              }
+            } catch {
+              void syncNow();
+            }
           }
-        } catch {
-          void syncNow();
-        }
-      }
-    }, 500);
+        }, 500)
+      : undefined;
 
     return () => {
       clearTimeout(initialSyncTimer);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [syncNow]);
+  }, [autoSync, syncNow]);
 
   return {
     isOnline,
