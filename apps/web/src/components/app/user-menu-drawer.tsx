@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import {
+  ArrowRightLeftIcon,
   BellIcon,
   CheckIcon,
   ChevronRightIcon,
@@ -11,8 +13,10 @@ import {
   MoonIcon,
   SettingsIcon,
   SunIcon,
+  UserPlusIcon,
 } from "lucide-react";
 import { useTheme } from "next-themes";
+import { toast } from "sonner";
 
 import { signOutAction } from "@/app/actions/auth";
 import { useSettingsModal } from "@/components/settings/settings-modal-provider";
@@ -26,6 +30,8 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import { authClient } from "@/lib/auth-client";
+import { useDeviceSessions } from "@/hooks/use-device-sessions";
 import { getInitials, roleLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -67,8 +73,15 @@ export function UserMenuDrawer({
   organizationName,
 }: UserMenuDrawerProps) {
   const [open, setOpen] = useState(false);
+  const [switching, setSwitching] = useState(false);
+  const router = useRouter();
   const { openSettings } = useSettingsModal();
   const { theme, setTheme } = useTheme();
+
+  const { sessions: deviceSessions } = useDeviceSessions();
+  const otherSessions = (deviceSessions ?? []).filter(
+    (s) => s.user.email !== user.email,
+  );
 
   const mounted = useSyncExternalStore(
     subscribe,
@@ -80,6 +93,38 @@ export function UserMenuDrawer({
     setOpen(false);
     openSettings();
   }
+
+  const handleSwitchSession = async (
+    sessionToken: string,
+    targetName: string,
+  ) => {
+    if (switching) return;
+    setSwitching(true);
+    toast.loading(`Alternando para ${targetName}...`, {
+      id: "switch-account-mobile",
+    });
+    try {
+      const res = await authClient.multiSession.setActive({ sessionToken });
+      if (res?.error) {
+        toast.error(res.error.message || "Erro ao alternar conta.", {
+          id: "switch-account-mobile",
+        });
+        setSwitching(false);
+        return;
+      }
+      toast.success(`Conectado como ${targetName}!`, {
+        id: "switch-account-mobile",
+      });
+      setOpen(false);
+      router.push("/dashboard");
+      router.refresh();
+    } catch {
+      toast.error("Erro inesperado ao alternar conta.", {
+        id: "switch-account-mobile",
+      });
+      setSwitching(false);
+    }
+  };
 
   return (
     <Drawer open={open} onOpenChange={setOpen}>
@@ -141,6 +186,59 @@ export function UserMenuDrawer({
               </div>
             </div>
             <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+          </Link>
+
+          {/* Multi-Session: Contas conectadas neste dispositivo */}
+          {otherSessions.length > 0 ? (
+            <section className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-[0.68rem] font-semibold tracking-[0.14em] text-muted-foreground/70 uppercase">
+                  Alternar Conta ({otherSessions.length})
+                </h3>
+              </div>
+              <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xs divide-y divide-border/40">
+                {otherSessions.map((s) => (
+                  <button
+                    key={s.session.token}
+                    type="button"
+                    disabled={switching}
+                    onClick={() =>
+                      handleSwitchSession(s.session.token, s.user.name)
+                    }
+                    className="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-muted/50 active:bg-muted/70 cursor-pointer"
+                  >
+                    <Avatar className="size-9 shrink-0 border border-border/80">
+                      <AvatarImage
+                        src={s.user.image ?? undefined}
+                        alt={s.user.name}
+                      />
+                      <AvatarFallback className="bg-muted text-xs font-semibold">
+                        {getInitials(s.user.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1 space-y-0.5 text-left">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {s.user.name}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {s.user.email}
+                      </p>
+                    </div>
+                    <ArrowRightLeftIcon className="size-4 text-muted-foreground/60 shrink-0" />
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {/* Adicionar outra conta */}
+          <Link
+            href="/login?redirect=/dashboard"
+            onClick={() => setOpen(false)}
+            className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-dashed border-border/80 bg-muted/30 px-3.5 py-2 text-xs font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors cursor-pointer"
+          >
+            <UserPlusIcon className="size-4" />
+            <span>Conectar outra conta</span>
           </Link>
 
           {/* Main Navigation Options */}

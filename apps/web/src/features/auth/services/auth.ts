@@ -12,6 +12,7 @@ import {
   username,
 } from "better-auth/plugins";
 import { jwt } from "better-auth/plugins/jwt";
+import { dash } from "@better-auth/infra";
 import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
@@ -178,6 +179,7 @@ export const auth = betterAuth({
     multiSession({
       maximumSessions: 5,
     }),
+    dash(),
     lastLoginMethod(),
     jwt({
       jwks: {
