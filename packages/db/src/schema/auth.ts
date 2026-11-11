@@ -34,6 +34,7 @@ export const user = pgTable("user", {
   pwaInstalledAt: timestamp("pwa_installed_at"),
   pwaPlatform: text("pwa_platform"),
   pwaLastSeenAt: timestamp("pwa_last_seen_at"),
+  tourCompleted: boolean("tour_completed").default(false).notNull(),
 });
 
 export const session = pgTable(
