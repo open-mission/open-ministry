@@ -53,3 +53,6 @@ skills-lock.json
 # design review artifacts
 /.impeccable/review/
 /.impeccable/mocks/
+*.figcraft
+docs/figcraft/
+openministry-preview.png
