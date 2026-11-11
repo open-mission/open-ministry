@@ -20,6 +20,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import {
   Field,
   FieldDescription,
   FieldError,
@@ -45,6 +53,7 @@ import {
 } from "@/lib/recurrence-utils";
 import { computeDurationMinutes, computeEndTime } from "@/lib/plan-utils";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type DepartmentOption = {
   id: string;
@@ -55,25 +64,67 @@ export function CreateEventDialog({
   departments,
   defaultDate,
   trigger,
+  open: controlledOpen,
+  onOpenChange: setControlledOpen,
 }: {
   departments: DepartmentOption[];
   defaultDate: string;
   trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const setOpen = isControlled ? (setControlledOpen ?? (() => {})) : setUncontrolledOpen;
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={setOpen}>
+        {trigger !== undefined ? (
+          trigger ? <DrawerTrigger asChild>{trigger}</DrawerTrigger> : null
+        ) : (
+          <DrawerTrigger asChild>
+            <Button size="lg" className="h-9">
+              <CalendarPlusIcon data-icon="inline-start" />
+              Novo culto ou evento
+            </Button>
+          </DrawerTrigger>
+        )}
+        <DrawerContent className="p-0">
+          <DrawerHeader className="border-b px-5 pt-4 pb-3 !text-left text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+            <DrawerTitle className="font-heading text-xl tracking-tight">
+              Novo culto ou evento
+            </DrawerTitle>
+            <DrawerDescription className="text-xs text-muted-foreground text-left">
+              Defina a data, os departamentos que atuam e, depois, monte a escala
+              com calma.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="max-h-[80vh] overflow-y-auto px-5 py-4 pb-8 [-webkit-overflow-scrolling:touch]">
+            <CreateEventForm
+              departments={departments}
+              defaultDate={defaultDate}
+            />
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger ? (
-          trigger
-        ) : (
+      {trigger !== undefined ? (
+        trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null
+      ) : (
+        <DialogTrigger asChild>
           <Button size="lg" className="h-9">
             <CalendarPlusIcon data-icon="inline-start" />
             Novo culto ou evento
           </Button>
-        )}
-      </DialogTrigger>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="font-heading text-2xl tracking-tight">
@@ -100,6 +151,7 @@ function CreateEventForm({
   departments: DepartmentOption[];
   defaultDate: string;
 }) {
+  const isMobile = useIsMobile();
   const [state, formAction] = useActionState<EventFormState, FormData>(
     createEventAction,
     undefined,
@@ -184,7 +236,7 @@ function CreateEventForm({
             placeholder="Culto de domingo, Ensaio do louvor..."
             className="h-10"
             aria-invalid={Boolean(state?.fieldErrors?.title)}
-            autoFocus
+            autoFocus={!isMobile}
             required
           />
           <FieldError
