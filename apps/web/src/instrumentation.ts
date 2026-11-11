@@ -1,6 +1,15 @@
+import * as Sentry from "@sentry/nextjs";
 import type { Instrumentation } from "next";
 
 export async function register(): Promise<void> {
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    await import("../sentry.server.config");
+  }
+
+  if (process.env.NEXT_RUNTIME === "edge") {
+    await import("../sentry.edge.config");
+  }
+
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
   try {
@@ -27,6 +36,8 @@ export const onRequestError: Instrumentation.onRequestError = async (
   request,
   context,
 ) => {
+  await Sentry.captureRequestError(error, request, context);
+
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
   try {
