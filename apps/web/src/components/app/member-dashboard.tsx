@@ -10,6 +10,11 @@ import {
 import { AssignmentList } from "@/components/app/assignment-list";
 import { BirthdaysCard } from "@/components/birthdays/birthdays-card";
 import { QuickActions } from "@/components/dashboard/quick-actions";
+import { VerseOfTheDayCard } from "@/components/dashboard/verse-of-the-day-card";
+import {
+  UnreadAnnouncementsWidget,
+  type UnreadAnnouncementItem,
+} from "@/components/dashboard/unread-announcements-widget";
 import {
   FelicitometroCard,
   type InitialMoodData,
@@ -29,6 +34,7 @@ import type {
   UpcomingAssignment,
 } from "@/lib/agenda";
 import type { BirthdayEntry } from "@/lib/birthdays";
+import type { VerseOfTheDayData } from "@/lib/youversion";
 import {
   eventDateParts,
   formatEventTimeRange,
@@ -43,6 +49,8 @@ export function MemberDashboard({
   agenda,
   initialMood,
   terminology,
+  votd,
+  unreadAnnouncements,
 }: {
   firstName: string;
   organizationName: string;
@@ -56,6 +64,8 @@ export function MemberDashboard({
     singular: string;
     plural: string;
   };
+  votd?: VerseOfTheDayData;
+  unreadAnnouncements?: UnreadAnnouncementItem[];
 }) {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 pb-4 sm:gap-12">
@@ -71,6 +81,14 @@ export function MemberDashboard({
           .
         </p>
       </header>
+
+      {/* 1. Versículo do Dia */}
+      {votd ? <VerseOfTheDayCard verse={votd} /> : null}
+
+      {/* 2. Últimos avisos não lidos */}
+      {unreadAnnouncements && unreadAnnouncements.length > 0 ? (
+        <UnreadAnnouncementsWidget initialAnnouncements={unreadAnnouncements} />
+      ) : null}
 
       <QuickActions isAdmin={false} terminology={terminology} />
 

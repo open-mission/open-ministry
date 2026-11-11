@@ -18,7 +18,19 @@ export type LiveNotificationRow = {
   createdAt: Date;
 };
 
-export async function getLiveUnreadNotificationsQuery(): Promise<SealedLiveQuery<LiveNotificationRow> | null> {
+// Cache de consultas seladas em memória para otimizar requisições repetidas (TTL de 5 minutos)
+const QUERY_CACHE_TTL_MS = 5 * 60 * 1000;
+const queryCache = new Map<
+  string,
+  {
+    sealed: SealedLiveQuery<LiveNotificationRow>;
+    expiresAt: number;
+  }
+>();
+
+export async function getLiveUnreadNotificationsQuery(options?: {
+  forceFresh?: boolean;
+}): Promise<SealedLiveQuery<LiveNotificationRow> | null> {
   const realtime = getRealtimeServer();
   if (!realtime) {
     return null;
@@ -26,6 +38,14 @@ export async function getLiveUnreadNotificationsQuery(): Promise<SealedLiveQuery
 
   try {
     const { organization, session } = await requireOrganizationContext();
+    const cacheKey = `${session.user.id}:${organization.id}`;
+
+    if (!options?.forceFresh) {
+      const cached = queryCache.get(cacheKey);
+      if (cached && cached.expiresAt > Date.now()) {
+        return cached.sealed;
+      }
+    }
 
     const query = db
       .select({
@@ -48,7 +68,13 @@ export async function getLiveUnreadNotificationsQuery(): Promise<SealedLiveQuery
       .orderBy(desc(notification.createdAt))
       .limit(20);
 
-    return await realtime.seal({ query });
+    const sealed = await realtime.seal({ query });
+    queryCache.set(cacheKey, {
+      sealed,
+      expiresAt: Date.now() + QUERY_CACHE_TTL_MS,
+    });
+
+    return sealed;
   } catch {
     return null;
   }

@@ -17,6 +17,8 @@ import { PastoralCarePreview } from "@/components/dashboard/pastoral-care-previe
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { RecentPeopleCarousel } from "@/components/dashboard/recent-people-carousel";
 import { UpcomingServicesCarousel } from "@/components/dashboard/upcoming-services-carousel";
+import { VerseOfTheDayCard } from "@/components/dashboard/verse-of-the-day-card";
+import { UnreadAnnouncementsWidget } from "@/components/dashboard/unread-announcements-widget";
 import { FelicitometroCard } from "@/components/felicitometro/felicitometro-card";
 import { InviteDialog } from "@/components/members/invite-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -37,6 +39,7 @@ import {
   getTodayMoodForPerson,
 } from "@/lib/felicitometro";
 import { getOrganizationEvolutionConfig } from "@/lib/notification-service";
+import { getUnreadAnnouncements } from "@/lib/notifications";
 import { requireOrganizationContext } from "@/lib/organizations";
 import {
   ensurePersonForUser,
@@ -44,6 +47,7 @@ import {
   listPeople,
   personDisplayName,
 } from "@/lib/people";
+import { getCachedVerseOfTheDay } from "@/lib/youversion";
 
 export const metadata: Metadata = {
   title: "Visão geral",
@@ -65,9 +69,11 @@ async function DashboardContent() {
   const churchMeta = parseChurchMetadata(organization.metadata);
   const departmentTerminology = getDepartmentTerminology(churchMeta);
 
-  const [people, initialPerson] = await Promise.all([
+  const [people, initialPerson, votd, unreadAnnouncements] = await Promise.all([
     listPeople(organization.id),
     findPersonByUserId(organization.id, session.user.id),
+    getCachedVerseOfTheDay(),
+    getUnreadAnnouncements(organization.id, session.user.id, 5),
   ]);
 
   const person =
@@ -118,6 +124,8 @@ async function DashboardContent() {
         agenda={agenda}
         initialMood={todayMood}
         terminology={departmentTerminology}
+        votd={votd}
+        unreadAnnouncements={unreadAnnouncements}
       />
     );
   }
@@ -202,7 +210,15 @@ async function DashboardContent() {
         ) : null}
       </header>
 
-      {/* 1. Atalhos Rápidos com Scroll Horizontal no Mobile */}
+      {/* 1. Versículo do Dia (YouVersion) */}
+      <VerseOfTheDayCard verse={votd} />
+
+      {/* 2. Últimos avisos não lidos */}
+      {unreadAnnouncements.length > 0 && (
+        <UnreadAnnouncementsWidget initialAnnouncements={unreadAnnouncements} />
+      )}
+
+      {/* 3. Atalhos Rápidos com Scroll Horizontal no Mobile */}
       <QuickActions
         isAdmin={isAdmin}
         departments={departmentOptions}

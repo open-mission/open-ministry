@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { format, isSameDay, parseISO } from "date-fns";
+import { format, isBefore, isSameDay, parseISO, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   CakeIcon,
@@ -28,8 +28,25 @@ export function CalendarAgendaView({
   items,
   onSelectItem,
 }: CalendarAgendaViewProps) {
+  const today = startOfDay(new Date());
+
+  // Na view de Agenda, exibe apenas os aniversários de hoje em diante (oculta os que já passaram)
+  const filteredItems = items.filter((item) => {
+    if (item.type === "birthday") {
+      const datePart = item.startsAt.slice(0, 10);
+      const [year, month, day] = datePart.split("-").map(Number);
+      const bdayDate =
+        year && month && day
+          ? new Date(year, month - 1, day, 0, 0, 0)
+          : startOfDay(parseISO(item.startsAt));
+
+      return !isBefore(bdayDate, today);
+    }
+    return true;
+  });
+
   // Sort items chronologically
-  const sorted = [...items].sort((a, b) =>
+  const sorted = [...filteredItems].sort((a, b) =>
     a.startsAt.localeCompare(b.startsAt),
   );
 

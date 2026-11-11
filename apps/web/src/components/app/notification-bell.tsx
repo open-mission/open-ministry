@@ -52,11 +52,22 @@ function LiveNotificationsSubscriber({
 }: {
   query: SealedLiveQuery<LiveNotificationRow>;
 }) {
+  const lastRefreshRef = useRef<number>(0);
+  const lastQueryRef = useRef<SealedLiveQuery<LiveNotificationRow>>(query);
+
   const refreshQuery = useCallback(async () => {
+    const now = Date.now();
+    // Limita renovação do sealed query para no máximo 1x por minuto
+    if (lastQueryRef.current && now - lastRefreshRef.current < 60_000) {
+      return lastQueryRef.current;
+    }
     const refreshed = await getLiveUnreadNotificationsQuery();
     if (!refreshed) {
+      if (lastQueryRef.current) return lastQueryRef.current;
       throw new Error("Não foi possível renovar a consulta em tempo real");
     }
+    lastRefreshRef.current = now;
+    lastQueryRef.current = refreshed;
     return refreshed;
   }, []);
 
@@ -461,11 +472,11 @@ export function NotificationBell({
     };
   }, [revalidate]);
 
-  // Fetch recent notifications when the panel opens (stale-while-revalidate cached)
+  // Fetch recent notifications when the panel opens (always get fresh unread state on open)
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
     if (nextOpen) {
-      void revalidate();
+      void revalidate(true);
     }
   };
 

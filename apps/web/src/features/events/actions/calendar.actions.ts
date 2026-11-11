@@ -149,8 +149,8 @@ export async function getCalendarDataAction(): Promise<{
   // 2. Process user unavailabilities
   for (const unavail of unavailabilities) {
     const dateStr = unavail.date; // "YYYY-MM-DD"
-    // Use ISO strings at start and end of day
-    const startsAt = `${dateStr}T00:00:00.000Z`;
+    // Use noon UTC to avoid date shifting across global timezones
+    const startsAt = `${dateStr}T12:00:00.000Z`;
     const endsAt = `${dateStr}T23:59:59.000Z`;
 
     items.push({
@@ -201,7 +201,7 @@ export async function getCalendarDataAction(): Promise<{
         title: `Aniversário: ${pName}`,
         subtitle: deptSubtitle,
         description: `Aniversário de ${pName} (${deptSubtitle})`,
-        startsAt: `${dateStr}T00:00:00.000Z`,
+        startsAt: `${dateStr}T12:00:00.000Z`,
         endsAt: `${dateStr}T23:59:59.000Z`,
         allDay: true,
         color: "rose",
