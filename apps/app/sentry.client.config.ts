@@ -1,5 +1,8 @@
 import * as Sentry from "@sentry/nextjs";
 
+const SENSITIVE_KEYS_REGEX =
+  /pass(word|phrase)?|secret|token|api[_-]?key|auth(orization)?|credit[_-]?card|cvv|cookie|session/i;
+
 Sentry.init({
   dsn:
     process.env.NEXT_PUBLIC_SENTRY_DSN ||
@@ -7,6 +10,29 @@ Sentry.init({
   tracesSampleRate: process.env.NODE_ENV === "production" ? 0.2 : 1.0,
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0,
+
+  // Sanitize and filter logs before dispatching
+  beforeSendLog: (log) => {
+    // Drop trace and debug logs in production
+    if (
+      process.env.NODE_ENV === "production" &&
+      (log.level === "trace" || log.level === "debug")
+    ) {
+      return null;
+    }
+
+    // Scrub sensitive keys from structured attributes
+    if (log.attributes && typeof log.attributes === "object") {
+      for (const key of Object.keys(log.attributes)) {
+        if (SENSITIVE_KEYS_REGEX.test(key)) {
+          log.attributes[key] = "[REDACTED]";
+        }
+      }
+    }
+
+    return log;
+  },
+
   tracePropagationTargets: [
     "localhost",
     /^https:\/\/.*\.openministry\.online/,
@@ -16,6 +42,10 @@ Sentry.init({
     Sentry.replayIntegration({
       maskAllText: false,
       blockAllMedia: false,
+    }),
+    // Forward browser console warnings and errors into Sentry Structured Logs
+    Sentry.consoleLoggingIntegration({
+      levels: ["warn", "error"],
     }),
     Sentry.captureConsoleIntegration({
       levels: ["error", "warn"],

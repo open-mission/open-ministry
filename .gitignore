@@ -48,6 +48,7 @@ next-env.d.ts
 /.commandcode/
 /.agents/
 skills-lock.json
+.impeccable/
 *report.md
 
 # design review artifacts

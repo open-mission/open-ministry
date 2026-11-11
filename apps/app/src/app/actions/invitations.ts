@@ -23,6 +23,7 @@ import { getSession } from "@/lib/session";
 import { buildWhatsAppShareUrl } from "@/lib/message-templates";
 import { renderOrganizationMessageText } from "@/lib/message-templates-server";
 import { getOrganizationEvolutionConfig } from "@/lib/notification-service";
+import { sentryLogger } from "@/lib/telemetry/sentry";
 
 export type InviteFormState =
   | {
@@ -127,6 +128,12 @@ export async function inviteMemberAction(
   try {
     const orgId = session.session.activeOrganizationId;
 
+    sentryLogger.setScopeContext({
+      action: "inviteMemberAction",
+      organizationId: orgId,
+      inviterUserId: session.user.id,
+    });
+
     await ensurePersonForEmail({
       organizationId: orgId,
       email: parsed.data.email,
@@ -189,6 +196,16 @@ export async function inviteMemberAction(
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/members");
 
+    sentryLogger.info(
+      sentryLogger.fmt`Invitation issued to ${parsed.data.email} as ${parsed.data.role} for ${churchName}`,
+      {
+        organizationId: orgId,
+        invitationId: invitation.id,
+        role: parsed.data.role,
+        hasPhone: Boolean(parsed.data.phone),
+      },
+    );
+
     return {
       invitation: {
         id: invitation.id,
@@ -205,6 +222,11 @@ export async function inviteMemberAction(
       },
     };
   } catch (error) {
+    sentryLogger.error(error instanceof Error ? error : String(error), {
+      action: "inviteMemberAction",
+      organizationId: session.session.activeOrganizationId,
+      targetEmail: parsed.data.email,
+    });
     return { error: actionErrorMessage(error) };
   }
 }
