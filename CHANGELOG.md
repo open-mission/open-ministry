@@ -6,6 +6,36 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.0.0] - 2026-11-11
+
+### Adicionado
+- **Lançamento Oficial da Versão 1.0.0**:
+  - Reorganização em Monorepo Turborepo multi-domínio:
+    - `apps/site`: Site institucional oficial servindo `openministry.online`, com a landing page original restaurada, iluminação ambiental esmeralda e mockup de dashboard inclinado.
+    - `apps/app`: Aplicação central servindo `app.openministry.online`, concentrando o painel administrativo, gestão de equipes, escalas ministeriais, cifras e cultos.
+    - `apps/docs`: Fundação da plataforma de documentação servindo `docs.openministry.online`.
+  - **Experiência de Onboarding Ministerial com Arte 3D**:
+    - Três ilustrações 3D minimalistas geradas via Nano Banana 2 (`hero.jpg`, `scheduling.jpg`, `worship.jpg`) integradas com estética glassmorphism e iluminação calorosa.
+    - Layout split-screen responsivo em desktop (`max-w-5xl`) e fluxo fullpage multi-step em mobile (`100dvh`).
+    - Sandboxes interativos em tempo real: preview e teste de confirmação WhatsApp, transposição harmônica ao vivo (`G -> A -> D`), alternador de status de voluntário e medidor de progresso.
+    - Coleta de WhatsApp formatado com validação e data de nascimento, persistindo no banco de dados Neon e sincronizando usuário e membro.
+    - Suporte a instalação facilitada como PWA em smartphones.
+  - **Confirmação de Logout Adaptativa**:
+    - No Desktop: `AlertDialog` do Shadcn UI com confirmação e estado de carregamento `isPending`.
+    - No Mobile: `Drawer` na base da tela com botões ergonômicos para a zona do polegar.
+  - **Observabilidade Full-Stack com Sentry**:
+    - Monitoramento unificado de erros, breadcrumbs de console e session replays.
+    - Rastreamento de latência e spans de APIs externas via `trackApiCall`.
+    - Métricas distribuídas customizadas (`telemetryMetrics`).
+    - Atribuição automática de usuário autenticado (`SentryUserLoader`).
+
+### Removido
+- **Desativação Completa do Datadog**:
+  - Remoção de todos os pacotes `@datadog/browser-rum`, `@datadog/browser-rum-nextjs`, `@vercel/otel` e `@opentelemetry/*`.
+  - Limpeza de variáveis de ambiente do Datadog e desativação de instrumentação legada.
+
+---
+
 ## [0.9.10] - 2026-11-10
 
 ### Corrigido
