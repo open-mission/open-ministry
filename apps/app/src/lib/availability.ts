@@ -4,12 +4,18 @@ export type DayAvailability = {
   dayOfWeek: number; // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
   periods: AvailabilityPeriod[];
   notes?: string | null;
+  /** Whether the person has already answered for this weekday. */
+  informed: boolean;
+  updatedAt?: Date | null;
 };
 
 export type MyAvailabilityResult = {
   personId: string;
   days: DayAvailability[];
   notes?: string | null;
+  /** False until the person saves their weekly availability for the first time. */
+  hasSaved: boolean;
+  updatedAt: Date | null;
 };
 
 export type PersonUnavailabilityItem = {
@@ -23,6 +29,18 @@ export type PersonUnavailabilityItem = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+export type SaveMyAvailabilityResult =
+  | { ok: true; updatedAt: Date }
+  | { ok: false; error: string };
+
+export type SaveUnavailabilityResult =
+  | { ok: true; item: PersonUnavailabilityItem; updated: boolean }
+  | { ok: false; error: string };
+
+export type DeleteUnavailabilityResult =
+  | { ok: true; deleted: boolean }
+  | { ok: false; error: string };
 
 export const DAYS_OF_WEEK = [
   { index: 0, label: "Domingo", shortLabel: "Dom" },

@@ -11,7 +11,7 @@ import { requireOrganizationContext } from "@/lib/organizations";
 import { can } from "@/lib/permissions/service";
 
 export const metadata: Metadata = {
-  title: "Agenda e Calendário",
+  title: "Agenda",
   description:
     "Acompanhe cultos, escalas e períodos de indisponibilidade em formato de calendário.",
 };
@@ -33,14 +33,15 @@ async function CalendarContent() {
     return (
       <div className="mx-auto flex w-full max-w-4xl flex-col items-center justify-center gap-4 py-16 text-center">
         <span className="flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
-          <ShieldAlertIcon className="size-7" />
+          <ShieldAlertIcon className="size-7" aria-hidden="true" />
         </span>
         <div className="space-y-1.5">
           <h1 className="font-heading text-2xl font-bold tracking-tight">
-            Módulo de Agenda não disponível
+            Módulo de agenda não disponível
           </h1>
-          <p className="max-w-md text-sm text-muted-foreground">
-            O módulo de Agenda não está liberado para sua igreja ou departamento.
+          <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
+            O módulo de agenda não está liberado para a sua igreja ou
+            departamento.
           </p>
         </div>
       </div>
@@ -57,12 +58,25 @@ async function CalendarContent() {
     name: d.name,
   }));
 
+  // The create action is delegable per department, so an admin check is not
+  // enough: a department leader with the grant must see the button too.
+  const canCreateEvent =
+    isAdmin ||
+    (
+      await Promise.all(
+        departments.map((department) =>
+          can("agenda", "createEvent", { departmentId: department.id }),
+        ),
+      )
+    ).some(Boolean);
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <FullCalendar
         initialItems={data.items}
         initialPreferences={data.preferences}
-        isAdmin={isAdmin}
+        canCreateEvent={canCreateEvent}
+        canViewTeamAvailability={data.canViewTeamAvailability}
         departments={departmentOptions}
       />
     </div>

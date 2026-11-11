@@ -21,11 +21,13 @@ export function MobileNavShell({
 }) {
   const colCount = items.length + 1; // +1 para o botão Menu
   const gridColsClass =
-    colCount === 2
+    colCount <= 2
       ? "grid-cols-2"
       : colCount === 3
         ? "grid-cols-3"
-        : "grid-cols-4";
+        : colCount === 4
+          ? "grid-cols-4"
+          : "grid-cols-5";
 
   return (
     <nav
@@ -66,7 +68,12 @@ export function MobileNavShell({
                   )}
                 />
               </span>
-              <span className={cn(isActive && "font-semibold")}>
+              <span
+                className={cn(
+                  "max-w-full truncate",
+                  isActive && "font-semibold",
+                )}
+              >
                 {item.label}
               </span>
             </Link>

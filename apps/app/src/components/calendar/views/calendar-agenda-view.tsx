@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { format, isBefore, isSameDay, parseISO, startOfDay } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   CakeIcon,
@@ -15,214 +15,209 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { CalendarItem } from "@/lib/calendar";
+import {
+  calendarDateKey,
+  calendarTimeLabel,
+  type CalendarItem,
+} from "@/lib/calendar";
 import { cn } from "@/lib/utils";
 
 type CalendarAgendaViewProps = {
   currentDate: Date;
   items: CalendarItem[];
+  timeZone?: string | null;
   onSelectItem: (item: CalendarItem) => void;
+  onToday: () => void;
 };
 
 export function CalendarAgendaView({
   items,
+  timeZone,
   onSelectItem,
+  onToday,
 }: CalendarAgendaViewProps) {
-  const today = startOfDay(new Date());
-
-  // Na view de Agenda, exibe apenas os aniversários de hoje em diante (oculta os que já passaram)
-  const filteredItems = items.filter((item) => {
-    if (item.type === "birthday") {
-      const datePart = item.startsAt.slice(0, 10);
-      const [year, month, day] = datePart.split("-").map(Number);
-      const bdayDate =
-        year && month && day
-          ? new Date(year, month - 1, day, 0, 0, 0)
-          : startOfDay(parseISO(item.startsAt));
-
-      return !isBefore(bdayDate, today);
-    }
-    return true;
+  const sorted = [...items].sort((a, b) => {
+    const dayComparison = a.startsAt.localeCompare(b.startsAt);
+    if (dayComparison !== 0) return dayComparison;
+    return a.title.localeCompare(b.title, "pt-BR");
   });
 
-  // Sort items chronologically
-  const sorted = [...filteredItems].sort((a, b) =>
-    a.startsAt.localeCompare(b.startsAt),
-  );
-
-  // Group by date string (YYYY-MM-DD)
-  const groups: { date: Date; items: CalendarItem[] }[] = [];
-
+  // Group by the calendar day in the church timezone.
+  const groups = new Map<string, CalendarItem[]>();
   for (const item of sorted) {
-    const itemDate = parseISO(item.startsAt);
-    const existingGroup = groups.find((g) => isSameDay(g.date, itemDate));
-
-    if (existingGroup) {
-      // Quando o evento é o mesmo, agrupa as escalas ou prioriza a escala sobre o evento geral
-      if (item.metadata?.eventId) {
-        const existingIndex = existingGroup.items.findIndex(
-          (i) => i.metadata?.eventId === item.metadata?.eventId,
-        );
-        if (existingIndex !== -1) {
-          const existingItem = existingGroup.items[existingIndex];
-
-          // Se já existe escala e o novo é evento geral, ignora o evento genérico
-          if (existingItem.type === "assignment" && item.type === "event") {
-            continue;
-          }
-
-          // Se já existe evento geral e o novo é escala, substitui pelo card de escala
-          if (existingItem.type === "event" && item.type === "assignment") {
-            existingGroup.items[existingIndex] = item;
-            continue;
-          }
-
-          // Se ambos são escalas do mesmo evento (múltiplas funções), combina as funções
-          if (
-            existingItem.type === "assignment" &&
-            item.type === "assignment"
-          ) {
-            const funcs = Array.from(
-              new Set([
-                ...(existingItem.metadata?.functionName?.split(", ") || []),
-                ...(item.metadata?.functionName?.split(", ") || []),
-              ]),
-            );
-            existingItem.title = `Escalado: ${funcs.join(", ")}`;
-            continue;
-          }
-        }
-      }
-      existingGroup.items.push(item);
+    const key = calendarDateKey(item.startsAt, timeZone);
+    const group = groups.get(key);
+    if (group) {
+      group.push(item);
     } else {
-      groups.push({ date: itemDate, items: [item] });
+      groups.set(key, [item]);
     }
   }
 
-  if (groups.length === 0) {
+  const groupList = [...groups.entries()].sort(([a], [b]) =>
+    a.localeCompare(b),
+  );
+
+  if (groupList.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed py-16 px-4 text-center bg-card">
+      <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed bg-card px-4 py-16 text-center">
         <div className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
           <CalendarDaysIcon className="size-6" />
         </div>
         <div className="space-y-1">
-          <p className="font-medium text-sm text-foreground">
-            Nenhum compromisso na agenda
+          <p className="text-sm font-medium text-foreground">
+            Nenhum compromisso neste período
           </p>
-          <p className="text-xs text-muted-foreground max-w-sm">
-            Não foram encontrados cultos, escalas ou bloqueios de datas neste
-            período.
+          <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
+            Ajuste os filtros ou volte para hoje. A agenda mostra os próximos 30
+            dias a partir da data escolhida.
           </p>
         </div>
+        <Button variant="outline" size="sm" onClick={onToday}>
+          Ir para hoje
+        </Button>
       </div>
     );
   }
 
+  const todayKey = calendarDateKey(new Date(), timeZone);
+
   return (
     <div className="space-y-6">
-      {groups.map((group) => {
-        const formattedDate = format(
-          group.date,
-          "EEEE, dd 'de' MMMM 'de' yyyy",
-          { locale: ptBR },
-        );
+      {groupList.map(([dayKey, dayItems], index) => {
+        const date = parseISO(dayKey);
+        const monthKey = format(date, "yyyy-MM");
+        const previousDate =
+          index > 0 ? parseISO(groupList[index - 1][0]) : null;
+        const showMonthDivider =
+          !previousDate || format(previousDate, "yyyy-MM") !== monthKey;
+        const isCurrentDay = dayKey === todayKey;
 
         return (
-          <div key={group.date.toISOString()} className="space-y-2.5">
+          <div key={dayKey} className="space-y-2.5">
+            {showMonthDivider ? (
+              <div className="flex items-center gap-3 pt-2 first:pt-0">
+                <h2 className="font-heading text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  {format(date, "MMMM 'de' yyyy", { locale: ptBR })}
+                </h2>
+                <div className="h-px flex-1 bg-border/70" />
+              </div>
+            ) : null}
+
             {/* Date Header */}
-            <div className="flex items-center gap-2">
-              <h3 className="font-heading text-sm font-semibold capitalize text-foreground">
-                {formattedDate}
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-heading text-sm font-semibold text-foreground">
+                {format(date, "EEEE, dd 'de' MMMM 'de' yyyy", {
+                  locale: ptBR,
+                })}
               </h3>
+              {isCurrentDay ? (
+                <Badge
+                  variant="secondary"
+                  className="font-mono text-[11px] uppercase tracking-wide"
+                >
+                  Hoje
+                </Badge>
+              ) : null}
               <div className="h-px flex-1 bg-border/60" />
             </div>
 
             {/* Items for this date */}
-            <div className="divide-y rounded-xl border bg-card shadow-2xs overflow-hidden">
-              {group.items.map((item) => {
-                const startTime = format(parseISO(item.startsAt), "HH:mm");
-                const endTime = format(parseISO(item.endsAt), "HH:mm");
+            <div className="divide-y overflow-hidden rounded-xl border bg-card shadow-2xs">
+              {dayItems.map((item) => {
+                const startTime = calendarTimeLabel(item.startsAt, timeZone);
+                const endTime = calendarTimeLabel(item.endsAt, timeZone);
+                const isTeamUnavailability =
+                  item.type === "unavailability" &&
+                  item.metadata?.isMine === false;
 
                 return (
                   <div
                     key={item.id}
-                    onClick={() => onSelectItem(item)}
                     className={cn(
-                      "flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between transition-colors cursor-pointer hover:bg-muted/10",
+                      "flex flex-col gap-3 p-4 transition-colors hover:bg-muted/10 sm:flex-row sm:items-center sm:justify-between",
                       item.type === "assignment" && "bg-emerald-500/2",
                       item.type === "unavailability" && "bg-amber-500/2",
                       item.type === "birthday" && "bg-rose-500/2",
                     )}
                   >
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        {item.type === "assignment" && (
-                          <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20 text-[10px]">
-                            <CheckCircle2Icon className="size-3 mr-1" />
-                            Minha Escala
-                          </Badge>
-                        )}
-                        {item.type === "event" && (
-                          <Badge variant="secondary" className="text-[10px]">
-                            <CalendarDaysIcon className="size-3 mr-1 text-primary" />
-                            Culto / Evento
-                          </Badge>
-                        )}
-                        {item.type === "unavailability" && (
-                          <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20 text-[10px]">
-                            <CalendarX2Icon className="size-3 mr-1" />
-                            Indisponível
-                          </Badge>
-                        )}
-                        {item.type === "birthday" && (
-                          <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20 text-[10px]">
-                            <CakeIcon className="size-3 mr-1" />
-                            Aniversariante
-                          </Badge>
-                        )}
+                    <button
+                      type="button"
+                      onClick={() => onSelectItem(item)}
+                      aria-label={`Abrir detalhes de ${item.title}`}
+                      className="min-w-0 flex-1 rounded-lg text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {item.type === "assignment" && (
+                            <Badge className="border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-700 dark:text-emerald-300">
+                              <CheckCircle2Icon className="mr-1 size-3" />
+                              Minha escala
+                            </Badge>
+                          )}
+                          {item.type === "event" && (
+                            <Badge variant="secondary" className="text-xs">
+                              <CalendarDaysIcon className="mr-1 size-3 text-primary" />
+                              Culto ou evento
+                            </Badge>
+                          )}
+                          {item.type === "unavailability" && (
+                            <Badge className="border-amber-500/20 bg-amber-500/10 text-xs text-amber-700 dark:text-amber-300">
+                              <CalendarX2Icon className="mr-1 size-3" />
+                              {isTeamUnavailability
+                                ? "Equipe indisponível"
+                                : "Minha indisponibilidade"}
+                            </Badge>
+                          )}
+                          {item.type === "birthday" && (
+                            <Badge className="border-rose-500/20 bg-rose-500/10 text-xs text-rose-700 dark:text-rose-300">
+                              <CakeIcon className="mr-1 size-3" />
+                              Aniversariante
+                            </Badge>
+                          )}
 
-                        <span className="font-heading font-semibold text-sm text-foreground">
-                          {item.title}
-                        </span>
-                      </div>
-
-                      {item.subtitle ? (
-                        <p className="text-xs font-medium text-muted-foreground">
-                          {item.subtitle}
-                        </p>
-                      ) : null}
-
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground pt-0.5">
-                        <span className="flex items-center gap-1 font-mono">
-                          <ClockIcon className="size-3" />
-                          {item.allDay
-                            ? "Dia todo"
-                            : `${startTime} às ${endTime}`}
-                        </span>
-
-                        {item.location ? (
-                          <span className="flex items-center gap-1">
-                            <MapPinIcon className="size-3" />
-                            {item.location}
+                          <span className="font-heading text-sm font-semibold text-foreground">
+                            {item.title}
                           </span>
+                        </div>
+
+                        {item.subtitle ? (
+                          <p className="text-xs font-medium text-muted-foreground">
+                            {item.subtitle}
+                          </p>
                         ) : null}
+
+                        <div className="flex flex-wrap items-center gap-3 pt-0.5 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1 font-mono">
+                            <ClockIcon className="size-3" />
+                            {item.allDay
+                              ? "Dia todo"
+                              : `${startTime} às ${endTime}`}
+                          </span>
+
+                          {item.location ? (
+                            <span className="flex items-center gap-1">
+                              <MapPinIcon className="size-3" />
+                              {item.location}
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
-                    </div>
+                    </button>
 
                     {item.href ? (
                       <Button
                         asChild
                         size="sm"
                         variant="outline"
-                        className="self-end sm:self-center gap-1 text-xs shrink-0"
+                        className="shrink-0 gap-1 self-end text-xs sm:self-center"
                       >
-                        <Link
-                          href={item.href}
-                          onClick={(e) => e.stopPropagation()}
-                        >
+                        <Link href={item.href}>
                           {item.type === "unavailability"
-                            ? "Ver ausências"
-                            : "Ver culto"}
+                            ? "Ver disponibilidade"
+                            : item.type === "birthday"
+                              ? "Ver membro"
+                              : "Ver culto"}
                           <ExternalLinkIcon className="size-3" />
                         </Link>
                       </Button>

@@ -141,14 +141,14 @@ export function MemberDashboard({
           <CardHeader className="flex flex-row items-start justify-between gap-3">
             <div className="space-y-1.5">
               <CardTitle className="font-heading text-lg tracking-tight sm:text-xl">
-                Agenda do departamento
+                Agenda dos departamentos
               </CardTitle>
               <CardDescription>
                 Os encontros dos seus departamentos.
               </CardDescription>
             </div>
             <Button asChild variant="ghost" size="sm" className="h-9 shrink-0 text-xs">
-              <Link href="/dashboard/events">
+              <Link href="/dashboard/calendar">
                 Ver agenda
                 <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
               </Link>
