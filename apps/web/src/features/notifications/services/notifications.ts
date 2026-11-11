@@ -69,6 +69,15 @@ export async function listNotifications(
   );
 }
 
+export async function getUnreadAnnouncements(
+  organizationId: string,
+  userId: string,
+  limit = 5,
+) {
+  const items = await listNotifications(organizationId, userId, 20, true);
+  return items.filter((item) => item.type === "announcement").slice(0, limit);
+}
+
 export async function countUnreadNotifications(
   organizationId: string,
   userId: string,

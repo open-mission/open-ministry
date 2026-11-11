@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  BookOpenIcon,
   CakeIcon,
   CalendarCheckIcon,
   CalendarDaysIcon,
@@ -35,6 +36,12 @@ export const navGroups: NavGroup[] = [
         label: "Visão geral",
         icon: LayoutDashboardIcon,
         exact: true,
+      },
+      {
+        href: "/dashboard/bible",
+        label: "Bíblia",
+        icon: BookOpenIcon,
+        exact: false,
       },
     ],
   },

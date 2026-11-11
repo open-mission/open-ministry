@@ -1,8 +1,11 @@
 "use server";
 
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { db } from "@/db";
+import * as schema from "@/db/schema";
 import { cacheInvalidateTags } from "@/lib/cache";
 import {
   getTodayDateString,
@@ -11,6 +14,7 @@ import {
 } from "@/lib/felicitometro";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { findPersonByUserId } from "@/lib/people";
+import { sendWebPushToUser } from "@/lib/push-notifications";
 
 const submitMoodSchema = z.object({
   score: z.coerce.number().int().min(1).max(5),
@@ -108,4 +112,64 @@ export async function getTodayUserMoodAction() {
     notes: mood.notes,
     date: mood.date,
   };
+}
+
+export async function sendFelicitometroPromptAction(): Promise<{
+  success: boolean;
+  sentCount: number;
+  pendingCount: number;
+  error?: string;
+}> {
+  try {
+    const context = await requireOrganizationContext();
+    const today = getTodayDateString();
+
+    // Membros que já responderam hoje
+    const answeredToday = await db.query.personMood.findMany({
+      where: and(
+        eq(schema.personMood.organizationId, context.organization.id),
+        eq(schema.personMood.date, today),
+      ),
+      columns: { userId: true },
+    });
+
+    const answeredUserIds = new Set(
+      answeredToday
+        .map((m) => m.userId)
+        .filter((id): id is string => Boolean(id)),
+    );
+
+    const pendingMembers = context.organization.members.filter(
+      (m) => m.userId && !answeredUserIds.has(m.userId),
+    );
+
+    let sentCount = 0;
+    for (const member of pendingMembers) {
+      if (!member.userId) continue;
+      try {
+        const res = await sendWebPushToUser(member.userId, {
+          title: "Como você está hoje? ☀️",
+          body: "Compartilhe com a liderança como está o seu coração hoje no Felicitômetro.",
+          url: "/dashboard",
+        });
+        if (res.sentCount > 0) sentCount += res.sentCount;
+      } catch {
+        // Ignora falha de envio individual
+      }
+    }
+
+    return {
+      success: true,
+      sentCount,
+      pendingCount: pendingMembers.length,
+    };
+  } catch (error) {
+    console.error("Erro ao disparar lembrete do felicitômetro:", error);
+    return {
+      success: false,
+      sentCount: 0,
+      pendingCount: 0,
+      error: "Falha ao enviar notificações do felicitômetro.",
+    };
+  }
 }
