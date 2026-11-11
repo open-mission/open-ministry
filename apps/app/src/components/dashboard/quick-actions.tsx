@@ -56,7 +56,7 @@ function QuickActionContent({
   return (
     <>
       <span className={cn(iconClassName, iconTone)}>
-        <Icon className="size-5" stroke={1.5} />
+        <Icon className="size-5" stroke={1.5} aria-hidden="true" />
       </span>
       <span className="min-w-0 space-y-0.5">
         <span className="block truncate text-sm font-medium leading-tight text-foreground">
@@ -103,7 +103,7 @@ export function QuickActions({
           Acessos rápidos
         </h2>
         <span className="pb-0.5 text-[0.68rem] text-muted-foreground/75 sm:hidden">
-          Arraste para o lado &rarr;
+          Arraste para o lado <span aria-hidden="true">&rarr;</span>
         </span>
       </div>
 

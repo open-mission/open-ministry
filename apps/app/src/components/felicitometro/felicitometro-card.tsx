@@ -80,7 +80,7 @@ export function FelicitometroCard({
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-2.5">
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <SparklesIcon className="size-4" />
+              <SparklesIcon className="size-4" aria-hidden="true" />
             </span>
             <div>
               <CardTitle className="font-heading text-lg leading-snug tracking-tight sm:text-xl">
@@ -102,7 +102,7 @@ export function FelicitometroCard({
               }}
               className="h-9 shrink-0 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
             >
-              <PencilIcon className="size-3" />
+              <PencilIcon className="size-3" aria-hidden="true" />
               Editar
             </Button>
           ) : null}
@@ -130,13 +130,13 @@ export function FelicitometroCard({
               <div className="flex flex-wrap gap-1.5">
                 {initialMood.needsPrayer && (
                   <Badge variant="secondary" className="gap-1 text-[11px] bg-amber-500/10 text-amber-700 dark:text-amber-300">
-                    <HeartHandshakeIcon className="size-3" />
+                    <HeartHandshakeIcon className="size-3" aria-hidden="true" />
                     Oração solicitada
                   </Badge>
                 )}
                 {initialMood.needsTalk && (
                   <Badge variant="secondary" className="gap-1 text-[11px] bg-blue-500/10 text-blue-700 dark:text-blue-300">
-                    <MessageSquareHeartIcon className="size-3" />
+                    <MessageSquareHeartIcon className="size-3" aria-hidden="true" />
                     Quer conversar
                   </Badge>
                 )}
@@ -179,13 +179,14 @@ export function FelicitometroCard({
                     type="button"
                     onClick={() => setSelectedScore(score)}
                     aria-pressed={isSelected}
+                    aria-label={`Sentimento: ${item.label}`}
                     className={`group flex min-h-[72px] flex-col items-center justify-center rounded-xl p-2.5 text-center transition-[transform,background-color,border-color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 ${
                       isSelected
                         ? `${item.bg} ${item.border} border-2 shadow-xs ring-1 ring-primary/40 scale-[1.03]`
                         : "border border-border/60 bg-card text-muted-foreground hover:bg-muted/40"
                     }`}
                   >
-                    <span className="text-2xl transition-transform duration-150 group-hover:scale-110 motion-reduce:transition-none sm:text-3xl">
+                    <span className="text-2xl transition-transform duration-150 group-hover:scale-110 motion-reduce:transition-none sm:text-3xl" aria-hidden="true">
                       {item.emoji}
                     </span>
                     <span
@@ -221,7 +222,7 @@ export function FelicitometroCard({
                   }
                 />
                 <div className="flex items-center gap-2 font-medium">
-                  <HeartHandshakeIcon className="size-4 shrink-0 text-amber-500" />
+                  <HeartHandshakeIcon className="size-4 shrink-0 text-amber-500" aria-hidden="true" />
                   <span className="text-sm leading-snug">
                     Gostaria de uma oração da minha liderança
                   </span>
@@ -240,7 +241,7 @@ export function FelicitometroCard({
                   }
                 />
                 <div className="flex items-center gap-2 font-medium">
-                  <MessageSquareHeartIcon className="size-4 shrink-0 text-blue-500" />
+                  <MessageSquareHeartIcon className="size-4 shrink-0 text-blue-500" aria-hidden="true" />
                   <span className="text-sm leading-snug">
                     Preciso conversar com um líder ou pastor
                   </span>

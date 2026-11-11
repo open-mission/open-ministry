@@ -69,7 +69,7 @@ export function InviteDialog({
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>
           <Button size="lg" className="h-9" variant={variant}>
-            <UserPlusIcon data-icon="inline-start" />
+            <UserPlusIcon data-icon="inline-start" aria-hidden="true" />
             Convidar pessoa
           </Button>
         </DrawerTrigger>
@@ -97,7 +97,7 @@ export function InviteDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="lg" className="h-9" variant={variant}>
-          <UserPlusIcon data-icon="inline-start" />
+          <UserPlusIcon data-icon="inline-start" aria-hidden="true" />
           Convidar pessoa
         </Button>
       </DialogTrigger>
@@ -167,7 +167,7 @@ function InviteForm({ onReset }: { onReset: () => void }) {
         <div className="rounded-xl border bg-accent/30 p-4 space-y-3">
           <p className="flex items-center gap-2 text-sm font-medium">
             <span className="flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              <CheckIcon className="size-3.5" />
+              <CheckIcon className="size-3.5" aria-hidden="true" />
             </span>
             Convite criado com sucesso
           </p>
@@ -190,7 +190,7 @@ function InviteForm({ onReset }: { onReset: () => void }) {
           </div>
 
           <p className="flex items-center gap-1.5 text-[0.7rem] text-muted-foreground">
-            <ClockIcon className="size-3.5" />
+            <ClockIcon className="size-3.5" aria-hidden="true" />
             Válido até {formatDate(state.invitation.expiresAt)}
           </p>
         </div>
@@ -200,11 +200,11 @@ function InviteForm({ onReset }: { onReset: () => void }) {
           <Tabs defaultValue="invite" className="space-y-2.5">
             <TabsList className="w-full grid grid-cols-2">
               <TabsTrigger value="invite" className="text-xs gap-1.5">
-                <MessageSquareIcon className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                <MessageSquareIcon className="size-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
                 Mensagem WhatsApp
               </TabsTrigger>
               <TabsTrigger value="save" className="text-xs gap-1.5">
-                <ShieldAlertIcon className="size-3.5 text-amber-500" />
+                <ShieldAlertIcon className="size-3.5 text-amber-500" aria-hidden="true" />
                 Salvar Contato
               </TabsTrigger>
             </TabsList>
@@ -223,9 +223,9 @@ function InviteForm({ onReset }: { onReset: () => void }) {
                   className="gap-1.5 text-xs"
                 >
                   {copiedInvite ? (
-                    <CheckIcon className="size-3.5 text-primary" />
+                    <CheckIcon className="size-3.5 text-primary" aria-hidden="true" />
                   ) : (
-                    <CopyIcon className="size-3.5" />
+                    <CopyIcon className="size-3.5" aria-hidden="true" />
                   )}
                   Copiar Mensagem
                 </Button>
@@ -241,7 +241,7 @@ function InviteForm({ onReset }: { onReset: () => void }) {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <ExternalLinkIcon className="size-3.5" />
+                    <ExternalLinkIcon className="size-3.5" aria-hidden="true" />
                     Abrir no WhatsApp
                   </a>
                 </Button>
@@ -250,7 +250,7 @@ function InviteForm({ onReset }: { onReset: () => void }) {
 
             <TabsContent value="save" className="space-y-2.5 mt-0">
               <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5 text-xs text-muted-foreground flex items-start gap-2">
-                <ShieldAlertIcon className="size-4 text-amber-500 shrink-0 mt-0.5" />
+                <ShieldAlertIcon className="size-4 text-amber-500 shrink-0 mt-0.5" aria-hidden="true" />
                 <p>
                   <strong>Dica anti-bloqueio:</strong> Peça para o membro salvar o contato da igreja. Isso evita que mensagens futuras caiam em spam.
                 </p>
@@ -269,9 +269,9 @@ function InviteForm({ onReset }: { onReset: () => void }) {
                   className="gap-1.5 text-xs"
                 >
                   {copiedSave ? (
-                    <CheckIcon className="size-3.5 text-primary" />
+                    <CheckIcon className="size-3.5 text-primary" aria-hidden="true" />
                   ) : (
-                    <CopyIcon className="size-3.5" />
+                    <CopyIcon className="size-3.5" aria-hidden="true" />
                   )}
                   Copiar Mensagem
                 </Button>
@@ -287,7 +287,7 @@ function InviteForm({ onReset }: { onReset: () => void }) {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <ExternalLinkIcon className="size-3.5" />
+                    <ExternalLinkIcon className="size-3.5" aria-hidden="true" />
                     Abrir no WhatsApp
                   </a>
                 </Button>
@@ -302,7 +302,7 @@ function InviteForm({ onReset }: { onReset: () => void }) {
           className="w-full"
           onClick={onReset}
         >
-          <MailPlusIcon data-icon="inline-start" />
+          <MailPlusIcon data-icon="inline-start" aria-hidden="true" />
           Convidar outra pessoa
         </Button>
       </div>

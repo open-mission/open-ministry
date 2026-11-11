@@ -243,7 +243,11 @@ async function DashboardContent() {
             className="group inline-flex items-center gap-1 pb-0.5 text-xs font-medium text-primary hover:underline"
           >
             Ver agenda
-            <ArrowRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+            <ArrowRightIcon
+              data-icon="inline-end"
+              className="size-3.5 transition-transform group-hover:translate-x-0.5"
+              aria-hidden="true"
+            />
           </Link>
         </div>
         <FeaturedServiceCard event={featuredEvent} isAdmin={isAdmin} />
@@ -301,7 +305,7 @@ async function DashboardContent() {
 
 function DashboardSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-10" aria-hidden>
+    <div className="mx-auto w-full max-w-6xl space-y-10" aria-hidden="true">
       <div className="space-y-2">
         <Skeleton className="h-10 w-56" />
         <Skeleton className="h-4 w-80" />

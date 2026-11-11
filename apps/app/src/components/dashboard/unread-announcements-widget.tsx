@@ -111,7 +111,7 @@ export function UnreadAnnouncementsWidget({
         <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
           <div className="flex items-center gap-2.5">
             <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400">
-              <MegaphoneIcon className="size-4" />
+              <MegaphoneIcon className="size-4" aria-hidden="true" />
             </div>
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
@@ -120,7 +120,7 @@ export function UnreadAnnouncementsWidget({
                 </CardTitle>
                 <Badge
                   variant="outline"
-                  className="border-amber-500/30 bg-amber-500/10 text-[10px] font-semibold text-amber-700 dark:text-amber-400"
+                  className="border-amber-500/30 bg-amber-500/10 text-[10px] font-semibold text-amber-700 dark:text-amber-400 tabular-nums"
                 >
                   {announcements.length}{" "}
                   {announcements.length === 1 ? "não lido" : "não lidos"}
@@ -140,7 +140,7 @@ export function UnreadAnnouncementsWidget({
           >
             <Link href="/dashboard/announcements">
               <span>Ver todos</span>
-              <ArrowRightIcon className="size-3.5" />
+              <ArrowRightIcon className="size-3.5" aria-hidden="true" />
             </Link>
           </Button>
         </CardHeader>
@@ -149,25 +149,21 @@ export function UnreadAnnouncementsWidget({
           {announcements.slice(0, 3).map((item) => (
             <div
               key={item.id}
-              onClick={() => handleOpenDetail(item)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  handleOpenDetail(item);
-                }
-              }}
-              role="button"
-              tabIndex={0}
               className={cn(
-                "group flex w-full cursor-pointer items-start justify-between gap-3 rounded-xl border border-border/60 bg-background/80 p-3 text-left transition-all hover:border-amber-500/30 hover:bg-amber-500/[0.02] hover:shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                "group flex w-full items-start justify-between gap-3 rounded-xl border border-border/60 bg-background/80 p-3 text-left transition-all hover:border-amber-500/30 hover:bg-amber-500/[0.02] hover:shadow-xs",
               )}
             >
-              <div className="min-w-0 flex-1 space-y-1">
+              <button
+                type="button"
+                onClick={() => handleOpenDetail(item)}
+                className="min-w-0 flex-1 space-y-1 text-left cursor-pointer rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`Abrir comunicado: ${item.title}`}
+              >
                 <div className="flex items-center justify-between gap-2">
                   <h4 className="truncate font-semibold text-xs sm:text-sm text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                     {item.title}
                   </h4>
-                  <span className="shrink-0 text-[11px] text-muted-foreground">
+                  <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
                     {formatAnnouncementTime(item.createdAt)}
                   </span>
                 </div>
@@ -177,7 +173,7 @@ export function UnreadAnnouncementsWidget({
                     {item.body}
                   </p>
                 ) : null}
-              </div>
+              </button>
 
               <div className="flex items-center gap-1 shrink-0 pt-0.5">
                 <Button
@@ -186,9 +182,10 @@ export function UnreadAnnouncementsWidget({
                   size="icon"
                   className="size-7 text-muted-foreground hover:text-foreground hover:bg-muted"
                   title="Marcar como lido"
+                  aria-label="Marcar como lido"
                   onClick={(e) => handleMarkRead(item.id, e)}
                 >
-                  <CheckIcon className="size-3.5" />
+                  <CheckIcon className="size-3.5" aria-hidden="true" />
                   <span className="sr-only">Marcar como lido</span>
                 </Button>
               </div>
