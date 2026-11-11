@@ -61,59 +61,106 @@ export function PendingInvitations({
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Papel</TableHead>
-                  <TableHead>Expira em</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pending.map((invitation) => {
-                  const expired = isExpired(invitation.expiresAt);
+          <>
+            {/* Mobile View: Cards */}
+            <div className="divide-y divide-border/60 md:hidden">
+              {pending.map((invitation) => {
+                const expired = isExpired(invitation.expiresAt);
 
-                  return (
-                    <TableRow key={invitation.id}>
-                      <TableCell className="max-w-64 truncate text-sm">
-                        {invitation.email}
-                      </TableCell>
-                      <TableCell>
-                        <RoleBadge role={invitation.role ?? "member"} />
-                      </TableCell>
-                      <TableCell>
-                        {expired ? (
-                          <Badge variant="destructive" className="font-normal">
-                            Expirado
-                          </Badge>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 text-sm whitespace-nowrap text-muted-foreground">
-                            <ClockIcon className="size-3.5" />
-                            {formatDate(invitation.expiresAt)}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-end gap-1.5">
-                          <WhatsAppInvitationDialog
-                            invitationId={invitation.id}
-                            email={invitation.email}
-                          />
-                          <CopyInvitationLink invitationId={invitation.id} />
-                          <CancelInvitationButton
-                            invitationId={invitation.id}
-                            email={invitation.email}
-                          />
+                return (
+                  <div key={invitation.id} className="flex flex-col gap-3 p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 space-y-1">
+                        <p className="truncate text-sm font-semibold text-foreground">
+                          {invitation.email}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <RoleBadge role={invitation.role ?? "member"} />
+                          {expired ? (
+                            <Badge variant="destructive" className="font-normal text-[11px]">
+                              Expirado
+                            </Badge>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                              <ClockIcon className="size-3" />
+                              Expira em {formatDate(invitation.expiresAt)}
+                            </span>
+                          )}
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-border/40">
+                      <WhatsAppInvitationDialog
+                        invitationId={invitation.id}
+                        email={invitation.email}
+                      />
+                      <CopyInvitationLink invitationId={invitation.id} />
+                      <CancelInvitationButton
+                        invitationId={invitation.id}
+                        email={invitation.email}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop View: Table */}
+            <div className="hidden overflow-x-auto md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Papel</TableHead>
+                    <TableHead>Expira em</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pending.map((invitation) => {
+                    const expired = isExpired(invitation.expiresAt);
+
+                    return (
+                      <TableRow key={invitation.id}>
+                        <TableCell className="max-w-64 truncate text-sm">
+                          {invitation.email}
+                        </TableCell>
+                        <TableCell>
+                          <RoleBadge role={invitation.role ?? "member"} />
+                        </TableCell>
+                        <TableCell>
+                          {expired ? (
+                            <Badge variant="destructive" className="font-normal">
+                              Expirado
+                            </Badge>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 text-sm whitespace-nowrap text-muted-foreground">
+                              <ClockIcon className="size-3.5" />
+                              {formatDate(invitation.expiresAt)}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <WhatsAppInvitationDialog
+                              invitationId={invitation.id}
+                              email={invitation.email}
+                            />
+                            <CopyInvitationLink invitationId={invitation.id} />
+                            <CancelInvitationButton
+                              invitationId={invitation.id}
+                              email={invitation.email}
+                            />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>

@@ -183,14 +183,14 @@ async function MembersContent() {
 
       {canViewFelicitometro && moodOverview ? (
         <Tabs defaultValue="list" className="w-full space-y-6">
-          <TabsList className="grid grid-cols-2 max-w-xs h-11 bg-muted/60 p-1">
-            <TabsTrigger value="list" className="text-xs font-medium gap-2">
+          <TabsList className="grid grid-cols-2 max-w-xs h-11 bg-muted/60 p-1 rounded-xl">
+            <TabsTrigger value="list" className="h-full text-xs sm:text-sm font-medium gap-2">
               <UsersIcon className="size-4" />
               Pessoas ({people.length})
             </TabsTrigger>
             <TabsTrigger
               value="felicitometro"
-              className="text-xs font-medium gap-2 relative"
+              className="h-full text-xs sm:text-sm font-medium gap-2 relative"
             >
               <SparklesIcon className="size-4" />
               Felicitômetro

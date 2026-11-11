@@ -75,12 +75,57 @@ async function BirthdaysContent() {
     }
   }
 
+  const currentYearGroups = groups.filter((g) => g.month >= today.month);
+  const nextYearGroups = groups.filter((g) => g.month < today.month);
+
   const maxDate = `${today.year}-${String(today.month).padStart(2, "0")}-${String(today.day).padStart(2, "0")}`;
   const ownBirthday = session.user.birthday ?? null;
   const thisMonthCount = entries.filter(
     (entry) => entry.month === today.month,
   ).length;
   const withoutBirthday = people.length - entries.length;
+
+  const renderMonthSection = (group: (typeof groups)[number]) => (
+    <section key={group.month} className="space-y-2">
+      <div className="flex items-baseline justify-between gap-2 border-b pb-1.5">
+        <h2 className="font-heading text-lg tracking-tight">
+          {group.label}
+        </h2>
+        <span className="text-[0.7rem] whitespace-nowrap text-muted-foreground">
+          {group.entries.length === 0
+            ? "sem datas"
+            : group.entries.length === 1
+              ? "1 aniversário"
+              : `${group.entries.length} aniversários`}
+        </span>
+      </div>
+
+      {group.entries.length === 0 ? null : (
+        <ul className="space-y-1">
+          {group.entries.map((entry) => (
+            <li
+              key={entry.personId}
+              className="flex items-baseline justify-between gap-3"
+            >
+              <span className="flex min-w-0 items-baseline gap-2">
+                <span className="w-6 shrink-0 text-right font-heading text-base text-primary">
+                  {entry.day}
+                </span>
+                <span className="truncate text-sm">
+                  {entry.name}
+                </span>
+              </span>
+              {entry.turningAge !== null ? (
+                <span className="shrink-0 text-[0.7rem] whitespace-nowrap text-muted-foreground">
+                  {entry.birthYear} · {entry.turningAge} anos
+                </span>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
@@ -138,62 +183,58 @@ async function BirthdaysContent() {
                 ))}
               </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="font-heading text-xl tracking-tight">
-                    O ano da equipe
-                  </CardTitle>
-                  <CardDescription>
-                    De {groups[0]?.label.toLowerCase()} a{" "}
-                    {groups[11]?.label.toLowerCase()}, mês a mês.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
-                    {groups.map((group) => (
-                      <section key={group.month} className="space-y-2">
-                        <div className="flex items-baseline justify-between gap-2 border-b pb-1.5">
-                          <h2 className="font-heading text-lg tracking-tight">
-                            {group.label}
-                          </h2>
-                          <span className="text-[0.7rem] whitespace-nowrap text-muted-foreground">
-                            {group.entries.length === 0
-                              ? "sem datas"
-                              : group.entries.length === 1
-                                ? "1 aniversário"
-                                : `${group.entries.length} aniversários`}
-                          </span>
-                        </div>
+              {currentYearGroups.length > 0 ? (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between gap-2">
+                      <CardTitle className="font-heading text-xl tracking-tight">
+                        Ainda em {today.year}
+                      </CardTitle>
+                      <Badge variant="secondary" className="font-semibold text-xs">
+                        {today.year}
+                      </Badge>
+                    </div>
+                    <CardDescription>
+                      Aniversários restantes deste ano, de{" "}
+                      {currentYearGroups[0]?.label.toLowerCase()} a{" "}
+                      {currentYearGroups[currentYearGroups.length - 1]?.label.toLowerCase()}.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
+                      {currentYearGroups.map(renderMonthSection)}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : null}
 
-                        {group.entries.length === 0 ? null : (
-                          <ul className="space-y-1">
-                            {group.entries.map((entry) => (
-                              <li
-                                key={entry.personId}
-                                className="flex items-baseline justify-between gap-3"
-                              >
-                                <span className="flex min-w-0 items-baseline gap-2">
-                                  <span className="w-6 shrink-0 text-right font-heading text-base text-primary">
-                                    {entry.day}
-                                  </span>
-                                  <span className="truncate text-sm">
-                                    {entry.name}
-                                  </span>
-                                </span>
-                                {entry.turningAge !== null ? (
-                                  <span className="shrink-0 text-[0.7rem] whitespace-nowrap text-muted-foreground">
-                                    {entry.birthYear} · {entry.turningAge} anos
-                                  </span>
-                                ) : null}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </section>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              {nextYearGroups.length > 0 ? (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between gap-2">
+                      <CardTitle className="font-heading text-xl tracking-tight">
+                        Próximo ano ({today.year + 1})
+                      </CardTitle>
+                      <Badge
+                        variant="outline"
+                        className="font-semibold text-xs text-primary border-primary/30 bg-primary/5"
+                      >
+                        {today.year + 1}
+                      </Badge>
+                    </div>
+                    <CardDescription>
+                      Aniversários para o início do próximo ano, de{" "}
+                      {nextYearGroups[0]?.label.toLowerCase()} a{" "}
+                      {nextYearGroups[nextYearGroups.length - 1]?.label.toLowerCase()}.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
+                      {nextYearGroups.map(renderMonthSection)}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : null}
             </>
           )}
         </div>

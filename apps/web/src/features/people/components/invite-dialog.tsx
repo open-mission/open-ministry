@@ -30,6 +30,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
   Field,
   FieldDescription,
   FieldError,
@@ -51,8 +60,38 @@ export function InviteDialog({
 }: {
   variant?: ComponentProps<typeof Button>["variant"];
 }) {
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [formKey, setFormKey] = useState(0);
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerTrigger asChild>
+          <Button size="lg" className="h-9" variant={variant}>
+            <UserPlusIcon data-icon="inline-start" />
+            Convidar pessoa
+          </Button>
+        </DrawerTrigger>
+        <DrawerContent className="p-0">
+          <DrawerHeader className="border-b px-5 pt-3 pb-3 !text-left text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+            <DrawerTitle className="font-heading text-xl tracking-tight">
+              Convidar pessoa
+            </DrawerTitle>
+            <DrawerDescription className="text-xs text-muted-foreground text-left">
+              Gere um link seguro e envie por email ou WhatsApp para a pessoa criar a conta.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="max-h-[75vh] overflow-y-auto p-5">
+            <InviteForm
+              key={formKey}
+              onReset={() => setFormKey((current) => current + 1)}
+            />
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

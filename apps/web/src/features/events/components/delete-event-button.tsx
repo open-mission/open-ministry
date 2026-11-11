@@ -28,14 +28,24 @@ export function DeleteEventButton({
   eventId,
   eventTitle,
   seriesId,
+  trigger,
+  open: controlledOpen,
+  onOpenChange: setControlledOpen,
 }: {
   eventId: string;
   eventTitle: string;
   seriesId: string | null;
+  trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const router = useRouter();
   const [scope, setScope] = useState<"single" | "series">("single");
   const [pending, startTransition] = useTransition();
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const setOpen = isControlled ? (setControlledOpen ?? (() => {})) : setUncontrolledOpen;
 
   function handleDelete() {
     startTransition(async () => {
@@ -52,13 +62,17 @@ export function DeleteEventButton({
   }
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="text-destructive">
-          <Trash2Icon data-icon="inline-start" />
-          Excluir
-        </Button>
-      </AlertDialogTrigger>
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      {trigger !== undefined ? (
+        trigger ? <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger> : null
+      ) : (
+        <AlertDialogTrigger asChild>
+          <Button variant="ghost" size="sm" className="text-destructive">
+            <Trash2Icon data-icon="inline-start" />
+            Excluir
+          </Button>
+        </AlertDialogTrigger>
+      )}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogMedia>
