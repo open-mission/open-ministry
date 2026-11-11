@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import {
-  ArrowLeftIcon,
   CalendarDaysIcon,
   CalendarIcon,
   ClockIcon,
@@ -154,17 +153,6 @@ async function MemberPageContent({
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 pb-12">
-      <div>
-        <Link
-          href="/dashboard/members"
-          prefetch={true}
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeftIcon className="size-4" />
-          Voltar para Pessoas
-        </Link>
-      </div>
-
       {/* Header do Membro */}
       <Card className="rounded-2xl border-border/70 shadow-xs overflow-hidden">
         <CardContent className="p-6">
@@ -383,16 +371,16 @@ async function MemberPageContent({
 
       {/* Abas de Navegação do Perfil */}
       <Tabs defaultValue="schedules" className="w-full space-y-6">
-        <TabsList className="grid grid-cols-3 max-w-md h-11 bg-muted/60 p-1">
-          <TabsTrigger value="schedules" className="text-xs font-medium gap-1.5">
+        <TabsList className="grid grid-cols-3 max-w-md h-11 bg-muted/60 p-1 rounded-xl">
+          <TabsTrigger value="schedules" className="h-full text-xs sm:text-sm font-medium gap-1.5">
             <CalendarDaysIcon className="size-3.5" />
             Escalas ({assignments.length})
           </TabsTrigger>
-          <TabsTrigger value="mood" className="text-xs font-medium gap-1.5">
+          <TabsTrigger value="mood" className="h-full text-xs sm:text-sm font-medium gap-1.5">
             <SparklesIcon className="size-3.5" />
             Felicitômetro ({totalMoods})
           </TabsTrigger>
-          <TabsTrigger value="unavailability" className="text-xs font-medium gap-1.5">
+          <TabsTrigger value="unavailability" className="h-full text-xs sm:text-sm font-medium gap-1.5">
             <ShieldAlertIcon className="size-3.5" />
             Bloqueios ({unavailabilities.length})
           </TabsTrigger>

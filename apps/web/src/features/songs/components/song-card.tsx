@@ -35,6 +35,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { SongRecord } from "@/lib/songs";
 import { DeleteSongDialog } from "./delete-song-dialog";
+import { SetSongGroupDialog } from "./set-song-group-dialog";
 import { SongFormDialog } from "./song-form-dialog";
 
 type SongCardProps = {
@@ -56,6 +57,7 @@ export function SongCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [groupOpen, setGroupOpen] = useState(false);
 
   const hasChords = Boolean(song.chords?.trim());
   const hasLyrics = Boolean(song.lyrics?.trim());
@@ -97,16 +99,16 @@ export function SongCard({
                     </Button>
                   </DrawerTrigger>
                   <DrawerContent className="max-h-[80dvh] rounded-t-[24px] p-0">
-                    <DrawerHeader className="border-b px-5 pt-4 pb-3 text-left">
+                    <DrawerHeader className="border-b px-5 pt-4 pb-3 !text-left text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
                       <div className="flex items-center gap-2">
                         <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
                           <Music2Icon className="size-4" />
                         </span>
-                        <DrawerTitle className="font-heading text-base font-bold truncate">
+                        <DrawerTitle className="font-heading text-base font-bold truncate text-left">
                           {song.title}
                         </DrawerTitle>
                       </div>
-                      <DrawerDescription className="text-xs text-muted-foreground truncate">
+                      <DrawerDescription className="text-xs text-muted-foreground truncate text-left">
                         {song.artist || "Opções da música"}
                       </DrawerDescription>
                     </DrawerHeader>
@@ -137,6 +139,18 @@ export function SongCard({
                       >
                         <PencilIcon className="size-4 text-muted-foreground" />
                         <span>Editar música</span>
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          setGroupOpen(true);
+                        }}
+                        className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium"
+                      >
+                        <FolderIcon className="size-4 text-muted-foreground" />
+                        <span>Definir grupo</span>
                       </Button>
 
                       <div className="my-1 border-t border-border/60" />
@@ -175,7 +189,7 @@ export function SongCard({
                       <span className="sr-only">Opções da música</span>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuContent align="end" className="w-44">
                     <DropdownMenuItem asChild>
                       <Link href={`/dashboard/songs/${song.id}`} prefetch={true}>
                         <FileTextIcon className="size-4 mr-2" />
@@ -185,6 +199,10 @@ export function SongCard({
                     <DropdownMenuItem onClick={() => setEditOpen(true)}>
                       <PencilIcon className="size-4 mr-2" />
                       Editar música
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setGroupOpen(true)}>
+                      <FolderIcon className="size-4 mr-2" />
+                      Definir grupo
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -327,6 +345,20 @@ export function SongCard({
           songId={song.id}
           songTitle={song.title}
           onSongDeleted={onSongDeleted}
+        />
+      )}
+
+      {groupOpen && (
+        <SetSongGroupDialog
+          song={{
+            id: song.id,
+            title: song.title,
+            collection: song.collection,
+            tags: song.tags,
+          }}
+          existingCollections={existingCollections}
+          open={groupOpen}
+          onOpenChange={setGroupOpen}
         />
       )}
     </>

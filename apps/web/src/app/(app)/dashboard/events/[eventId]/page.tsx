@@ -13,8 +13,7 @@ import {
 } from "lucide-react";
 
 import { getEventUnavailablePeopleAction } from "@/app/actions/availability";
-import { DeleteEventButton } from "@/components/events/delete-event-button";
-import { EditEventDialog } from "@/components/events/edit-event-dialog";
+import { EventActionsMenu } from "@/components/events/event-actions-menu";
 import { PlanEditor } from "@/components/events/plan-editor";
 import { ScheduleEditor } from "@/components/events/schedule-editor";
 import { Badge } from "@/components/ui/badge";
@@ -148,6 +147,28 @@ async function EventContent({
                     ) ?? "Série"}
                   </Badge>
                 ) : null}
+                {canEditEvent || canDeleteEvent ? (
+                  <EventActionsMenu
+                    event={{
+                      id: event.id,
+                      title: event.title,
+                      description: event.description,
+                      kind: event.kind,
+                      location: event.location,
+                      seriesId: event.seriesId,
+                    }}
+                    departments={departments.map((department) => ({
+                      id: department.id,
+                      name: department.name,
+                    }))}
+                    selectedDepartmentIds={[...actingIds]}
+                    defaultDate={toInputDate(event.startsAt)}
+                    defaultTime={toInputTime(event.startsAt)}
+                    defaultDuration={defaultDuration}
+                    canEdit={canEditEvent}
+                    canDelete={canDeleteEvent}
+                  />
+                ) : null}
               </div>
 
               <p className="text-sm text-muted-foreground">
@@ -170,38 +191,6 @@ async function EventContent({
               </div>
             </div>
           </div>
-
-          {canEditEvent || canDeleteEvent ? (
-            <div className="flex shrink-0 items-center gap-1.5">
-              {canEditEvent ? (
-                <EditEventDialog
-                  event={{
-                    id: event.id,
-                    title: event.title,
-                    description: event.description,
-                    kind: event.kind,
-                    location: event.location,
-                    seriesId: event.seriesId,
-                  }}
-                  departments={departments.map((department) => ({
-                    id: department.id,
-                    name: department.name,
-                  }))}
-                  selectedDepartmentIds={[...actingIds]}
-                  defaultDate={toInputDate(event.startsAt)}
-                  defaultTime={toInputTime(event.startsAt)}
-                  defaultDuration={defaultDuration}
-                />
-              ) : null}
-              {canDeleteEvent ? (
-                <DeleteEventButton
-                  eventId={event.id}
-                  eventTitle={event.title}
-                  seriesId={event.seriesId}
-                />
-              ) : null}
-            </div>
-          ) : null}
         </div>
 
         {event.description ? (

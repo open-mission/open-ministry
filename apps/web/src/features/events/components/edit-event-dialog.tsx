@@ -49,6 +49,9 @@ export function EditEventDialog({
   defaultDate,
   defaultTime,
   defaultDuration,
+  trigger,
+  open: controlledOpen,
+  onOpenChange: setControlledOpen,
 }: {
   event: {
     id: string;
@@ -63,17 +66,27 @@ export function EditEventDialog({
   defaultDate: string;
   defaultTime: string;
   defaultDuration: number;
+  trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const setOpen = isControlled ? (setControlledOpen ?? (() => {})) : setUncontrolledOpen;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <PencilIcon data-icon="inline-start" />
-          Editar
-        </Button>
-      </DialogTrigger>
+      {trigger !== undefined ? (
+        trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null
+      ) : (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            <PencilIcon data-icon="inline-start" />
+            Editar
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="font-heading text-2xl tracking-tight">

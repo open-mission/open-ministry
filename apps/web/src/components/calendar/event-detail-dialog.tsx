@@ -123,15 +123,15 @@ export function EventDetailDialog({
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="gap-0 rounded-t-[28px] border-x-0 border-b-0 bg-background p-0">
-          <DrawerHeader className="px-5 pt-1 pb-2 text-left">
-            <div className="flex items-center gap-2 mb-1.5">
-              {badgeContent}
-            </div>
-            <DrawerTitle className="font-heading text-xl tracking-tight text-foreground">
+          <DrawerHeader className="px-5 pt-3 pb-3 text-center">
+            <DrawerTitle className="font-heading text-xl tracking-tight text-foreground text-center">
               {item.title}
             </DrawerTitle>
+            <div className="flex items-center justify-center gap-2 mt-1.5">
+              {badgeContent}
+            </div>
             {item.subtitle ? (
-              <DrawerDescription className="text-sm font-medium text-foreground/80">
+              <DrawerDescription className="text-sm font-medium text-foreground/80 text-center mt-1">
                 {item.subtitle}
               </DrawerDescription>
             ) : null}
