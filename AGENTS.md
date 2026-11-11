@@ -10,20 +10,13 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- BEGIN:turborepo-agent-rules -->
 
-## Turborepo Monorepo & AI Guidance
+# This is NOT the Turborepo you know
 
-Este projeto é gerenciado por **Turborepo** (`turbo.json`) em monorepo com Bun (`workspaces: ["apps/*", "packages/*"]`).
-- O código da aplicação principal reside em `apps/app` (servindo `app.openministry.online`) e segue a arquitetura **Feature-Based** em `apps/app/src/features/*`.
-- O site institucional e de apresentação reside em `apps/site` (servindo `openministry.online`).
-- A documentação futura residirá em `apps/docs` (servindo `docs.openministry.online`).
-- Pacotes internos reutilizáveis estão em `packages/`:
-  - `@openministry/db`: Modelos Drizzle ORM, conexão Neon e migrações SQL.
-  - `@openministry/ui`: Componentes primitivos Shadcn UI / Radix.
-  - `@openministry/typescript-config`: Configurações compartilhadas de TypeScript.
-  - `@openministry/eslint-config`: Configurações compartilhadas de ESLint.
-- Ao adicionar novas tarefas ou pacotes, consulte a documentação com `turbo docs "[termo]"` ou acesse `https://turborepo.dev/docs.md`.
-- No `turbo.json`, mantenha sempre a propriedade `"description"` preenchida em cada task para documentar explicitamente o propósito para IAs e desenvolvedores.
+Turborepo configuration, task behavior, and CLI commands can vary between installed versions and may differ from your training data. Resolve the `turbo` package from this file's directory or relevant workspace; in monorepos, it may not be visible from the repository root. For example, run `node -p "require.resolve('turbo/package.json')"` from a workspace that depends on `turbo`.
 
+Read `docs/README.md` inside that installed package first, then read the relevant pages from its `docs/` directory before changing Turborepo configuration or commands. Heed deprecation notices. These bundled docs match the installed package version and are available without network access.
+
+This block is written and re-added by `turbo` before repository-scoped commands when an AI agent is detected. In the Turborepo source repository, its template is defined in `crates/turborepo-cli/src/cli/agent_guidance.rs`. Removing the managed block while updates are enabled means a later qualifying invocation will add it again. Set `"agentGuidance": true` in the root `turbo.json` or `turbo.jsonc` to opt in; this does not remove an existing block. Keep the block committed with your work to avoid an uncommitted change on the next agent invocation.
 <!-- END:turborepo-agent-rules -->
 
 ## Git Flow

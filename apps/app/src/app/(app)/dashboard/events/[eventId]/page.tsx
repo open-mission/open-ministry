@@ -3,30 +3,22 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import {
-  ArrowLeftIcon,
-  ClipboardListIcon,
-  ClockIcon,
-  MapPinIcon,
-  RepeatIcon,
-  UsersIcon,
-} from "lucide-react";
+import { ArrowLeftIcon, MapPinIcon, RepeatIcon } from "lucide-react";
 
 import { getEventUnavailablePeopleAction } from "@/app/actions/availability";
 import { EventActionsMenu } from "@/components/events/event-actions-menu";
+import { EventTabs } from "@/components/events/event-tabs";
 import { PlanEditor } from "@/components/events/plan-editor";
-import { ScheduleEditor } from "@/components/events/schedule-editor";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listDepartments } from "@/lib/departments";
 import {
   eventDateParts,
   formatEventFullDate,
   formatEventTimeRange,
   getEvent,
+  getSeriesOccurrenceCount,
   recurrenceLabel,
-  scheduleProgress,
   toInputDate,
   toInputTime,
 } from "@/lib/events";
@@ -41,26 +33,34 @@ export const metadata: Metadata = {
   title: "Culto ou evento",
 };
 
+type EventSearchParams = {
+  tab?: string;
+};
+
 export default function EventPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ eventId: string }>;
+  searchParams: Promise<EventSearchParams>;
 }) {
   return (
     <Suspense fallback={<EventSkeleton />}>
-      <EventContent params={params} />
+      <EventContent params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
 async function EventContent({
   params,
+  searchParams,
 }: {
   params: Promise<{ eventId: string }>;
+  searchParams: Promise<EventSearchParams>;
 }) {
   await connection();
 
-  const { eventId } = await params;
+  const [{ eventId }, query] = await Promise.all([params, searchParams]);
   const { organization, session, isAdmin } =
     await requireOrganizationContext();
 
@@ -80,12 +80,16 @@ async function EventContent({
     can("agenda", "deleteEvent", { eventId: event.id }),
   ]);
 
-  const [departments, people, unavailablePeopleMap, songs] = await Promise.all([
-    listDepartments(organization.id),
-    listPeople(organization.id),
-    getEventUnavailablePeopleAction(event.id),
-    listSongs(organization.id),
-  ]);
+  const [departments, people, unavailablePeopleMap, songs, seriesOccurrences] =
+    await Promise.all([
+      listDepartments(organization.id),
+      listPeople(organization.id),
+      getEventUnavailablePeopleAction(event.id),
+      listSongs(organization.id),
+      event.seriesId
+        ? getSeriesOccurrenceCount(organization.id, event.seriesId)
+        : Promise.resolve(0),
+    ]);
   const actingIds = new Set(
     event.departments.map((item) => item.departmentId),
   );
@@ -93,7 +97,14 @@ async function EventContent({
     actingIds.has(department.id),
   );
   const assignments = event.schedule?.assignments ?? [];
-  const progress = scheduleProgress(event);
+  const departmentAssignmentCounts = assignments.reduce<Record<string, number>>(
+    (counts, assignment) => {
+      counts[assignment.departmentId] =
+        (counts[assignment.departmentId] ?? 0) + 1;
+      return counts;
+    },
+    {},
+  );
   const parts = eventDateParts(event.startsAt);
   const defaultDuration = Math.round(
     (event.endsAt.getTime() - event.startsAt.getTime()) / 60_000,
@@ -101,6 +112,7 @@ async function EventContent({
   const canManagePlan = await can("schedules", "editPlan", {
     eventId: event.id,
   });
+  const defaultTab = query.tab === "teams" ? "teams" : "order";
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
@@ -116,19 +128,19 @@ async function EventContent({
 
       <header className="flex flex-col gap-5">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-4">
-            <div className="hidden sm:flex size-20 shrink-0 flex-col items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-              <span className="font-heading text-3xl leading-none">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div className="flex size-14 shrink-0 flex-col items-center justify-center rounded-xl bg-primary text-primary-foreground sm:size-20 sm:rounded-2xl">
+              <span className="font-heading text-xl leading-none sm:text-3xl">
                 {parts.day}
               </span>
-              <span className="mt-1 text-[0.65rem] font-medium tracking-[0.14em] text-primary-foreground/70">
+              <span className="mt-0.5 text-[0.55rem] font-medium tracking-[0.14em] text-primary-foreground/70 sm:mt-1 sm:text-[0.65rem]">
                 {parts.monthShort}
               </span>
             </div>
 
             <div className="min-w-0 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="font-heading text-2xl sm:text-4xl leading-tight tracking-tight">
+                <h1 className="font-heading text-2xl leading-tight tracking-tight sm:text-4xl">
                   {event.title}
                 </h1>
                 <Badge
@@ -162,6 +174,8 @@ async function EventContent({
                       name: department.name,
                     }))}
                     selectedDepartmentIds={[...actingIds]}
+                    departmentAssignmentCounts={departmentAssignmentCounts}
+                    seriesOccurrences={seriesOccurrences}
                     defaultDate={toInputDate(event.startsAt)}
                     defaultTime={toInputTime(event.startsAt)}
                     defaultDuration={defaultDuration}
@@ -215,34 +229,16 @@ async function EventContent({
         ) : null}
       </header>
 
-      <Tabs defaultValue="order" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 sm:w-fit sm:inline-flex group-data-horizontal/tabs:h-10 h-10 p-1 items-stretch rounded-xl bg-muted">
-          <TabsTrigger
-            value="order"
-            className="h-8 flex items-center justify-center gap-1.5 px-2.5 text-xs sm:text-sm sm:gap-2 sm:px-3"
-          >
-            <ClockIcon className="size-3.5 sm:size-4 shrink-0" />
-            <span className="truncate">Cronograma do Culto</span>
-            {event.planItems?.length ? (
-              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/10 px-1 text-[10px] font-semibold text-primary shrink-0">
-                {event.planItems.length}
-              </span>
-            ) : null}
-          </TabsTrigger>
-
-          <TabsTrigger
-            value="teams"
-            className="h-8 flex items-center justify-center gap-1.5 px-2.5 text-xs sm:text-sm sm:gap-2 sm:px-3"
-          >
-            <UsersIcon className="size-3.5 sm:size-4 shrink-0" />
-            <span className="truncate">Escala & Equipes</span>
-            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-muted-foreground/15 px-1 text-[10px] font-semibold text-muted-foreground shrink-0">
-              {progress.assignmentsCount}
-            </span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="order">
+      <EventTabs
+        defaultTab={defaultTab}
+        planItemsCount={event.planItems?.length ?? 0}
+        eventId={event.id}
+        departments={actingDepartments}
+        assignments={assignments}
+        currentUserId={session.user.id}
+        isAdmin={isAdmin}
+        unavailablePeopleMap={unavailablePeopleMap}
+        plan={
           <PlanEditor
             eventId={event.id}
             eventTitle={event.title}
@@ -262,50 +258,8 @@ async function EventContent({
             }))}
             canManage={canManagePlan}
           />
-        </TabsContent>
-
-        <TabsContent value="teams" className="space-y-4">
-          <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
-            <h2 className="font-heading text-2xl tracking-tight">Equipes e Funções</h2>
-            <span className="text-xs text-muted-foreground">
-              {progress.totalFunctions === 0
-                ? "Sem funções definidas"
-                : `${progress.filledFunctions} de ${progress.totalFunctions} funções preenchidas · ${progress.assignmentsCount} ${
-                    progress.assignmentsCount === 1
-                      ? "pessoa escalada"
-                      : "pessoas escaladas"
-                  }`}
-            </span>
-          </div>
-
-          {actingDepartments.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed px-6 py-10 text-center">
-              <span className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                <ClipboardListIcon className="size-5" />
-              </span>
-              <div className="max-w-md space-y-1">
-                <p className="text-sm font-medium">
-                  Nenhum departamento atuando
-                </p>
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  {isAdmin
-                    ? "Edite o evento para escolher os departamentos. Depois, volte aqui para escalar as pessoas em cada função."
-                    : "A liderança ainda não definiu os departamentos deste evento."}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <ScheduleEditor
-              eventId={event.id}
-              departments={actingDepartments}
-              assignments={assignments}
-              currentUserId={session.user.id}
-              isAdmin={isAdmin}
-              unavailablePeopleMap={unavailablePeopleMap}
-            />
-          )}
-        </TabsContent>
-      </Tabs>
+        }
+      />
     </div>
   );
 }

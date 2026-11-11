@@ -35,7 +35,7 @@ export interface PageInfoProps {
 export function PageInfo({
   title,
   description,
-  triggerLabel = "Info",
+  triggerLabel = "Como funciona",
   className,
 }: PageInfoProps) {
   const [open, setOpen] = useState(false);

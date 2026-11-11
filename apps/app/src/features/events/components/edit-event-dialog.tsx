@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { PencilIcon } from "lucide-react";
+import { AlertTriangleIcon, PencilIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -55,6 +55,7 @@ export function EditEventDialog({
   event,
   departments,
   selectedDepartmentIds,
+  departmentAssignmentCounts = {},
   defaultDate,
   defaultTime,
   defaultDuration,
@@ -72,6 +73,7 @@ export function EditEventDialog({
   };
   departments: DepartmentOption[];
   selectedDepartmentIds: string[];
+  departmentAssignmentCounts?: Record<string, number>;
   defaultDate: string;
   defaultTime: string;
   defaultDuration: number;
@@ -114,6 +116,7 @@ export function EditEventDialog({
               event={event}
               departments={departments}
               selectedDepartmentIds={selectedDepartmentIds}
+              departmentAssignmentCounts={departmentAssignmentCounts}
               defaultDate={defaultDate}
               defaultTime={defaultTime}
               defaultDuration={defaultDuration}
@@ -152,6 +155,7 @@ export function EditEventDialog({
           event={event}
           departments={departments}
           selectedDepartmentIds={selectedDepartmentIds}
+          departmentAssignmentCounts={departmentAssignmentCounts}
           defaultDate={defaultDate}
           defaultTime={defaultTime}
           defaultDuration={defaultDuration}
@@ -166,6 +170,7 @@ function EditEventForm({
   event,
   departments,
   selectedDepartmentIds,
+  departmentAssignmentCounts,
   defaultDate,
   defaultTime,
   defaultDuration,
@@ -181,6 +186,7 @@ function EditEventForm({
   };
   departments: DepartmentOption[];
   selectedDepartmentIds: string[];
+  departmentAssignmentCounts: Record<string, number>;
   defaultDate: string;
   defaultTime: string;
   defaultDuration: number;
@@ -192,11 +198,23 @@ function EditEventForm({
     undefined,
   );
   const [scope, setScope] = useState("single");
+  const [selectedDepartments, setSelectedDepartments] =
+    useState<string[]>(selectedDepartmentIds);
   const [startTime, setStartTime] = useState(defaultTime);
   const [endTime, setEndTime] = useState(() =>
     computeEndTime(defaultTime, defaultDuration),
   );
   const durationMinutes = computeDurationMinutes(startTime, endTime);
+  const removedWithAssignments = departments.filter(
+    (department) =>
+      !selectedDepartments.includes(department.id) &&
+      (departmentAssignmentCounts[department.id] ?? 0) > 0,
+  );
+  const removedAssignmentsCount = removedWithAssignments.reduce(
+    (total, department) =>
+      total + (departmentAssignmentCounts[department.id] ?? 0),
+    0,
+  );
   const handled = useRef(false);
 
   const handleStartTimeChange = (newStartTime: string) => {
@@ -374,14 +392,50 @@ function EditEventForm({
                   key={department.id}
                   value={department.id}
                   label={department.name}
-                  defaultChecked={selectedDepartmentIds.includes(
-                    department.id,
-                  )}
+                  checked={selectedDepartments.includes(department.id)}
+                  onCheckedChange={(checked) =>
+                    setSelectedDepartments((current) =>
+                      checked
+                        ? [...current, department.id]
+                        : current.filter((id) => id !== department.id),
+                    )
+                  }
                 />
               ))}
             </div>
           )}
         </FieldSet>
+
+        {removedWithAssignments.length > 0 ? (
+          <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-[0.8125rem] leading-relaxed text-amber-900 dark:text-amber-200">
+            <AlertTriangleIcon className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <div className="space-y-1">
+              <p className="font-semibold">
+                Escalas serão removidas ao salvar
+              </p>
+              <p className="text-muted-foreground">
+                {scope === "series" ? (
+                  <>
+                    As escalas de{" "}
+                    {removedWithAssignments.map((d) => d.name).join(", ")}{" "}
+                    serão removidas de todas as ocorrências da série.
+                  </>
+                ) : (
+                  <>
+                    {removedAssignmentsCount === 1
+                      ? "1 pessoa escalada"
+                      : `${removedAssignmentsCount} pessoas escaladas`}{" "}
+                    em {removedWithAssignments.map((d) => d.name).join(", ")}{" "}
+                    {removedWithAssignments.length === 1
+                      ? "será removida"
+                      : "serão removidas"}{" "}
+                    da escala desta ocorrência.
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+        ) : null}
       </FieldGroup>
 
       {state?.error ? <FormAlert>{state.error}</FormAlert> : null}

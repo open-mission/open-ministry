@@ -8,12 +8,27 @@ export function DepartmentCheckboxRow({
   value,
   label,
   defaultChecked = false,
+  checked: controlledChecked,
+  onCheckedChange,
 }: {
   value: string;
   label: string;
   defaultChecked?: boolean;
+  checked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
 }) {
-  const [checked, setChecked] = useState(defaultChecked);
+  const [uncontrolledChecked, setUncontrolledChecked] =
+    useState(defaultChecked);
+  const isControlled = controlledChecked !== undefined;
+  const checked = isControlled ? controlledChecked : uncontrolledChecked;
+
+  const setChecked = (next: boolean) => {
+    if (!isControlled) {
+      setUncontrolledChecked(next);
+    }
+
+    onCheckedChange?.(next);
+  };
 
   return (
     <label
@@ -27,7 +42,7 @@ export function DepartmentCheckboxRow({
           return;
         }
 
-        setChecked((current) => !current);
+        setChecked(!checked);
       }}
     >
       <Checkbox

@@ -2,9 +2,11 @@ import Link from "next/link";
 import { ArrowRightIcon } from "lucide-react";
 
 import type { UpcomingAssignment } from "@/lib/agenda";
+import { Badge } from "@/components/ui/badge";
 import {
   eventDateParts,
   formatEventTimeRange,
+  relativeDayLabel,
 } from "@/lib/events";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +22,7 @@ export function AssignmentList({
       {assignments.map((assignment) => {
         const event = assignment.schedule.event;
         const parts = eventDateParts(event.startsAt);
+        const relativeDay = past ? null : relativeDayLabel(event.startsAt);
 
         return (
           <li key={assignment.id}>
@@ -39,13 +42,23 @@ export function AssignmentList({
                 </span>
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{event.title}</p>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {relativeDay ? (
+                    <Badge className="font-normal">{relativeDay}</Badge>
+                  ) : null}
+                  <p className="truncate text-sm font-medium">{event.title}</p>
+                </div>
                 <p className="truncate text-xs text-muted-foreground">
                   {parts.weekday} ·{" "}
                   {formatEventTimeRange(event.startsAt, event.endsAt)} ·{" "}
                   {assignment.department.name} ·{" "}
                   {assignment.function.name}
                 </p>
+                {!past ? (
+                  <p className="mt-0.5 text-[0.7rem] text-muted-foreground">
+                    Chegue 30 min antes para se organizar.
+                  </p>
+                ) : null}
               </div>
               <ArrowRightIcon className="size-4 shrink-0 text-primary" />
             </Link>

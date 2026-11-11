@@ -1,6 +1,7 @@
 import { ClipboardListIcon } from "lucide-react";
 
 import { AssignmentList } from "@/components/app/assignment-list";
+import { PageInfo } from "@/components/app/page-info";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -23,16 +24,31 @@ export function MemberSchedules({
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
       <header className="space-y-2">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <h1 className="font-heading text-4xl leading-none tracking-tight">
             Minhas escalas
           </h1>
           <Badge variant="outline" className="font-normal">
-            {upcoming.length}
+            {upcoming.length === 1
+              ? "1 próxima"
+              : `${upcoming.length} próximas`}
           </Badge>
+          <PageInfo
+            title="Minhas escalas"
+            description={
+              <>
+                Aqui ficam os encontros em que você foi escalado em{" "}
+                <span className="font-medium text-foreground">
+                  {organizationName}
+                </span>
+                . Abra um encontro para ver os detalhes. Procure chegar 30
+                minutos antes do horário para se organizar com a equipe.
+              </>
+            }
+          />
         </div>
         <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-          Os encontros em que você foi escalado em{" "}
+          Sua agenda de serviço em{" "}
           <span className="font-medium text-foreground">
             {organizationName}
           </span>

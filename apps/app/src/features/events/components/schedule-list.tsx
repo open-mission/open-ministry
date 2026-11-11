@@ -2,10 +2,13 @@ import Link from "next/link";
 import { ArrowRightIcon, CheckIcon, ClipboardListIcon } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
+  coverageStatus,
   eventDateParts,
   formatEventMonthYear,
   formatEventTimeRange,
+  relativeDayLabel,
   scheduleProgress,
   type EventListItem,
 } from "@/lib/events";
@@ -71,6 +74,8 @@ function ScheduleRow({
 }) {
   const parts = eventDateParts(event.startsAt);
   const progress = scheduleProgress(event);
+  const status = coverageStatus(event);
+  const relativeDay = relativeDayLabel(event.startsAt);
   const assignments = event.schedule?.assignments ?? [];
   const people = [
     ...new Map(
@@ -83,7 +88,11 @@ function ScheduleRow({
 
   return (
     <Link
-      href={`/dashboard/events/${event.id}`}
+      href={
+        status === "complete"
+          ? `/dashboard/events/${event.id}`
+          : `/dashboard/events/${event.id}?tab=teams`
+      }
       prefetch={true}
       className={cn(
         "group grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 rounded-xl border border-border/60 bg-card p-3 transition-[border-color,background-color] hover:border-primary/30 active:bg-muted/40 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:gap-3 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:px-2 sm:py-4 sm:hover:bg-muted/50",
@@ -100,9 +109,14 @@ function ScheduleRow({
       </div>
 
       <div className="min-w-0 space-y-1">
-        <p className="font-heading text-base leading-tight tracking-tight sm:text-lg">
-          {event.title}
-        </p>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {relativeDay ? (
+            <Badge className="font-normal">{relativeDay}</Badge>
+          ) : null}
+          <p className="font-heading text-base leading-tight tracking-tight sm:text-lg">
+            {event.title}
+          </p>
+        </div>
         <p className="text-xs text-muted-foreground">
           {parts.weekday} · {formatEventTimeRange(event.startsAt, event.endsAt)}
           {event.departments.length > 0
@@ -131,7 +145,7 @@ function ScheduleRow({
                 </Avatar>
               ))}
             </div>
-            <span className="text-[0.7rem] text-muted-foreground">
+            <span className="text-[0.8125rem] text-muted-foreground">
               {people.length === 1
                 ? "1 pessoa escalada"
                 : `${people.length} pessoas escaladas`}
@@ -143,22 +157,27 @@ function ScheduleRow({
       <div className="col-span-2 flex items-center justify-between gap-3 border-t border-border/40 pt-2 sm:col-span-1 sm:justify-end sm:border-0 sm:pt-0">
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[0.7rem] whitespace-nowrap sm:rounded-none sm:bg-transparent sm:p-0 sm:text-xs",
-            progress.status === "complete"
+            "inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[0.8125rem] whitespace-nowrap sm:rounded-none sm:bg-transparent sm:p-0",
+            status === "complete"
               ? "bg-primary/10 text-primary"
               : "bg-muted/60 text-muted-foreground",
           )}
+          title={
+            status === "complete"
+              ? "Todas as funções têm pelo menos 1 pessoa escalada."
+              : "Abrir a escala para completar as funções."
+          }
         >
-          {progress.status === "complete" ? (
+          {status === "complete" ? (
             <CheckIcon className="size-3.5" />
           ) : (
             <ClipboardListIcon className="size-3.5" />
           )}
-          {progress.totalFunctions === 0
-            ? "Sem funções"
-            : progress.status === "empty"
+          {status === "setup"
+            ? "Definir funções"
+            : status === "empty"
               ? "Sem escala"
-              : progress.status === "complete"
+              : status === "complete"
                 ? "Escala completa"
                 : `${progress.filledFunctions} de ${progress.totalFunctions} funções`}
         </span>
