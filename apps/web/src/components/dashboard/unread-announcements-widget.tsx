@@ -40,6 +40,14 @@ function formatAnnouncementTime(dateValue: string | Date): string {
   const date = typeof dateValue === "string" ? new Date(dateValue) : dateValue;
   if (Number.isNaN(date.getTime())) return "Hoje";
 
+  // Durante prerender / SSR, evita Date.now() para manter pureza e evitar hydration mismatch
+  if (typeof window === "undefined") {
+    return new Intl.DateTimeFormat("pt-BR", {
+      day: "2-digit",
+      month: "short",
+    }).format(date);
+  }
+
   const diffMs = Date.now() - date.getTime();
   const diffMinutes = Math.floor(diffMs / 60000);
   if (diffMinutes < 1) return "Agora mesmo";

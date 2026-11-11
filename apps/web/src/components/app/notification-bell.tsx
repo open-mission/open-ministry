@@ -136,6 +136,13 @@ function TypeIcon({ type }: { type: string }) {
 }
 
 function formatRelativeTime(dateStr: string): string {
+  if (typeof window === "undefined") {
+    return new Intl.DateTimeFormat("pt-BR", {
+      day: "2-digit",
+      month: "short",
+    }).format(new Date(dateStr));
+  }
+
   const diffMs = Date.now() - new Date(dateStr).getTime();
   const diffMinutes = Math.floor(diffMs / 60000);
   if (diffMinutes < 1) return "Agora mesmo";
