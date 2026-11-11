@@ -12,6 +12,7 @@ const geist = Geist({
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-display",
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
