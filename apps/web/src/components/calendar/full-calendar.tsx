@@ -42,6 +42,7 @@ export function FullCalendar({
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<CalendarViewMode>("month");
   const [filterType, setFilterType] = useState<CalendarFilterType>("all");
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>("all");
   const preferences = initialPreferences;
 
   const [selectedItem, setSelectedItem] = useState<CalendarItem | null>(null);
@@ -101,42 +102,71 @@ export function FullCalendar({
     setIsDetailOpen(true);
   }, []);
 
+  // Department filtered items
+  const departmentFilteredItems = useMemo(() => {
+    if (selectedDepartmentId === "all") return initialItems;
+    return initialItems.filter((item) => {
+      if (item.type === "event") {
+        return item.metadata?.departmentIds?.includes(selectedDepartmentId);
+      }
+      if (item.type === "assignment") {
+        return (
+          item.metadata?.departmentId === selectedDepartmentId ||
+          item.metadata?.departmentIds?.includes(selectedDepartmentId)
+        );
+      }
+      if (item.type === "birthday") {
+        return item.metadata?.departmentIds?.includes(selectedDepartmentId);
+      }
+      if (item.type === "unavailability") {
+        return true;
+      }
+      return true;
+    });
+  }, [initialItems, selectedDepartmentId]);
+
   // Items count
   const itemsCount = useMemo(() => {
     return {
-      total: initialItems.length,
-      events: initialItems.filter((i) => i.type === "event").length,
-      assignments: initialItems.filter((i) => i.type === "assignment").length,
-      unavailabilities: initialItems.filter((i) => i.type === "unavailability")
+      total: departmentFilteredItems.length,
+      events: departmentFilteredItems.filter((i) => i.type === "event").length,
+      assignments: departmentFilteredItems.filter((i) => i.type === "assignment")
+        .length,
+      unavailabilities: departmentFilteredItems.filter(
+        (i) => i.type === "unavailability",
+      ).length,
+      birthdays: departmentFilteredItems.filter((i) => i.type === "birthday")
         .length,
     };
-  }, [initialItems]);
+  }, [departmentFilteredItems]);
 
   // Filtered items
   const filteredItems = useMemo(() => {
     if (filterType === "events")
-      return initialItems.filter((i) => i.type === "event");
+      return departmentFilteredItems.filter((i) => i.type === "event");
     if (filterType === "assignments")
-      return initialItems.filter((i) => i.type === "assignment");
+      return departmentFilteredItems.filter((i) => i.type === "assignment");
     if (filterType === "unavailabilities")
-      return initialItems.filter((i) => i.type === "unavailability");
+      return departmentFilteredItems.filter((i) => i.type === "unavailability");
+    if (filterType === "birthdays")
+      return departmentFilteredItems.filter((i) => i.type === "birthday");
 
     // filterType === "all"
     // Quando o usuário possui escala em um culto/evento, agrupamos priorizando a escala
     // para não exibir dois cards (um de culto geral e outro de escala) para o mesmo evento.
     const assignmentEventIds = new Set(
-      initialItems
+      departmentFilteredItems
         .filter((i) => i.type === "assignment" && i.metadata?.eventId)
         .map((i) => i.metadata!.eventId!),
     );
 
-    return initialItems.filter((item) => {
+    return departmentFilteredItems.filter((item) => {
       if (item.type === "event" && item.metadata?.eventId) {
         return !assignmentEventIds.has(item.metadata.eventId);
       }
       return true;
     });
-  }, [initialItems, filterType]);
+  }, [departmentFilteredItems, filterType]);
 
   return (
     <div className="space-y-6">
@@ -145,9 +175,11 @@ export function FullCalendar({
         currentDate={currentDate}
         viewMode={viewMode}
         filterType={filterType}
+        selectedDepartmentId={selectedDepartmentId}
         preferences={preferences}
         onViewChange={setViewMode}
         onFilterChange={setFilterType}
+        onDepartmentChange={setSelectedDepartmentId}
         onPrev={handlePrev}
         onNext={handleNext}
         onToday={handleToday}

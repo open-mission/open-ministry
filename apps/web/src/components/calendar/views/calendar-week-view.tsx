@@ -11,7 +11,7 @@ import {
   startOfWeek,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarX2Icon, CheckCircle2Icon } from "lucide-react";
+import { CakeIcon, CalendarX2Icon, CheckCircle2Icon } from "lucide-react";
 
 import {
   computeGridHours,
@@ -147,10 +147,19 @@ export function CalendarWeekView({
                       key={item.id}
                       type="button"
                       onClick={() => onSelectItem(item)}
-                      className="flex w-full cursor-pointer items-center gap-1 truncate rounded border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 text-left text-[10px] font-medium text-amber-800 transition-transform hover:scale-[1.02] dark:text-amber-300"
+                      className={cn(
+                        "flex w-full cursor-pointer items-center gap-1 truncate rounded px-1.5 py-0.5 text-left text-[10px] font-medium transition-transform hover:scale-[1.02]",
+                        item.type === "birthday"
+                          ? "border border-rose-500/30 bg-rose-500/15 text-rose-800 dark:text-rose-300"
+                          : "border border-amber-500/30 bg-amber-500/15 text-amber-800 dark:text-amber-300",
+                      )}
                       title={item.title}
                     >
-                      <CalendarX2Icon className="size-2.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                      {item.type === "birthday" ? (
+                        <CakeIcon className="size-2.5 shrink-0 text-rose-600 dark:text-rose-400" />
+                      ) : (
+                        <CalendarX2Icon className="size-2.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                      )}
                       <span className="truncate">{item.title}</span>
                     </button>
                   ))}

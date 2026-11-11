@@ -20,9 +20,11 @@ import { Input } from "@/components/ui/input";
 export function BirthdayForm({
   birthday,
   maxDate,
+  onSuccess,
 }: {
   birthday: string | null;
   maxDate: string;
+  onSuccess?: () => void;
 }) {
   const [state, formAction] = useActionState<BirthdayFormState, FormData>(
     updateOwnBirthdayAction,
@@ -32,11 +34,12 @@ export function BirthdayForm({
   useEffect(() => {
     if (state?.success) {
       toast.success("Sua data de nascimento foi salva.");
+      onSuccess?.();
     }
-  }, [state]);
+  }, [state, onSuccess]);
 
   return (
-    <form action={formAction} className="space-y-3">
+    <form action={formAction} className="space-y-4">
       <Field data-invalid={Boolean(state?.fieldErrors?.birthday)}>
         <FieldLabel htmlFor="own-birthday" className="gap-2">
           <CalendarDaysIcon className="size-4 text-muted-foreground" />
