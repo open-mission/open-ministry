@@ -38,7 +38,7 @@ async function OnboardingContent() {
   const context = await getOrganizationContext();
 
   if (context) {
-    redirect("/dashboard");
+    redirect("/");
   }
 
   const memberships = await listUserMemberships(session.user.id);

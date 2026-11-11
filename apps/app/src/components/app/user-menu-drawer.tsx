@@ -118,7 +118,7 @@ export function UserMenuDrawer({
         id: "switch-account-mobile",
       });
       setOpen(false);
-      router.push("/dashboard");
+      router.push("/");
       router.refresh();
     } catch {
       toast.error("Erro inesperado ao alternar conta.", {

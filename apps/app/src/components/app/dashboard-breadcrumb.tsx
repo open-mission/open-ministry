@@ -61,7 +61,8 @@ export function DashboardBreadcrumb() {
   }
 
   const items = segments.map((seg, idx) => {
-    const href = "/" + segments.slice(0, idx + 1).join("/");
+    const rawHref = "/" + segments.slice(0, idx + 1).join("/");
+    const href = rawHref === "/dashboard" ? "/" : rawHref;
     const isLast = idx === segments.length - 1;
     let label = routeLabels[seg];
 

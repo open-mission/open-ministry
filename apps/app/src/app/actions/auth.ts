@@ -146,7 +146,7 @@ export async function signInAction(
 
   const destination = safeRedirectPath(parsed.data.redirectTo);
 
-  redirect(destination ?? "/dashboard");
+  redirect(destination ?? "/");
 }
 
 export async function signOutAction(formData: FormData): Promise<void> {

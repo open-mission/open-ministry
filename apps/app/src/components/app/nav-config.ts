@@ -32,7 +32,7 @@ export const navGroups: NavGroup[] = [
     title: "Principal",
     items: [
       {
-        href: "/dashboard",
+        href: "/",
         label: "Visão geral",
         icon: LayoutDashboardIcon,
         exact: true,
@@ -138,7 +138,7 @@ export const emailsNavItem: NavItem = {
 
 export const mobileNavItems: NavItem[] = [
   {
-    href: "/dashboard",
+    href: "/",
     label: "Início",
     icon: LayoutDashboardIcon,
     exact: true,
@@ -158,18 +158,25 @@ export const mobileNavItems: NavItem[] = [
 ];
 
 export function isNavItemActive(item: NavItem, pathname: string) {
+  if (item.href === "/") {
+    return pathname === "/" || pathname === "/dashboard";
+  }
   return item.exact ? pathname === item.href : pathname.startsWith(item.href);
 }
 
 export function isMobileNavRoute(pathname: string) {
-  return mobileNavItems.some((item) => item.href === pathname);
+  return (
+    pathname === "/" ||
+    pathname === "/dashboard" ||
+    mobileNavItems.some((item) => item.href === pathname)
+  );
 }
 
 export function getParentHref(pathname: string) {
   const segments = pathname.split("/").filter(Boolean);
 
   if (segments.length <= 2) {
-    return "/dashboard";
+    return "/";
   }
 
   return `/${segments.slice(0, -1).join("/")}`;

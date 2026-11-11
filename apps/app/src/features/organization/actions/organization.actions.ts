@@ -107,7 +107,7 @@ export async function createChurchAction(
     return { error: actionErrorMessage(error) };
   }
 
-  redirect("/dashboard");
+  redirect("/");
 }
 
 export async function setActiveOrganizationAction(
@@ -133,5 +133,5 @@ export async function setActiveOrganizationAction(
     redirect("/onboarding");
   }
 
-  redirect("/dashboard");
+  redirect("/");
 }
