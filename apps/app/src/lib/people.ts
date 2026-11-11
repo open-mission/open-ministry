@@ -80,6 +80,82 @@ export async function listPeople(organizationId: string) {
 
 export type PersonRecord = Awaited<ReturnType<typeof listPeople>>[number];
 
+/**
+ * Lean person projection shared by the dashboard and the calendar: identity
+ * fields plus department links, without assignments/functions. Large churches
+ * can have hundreds of people, and those nested relations are only needed by
+ * the people and event screens.
+ */
+export async function listPeopleSummary(organizationId: string) {
+  return remember(
+    `org:${organizationId}:people:summary`,
+    180,
+    async () => {
+      const people = await db.query.person.findMany({
+        where: eq(schema.person.organizationId, organizationId),
+        columns: {
+          id: true,
+          userId: true,
+          name: true,
+          email: true,
+          phone: true,
+          image: true,
+          birthday: true,
+          createdAt: true,
+        },
+        with: {
+          user: {
+            columns: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+              birthday: true,
+            },
+          },
+        },
+      });
+
+      if (people.length === 0) {
+        return [];
+      }
+
+      const memberships = await db.query.departmentMember.findMany({
+        where: inArray(
+          schema.departmentMember.personId,
+          people.map((item) => item.id),
+        ),
+        columns: { personId: true, departmentId: true, isLeader: true },
+        with: {
+          department: { columns: { name: true } },
+        },
+      });
+
+      const membershipsByPerson = new Map<string, typeof memberships>();
+
+      for (const membership of memberships) {
+        const list = membershipsByPerson.get(membership.personId) ?? [];
+        list.push(membership);
+        membershipsByPerson.set(membership.personId, list);
+      }
+
+      return people
+        .map((item) => ({
+          ...item,
+          memberships: membershipsByPerson.get(item.id) ?? [],
+        }))
+        .sort((a, b) =>
+          personDisplayName(a).localeCompare(personDisplayName(b), "pt-BR"),
+        );
+    },
+    [`people:${organizationId}`, `departments:${organizationId}`],
+  );
+}
+
+export type PersonSummary = Awaited<
+  ReturnType<typeof listPeopleSummary>
+>[number];
+
 export async function getPerson(
   organizationId: string,
   personId: string,

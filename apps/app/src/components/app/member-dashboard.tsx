@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import {
   ArrowRightIcon,
@@ -10,7 +11,6 @@ import {
 import { AssignmentList } from "@/components/app/assignment-list";
 import { BirthdaysCard } from "@/components/birthdays/birthdays-card";
 import { QuickActions } from "@/components/dashboard/quick-actions";
-import { VerseOfTheDayCard } from "@/components/dashboard/verse-of-the-day-card";
 import {
   UnreadAnnouncementsWidget,
   type UnreadAnnouncementItem,
@@ -34,7 +34,6 @@ import type {
   UpcomingAssignment,
 } from "@/lib/agenda";
 import type { BirthdayEntry } from "@/lib/birthdays";
-import type { VerseOfTheDayData } from "@/lib/youversion";
 import {
   eventDateParts,
   formatEventTimeRange,
@@ -49,7 +48,7 @@ export function MemberDashboard({
   agenda,
   initialMood,
   terminology,
-  votd,
+  votdSlot,
   unreadAnnouncements,
 }: {
   firstName: string;
@@ -64,7 +63,7 @@ export function MemberDashboard({
     singular: string;
     plural: string;
   };
-  votd?: VerseOfTheDayData;
+  votdSlot?: ReactNode;
   unreadAnnouncements?: UnreadAnnouncementItem[];
 }) {
   return (
@@ -83,7 +82,7 @@ export function MemberDashboard({
       </header>
 
       {/* 1. Versículo do Dia */}
-      {votd ? <VerseOfTheDayCard verse={votd} /> : null}
+      {votdSlot}
 
       {/* 2. Últimos avisos não lidos */}
       {unreadAnnouncements && unreadAnnouncements.length > 0 ? (

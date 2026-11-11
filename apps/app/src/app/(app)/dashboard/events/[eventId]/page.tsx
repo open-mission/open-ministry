@@ -11,7 +11,10 @@ import { EventTabs } from "@/components/events/event-tabs";
 import { PlanEditor } from "@/components/events/plan-editor";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { listDepartments } from "@/lib/departments";
+import {
+  listDepartmentOptions,
+  listDepartmentsByIds,
+} from "@/lib/departments";
 import {
   eventDateParts,
   formatEventFullDate,
@@ -24,7 +27,7 @@ import {
 } from "@/lib/events";
 import { eventKindLabels, type EventKind } from "@/lib/event-options";
 import { requireOrganizationContext } from "@/lib/organizations";
-import { listPeople } from "@/lib/people";
+import { listPeopleSummary } from "@/lib/people";
 import { personDisplayImage } from "@/lib/person-format";
 import { can } from "@/lib/permissions/service";
 import { listSongs } from "@/lib/songs";
@@ -64,38 +67,48 @@ async function EventContent({
   const { organization, session, isAdmin } =
     await requireOrganizationContext();
 
-  const hasAccess = await can("agenda", "read");
+  // The event fetch and the access check are independent, and the subsequent
+  // permission checks share the same cached permission bundles.
+  const [hasAccess, event] = await Promise.all([
+    can("agenda", "read"),
+    getEvent(organization.id, eventId),
+  ]);
+
   if (!hasAccess) {
     notFound();
   }
-
-  const event = await getEvent(organization.id, eventId);
 
   if (!event) {
     notFound();
   }
 
-  const [canEditEvent, canDeleteEvent] = await Promise.all([
+  const actingDepartmentIds = event.departments.map(
+    (item) => item.departmentId,
+  );
+
+  const [
+    canEditEvent,
+    canDeleteEvent,
+    canManagePlan,
+    departmentOptions,
+    actingDepartments,
+    people,
+    unavailablePeopleMap,
+    songs,
+    seriesOccurrences,
+  ] = await Promise.all([
     can("agenda", "updateEvent", { eventId: event.id }),
     can("agenda", "deleteEvent", { eventId: event.id }),
+    can("schedules", "editPlan", { eventId: event.id }),
+    listDepartmentOptions(organization.id),
+    listDepartmentsByIds(organization.id, actingDepartmentIds),
+    listPeopleSummary(organization.id),
+    getEventUnavailablePeopleAction(event.id, event.startsAt),
+    listSongs(organization.id),
+    event.seriesId
+      ? getSeriesOccurrenceCount(organization.id, event.seriesId)
+      : Promise.resolve(0),
   ]);
-
-  const [departments, people, unavailablePeopleMap, songs, seriesOccurrences] =
-    await Promise.all([
-      listDepartments(organization.id),
-      listPeople(organization.id),
-      getEventUnavailablePeopleAction(event.id),
-      listSongs(organization.id),
-      event.seriesId
-        ? getSeriesOccurrenceCount(organization.id, event.seriesId)
-        : Promise.resolve(0),
-    ]);
-  const actingIds = new Set(
-    event.departments.map((item) => item.departmentId),
-  );
-  const actingDepartments = departments.filter((department) =>
-    actingIds.has(department.id),
-  );
   const assignments = event.schedule?.assignments ?? [];
   const departmentAssignmentCounts = assignments.reduce<Record<string, number>>(
     (counts, assignment) => {
@@ -109,9 +122,6 @@ async function EventContent({
   const defaultDuration = Math.round(
     (event.endsAt.getTime() - event.startsAt.getTime()) / 60_000,
   );
-  const canManagePlan = await can("schedules", "editPlan", {
-    eventId: event.id,
-  });
   const defaultTab = query.tab === "teams" ? "teams" : "order";
 
   return (
@@ -169,11 +179,8 @@ async function EventContent({
                       location: event.location,
                       seriesId: event.seriesId,
                     }}
-                    departments={departments.map((department) => ({
-                      id: department.id,
-                      name: department.name,
-                    }))}
-                    selectedDepartmentIds={[...actingIds]}
+                    departments={departmentOptions}
+                    selectedDepartmentIds={actingDepartmentIds}
                     departmentAssignmentCounts={departmentAssignmentCounts}
                     seriesOccurrences={seriesOccurrences}
                     defaultDate={toInputDate(event.startsAt)}

@@ -5,12 +5,14 @@ import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { getPersonMembershipsForUser } from "@/lib/agenda";
 import type { CalendarItem, CalendarPreferences } from "@/lib/calendar";
-import { listEvents } from "@/lib/events";
+import { listCalendarEvents } from "@/lib/events";
 import { requireOrganizationContext } from "@/lib/organizations";
-import { ensurePersonForUser, listPeople } from "@/lib/people";
+import { ensurePersonForUser, listPeopleSummary } from "@/lib/people";
 import { personDisplayBirthday, personDisplayName } from "@/lib/person-format";
 import { requirePermission } from "@/lib/permissions/service";
+import { getUserRecord } from "@/lib/user-record";
 
 export async function getCalendarDataAction(): Promise<{
   items: CalendarItem[];
@@ -30,21 +32,11 @@ export async function getCalendarDataAction(): Promise<{
 
   const { organization, session } = context;
 
-  const [userRow, person] = await Promise.all([
-    db.query.user.findFirst({
-      where: eq(schema.user.id, session.user.id),
-      columns: {
-        weekStartsOn: true,
-        timezone: true,
-      },
-    }),
-    ensurePersonForUser(organization.id, {
-      id: session.user.id,
-      name: session.user.name,
-      email: session.user.email,
-      image: session.user.image ?? null,
-      birthday: session.user.birthday ?? null,
-    }),
+  // Events, people and preferences are independent, so they load together.
+  const [userRow, events, people] = await Promise.all([
+    getUserRecord(session.user.id),
+    listCalendarEvents(organization.id),
+    listPeopleSummary(organization.id),
   ]);
 
   const preferences: CalendarPreferences = {
@@ -52,20 +44,35 @@ export async function getCalendarDataAction(): Promise<{
     timezone: userRow?.timezone || "America/Sao_Paulo",
   };
 
-  const [events, people] = await Promise.all([
-    listEvents(organization.id),
-    listPeople(organization.id),
-  ]);
+  const currentPerson = people.find(
+    (item) => item.userId === session.user.id,
+  );
+  const person =
+    currentPerson ??
+    (await ensurePersonForUser(organization.id, {
+      id: session.user.id,
+      name: session.user.name,
+      email: session.user.email,
+      image: session.user.image ?? null,
+      birthday: session.user.birthday ?? null,
+    }));
+
+  // A person created after the summary was cached is not in `people` yet, so
+  // their leadership has to be loaded separately for the visibility rule.
+  const currentMemberships =
+    currentPerson?.memberships ??
+    (person
+      ? await getPersonMembershipsForUser(organization.id, session.user.id)
+      : []);
 
   const peopleById = new Map(people.map((item) => [item.id, item]));
-  const currentPerson = person ? peopleById.get(person.id) : undefined;
 
   // Admins see the whole church; department leaders see the people they lead.
   // Members only see their own unavailability.
   const ledDepartmentIds = context.isAdmin
     ? null
     : new Set(
-        (currentPerson?.memberships ?? [])
+        currentMemberships
           .filter((membership) => membership.isLeader)
           .map((membership) => membership.departmentId),
       );

@@ -24,7 +24,7 @@ import { InviteDialog } from "@/components/members/invite-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   getDepartmentAgenda,
-  getPersonMemberships,
+  getPersonMembershipsForUser,
   getUpcomingAssignments,
 } from "@/lib/agenda";
 import {
@@ -32,7 +32,7 @@ import {
   getTodayInSaoPaulo,
 } from "@/lib/birthdays";
 import { getDepartmentTerminology, parseChurchMetadata } from "@/lib/church";
-import { listDepartments } from "@/lib/departments";
+import { listDepartmentOptions } from "@/lib/departments";
 import { listUpcomingEvents, splitEvents, toInputDate } from "@/lib/events";
 import {
   getOrganizationMoodOverview,
@@ -44,10 +44,10 @@ import { requireOrganizationContext } from "@/lib/organizations";
 import {
   ensurePersonForUser,
   findPersonByUserId,
-  listPeople,
+  listPeopleSummary,
   personDisplayName,
 } from "@/lib/people";
-import { getCachedVerseOfTheDay } from "@/lib/youversion";
+import { getCachedVerseOfTheDay, type VerseOfTheDayData } from "@/lib/youversion";
 
 export const metadata: Metadata = {
   title: "Visão geral",
@@ -69,10 +69,18 @@ async function DashboardContent() {
   const churchMeta = parseChurchMetadata(organization.metadata);
   const departmentTerminology = getDepartmentTerminology(churchMeta);
 
-  const [people, initialPerson, votd, unreadAnnouncements] = await Promise.all([
-    listPeople(organization.id),
+  const membershipsPromise = !isAdmin
+    ? getPersonMembershipsForUser(organization.id, session.user.id)
+    : Promise.resolve([]);
+
+  // Start the verse fetch immediately but do not await it here: it is rendered
+  // inside its own Suspense boundary so a slow YouVersion API never holds the
+  // dashboard shell.
+  const votdPromise = getCachedVerseOfTheDay();
+
+  const [people, initialPerson, unreadAnnouncements] = await Promise.all([
+    listPeopleSummary(organization.id),
     findPersonByUserId(organization.id, session.user.id),
-    getCachedVerseOfTheDay(),
     getUnreadAnnouncements(organization.id, session.user.id, 5),
   ]);
 
@@ -86,8 +94,16 @@ async function DashboardContent() {
       birthday: session.user.birthday ?? null,
     }));
 
-  const memberships =
-    !isAdmin && person ? await getPersonMemberships(person.id) : [];
+  // When the person record already existed the memberships were loaded in
+  // parallel above. A freshly linked person needs a new lookup because the
+  // earlier fetch may have run before the link invalidated the cache.
+  const memberships = !isAdmin
+    ? initialPerson
+      ? await membershipsPromise
+      : person
+        ? await getPersonMembershipsForUser(organization.id, session.user.id)
+        : []
+    : [];
   const isLeader = memberships.some((membership) => membership.isLeader);
 
   if (!isAdmin && !isLeader) {
@@ -124,17 +140,21 @@ async function DashboardContent() {
         agenda={agenda}
         initialMood={todayMood}
         terminology={departmentTerminology}
-        votd={votd}
+        votdSlot={
+          <Suspense fallback={<VerseOfTheDayCardSkeleton />}>
+            <VerseOfTheDaySection votdPromise={votdPromise} />
+          </Suspense>
+        }
         unreadAnnouncements={unreadAnnouncements}
       />
     );
   }
 
   // Dados para administradores e líderes: carregamento 100% paralelo com caching de alta performance
-  const [events, departments, evolutionResult, moodOverview] =
+  const [events, departments, evolutionResult, moodOverview, todayMood] =
     await Promise.all([
       listUpcomingEvents(organization.id, 8),
-      listDepartments(organization.id),
+      listDepartmentOptions(organization.id),
       getOrganizationEvolutionConfig(organization.id),
       getOrganizationMoodOverview({
         organizationId: organization.id,
@@ -142,11 +162,10 @@ async function DashboardContent() {
         isAdmin,
         days: 14,
       }),
+      person
+        ? getTodayMoodForPerson(organization.id, person.id)
+        : Promise.resolve(null),
     ]);
-
-  const todayMood = person
-    ? await getTodayMoodForPerson(organization.id, person.id)
-    : null;
 
   const birthdayEntries = buildBirthdayEntries(people, {
     includeAge: true,
@@ -157,10 +176,7 @@ async function DashboardContent() {
   const featuredEvent = upcoming[0] ?? null;
   const otherUpcomingEvents = upcoming.slice(1, 7);
 
-  const departmentOptions = departments.map((d) => ({
-    id: d.id,
-    name: d.name,
-  }));
+  const departmentOptions = departments;
 
   const peopleOptions = people.map((p) => ({
     id: p.id,
@@ -211,7 +227,9 @@ async function DashboardContent() {
       </header>
 
       {/* 1. Versículo do Dia (YouVersion) */}
-      <VerseOfTheDayCard verse={votd} />
+      <Suspense fallback={<VerseOfTheDayCardSkeleton />}>
+        <VerseOfTheDaySection votdPromise={votdPromise} />
+      </Suspense>
 
       {/* 2. Últimos avisos não lidos */}
       {unreadAnnouncements.length > 0 && (
@@ -299,6 +317,40 @@ async function DashboardContent() {
         people={recentPeople}
         roleByUserId={roleByUserId}
       />
+    </div>
+  );
+}
+
+async function VerseOfTheDaySection({
+  votdPromise,
+}: {
+  votdPromise: Promise<VerseOfTheDayData>;
+}) {
+  const votd = await votdPromise;
+  return <VerseOfTheDayCard verse={votd} />;
+}
+
+function VerseOfTheDayCardSkeleton() {
+  return (
+    <div
+      className="rounded-xl bg-card p-5 ring-1 ring-foreground/10 sm:p-6"
+      aria-hidden="true"
+    >
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between gap-2">
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-5 w-28" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-full" />
+          <Skeleton className="h-5 w-4/5" />
+          <Skeleton className="h-4 w-36" />
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <Skeleton className="h-8 w-40" />
+          <Skeleton className="h-8 w-32" />
+        </div>
+      </div>
     </div>
   );
 }

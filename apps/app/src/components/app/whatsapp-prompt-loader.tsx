@@ -1,10 +1,8 @@
 import { connection } from "next/server";
-import { eq } from "drizzle-orm";
 
-import { db } from "@/db";
-import * as schema from "@/db/schema";
-import { getSession } from "@/lib/session";
 import { WhatsAppPhonePrompt } from "@/components/app/whatsapp-phone-prompt";
+import { getSession } from "@/lib/session";
+import { getUserRecord } from "@/lib/user-record";
 
 export async function WhatsAppPromptLoader() {
   await connection();
@@ -20,10 +18,7 @@ export async function WhatsAppPromptLoader() {
   }
 
   // Check database directly to ensure freshness
-  const userRecord = await db.query.user.findFirst({
-    where: eq(schema.user.id, session.user.id),
-    columns: { phone: true, name: true },
-  });
+  const userRecord = await getUserRecord(session.user.id);
 
   if (userRecord?.phone && userRecord.phone.trim().length > 0) {
     return null;

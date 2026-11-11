@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getRedisClient, isRedisConfigured } from "@/lib/queue";
+import { singleFlight } from "@/lib/single-flight";
 
 const ISO_DATE_REGEX =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
@@ -211,7 +212,9 @@ export async function remember<T>(
     return cached;
   }
 
-  const result = await fetcher();
-  await cacheSet(key, result, ttlSeconds, tags);
-  return result;
+  return singleFlight(key, async () => {
+    const result = await fetcher();
+    await cacheSet(key, result, ttlSeconds, tags);
+    return result;
+  });
 }
