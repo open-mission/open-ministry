@@ -1,0 +1,21 @@
+{
+  "extends": "@openministry/typescript-config/nextjs.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "@openministry/db": ["../../packages/db/src"],
+      "@openministry/db/*": ["../../packages/db/src/*"],
+      "@openministry/ui": ["../../packages/ui/src"],
+      "@openministry/ui/*": ["../../packages/ui/src/*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts"
+  ],
+  "exclude": ["node_modules"]
+}

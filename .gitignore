@@ -13,8 +13,11 @@
 # testing
 /coverage
 
+# turborepo
+.turbo/
+
 # next.js
-/.next/
+.next/
 /out/
 
 # production

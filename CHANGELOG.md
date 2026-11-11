@@ -6,6 +6,32 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [0.9.9] - 2026-11-10
+
+### Adicionado
+- **Reorganização em Monorepo Turborepo e Arquitetura Feature-Based**:
+  - Migração de projeto monolítico para monorepo moderno com **Turborepo** (`turbo.json`) e workspaces do **Bun** (`apps/*`, `packages/*`).
+  - Extração de pacotes compartilhados:
+    - `@openministry/db`: Modelos Drizzle ORM, conexão Neon e migrações SQL.
+    - `@openministry/ui`: Mais de 60 componentes primitivos Shadcn UI / Radix.
+    - `@openministry/typescript-config`: Configurações compartilhadas de TypeScript (`base`, `nextjs`, `react-library`).
+    - `@openministry/eslint-config`: Configurações compartilhadas de ESLint.
+  - Reorganização do código frontend em `apps/web/src/features/*` cobrindo 10 domínios: `songs`, `events`, `departments`, `people`, `notifications`, `jobs`, `felicitometro`, `organization`, `auth` e `offline`.
+  - Configuração do `turbo.json` com inteligência artificial (`ai` guide) e documentação declarativa de tarefas.
+- **Better Auth `@better-auth/infra` & Suporte a Multi-Session**:
+  - Instalação e integração de `@better-auth/infra` no servidor com `dash()` consumindo `BETTER_AUTH_API_KEY`.
+  - Integração de `sentinelClient()` no cliente Better Auth para proteção contra abusos e segurança automatizada.
+  - Habilitação completa de Multi-Session (`maximumSessions: 5`) permitindo múltiplas contas ativas no mesmo navegador.
+  - Hook reativo `useDeviceSessions` com `@tanstack/react-query` para listar e cachear sessões do dispositivo.
+  - Seção de alternância rápida de contas ("Alternar Conta") e conexão de novas contas ("Conectar outra conta") integradas no menu desktop (`NavUser`) e na gaveta mobile (`UserMenuDrawer`).
+- **Melhorias de Design & Notificações no Dashboard**:
+  - Notificações transformadas em banner fixo sticky (`sticky top-[calc(3.5rem+env(safe-area-inset-top))]`) com blur de fundo e sombra sutil.
+  - Disparo automático de toasts Sonner no Shadcn UI ao receber avisos ou notificações em tempo real.
+  - Grupos de navegação colapsáveis no menu lateral (`SidebarNav`) com `Collapsible` e animação suave do chevron.
+  - Limpeza visual no cabeçalho da página de membros (`/dashboard/members/[personId]`), eliminando faixa cortada.
+
+---
+
 ## [0.9.8] - 2026-11-10
 
 ### Adicionado
