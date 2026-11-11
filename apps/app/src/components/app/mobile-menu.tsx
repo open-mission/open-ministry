@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
-import { signOutAction } from "@/app/actions/auth";
+import { SignOutConfirmDialog } from "@/components/app/sign-out-confirm-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -98,6 +98,7 @@ export function MobileMenu({
 } = {}) {
   const pathname = usePathname();
   const { open, setOpen } = useMobileMenu();
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(
     subscribe,
@@ -125,7 +126,8 @@ export function MobileMenu({
   const themeAction = isDark ? "Ativar tema claro" : "Ativar tema escuro";
 
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
+    <>
+      <Drawer open={open} onOpenChange={setOpen}>
       <DrawerContent className="h-[90dvh] gap-0 rounded-t-[28px] border-x-0 border-b-0 bg-background p-0 data-[vaul-drawer-direction=bottom]:max-h-[90dvh]">
         <DrawerHeader className="sr-only">
           <DrawerTitle>Menu de navegação</DrawerTitle>
@@ -219,20 +221,27 @@ export function MobileMenu({
             <span className="text-xs text-muted-foreground">{themeValue}</span>
           </button>
 
-          <form action={signOutAction}>
-            <input type="hidden" name="redirectTo" value="/" />
-            <button
-              type="submit"
-              className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10 active:bg-destructive/15"
-            >
-              <span className="flex size-8 items-center justify-center rounded-lg bg-destructive/10">
-                <LogOutIcon className="size-4" />
-              </span>
-              <span className="flex-1 text-left">Sair da conta</span>
-            </button>
-          </form>
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              setTimeout(() => setShowSignOutConfirm(true), 150);
+            }}
+            className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10 active:bg-destructive/15 cursor-pointer"
+          >
+            <span className="flex size-8 items-center justify-center rounded-lg bg-destructive/10">
+              <LogOutIcon className="size-4" />
+            </span>
+            <span className="flex-1 text-left">Sair da conta</span>
+          </button>
         </div>
       </DrawerContent>
     </Drawer>
+
+    <SignOutConfirmDialog
+      open={showSignOutConfirm}
+      onOpenChange={setShowSignOutConfirm}
+    />
+    </>
   );
 }

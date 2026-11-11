@@ -90,10 +90,9 @@ const mockMembers = [
 export default function Home() {
   return (
     <main className="relative overflow-hidden">
-      {/* Background ambient forest glow matching production */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[52rem] bg-[radial-gradient(80%_60%_at_50%_-10%,oklch(0.36_0.062_156/0.22),transparent_75%)]"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[44rem] bg-[radial-gradient(70%_60%_at_50%_-10%,var(--color-secondary),transparent_72%)]"
       />
 
       <header className="mx-auto flex h-20 w-full max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
@@ -139,10 +138,10 @@ export default function Home() {
           <div className="hidden sm:block">
             <ThemeToggle />
           </div>
-          <Button asChild variant="ghost" size="lg" className="h-10 text-sm">
+          <Button asChild variant="ghost" size="lg">
             <a href={`${APP_URL}/login`}>Entrar</a>
           </Button>
-          <Button asChild size="lg" className="h-10 rounded-xl px-4 text-sm font-medium">
+          <Button asChild size="lg">
             <a href={`${APP_URL}/signup`}>Criar conta</a>
           </Button>
         </div>
@@ -152,21 +151,18 @@ export default function Home() {
         <div className="space-y-8">
           <Badge
             variant="outline"
-            className="h-6 gap-1.5 rounded-full border-primary/20 bg-background/70 px-3 text-primary text-xs"
+            className="h-6 gap-1.5 border-primary/20 bg-background/70 px-2.5 text-primary"
           >
-            <SparklesIcon className="size-3.5" />
+            <SparklesIcon />
             Feito para igrejas que cuidam de pessoas
           </Badge>
 
           <div className="space-y-5">
-            <h1 className="font-heading text-5xl leading-[1.0] tracking-tight sm:text-6xl lg:text-7xl">
-              Sua igreja
+            <h1 className="font-heading text-5xl leading-[0.96] tracking-tight text-balance sm:text-6xl lg:text-7xl">
+              Sua igreja organizada.
               <br />
-              organizada.
-              <br />
-              Seu povo
-              <br />
-              <span className="text-primary italic font-serif">cuidado.</span>
+              Seu povo{" "}
+              <span className="text-primary italic">cuidado.</span>
             </h1>
             <p className="max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg">
               O OpenMinistry reúne pessoas, convites e permissões em um só
@@ -176,17 +172,17 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Button asChild size="lg" className="h-12 rounded-xl px-6 text-sm font-medium">
+            <Button asChild size="lg" className="h-11 px-5 text-sm">
               <a href={`${APP_URL}/signup`}>
                 Criar minha igreja
-                <ArrowRightIcon className="size-4 ml-1.5" />
+                <ArrowRightIcon data-icon="inline-end" />
               </a>
             </Button>
             <Button
               asChild
               variant="outline"
               size="lg"
-              className="h-12 rounded-xl border-border/80 bg-card/60 px-6 text-sm font-medium backdrop-blur-sm"
+              className="h-11 px-5 text-sm"
             >
               <a href={`${APP_URL}/login`}>Já tenho conta</a>
             </Button>
@@ -210,103 +206,95 @@ export default function Home() {
         </div>
 
         <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-          {/* Luminous emerald ambient spotlight behind the dashboard mockup */}
           <div
             aria-hidden
-            className="pointer-events-none absolute -inset-10 -z-10 rounded-full bg-[radial-gradient(ellipse_at_center,oklch(0.78_0.07_150/0.18),oklch(0.36_0.062_156/0.08)_50%,transparent_75%)] blur-2xl"
+            className="absolute -inset-6 -z-10 rounded-[2.75rem] bg-accent/60 blur-2xl"
           />
 
-          {/* Clean, straight-aligned dashboard mockup */}
-          <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-border/80 bg-card/95 backdrop-blur-md shadow-2xl shadow-black/40">
-            <div className="flex items-center justify-between border-b border-border/60 px-5 py-4">
-              <div className="flex items-center gap-3">
-                <span className="flex size-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                  <ChurchIcon className="size-4.5" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    Comunidade da Graça
+          <div className="rotate-1 rounded-[2rem] border bg-card p-2 shadow-2xl shadow-primary/10">
+            <div className="overflow-hidden rounded-[1.6rem] border bg-background">
+              <div className="flex items-center justify-between border-b px-5 py-3.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                    <ChurchIcon className="size-4" />
+                  </span>
+                  <div>
+                    <p className="text-xs font-medium">
+                      Comunidade da Graça
+                    </p>
+                    <p className="text-[0.65rem] text-muted-foreground">
+                      Painel da igreja
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="secondary" className="font-normal">
+                  Ao vivo
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 p-5">
+                <div className="rounded-xl border bg-card p-3.5">
+                  <p className="text-[0.65rem] font-medium tracking-wide text-muted-foreground uppercase">
+                    Pessoas
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    Painel da igreja
+                  <p className="mt-1 font-heading text-3xl leading-none">128</p>
+                  <p className="mt-1 text-[0.65rem] text-primary">
+                    +6 este mês
+                  </p>
+                </div>
+                <div className="rounded-xl border bg-card p-3.5">
+                  <p className="text-[0.65rem] font-medium tracking-wide text-muted-foreground uppercase">
+                    Convites
+                  </p>
+                  <p className="mt-1 font-heading text-3xl leading-none">4</p>
+                  <p className="mt-1 text-[0.65rem] text-muted-foreground">
+                    aguardando resposta
                   </p>
                 </div>
               </div>
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-xs text-muted-foreground">
-                <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Ao vivo
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-3.5 p-5">
-              <div className="rounded-xl border border-border/60 bg-background/50 p-4">
-                <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                  Pessoas
-                </p>
-                <p className="mt-1.5 font-heading text-3xl font-semibold leading-none tracking-tight text-foreground">
-                  128
-                </p>
-                <p className="mt-2 text-xs font-medium text-primary">
-                  +6 este mês
-                </p>
-              </div>
-              <div className="rounded-xl border border-border/60 bg-background/50 p-4">
-                <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                  Convites
-                </p>
-                <p className="mt-1.5 font-heading text-3xl font-semibold leading-none tracking-tight text-foreground">
-                  4
-                </p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  aguardando resposta
-                </p>
-              </div>
-            </div>
-
-            <div className="border-t border-border/60 px-5 py-4.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-foreground">Equipe recente</span>
-                <span className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-                  Ver todas
-                </span>
-              </div>
-              <div className="mt-3.5 space-y-3">
-                {mockMembers.map((member) => (
-                  <div
-                    key={member.email}
-                    className="flex items-center gap-3"
-                  >
-                    <span
-                      className={`flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${member.color}`}
+              <div className="border-t px-5 py-4">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium">Equipe recente</span>
+                  <span className="text-muted-foreground">Ver todas</span>
+                </div>
+                <div className="mt-3 space-y-2.5">
+                  {mockMembers.map((member) => (
+                    <div
+                      key={member.email}
+                      className="flex items-center gap-2.5"
                     >
-                      {member.initials}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-medium text-foreground">
-                        {member.name}
-                      </p>
-                      <p className="truncate text-[11px] text-muted-foreground">
-                        {member.email}
-                      </p>
+                      <span
+                        className={`flex size-8 items-center justify-center rounded-full text-[0.6rem] font-semibold ${member.color}`}
+                      >
+                        {member.initials}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-medium">
+                          {member.name}
+                        </p>
+                        <p className="truncate text-[0.65rem] text-muted-foreground">
+                          {member.email}
+                        </p>
+                      </div>
+                      <span className="rounded-full border px-2 py-0.5 text-[0.6rem] text-muted-foreground">
+                        {member.role}
+                      </span>
                     </div>
-                    <span className="rounded-full border border-border/60 bg-muted/20 px-2.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                      {member.role}
-                    </span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Floating Toast notification positioned cleanly at bottom left */}
-          <div className="absolute -bottom-5 -left-4 sm:-left-6 hidden w-64 rounded-2xl border border-border/80 bg-card/95 backdrop-blur-md p-3.5 shadow-2xl sm:block">
-            <div className="flex items-center gap-3">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+          <div className="absolute -bottom-6 -left-4 hidden w-56 rotate-[-3deg] rounded-2xl border bg-card p-3 shadow-xl sm:block">
+            <div className="flex items-center gap-2.5">
+              <span className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
                 <CheckIcon className="size-4" />
               </span>
               <div>
-                <p className="text-xs font-semibold text-foreground">Convite aceito</p>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs font-medium">Convite aceito</p>
+                <p className="text-[0.65rem] text-muted-foreground">
                   Ana entrou na equipe
                 </p>
               </div>
