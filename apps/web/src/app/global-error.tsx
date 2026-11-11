@@ -2,6 +2,7 @@
 
 import { datadogRum } from "@datadog/browser-rum";
 import { addNextjsError } from "@datadog/browser-rum-nextjs";
+import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 
 export default function GlobalError({
@@ -12,6 +13,7 @@ export default function GlobalError({
   retry: () => void;
 }) {
   useEffect(() => {
+    Sentry.captureException(error);
     if (datadogRum.getInitConfiguration()) {
       addNextjsError(error);
     }
