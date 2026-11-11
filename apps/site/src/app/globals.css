@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -84,13 +85,43 @@
     --accent: oklch(0.3 0.04 65);
     --accent-foreground: oklch(0.92 0.03 80);
     --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(0.28 0.018 150);
-    --input: oklch(0.28 0.018 150);
-    --ring: oklch(0.78 0.07 150);
+    --border: oklch(1 0 0 / 12%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.65 0.06 150);
 }
 
-body {
-    background-color: var(--background);
-    color: var(--foreground);
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html {
+    @apply font-sans;
+    touch-action: pan-x pan-y;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    touch-action: pan-x pan-y;
+    overscroll-behavior-y: none;
+  }
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+  button,
+  nav,
+  header,
+  [role="button"] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  ::selection {
+    background: oklch(0.36 0.062 156 / 0.2);
+  }
 }
+
