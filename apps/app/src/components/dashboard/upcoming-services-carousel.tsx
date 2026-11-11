@@ -38,7 +38,7 @@ export function UpcomingServicesCarousel({
           className="group inline-flex items-center gap-1 pb-0.5 text-xs font-medium text-primary hover:underline"
         >
           Ver todos na agenda
-          <ArrowRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+          <ArrowRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
         </Link>
       </div>
 
@@ -64,7 +64,7 @@ export function UpcomingServicesCarousel({
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5">
                     <div className="flex size-11 shrink-0 flex-col items-center justify-center rounded-xl bg-secondary font-semibold text-secondary-foreground">
-                      <span className="font-heading text-lg leading-none">
+                      <span className="font-heading text-lg leading-none tabular-nums">
                         {parts.day}
                       </span>
                       <span className="text-[0.62rem] uppercase tracking-wider text-muted-foreground">
@@ -76,7 +76,7 @@ export function UpcomingServicesCarousel({
                         {parts.weekday}
                       </p>
                       <p className="flex items-center gap-1 text-xs font-medium text-foreground">
-                        <ClockIcon className="size-3 text-muted-foreground" />
+                        <ClockIcon className="size-3 text-muted-foreground" aria-hidden="true" />
                         {time}
                       </p>
                     </div>
@@ -86,7 +86,7 @@ export function UpcomingServicesCarousel({
                     <Badge
                       variant="outline"
                       className={cn(
-                        "px-1.5 py-0 text-[0.65rem] font-normal",
+                        "px-1.5 py-0 text-[0.65rem] font-normal tabular-nums",
                         progress.status === "complete"
                           ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                           : "bg-muted text-muted-foreground",
@@ -111,15 +111,15 @@ export function UpcomingServicesCarousel({
 
               <div className="flex items-center justify-between border-t border-border/50 pt-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
-                  <UsersIcon className="size-3.5" />
+                  <UsersIcon className="size-3.5" aria-hidden="true" />
                   <span>
-                    {assignmentsCount}{" "}
+                    <span className="tabular-nums">{assignmentsCount}</span>{" "}
                     {assignmentsCount === 1 ? "escalado" : "escalados"}
                   </span>
                 </div>
                 <span className="inline-flex items-center gap-0.5 text-[0.72rem] font-medium text-primary transition-transform group-hover:translate-x-0.5">
                   Acessar
-                  <ArrowRightIcon className="size-3" />
+                  <ArrowRightIcon className="size-3" aria-hidden="true" />
                 </span>
               </div>
             </Link>

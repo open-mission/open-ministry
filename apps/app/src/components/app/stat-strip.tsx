@@ -26,10 +26,10 @@ export function StatStrip({
             className="flex flex-col gap-2.5 px-3 py-4 sm:flex-row sm:items-center sm:gap-4 sm:px-5 sm:py-5"
           >
             <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:size-10">
-              <Icon className="size-4 sm:size-[18px]" />
+              <Icon className="size-4 sm:size-[18px]" aria-hidden="true" />
             </span>
             <div className="min-w-0 space-y-0.5">
-              <p className="font-heading text-2xl leading-none tracking-tight sm:text-3xl">
+              <p className="font-heading text-2xl leading-none tracking-tight sm:text-3xl tabular-nums">
                 {value}
               </p>
               <p className="text-[11px] font-medium leading-tight text-muted-foreground sm:text-xs">

@@ -112,7 +112,7 @@ export function MemberDashboard({
             <Button asChild variant="ghost" size="sm" className="h-9 shrink-0 text-xs">
               <Link href="/dashboard/schedules">
                 Ver escalas
-                <ArrowRightIcon data-icon="inline-end" />
+                <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
               </Link>
             </Button>
           </CardHeader>
@@ -120,7 +120,7 @@ export function MemberDashboard({
             {assignments.length === 0 ? (
               <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed px-4 py-8 text-center">
                 <span className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                  <ClipboardListIcon className="size-5" />
+                  <ClipboardListIcon className="size-5" aria-hidden="true" />
                 </span>
                 <div className="space-y-1">
                   <p className="text-sm font-medium">
@@ -150,7 +150,7 @@ export function MemberDashboard({
             <Button asChild variant="ghost" size="sm" className="h-9 shrink-0 text-xs">
               <Link href="/dashboard/events">
                 Ver agenda
-                <ArrowRightIcon data-icon="inline-end" />
+                <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
               </Link>
             </Button>
           </CardHeader>
@@ -158,7 +158,7 @@ export function MemberDashboard({
             {memberships.length === 0 ? (
               <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed px-4 py-8 text-center">
                 <span className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                  <HandHeartIcon className="size-5" />
+                  <HandHeartIcon className="size-5" aria-hidden="true" />
                 </span>
                 <div className="space-y-1">
                   <p className="text-sm font-medium">
@@ -173,7 +173,7 @@ export function MemberDashboard({
             ) : agenda.length === 0 ? (
               <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed px-4 py-8 text-center">
                 <span className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                  <CalendarDaysIcon className="size-5" />
+                  <CalendarDaysIcon className="size-5" aria-hidden="true" />
                 </span>
                 <div className="space-y-1">
                   <p className="text-sm font-medium">
@@ -196,7 +196,7 @@ export function MemberDashboard({
                         className="flex items-center gap-3 py-3 transition-colors hover:bg-muted/50"
                       >
                         <span className="flex w-10 shrink-0 flex-col items-center">
-                          <span className="font-heading text-xl leading-none">
+                          <span className="font-heading text-xl leading-none tabular-nums">
                             {parts.day}
                           </span>
                           <span className="mt-0.5 text-[0.6rem] tracking-[0.12em] text-muted-foreground">
@@ -219,7 +219,7 @@ export function MemberDashboard({
                               .join(", ")}
                           </p>
                         </div>
-                        <ArrowRightIcon className="size-4 shrink-0 text-primary" />
+                        <ArrowRightIcon className="size-4 shrink-0 text-primary" aria-hidden="true" />
                       </Link>
                     </li>
                   );
@@ -258,14 +258,14 @@ function MemberDepartments({
           className="group inline-flex shrink-0 items-center gap-1 pb-0.5 text-xs font-medium text-primary hover:underline"
         >
           Ver todos
-          <ArrowRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+          <ArrowRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
         </Link>
       </div>
 
       {memberships.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed px-4 py-8 text-center">
           <span className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <HandHeartIcon className="size-5" />
+            <HandHeartIcon className="size-5" aria-hidden="true" />
           </span>
           <div className="space-y-1">
             <p className="text-sm font-medium">
@@ -298,14 +298,14 @@ function MemberDepartments({
               >
                 <div className="flex items-start justify-between gap-3">
                   <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <HandHeartIcon className="size-5" />
+                    <HandHeartIcon className="size-5" aria-hidden="true" />
                   </span>
                   {membership.isLeader ? (
                     <Badge
                       variant="secondary"
                       className="gap-1 font-normal"
                     >
-                      <CrownIcon className="size-3" />
+                      <CrownIcon className="size-3" aria-hidden="true" />
                       Líder
                     </Badge>
                   ) : null}
@@ -322,7 +322,7 @@ function MemberDepartments({
 
                 <span className="mt-auto inline-flex items-center gap-1 text-xs font-medium text-primary">
                   Abrir departamento
-                  <ArrowRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+                  <ArrowRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                 </span>
               </Link>
             );

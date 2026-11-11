@@ -39,7 +39,7 @@ export function RecentPeopleCarousel({
           className="group inline-flex items-center gap-1 pb-0.5 text-xs font-medium text-primary hover:underline"
         >
           Ver todas as pessoas
-          <ArrowRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+          <ArrowRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
         </Link>
       </div>
 

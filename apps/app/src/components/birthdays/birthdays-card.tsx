@@ -43,7 +43,7 @@ export function BirthdaysCard({ entries }: { entries: BirthdayEntry[] }) {
         <Button asChild variant="ghost" size="sm" className="h-9 shrink-0 text-xs">
           <Link href="/dashboard/birthdays">
             Ver todos
-            <ArrowRightIcon data-icon="inline-end" />
+            <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
           </Link>
         </Button>
       </CardHeader>
@@ -51,7 +51,7 @@ export function BirthdaysCard({ entries }: { entries: BirthdayEntry[] }) {
         {entries.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed px-4 py-8 text-center">
             <span className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-              <CakeIcon className="size-5" />
+              <CakeIcon className="size-5" aria-hidden="true" />
             </span>
             <div className="space-y-1">
               <p className="text-sm font-medium">Nenhuma data cadastrada</p>
@@ -86,7 +86,7 @@ export function BirthdaysCard({ entries }: { entries: BirthdayEntry[] }) {
                     className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/60"
                   >
                     <span className="flex w-9 shrink-0 flex-col items-center">
-                      <span className="font-heading text-xl leading-none text-foreground">
+                      <span className="font-heading text-xl leading-none text-foreground tabular-nums">
                         {entry.day}
                       </span>
                       <span className="mt-0.5 text-[0.6rem] tracking-[0.12em] text-muted-foreground">
@@ -129,7 +129,7 @@ function Highlight({
   return (
     <div className="flex items-center gap-3 rounded-lg bg-accent/60 px-4 py-3">
       <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-background/70 text-accent-foreground">
-        <CakeIcon className="size-5" />
+        <CakeIcon className="size-5" aria-hidden="true" />
       </span>
       <div className="min-w-0">
         <Badge variant="secondary" className="mb-1 font-normal">
