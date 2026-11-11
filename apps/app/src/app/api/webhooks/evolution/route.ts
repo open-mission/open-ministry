@@ -3,6 +3,7 @@ import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { formatPhoneNumberForEvolution } from "@/lib/evolution-api";
+import { sentryLogger } from "@/lib/telemetry/sentry";
 
 type EvolutionUpdateItem = {
   key?: {
@@ -27,6 +28,7 @@ type EvolutionUpsertItem = {
 };
 
 export async function POST(req: Request) {
+  let instanceName = "";
   try {
     const url = new URL(req.url);
     const tokenParam = url.searchParams.get("token")?.trim();
@@ -41,8 +43,14 @@ export async function POST(req: Request) {
     }
 
     const eventRaw = String(rawBody.event || rawBody.type || "").toLowerCase().replace(/_/g, ".");
-    const instanceName = String(rawBody.instance || "").trim();
+    instanceName = String(rawBody.instance || "").trim();
     const rawData = rawBody.data;
+
+    sentryLogger.setScopeContext({
+      route: "/api/webhooks/evolution",
+      event: eventRaw,
+      instanceName,
+    });
 
     // 1. Identify organization
     let organizationId: string | null = orgIdParam || null;
@@ -226,11 +234,24 @@ export async function POST(req: Request) {
       }
     }
 
+    sentryLogger.info(
+      sentryLogger.fmt`Evolution webhook event processed: ${eventRaw}`,
+      {
+        instanceName,
+        organizationId: organizationId ?? "unknown",
+        event: eventRaw,
+      },
+    );
+
     return NextResponse.json({
       received: true,
       event: eventRaw,
     });
   } catch (error) {
+    sentryLogger.error(error instanceof Error ? error : String(error), {
+      route: "/api/webhooks/evolution",
+      instanceName,
+    });
     console.error("Erro ao processar webhook da Evolution API:", error);
     // Respond 200 with error flag so Evolution doesn't enter retry loops
     return NextResponse.json(
