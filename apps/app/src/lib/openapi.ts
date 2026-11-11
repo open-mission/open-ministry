@@ -9,7 +9,7 @@ export const openApiDocument = {
   openapi: "3.1.0",
   info: {
     title: "OpenMinistry API",
-    version: "1.0.0",
+    version: "1.0.1",
     description:
       "API REST da plataforma OpenMinistry para gestão ministerial de igrejas, repertório de músicas, cultos, escalas, voluntários e integrações WhatsApp.",
   },

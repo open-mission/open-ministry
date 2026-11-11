@@ -5,6 +5,7 @@ import { eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { remember } from "@/lib/cache";
+import { findPersonByUserId } from "@/lib/people";
 
 export async function getPersonMemberships(personId: string) {
   return db.query.departmentMember.findMany({
@@ -22,6 +23,44 @@ export async function getPersonMemberships(personId: string) {
 export type PersonMembership = Awaited<
   ReturnType<typeof getPersonMemberships>
 >[number];
+
+/**
+ * Variante cacheada por usuário para o dashboard. Evita repetir a consulta de
+ * vínculos a cada carregamento e permite buscar membros e permissões em
+ * paralelo com o restante da página.
+ */
+export async function getPersonMembershipsForUser(
+  organizationId: string,
+  userId: string,
+) {
+  return remember(
+    `org:${organizationId}:user:${userId}:memberships`,
+    120,
+    async () => {
+      const person = await findPersonByUserId(organizationId, userId);
+
+      if (!person) {
+        return [];
+      }
+
+      return db.query.departmentMember.findMany({
+        where: eq(schema.departmentMember.personId, person.id),
+        with: {
+          department: true,
+          assignments: {
+            with: { function: true },
+          },
+        },
+        orderBy: (memberships, { desc }) => [desc(memberships.isLeader)],
+      });
+    },
+    [
+      `people:${organizationId}`,
+      `departments:${organizationId}`,
+      `permissions:${organizationId}`,
+    ],
+  );
+}
 
 export async function getPersonAssignments(
   organizationId: string,

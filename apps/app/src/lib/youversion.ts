@@ -53,7 +53,9 @@ export async function getCachedVerseOfTheDay(
     43200, // 12 horas de cache
     async () => {
       try {
-        const client = new ApiClient({ appKey: apiKey });
+        // The dashboard waits for this on a cold cache. A short timeout keeps a
+        // slow external API from holding the whole page render.
+        const client = new ApiClient({ appKey: apiKey, timeout: 2500 });
         const bibleClient = new BibleClient(client);
         const imagesClient = new ImagesClient(client);
 

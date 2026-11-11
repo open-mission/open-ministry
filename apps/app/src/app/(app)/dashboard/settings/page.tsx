@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { eq } from "drizzle-orm";
 
 import {
   getEvolutionSettingsAction,
@@ -11,12 +10,11 @@ import {
 import { getOrganizationPermissionSettingsAction } from "@/app/actions/permissions";
 import { SettingsView } from "@/components/settings/settings-view";
 import { Skeleton } from "@/components/ui/skeleton";
-import { db } from "@/db";
-import * as schema from "@/db/schema";
 import { listDepartments } from "@/lib/departments";
 import { getOrganizationMessageTemplates } from "@/lib/message-templates-server";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { listPeople } from "@/lib/people";
+import { getUserRecord } from "@/lib/user-record";
 
 export const metadata: Metadata = {
   title: "Configurações",
@@ -36,12 +34,9 @@ async function SettingsContent() {
   const { organization, session, role, isAdmin } =
     await requireOrganizationContext();
 
-  const userRecord = await db.query.user.findFirst({
-    where: eq(schema.user.id, session.user.id),
-  });
-
-  const [initialSessions, initialPasskeys, people, departments] =
+  const [userRecord, initialSessions, initialPasskeys, people, departments] =
     await Promise.all([
+      getUserRecord(session.user.id),
       getUserSessionsAction(),
       getUserPasskeysAction(),
       listPeople(organization.id),

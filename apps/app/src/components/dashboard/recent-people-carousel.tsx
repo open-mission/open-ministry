@@ -9,7 +9,7 @@ import {
   personDisplayEmail,
   personDisplayImage,
   personDisplayName,
-  type PersonRecord,
+  type PersonSummary,
 } from "@/lib/people";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +17,7 @@ export function RecentPeopleCarousel({
   people,
   roleByUserId = new Map(),
 }: {
-  people: PersonRecord[];
+  people: PersonSummary[];
   roleByUserId?: Map<string, string>;
 }) {
   if (people.length === 0) {
