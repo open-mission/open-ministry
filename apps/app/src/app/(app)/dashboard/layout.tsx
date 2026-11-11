@@ -6,7 +6,7 @@ import {
   DashboardBreadcrumbFallback,
 } from "@/components/app/dashboard-breadcrumb";
 import { DashboardOnboardingLoader } from "@/components/onboarding/dashboard-onboarding-loader";
-import { DatadogUserLoader } from "@/components/app/datadog-user-loader";
+import { SentryUserLoader } from "@/components/app/sentry-user-loader";
 import { ImpersonationBannerLoader } from "@/components/app/impersonation-banner-loader";
 import {
   MobileHeaderLeadingFallback,
@@ -75,7 +75,7 @@ export default function DashboardLayout({
               </header>
               <OfflineBanner />
               <Suspense fallback={null}>
-                <DatadogUserLoader />
+                <SentryUserLoader />
               </Suspense>
               <Suspense fallback={null}>
                 <ImpersonationBannerLoader />
