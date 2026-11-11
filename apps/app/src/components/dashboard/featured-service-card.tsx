@@ -39,7 +39,7 @@ export function FeaturedServiceCard({
       <Card className="overflow-hidden border-dashed bg-card/40">
         <CardContent className="flex flex-col items-center justify-center gap-3 p-8 text-center sm:p-10">
           <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <CalendarDaysIcon className="size-6" />
+            <CalendarDaysIcon className="size-6" aria-hidden="true" />
           </span>
           <div className="space-y-1 max-w-sm">
             <h3 className="font-heading text-xl tracking-tight">
@@ -55,7 +55,7 @@ export function FeaturedServiceCard({
             <Button asChild variant="outline" size="sm" className="mt-2">
               <Link href="/dashboard/events" prefetch={true}>
                 Ver todos os cultos
-                <ArrowRightIcon data-icon="inline-end" />
+                <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
               </Link>
             </Button>
           ) : null}
@@ -93,7 +93,7 @@ export function FeaturedServiceCard({
               variant={isTodayEvent ? "default" : "secondary"}
               className="px-2.5 py-0.5 text-xs font-medium"
             >
-              <SparklesIcon className="mr-1 size-3" />
+              <SparklesIcon className="mr-1 size-3" aria-hidden="true" />
               {isTodayEvent ? "Acontecendo hoje" : timingLabel}
             </Badge>
 
@@ -122,17 +122,17 @@ export function FeaturedServiceCard({
             >
               {progress.status === "complete" ? (
                 <>
-                  <CheckCircle2Icon className="mr-1 size-3.5" />
+                  <CheckCircle2Icon className="mr-1 size-3.5" aria-hidden="true" />
                   Escala completa ({progress.assignmentsCount})
                 </>
               ) : progress.status === "partial" ? (
                 <>
-                  <UsersIcon className="mr-1 size-3.5" />
+                  <UsersIcon className="mr-1 size-3.5" aria-hidden="true" />
                   {progress.filledFunctions} de {progress.totalFunctions} funções
                 </>
               ) : (
                 <>
-                  <AlertCircleIcon className="mr-1 size-3.5" />
+                  <AlertCircleIcon className="mr-1 size-3.5" aria-hidden="true" />
                   Sem escala montada
                 </>
               )}
@@ -144,7 +144,7 @@ export function FeaturedServiceCard({
         <div className="flex items-start gap-4">
           {/* Estampa da Data */}
           <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary shadow-inner">
-            <span className="font-heading text-2xl font-bold leading-none tracking-tight">
+            <span className="font-heading text-2xl font-bold leading-none tracking-tight tabular-nums">
               {parts.day}
             </span>
             <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-primary/80">
@@ -158,7 +158,7 @@ export function FeaturedServiceCard({
             </h3>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
               <span className="flex items-center gap-1 font-medium text-foreground/80">
-                <ClockIcon className="size-3.5 text-primary" />
+                <ClockIcon className="size-3.5 text-primary" aria-hidden="true" />
                 {timeRange}
               </span>
 
@@ -191,16 +191,19 @@ export function FeaturedServiceCard({
                     const image = personDisplayImage(person);
 
                     return (
-                      <Avatar
-                        key={assignment.id}
-                        className="size-8 border ring-2 ring-background"
-                        title={`${name} (${assignment.function.name})`}
-                      >
-                        <AvatarImage src={image ?? undefined} alt={name} />
-                        <AvatarFallback className="bg-primary/10 text-[0.62rem] font-medium text-primary">
-                          {getInitials(name)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <span key={assignment.id} className="relative inline-flex">
+                        <Avatar
+                          className="size-8 border ring-2 ring-background"
+                        >
+                          <AvatarImage src={image ?? undefined} alt={name} />
+                          <AvatarFallback className="bg-primary/10 text-[0.62rem] font-medium text-primary">
+                            {getInitials(name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="sr-only">
+                          {name} ({assignment.function.name})
+                        </span>
+                      </span>
                     );
                   })}
                 </div>
@@ -224,8 +227,8 @@ export function FeaturedServiceCard({
               size="sm"
               className="h-10 flex-1 sm:h-9 sm:flex-initial"
             >
-              <Link href={`/dashboard/events/${event.id}`} prefetch={true}>
-                Ver detalhes
+              <Link href={`/dashboard/events/${event.id}?tab=teams`} prefetch={true}>
+                Ver escalas
               </Link>
             </Button>
             <Button
@@ -235,7 +238,7 @@ export function FeaturedServiceCard({
             >
               <Link href={`/dashboard/events/${event.id}`} prefetch={true}>
                 Ver cronograma
-                <ArrowRightIcon data-icon="inline-end" />
+                <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
               </Link>
             </Button>
           </div>

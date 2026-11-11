@@ -19,6 +19,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -75,7 +76,7 @@ export function VerseOfTheDayCard({
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <div className="flex size-7 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                  <SparklesIcon className="size-3.5" />
+                  <SparklesIcon className="size-3.5" aria-hidden="true" />
                 </div>
                 <span className="font-heading text-xs font-semibold tracking-wider uppercase text-muted-foreground">
                   Versículo do Dia
@@ -113,9 +114,9 @@ export function VerseOfTheDayCard({
                   onClick={handleCopy}
                 >
                   {copied ? (
-                    <CheckIcon className="size-3.5 text-emerald-500" />
+                    <CheckIcon className="size-3.5 text-emerald-500" aria-hidden="true" />
                   ) : (
-                    <CopyIcon className="size-3.5" />
+                    <CopyIcon className="size-3.5" aria-hidden="true" />
                   )}
                   <span>{copied ? "Copiado" : "Copiar"}</span>
                 </Button>
@@ -127,7 +128,7 @@ export function VerseOfTheDayCard({
                   className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground"
                   onClick={handleShare}
                 >
-                  <Share2Icon className="size-3.5" />
+                  <Share2Icon className="size-3.5" aria-hidden="true" />
                   <span>Compartilhar</span>
                 </Button>
 
@@ -139,7 +140,7 @@ export function VerseOfTheDayCard({
                     className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground"
                     onClick={() => setImageDialogOpen(true)}
                   >
-                    <ImageIcon className="size-3.5" />
+                    <ImageIcon className="size-3.5" aria-hidden="true" />
                     <span>Ver imagem</span>
                   </Button>
                 ) : null}
@@ -149,14 +150,18 @@ export function VerseOfTheDayCard({
                 asChild
                 variant="ghost"
                 size="sm"
-                className="h-8 gap-1.5 px-2.5 text-xs font-medium text-primary hover:text-primary hover:bg-primary/10 ml-auto"
+                className="group h-8 gap-1.5 px-2.5 text-xs font-medium text-primary hover:text-primary hover:bg-primary/10 ml-auto"
               >
                 <Link
                   href={`/dashboard/bible?passage=${encodeURIComponent(verse.passageId)}`}
                 >
-                  <BookOpenIcon className="size-3.5" />
+                  <BookOpenIcon className="size-3.5" aria-hidden="true" />
                   <span>Abrir na Bíblia</span>
-                  <ArrowRightIcon className="size-3 transition-transform group-hover:translate-x-0.5" />
+                  <ArrowRightIcon
+                    data-icon="inline-end"
+                    className="size-3 transition-transform group-hover:translate-x-0.5"
+                    aria-hidden="true"
+                  />
                 </Link>
               </Button>
             </div>
@@ -172,12 +177,19 @@ export function VerseOfTheDayCard({
               <DialogTitle className="text-sm font-semibold">
                 {verse.reference}
               </DialogTitle>
+              <DialogDescription className="sr-only">
+                Imagem ilustrativa do versículo do dia: {verse.reference}
+              </DialogDescription>
             </DialogHeader>
             <div className="relative mt-2 overflow-hidden rounded-xl border">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={verse.imageUrl}
                 alt={`Versículo do dia: ${verse.reference}`}
+                width={1200}
+                height={675}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-auto object-cover"
               />
             </div>
@@ -188,7 +200,7 @@ export function VerseOfTheDayCard({
                 size="sm"
                 onClick={handleShare}
               >
-                <Share2Icon className="size-3.5 mr-1" />
+                <Share2Icon className="size-3.5 mr-1" aria-hidden="true" />
                 Compartilhar
               </Button>
             </div>

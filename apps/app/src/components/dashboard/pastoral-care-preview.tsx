@@ -44,7 +44,7 @@ export function PastoralCarePreview({
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="flex size-7 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
-              <HeartHandshakeIcon className="size-4" />
+              <HeartHandshakeIcon className="size-4" aria-hidden="true" />
             </span>
             <CardTitle className="font-heading text-lg tracking-tight sm:text-xl">
               Cuidado pastoral & Felicitômetro
@@ -58,7 +58,7 @@ export function PastoralCarePreview({
         <Button asChild variant="ghost" size="sm" className="h-8 gap-1 self-start text-xs sm:self-auto">
           <Link href="/dashboard/members?tab=felicitometro" prefetch={true}>
             <span>Painel completo</span>
-            <ArrowRightIcon className="size-3.5" />
+            <ArrowRightIcon className="size-3.5" aria-hidden="true" />
           </Link>
         </Button>
       </CardHeader>
@@ -74,10 +74,10 @@ export function PastoralCarePreview({
               <span className="text-xl" role="img" aria-label="Humor médio">
                 {moodDef.emoji}
               </span>
-              <span className="font-heading text-lg font-bold tracking-tight">
+              <span className="font-heading text-lg font-bold tracking-tight tabular-nums">
                 {overview.totalCheckIns > 0 ? overview.averageScore.toFixed(1) : "—"}
               </span>
-              <span className="text-xs text-muted-foreground">/ 5.0</span>
+              <span className="text-xs text-muted-foreground tabular-nums">/ 5.0</span>
             </div>
           </div>
 
@@ -86,7 +86,7 @@ export function PastoralCarePreview({
               Check-ins
             </p>
             <div className="flex items-baseline gap-1">
-              <span className="font-heading text-xl font-bold tracking-tight">
+              <span className="font-heading text-xl font-bold tracking-tight tabular-nums">
                 {overview.totalCheckIns}
               </span>
               <span className="text-xs text-muted-foreground">registros</span>
@@ -103,8 +103,8 @@ export function PastoralCarePreview({
               Pedidos de oração
             </p>
             <div className="flex items-center gap-1.5">
-              <span className="text-base">🙏</span>
-              <span className="font-heading text-xl font-bold tracking-tight">
+              <span className="text-base" aria-hidden="true">🙏</span>
+              <span className="font-heading text-xl font-bold tracking-tight tabular-nums">
                 {overview.prayerRequestsCount}
               </span>
               <span className="text-xs text-muted-foreground">
@@ -123,8 +123,8 @@ export function PastoralCarePreview({
               Querem conversar
             </p>
             <div className="flex items-center gap-1.5">
-              <span className="text-base">💬</span>
-              <span className="font-heading text-xl font-bold tracking-tight">
+              <span className="text-base" aria-hidden="true">💬</span>
+              <span className="font-heading text-xl font-bold tracking-tight tabular-nums">
                 {overview.talkRequestsCount}
               </span>
               <span className="text-xs text-muted-foreground">
@@ -141,7 +141,7 @@ export function PastoralCarePreview({
               <h3 className="text-sm font-semibold text-foreground">
                 Membros precisando de carinho & contato
               </h3>
-              <Badge variant="outline" className="border-rose-500/20 bg-rose-500/10 text-[0.65rem] font-normal text-rose-600 dark:text-rose-400">
+              <Badge variant="outline" className="border-rose-500/20 bg-rose-500/10 text-[0.65rem] font-normal text-rose-600 dark:text-rose-400 tabular-nums">
                 {overview.recentCareRequests.length} no total
               </Badge>
             </div>
@@ -226,7 +226,7 @@ export function PastoralCarePreview({
                             target="_blank"
                             rel="noreferrer"
                           >
-                            <MessageCircleIcon className="size-3.5" />
+                            <MessageCircleIcon className="size-3.5" aria-hidden="true" />
                             WhatsApp
                           </a>
                         </Button>
@@ -235,7 +235,7 @@ export function PastoralCarePreview({
                       <Button size="sm" variant="ghost" asChild className="h-8 gap-1 text-xs">
                         <Link href={`/dashboard/members/${req.personId}`} prefetch={true}>
                           <span>Perfil</span>
-                          <ArrowRightIcon className="size-3" />
+                          <ArrowRightIcon className="size-3" aria-hidden="true" />
                         </Link>
                       </Button>
                     </div>
@@ -247,7 +247,7 @@ export function PastoralCarePreview({
         ) : (
           <div className="flex items-center gap-3 rounded-xl border border-dashed border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-emerald-900 dark:text-emerald-200">
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <SparklesIcon className="size-4" />
+              <SparklesIcon className="size-4" aria-hidden="true" />
             </span>
             <p className="text-xs leading-relaxed">
               Tudo em paz por aqui! Nenhum pedido urgente de oração ou conversa registrado recentemente. Continue cuidando e incentivando sua equipe.
