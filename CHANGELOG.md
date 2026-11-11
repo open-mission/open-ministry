@@ -6,6 +6,16 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [0.9.10] - 2026-11-10
+
+### Corrigido
+- **Compatibilidade do Build Vercel com Turborepo Strict Mode**:
+  - Configuração de `globalPassThroughEnv` no `turbo.json` para repassar todas as 24 variáveis de ambiente da plataforma Vercel (`DATABASE_URL`, `BETTER_AUTH_*`, `GOOGLE_*`, `UPSTASH_*`, `QSTASH_*`, `DD_*`, `BREVO_*`, etc.) para as tarefas de build.
+  - Alteração do modo de UI do Turborepo para `"stream"` em vez de `"tui"`, otimizando a saída de logs para ambientes de CI/CD.
+  - Adição de fallback resiliente em `packages/db/src/index.ts` durante a avaliação de módulo em tempo de compilação, permitindo que a coleta estática de dados do Next.js (como `/_not-found`) execute com segurança mesmo em builds sem conexão ao banco ativo.
+
+---
+
 ## [0.9.9] - 2026-11-10
 
 ### Adicionado
