@@ -130,7 +130,7 @@ export const auth = betterAuth({
             userId: user.id,
             data: {
               name: user.name,
-              dashboardUrl: `${getAppBaseUrl()}/dashboard`,
+              dashboardUrl: `${getAppBaseUrl()}/`,
             },
           }).catch((err) => {
             console.error("Erro ao enviar email de boas-vindas:", err);

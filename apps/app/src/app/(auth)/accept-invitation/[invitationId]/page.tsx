@@ -120,7 +120,7 @@ async function InvitationContent({ params }: InvitationPageProps) {
             </Button>
           </form>
           <Button asChild variant="outline" className="h-10 w-full" size="lg">
-            <Link href="/dashboard">Ir para meu painel</Link>
+            <Link href="/">Ir para meu painel</Link>
           </Button>
         </div>
       </InvitationCard>
@@ -140,7 +140,7 @@ async function InvitationContent({ params }: InvitationPageProps) {
         description={`Sua conta já está vinculada a ${details.organization.name}.`}
       >
         <Button asChild className="h-10 w-full" size="lg">
-          <Link href="/dashboard">
+          <Link href="/">
             Ir para o painel
             <ArrowRightIcon data-icon="inline-end" />
           </Link>

@@ -371,5 +371,5 @@ export async function acceptInvitationAction(
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/members");
-  redirect("/dashboard");
+  redirect("/");
 }

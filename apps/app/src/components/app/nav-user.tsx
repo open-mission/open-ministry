@@ -79,7 +79,7 @@ export function NavUser({
         return;
       }
       toast.success(`Conectado como ${targetName}!`, { id: "switch-account" });
-      router.push("/dashboard");
+      router.push("/");
       router.refresh();
     } catch {
       toast.error("Erro inesperado ao alternar conta.", {

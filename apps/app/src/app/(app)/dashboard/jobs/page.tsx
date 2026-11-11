@@ -33,7 +33,7 @@ async function JobsContent() {
     : false;
 
   if (!isAdmin && !isLeader) {
-    redirect("/dashboard");
+    redirect("/");
   }
 
   const initialJobs = await listBackgroundJobs(organization.id);

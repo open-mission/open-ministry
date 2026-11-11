@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "OpenMinistry",
     description:
       "Organize pessoas, departamentos, cultos, escalas e aniversários da sua igreja.",
-    start_url: "/dashboard",
+    start_url: "/",
     scope: "/",
     display: "standalone",
     orientation: "portrait",

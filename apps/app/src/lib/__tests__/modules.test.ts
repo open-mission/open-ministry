@@ -130,7 +130,7 @@ describe("Modules System Foundation", () => {
     const nav = buildAccessibleNavGroups([]);
     const allHrefs = nav.flatMap((g) => g.items.map((i) => i.href));
 
-    expect(allHrefs).toContain("/dashboard");
+    expect(allHrefs).toContain("/");
     expect(allHrefs).toContain("/dashboard/members");
     expect(allHrefs).toContain("/dashboard/departments");
   });
@@ -140,7 +140,7 @@ describe("Modules System Foundation", () => {
     const items = buildAccessibleMobileNavItems(["agenda"]);
     const hrefs = items.map((i) => i.href);
 
-    expect(hrefs).toContain("/dashboard");
+    expect(hrefs).toContain("/");
     expect(hrefs).toContain("/dashboard/calendar");
     expect(hrefs).not.toContain("/dashboard/schedules");
   });

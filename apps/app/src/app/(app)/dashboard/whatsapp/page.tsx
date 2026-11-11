@@ -32,7 +32,7 @@ async function WhatsAppContent() {
     : false;
 
   if (!isAdmin && !isLeader) {
-    redirect("/dashboard");
+    redirect("/");
   }
 
   return (

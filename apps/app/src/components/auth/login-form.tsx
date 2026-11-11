@@ -71,7 +71,7 @@ export function LoginForm({ redirectTo, initialError }: LoginFormProps) {
         return;
       }
 
-      router.push(redirectTo || "/dashboard");
+      router.push(redirectTo || "/");
       router.refresh();
     } catch (err: unknown) {
       setPasskeyPending(false);

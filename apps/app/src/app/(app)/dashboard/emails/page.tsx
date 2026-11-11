@@ -33,7 +33,7 @@ async function EmailsContent() {
     : false;
 
   if (!isAdmin && !isLeader) {
-    redirect("/dashboard");
+    redirect("/");
   }
 
   const logsResult = await listEmailLogsAction();
