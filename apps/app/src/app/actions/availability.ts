@@ -570,22 +570,28 @@ export async function checkPersonAvailabilityForEventAction(
 
 export async function getEventUnavailablePeopleAction(
   eventId: string,
+  startsAt?: Date,
 ): Promise<Record<string, { isBlocked: boolean; reason?: string | null }>> {
   const context = await requireOrganizationContext();
   if (!context) return {};
   await requirePermission("schedules", "read");
 
-  const event = await db.query.event.findFirst({
-    where: and(
-      eq(schema.event.id, eventId),
-      eq(schema.event.organizationId, context.organization.id),
-    ),
-  });
+  let eventStartsAt = startsAt;
 
-  if (!event) return {};
+  if (!eventStartsAt) {
+    const event = await db.query.event.findFirst({
+      where: and(
+        eq(schema.event.id, eventId),
+        eq(schema.event.organizationId, context.organization.id),
+      ),
+    });
 
-  const dateStr = formatDateToYYYYMMDD(event.startsAt);
-  const period = getPeriodFromDate(event.startsAt);
+    if (!event) return {};
+    eventStartsAt = event.startsAt;
+  }
+
+  const dateStr = formatDateToYYYYMMDD(eventStartsAt);
+  const period = getPeriodFromDate(eventStartsAt);
 
   const blockedRows = await db.query.personUnavailability.findMany({
     where: and(
