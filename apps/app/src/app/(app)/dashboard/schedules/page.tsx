@@ -6,6 +6,9 @@ import { ClipboardListIcon } from "lucide-react";
 
 import { MemberSchedules } from "@/components/app/member-schedules";
 import { PageInfo } from "@/components/app/page-info";
+import { DepartmentCoverageBoard } from "@/components/events/department-coverage";
+import { EventFilters } from "@/components/events/event-filters";
+import { PastEventsSheet } from "@/components/events/past-events-sheet";
 import { ScheduleList } from "@/components/events/schedule-list";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,8 +16,13 @@ import {
   getPersonAssignments,
   splitAssignments,
 } from "@/lib/agenda";
+import { listDepartments } from "@/lib/departments";
 import {
+  buildDepartmentCoverage,
+  coverageCounts,
+  filterEvents,
   listEvents,
+  parseCoverageFilter,
   splitEvents,
 } from "@/lib/events";
 import { requireOrganizationContext } from "@/lib/organizations";
@@ -25,17 +33,32 @@ export const metadata: Metadata = {
   title: "Escalas",
 };
 
-export default function SchedulesPage() {
+type SchedulesSearchParams = {
+  coverage?: string;
+  department?: string;
+  q?: string;
+};
+
+export default function SchedulesPage({
+  searchParams,
+}: {
+  searchParams: Promise<SchedulesSearchParams>;
+}) {
   return (
     <Suspense fallback={<SchedulesSkeleton />}>
-      <SchedulesContent />
+      <SchedulesContent searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function SchedulesContent() {
+async function SchedulesContent({
+  searchParams,
+}: {
+  searchParams: Promise<SchedulesSearchParams>;
+}) {
   await connection();
 
+  const params = await searchParams;
   const { organization, session, isAdmin } =
     await requireOrganizationContext();
 
@@ -74,8 +97,27 @@ async function SchedulesContent() {
     );
   }
 
-  const events = await listEvents(organization.id);
+  const [events, departments] = await Promise.all([
+    listEvents(organization.id),
+    listDepartments(organization.id),
+  ]);
   const { upcoming, past } = splitEvents(events);
+  const departmentOptions = departments.map((department) => ({
+    id: department.id,
+    name: department.name,
+  }));
+  const coverage =
+    parseCoverageFilter(params.coverage) ?? ("attention" as const);
+  const departmentId =
+    typeof params.department === "string" ? params.department : undefined;
+  const query = typeof params.q === "string" ? params.q : undefined;
+  const counts = coverageCounts(upcoming);
+  const filteredUpcoming = filterEvents(upcoming, {
+    coverage,
+    departmentId,
+    query,
+  });
+  const coverageBoard = buildDepartmentCoverage(upcoming, departmentOptions);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
@@ -86,14 +128,15 @@ async function SchedulesContent() {
           </h1>
           <PageInfo
             title="Escalas"
+            triggerLabel="Como funciona"
             description={
               <>
                 Acompanhe quem serve em cada encontro de{" "}
                 <span className="font-medium text-foreground">
                   {organization.name}
-                </span>{" "}
-                e veja o que ainda falta montar. As escalas anteriores ficam no
-                histórico.
+                </span>
+                . Cada função é considerada coberta quando tem pelo menos uma
+                pessoa escalada. As escalas anteriores ficam no histórico.
               </>
             }
           />
@@ -120,50 +163,74 @@ async function SchedulesContent() {
         </div>
       ) : (
         <>
+          <DepartmentCoverageBoard
+            departments={coverageBoard}
+            eventsCount={upcoming.length}
+          />
+
           <section className="space-y-4">
-            <div className="flex items-baseline justify-between gap-2">
-              <h2 className="font-heading text-2xl tracking-tight">
-                Próximas escalas
-              </h2>
-              <span className="text-xs text-muted-foreground">
-                {upcoming.length === 0
-                  ? "nenhum encontro"
-                  : upcoming.length === 1
-                    ? "1 encontro"
-                    : `${upcoming.length} encontros`}
-              </span>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="font-heading text-2xl tracking-tight">
+                  Próximas escalas
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {upcoming.length === 0
+                    ? "nenhum encontro futuro"
+                    : filteredUpcoming.length === upcoming.length
+                      ? upcoming.length === 1
+                        ? "1 encontro futuro"
+                        : `${upcoming.length} encontros futuros`
+                      : `${filteredUpcoming.length} de ${upcoming.length} encontros`}
+                </p>
+              </div>
+
+              <PastEventsSheet count={past.length}>
+                <ScheduleList events={past} past />
+              </PastEventsSheet>
             </div>
+
+            <EventFilters
+              coverage={coverage}
+              departmentId={departmentId}
+              query={query}
+              departments={departmentOptions}
+              counts={counts}
+              searchPlaceholder="Buscar escala por encontro"
+            />
 
             {upcoming.length === 0 ? (
               <div className="rounded-xl border border-dashed px-6 py-10 text-center">
                 <p className="text-sm font-medium">
-                  Nenhum encontro marcado
+                  Nenhum encontro futuro publicado
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Quando um culto ou evento for marcado, as próximas escalas
                   aparecem aqui.
                 </p>
               </div>
+            ) : filteredUpcoming.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed px-6 py-10 text-center">
+                <p className="text-sm font-medium">
+                  Nenhuma escala com estes filtros
+                </p>
+                <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
+                  {coverage === "attention"
+                    ? "Todas as escalas dos próximos encontros estão completas."
+                    : "Ajuste a busca ou o departamento para ver outras escalas."}
+                </p>
+                {coverage !== "all" || departmentId || query ? (
+                  <Button asChild variant="outline" size="sm">
+                    <Link href="/dashboard/schedules?coverage=all">
+                      Ver todas as escalas
+                    </Link>
+                  </Button>
+                ) : null}
+              </div>
             ) : (
-              <ScheduleList events={upcoming} />
+              <ScheduleList events={filteredUpcoming} />
             )}
           </section>
-
-          {past.length > 0 ? (
-            <section className="space-y-4">
-              <div className="flex items-baseline justify-between gap-2">
-                <h2 className="font-heading text-2xl tracking-tight">
-                  Já aconteceram
-                </h2>
-                <span className="text-xs text-muted-foreground">
-                  {past.length === 1
-                    ? "1 encontro"
-                    : `${past.length} encontros`}
-                </span>
-              </div>
-              <ScheduleList events={past.slice(0, 24)} past />
-            </section>
-          ) : null}
         </>
       )}
     </div>

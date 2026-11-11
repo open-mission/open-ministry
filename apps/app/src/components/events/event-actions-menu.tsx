@@ -33,6 +33,8 @@ export function EventActionsMenu({
   event,
   departments,
   selectedDepartmentIds,
+  departmentAssignmentCounts = {},
+  seriesOccurrences = 0,
   defaultDate,
   defaultTime,
   defaultDuration,
@@ -49,6 +51,8 @@ export function EventActionsMenu({
   };
   departments: DepartmentOption[];
   selectedDepartmentIds: string[];
+  departmentAssignmentCounts?: Record<string, number>;
+  seriesOccurrences?: number;
   defaultDate: string;
   defaultTime: string;
   defaultDuration: number;
@@ -73,7 +77,7 @@ export function EventActionsMenu({
             variant="ghost"
             size="icon-xs"
             onClick={() => setDrawerOpen(true)}
-            className="size-7 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="relative size-9 rounded-lg text-muted-foreground after:absolute after:-inset-1 after:rounded-lg after:content-[''] hover:bg-muted hover:text-foreground"
             title="Opções do evento"
           >
             <MoreHorizontalIcon className="size-4" />
@@ -137,7 +141,7 @@ export function EventActionsMenu({
             <Button
               variant="ghost"
               size="icon-xs"
-              className="size-7 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="relative size-9 rounded-lg text-muted-foreground after:absolute after:-inset-1 after:rounded-lg after:content-[''] hover:bg-muted hover:text-foreground"
               title="Opções do evento"
             >
               <MoreHorizontalIcon className="size-4" />
@@ -170,6 +174,7 @@ export function EventActionsMenu({
           event={event}
           departments={departments}
           selectedDepartmentIds={selectedDepartmentIds}
+          departmentAssignmentCounts={departmentAssignmentCounts}
           defaultDate={defaultDate}
           defaultTime={defaultTime}
           defaultDuration={defaultDuration}
@@ -184,6 +189,7 @@ export function EventActionsMenu({
           eventId={event.id}
           eventTitle={event.title}
           seriesId={event.seriesId}
+          seriesOccurrences={seriesOccurrences}
           trigger={null}
           open={deleteOpen}
           onOpenChange={setDeleteOpen}

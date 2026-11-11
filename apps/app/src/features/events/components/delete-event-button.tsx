@@ -28,6 +28,7 @@ export function DeleteEventButton({
   eventId,
   eventTitle,
   seriesId,
+  seriesOccurrences = 0,
   trigger,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
@@ -35,6 +36,7 @@ export function DeleteEventButton({
   eventId: string;
   eventTitle: string;
   seriesId: string | null;
+  seriesOccurrences?: number;
   trigger?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -78,10 +80,21 @@ export function DeleteEventButton({
           <AlertDialogMedia>
             <Trash2Icon />
           </AlertDialogMedia>
-          <AlertDialogTitle>Excluir {eventTitle}?</AlertDialogTitle>
+          <AlertDialogTitle>
+            {scope === "series"
+              ? seriesOccurrences > 0
+                ? `Excluir ${seriesOccurrences} ocorrências?`
+                : "Excluir esta série?"
+              : `Excluir ${eventTitle}?`}
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            A escala e as atribuições desta ocorrência serão removidas. Essa
-            ação não pode ser desfeita.
+            {scope === "series"
+              ? `${
+                  seriesOccurrences > 0
+                    ? `Todas as ${seriesOccurrences} ocorrências`
+                    : "Todas as ocorrências"
+                } desta série serão removidas, inclusive as que já aconteceram, junto com as escalas e o cronograma. Essa ação não pode ser desfeita.`
+              : "A escala, o cronograma e as atribuições desta ocorrência serão removidos. Essa ação não pode ser desfeita."}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -119,7 +132,13 @@ export function DeleteEventButton({
             onClick={handleDelete}
             disabled={pending}
           >
-            Excluir
+            {scope === "series" && seriesId
+              ? seriesOccurrences > 0
+                ? `Excluir ${seriesOccurrences} ocorrências`
+                : "Excluir série"
+              : seriesId
+                ? "Excluir esta ocorrência"
+                : "Excluir evento"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

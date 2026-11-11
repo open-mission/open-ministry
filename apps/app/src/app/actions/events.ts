@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lt, notInArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -283,6 +283,46 @@ async function replaceEventDepartments(
   );
 }
 
+/**
+ * When a department is removed from an event, its assignments stop being
+ * visible in the scale. Delete them explicitly so re-adding the department
+ * does not silently resurrect stale assignments.
+ */
+async function removeAssignmentsForRemovedDepartments(
+  eventIds: string[],
+  keptDepartmentIds: string[],
+) {
+  if (eventIds.length === 0) {
+    return;
+  }
+
+  const schedules = await db.query.schedule.findMany({
+    where: inArray(schema.schedule.eventId, eventIds),
+    columns: { id: true },
+  });
+
+  if (schedules.length === 0) {
+    return;
+  }
+
+  await db
+    .delete(schema.scheduleAssignment)
+    .where(
+      and(
+        inArray(
+          schema.scheduleAssignment.scheduleId,
+          schedules.map((schedule) => schedule.id),
+        ),
+        keptDepartmentIds.length > 0
+          ? notInArray(
+              schema.scheduleAssignment.departmentId,
+              keptDepartmentIds,
+            )
+          : undefined,
+      ),
+    );
+}
+
 export async function createEventAction(
   _state: EventFormState,
   formData: FormData,
@@ -550,6 +590,10 @@ export async function updateEventAction(
       );
 
       await replaceEventDepartments(seriesIds, validDepartmentIds);
+      await removeAssignmentsForRemovedDepartments(
+        seriesIds,
+        validDepartmentIds,
+      );
     } else {
       await db
         .update(schema.event)
@@ -562,6 +606,10 @@ export async function updateEventAction(
         .where(eq(schema.event.id, event.id));
 
       await replaceEventDepartments([event.id], validDepartmentIds);
+      await removeAssignmentsForRemovedDepartments(
+        [event.id],
+        validDepartmentIds,
+      );
     }
   } catch (error) {
     console.error("Erro ao atualizar evento", error);
@@ -895,6 +943,174 @@ export async function removeScheduleAssignmentAction(
     assignment.schedule.event.organizationId,
   );
   return { ok: true };
+}
+
+export type CopyScaleResult = {
+  ok: boolean;
+  error?: string;
+  copiedCount?: number;
+  assignments?: {
+    id: string;
+    departmentId: string;
+    functionId: string;
+    personId: string;
+    person: {
+      name: string;
+      email: string | null;
+      image: string | null;
+      birthday: string | null;
+      userId: string | null;
+    };
+    function: { name: string };
+  }[];
+};
+
+/**
+ * Copies the assignments of a department from the most recent earlier event
+ * where that department served. People who left the department and functions
+ * that no longer exist are skipped.
+ */
+export async function copyLastScaleAction(
+  eventId: string,
+  departmentId: string,
+): Promise<CopyScaleResult> {
+  if (!eventId || !departmentId) {
+    return { ok: false, error: "Evento ou departamento inválido." };
+  }
+
+  const access = await getScheduleAccess(eventId, departmentId);
+
+  if ("error" in access) {
+    return { ok: false, error: access.error };
+  }
+
+  const [previous] = await db
+    .select({ scheduleId: schema.schedule.id })
+    .from(schema.scheduleAssignment)
+    .innerJoin(
+      schema.schedule,
+      eq(schema.scheduleAssignment.scheduleId, schema.schedule.id),
+    )
+    .innerJoin(schema.event, eq(schema.schedule.eventId, schema.event.id))
+    .where(
+      and(
+        eq(schema.event.organizationId, access.context.organization.id),
+        eq(schema.scheduleAssignment.departmentId, departmentId),
+        lt(schema.event.startsAt, access.event.startsAt),
+      ),
+    )
+    .orderBy(desc(schema.event.startsAt))
+    .limit(1);
+
+  if (!previous) {
+    return { ok: true, copiedCount: 0, assignments: [] };
+  }
+
+  const [previousAssignments, members, functions] = await Promise.all([
+    db.query.scheduleAssignment.findMany({
+      where: and(
+        eq(schema.scheduleAssignment.scheduleId, previous.scheduleId),
+        eq(schema.scheduleAssignment.departmentId, departmentId),
+      ),
+      columns: { functionId: true, personId: true },
+    }),
+    db.query.departmentMember.findMany({
+      where: eq(schema.departmentMember.departmentId, departmentId),
+      columns: { personId: true },
+    }),
+    db.query.departmentFunction.findMany({
+      where: eq(schema.departmentFunction.departmentId, departmentId),
+      columns: { id: true },
+    }),
+  ]);
+
+  const memberIds = new Set(members.map((member) => member.personId));
+  const functionIds = new Set(
+    functions.map((departmentFunction) => departmentFunction.id),
+  );
+  const copyable = previousAssignments.filter(
+    (assignment) =>
+      memberIds.has(assignment.personId) &&
+      functionIds.has(assignment.functionId),
+  );
+
+  if (copyable.length === 0) {
+    return { ok: true, copiedCount: 0, assignments: [] };
+  }
+
+  const schedule = await getOrCreateSchedule(access.event.id);
+
+  if (!schedule) {
+    return { ok: false, error: "Não foi possível abrir a escala deste evento." };
+  }
+
+  const existingAssignments = await db.query.scheduleAssignment.findMany({
+    where: eq(schema.scheduleAssignment.scheduleId, schedule.id),
+    columns: { functionId: true, personId: true },
+  });
+  const existingKeys = new Set(
+    existingAssignments.map(
+      (assignment) => `${assignment.functionId}:${assignment.personId}`,
+    ),
+  );
+  const newAssignments = copyable.filter(
+    (assignment) =>
+      !existingKeys.has(`${assignment.functionId}:${assignment.personId}`),
+  );
+
+  if (newAssignments.length === 0) {
+    return { ok: true, copiedCount: 0, assignments: [] };
+  }
+
+  try {
+    await db
+      .insert(schema.scheduleAssignment)
+      .values(
+        newAssignments.map((assignment) => ({
+          id: randomUUID(),
+          scheduleId: schedule.id,
+          departmentId,
+          functionId: assignment.functionId,
+          personId: assignment.personId,
+        })),
+      )
+      .onConflictDoNothing();
+  } catch (error) {
+    console.error("Erro ao copiar escala", error);
+    return { ok: false, error: "Não foi possível copiar a escala anterior." };
+  }
+
+  const saved = await db.query.scheduleAssignment.findMany({
+    where: and(
+      eq(schema.scheduleAssignment.scheduleId, schedule.id),
+      eq(schema.scheduleAssignment.departmentId, departmentId),
+    ),
+    with: {
+      person: true,
+      function: true,
+    },
+  });
+
+  await revalidateEvents(eventId, access.context.organization.id);
+
+  return {
+    ok: true,
+    copiedCount: newAssignments.length,
+    assignments: saved.map((assignment) => ({
+      id: assignment.id,
+      departmentId: assignment.departmentId,
+      functionId: assignment.functionId,
+      personId: assignment.personId,
+      person: {
+        name: assignment.person.name,
+        email: assignment.person.email,
+        image: assignment.person.image,
+        birthday: assignment.person.birthday,
+        userId: assignment.person.userId,
+      },
+      function: { name: assignment.function.name },
+    })),
+  };
 }
 
 async function canManageEventPlan(
