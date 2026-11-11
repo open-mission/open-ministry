@@ -15,6 +15,7 @@ import {
 import { requireOrganizationContext } from "@/lib/organizations";
 import { findPersonByUserId } from "@/lib/people";
 import { sendWebPushToUser } from "@/lib/push-notifications";
+import { logWideEvent, sentryLogger } from "@/lib/telemetry/sentry";
 
 const submitMoodSchema = z.object({
   score: z.coerce.number().int().min(1).max(5),
@@ -40,12 +41,23 @@ export async function submitDailyMoodAction(
   formData: FormData,
 ): Promise<SubmitMoodState> {
   const context = await requireOrganizationContext();
+
+  sentryLogger.setScopeContext({
+    action: "submitDailyMoodAction",
+    organizationId: context.organization.id,
+    userId: context.session.user.id,
+  });
+
   const person = await findPersonByUserId(
     context.organization.id,
     context.session.user.id,
   );
 
   if (!person) {
+    sentryLogger.warn("submitDailyMoodAction: person record not found for user", {
+      organizationId: context.organization.id,
+      userId: context.session.user.id,
+    });
     return { error: "Perfil de membro não encontrado para sua conta." };
   }
 
@@ -76,7 +88,21 @@ export async function submitDailyMoodAction(
       notes: parsed.data.notes,
     });
     await cacheInvalidateTags(`mood:${context.organization.id}`);
+
+    logWideEvent("felicitometro.mood_registered", {
+      organizationId: context.organization.id,
+      personId: person.id,
+      score: parsed.data.score,
+      needsPrayer: parsed.data.needsPrayer,
+      needsTalk: parsed.data.needsTalk,
+      hasNotes: Boolean(parsed.data.notes),
+    });
   } catch (error) {
+    sentryLogger.error(error instanceof Error ? error : String(error), {
+      action: "submitDailyMoodAction",
+      organizationId: context.organization.id,
+      personId: person.id,
+    });
     console.error("Erro ao salvar sentimento diário:", error);
     return { error: "Não foi possível registrar seu sentimento. Tente novamente." };
   }
