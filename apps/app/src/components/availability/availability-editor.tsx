@@ -1,18 +1,24 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import {
+  CalendarCheckIcon,
   CalendarDaysIcon,
+  CalendarX2Icon,
   CheckCircle2Icon,
   CheckIcon,
+  CircleDashedIcon,
   ClockIcon,
   Loader2Icon,
   MoonIcon,
+  RotateCcwIcon,
   SparklesIcon,
   SunIcon,
   SunriseIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { saveMyAvailabilityAction } from "@/app/actions/availability";
 import {
@@ -38,6 +44,12 @@ type AvailabilityEditorProps = {
   initialData: MyAvailabilityResult;
 };
 
+const ALL_PERIODS: AvailabilityPeriod[] = [
+  "morning",
+  "afternoon",
+  "evening",
+];
+
 const PERIODS: {
   id: AvailabilityPeriod;
   label: string;
@@ -48,91 +60,213 @@ const PERIODS: {
     id: "morning",
     label: "Manhã",
     icon: SunriseIcon,
-    hint: "Cultos das 06h às 12h",
+    hint: "6h às 12h",
   },
   {
     id: "afternoon",
     label: "Tarde",
     icon: SunIcon,
-    hint: "Reuniões das 12h às 18h",
+    hint: "12h às 18h",
   },
   {
     id: "evening",
     label: "Noite",
     icon: MoonIcon,
-    hint: "Cultos das 18h às 23h",
+    hint: "18h às 23h",
   },
 ];
 
+type EditableDay = DayAvailability & { informed: boolean };
+
+type Baseline = {
+  days: EditableDay[];
+  notes: string;
+};
+
+function buildEditableDays(days: DayAvailability[]): EditableDay[] {
+  return days.map((day) => ({
+    ...day,
+    periods: [...day.periods],
+    informed: day.informed,
+  }));
+}
+
+function snapshot(days: EditableDay[], notes: string): string {
+  return JSON.stringify({
+    notes: notes.trim(),
+    days: days.map((day) => ({
+      dayOfWeek: day.dayOfWeek,
+      informed: day.informed,
+      periods: [...day.periods].sort(),
+    })),
+  });
+}
+
+function getDayStatus(day: EditableDay) {
+  if (!day.informed) return "uninformed" as const;
+  if (day.periods.length === 0) return "unavailable" as const;
+  return "available" as const;
+}
+
 export function AvailabilityEditor({ initialData }: AvailabilityEditorProps) {
   const [isPending, startTransition] = useTransition();
-  const [days, setDays] = useState<DayAvailability[]>(initialData.days);
+  const [days, setDays] = useState<EditableDay[]>(() =>
+    buildEditableDays(initialData.days),
+  );
   const [generalNotes, setGeneralNotes] = useState(initialData.notes || "");
+  const [baseline, setBaseline] = useState<Baseline>(() => ({
+    days: buildEditableDays(initialData.days),
+    notes: initialData.notes || "",
+  }));
+  const [hasSavedOnce, setHasSavedOnce] = useState(initialData.hasSaved);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(
+    initialData.updatedAt,
+  );
+
+  const currentSnapshot = useMemo(
+    () => snapshot(days, generalNotes),
+    [days, generalNotes],
+  );
+  const baselineSnapshot = useMemo(
+    () => snapshot(baseline.days, baseline.notes),
+    [baseline],
+  );
+  const isDirty = currentSnapshot !== baselineSnapshot;
+
+  // Guard against losing a half-finished answer when the tab is reloaded.
+  useEffect(() => {
+    if (!isDirty) return;
+
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
+
+  function updateDay(
+    dayIndex: number,
+    updater: (day: EditableDay) => EditableDay,
+  ) {
+    setDays((prev) =>
+      prev.map((day) => (day.dayOfWeek === dayIndex ? updater(day) : day)),
+    );
+  }
 
   function togglePeriod(dayIndex: number, period: AvailabilityPeriod) {
+    updateDay(dayIndex, (day) => {
+      const exists = day.periods.includes(period);
+      return {
+        ...day,
+        informed: true,
+        periods: exists
+          ? day.periods.filter((value) => value !== period)
+          : ALL_PERIODS.filter(
+              (value) => value === period || day.periods.includes(value),
+            ),
+      };
+    });
+  }
+
+  function toggleWholeDay(dayIndex: number) {
+    updateDay(dayIndex, (day) => {
+      if (day.periods.length === ALL_PERIODS.length) {
+        return { ...day, informed: true, periods: [] };
+      }
+      return { ...day, informed: true, periods: [...ALL_PERIODS] };
+    });
+  }
+
+  function applyWeekendPreset() {
     setDays((prev) =>
-      prev.map((d) => {
-        if (d.dayOfWeek !== dayIndex) return d;
-        const exists = d.periods.includes(period);
-        const newPeriods = exists
-          ? d.periods.filter((p) => p !== period)
-          : [...d.periods, period];
-        return { ...d, periods: newPeriods };
+      prev.map((day) =>
+        day.dayOfWeek === 0 || day.dayOfWeek === 6
+          ? { ...day, informed: true, periods: [...ALL_PERIODS] }
+          : day,
+      ),
+    );
+  }
+
+  function applyWeeknightsPreset() {
+    setDays((prev) =>
+      prev.map((day) => {
+        if (day.dayOfWeek === 0 || day.dayOfWeek === 6) return day;
+        const periods = day.periods.includes("evening")
+          ? day.periods
+          : ALL_PERIODS.filter(
+              (period) => period === "evening" || day.periods.includes(period),
+            );
+        return { ...day, informed: true, periods };
       }),
     );
   }
 
-  function setAllPeriodsForDay(dayIndex: number, all: boolean) {
+  function clearAll() {
     setDays((prev) =>
-      prev.map((d) => {
-        if (d.dayOfWeek !== dayIndex) return d;
-        return {
-          ...d,
-          periods: all ? ["morning", "afternoon", "evening"] : [],
-        };
-      }),
+      prev.map((day) => ({ ...day, informed: true, periods: [] })),
     );
+  }
+
+  function handleReset() {
+    setDays(buildEditableDays(baseline.days));
+    setGeneralNotes(baseline.notes);
   }
 
   function handleSave() {
+    if (!isDirty || isPending) return;
+
     startTransition(async () => {
       const res = await saveMyAvailabilityAction({
-        days,
+        days: days.map((day) => ({
+          dayOfWeek: day.dayOfWeek,
+          periods: day.periods,
+        })),
         generalNotes,
       });
 
       if (res.ok) {
-        toast.success("Sua disponibilidade para servir foi salva com sucesso!");
+        const savedAt = new Date(res.updatedAt);
+        const savedDays = days.map((day) => ({ ...day, informed: true }));
+        const savedNotes = generalNotes;
+
+        setDays(savedDays);
+        setBaseline({ days: buildEditableDays(savedDays), notes: savedNotes });
+        setHasSavedOnce(true);
+        setLastSavedAt(savedAt);
+        toast.success(
+          `Disponibilidade atualizada às ${format(savedAt, "HH:mm")}.`,
+        );
       } else {
         toast.error(res.error || "Erro ao salvar disponibilidade.");
       }
     });
   }
 
+  const daysWithAnswer = days.filter((day) => day.informed).length;
   const totalSelectedPeriods = days.reduce(
-    (acc, d) => acc + d.periods.length,
+    (total, day) => total + day.periods.length,
     0,
   );
 
   return (
-    <div className="space-y-6">
-      {/* Overview Card */}
+    <div className="space-y-4">
       <Card className="shadow-xs">
         <CardHeader>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <CalendarDaysIcon className="size-5" />
+                  <CalendarDaysIcon className="size-5" aria-hidden="true" />
                 </div>
                 <CardTitle className="font-heading text-xl tracking-tight">
-                  Disponibilidade para Servir
+                  Sua semana
                 </CardTitle>
               </div>
               <CardDescription>
-                Informe em quais dias da semana e períodos você está disponível.
-                Os líderes usarão essas informações ao montar a escala dos
-                cultos.
+                Marque os períodos em que você costuma poder servir. A liderança
+                usa essa informação ao montar as escalas.
               </CardDescription>
             </div>
 
@@ -140,72 +274,156 @@ export function AvailabilityEditor({ initialData }: AvailabilityEditorProps) {
               variant={totalSelectedPeriods > 0 ? "secondary" : "outline"}
               className="gap-1.5 self-start font-mono text-xs font-normal sm:self-center"
             >
-              <CheckCircle2Icon className="size-3.5 text-emerald-500" />
-              {totalSelectedPeriods}{" "}
-              {totalSelectedPeriods === 1 ? "período ativo" : "períodos ativos"}
+              <CheckCircle2Icon
+                className="size-3.5 text-emerald-600 dark:text-emerald-400"
+                aria-hidden="true"
+              />
+              {daysWithAnswer} de 7 dias informados
             </Badge>
           </div>
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {/* Legend and explanation */}
-          <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">Períodos do dia:</span>
-            {PERIODS.map((p) => {
-              const Icon = p.icon;
-              return (
-                <div key={p.id} className="flex items-center gap-1.5">
-                  <Icon className="size-3.5 text-primary" />
-                  <span>
-                    <strong>{p.label}</strong> ({p.hint})
-                  </span>
-                </div>
-              );
-            })}
+          {!hasSavedOnce ? (
+            <div className="flex items-start gap-3 rounded-xl border border-primary/25 bg-primary/5 p-4">
+              <SparklesIcon
+                className="mt-0.5 size-5 shrink-0 text-primary"
+                aria-hidden="true"
+              />
+              <div className="space-y-1">
+                <p className="font-heading text-sm font-semibold text-foreground">
+                  Primeira vez? Leva menos de um minuto.
+                </p>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  Marque os períodos em que você pode servir e salve. Dias sem
+                  resposta aparecem como{" "}
+                  <span className="font-medium text-foreground">
+                    “Não informado”
+                  </span>{" "}
+                  — nada é presumido sobre a sua disponibilidade.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <ClockIcon className="size-3.5" aria-hidden="true" />
+              {lastSavedAt
+                ? `Última atualização em ${format(lastSavedAt, "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}.`
+                : "Sua disponibilidade ainda não foi salva."}
+            </p>
+          )}
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">
+              Atalhos:
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={applyWeekendPreset}
+              className="min-h-11 gap-1.5"
+            >
+              <CalendarCheckIcon className="size-4" aria-hidden="true" />
+              Fins de semana
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={applyWeeknightsPreset}
+              className="min-h-11 gap-1.5"
+            >
+              <MoonIcon className="size-4" aria-hidden="true" />
+              Noites nos dias úteis
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={clearAll}
+              className="min-h-11 gap-1.5 text-muted-foreground"
+            >
+              <RotateCcwIcon className="size-4" aria-hidden="true" />
+              Limpar tudo
+            </Button>
           </div>
 
-          {/* Days Grid */}
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Períodos:</span>
+            {PERIODS.map((period, index) => (
+              <span key={period.id} className="flex items-center gap-2">
+                {index > 0 ? (
+                  <span aria-hidden="true" className="text-border">
+                    ·
+                  </span>
+                ) : null}
+                <span>
+                  {period.label}{" "}
+                  <span className="font-mono text-[11px]">
+                    {period.hint.replace(" às ", "–")}
+                  </span>
+                </span>
+              </span>
+            ))}
+          </p>
+
+          {/* Days */}
+          <div className="space-y-3">
             {DAYS_OF_WEEK.map((day) => {
-              const currentDay = days.find((d) => d.dayOfWeek === day.index);
-              const selectedPeriods = currentDay?.periods || [];
-              const hasAll = selectedPeriods.length === 3;
-              const hasNone = selectedPeriods.length === 0;
+              const currentDay = days.find(
+                (value) => value.dayOfWeek === day.index,
+              );
+              if (!currentDay) return null;
+
+              const selectedPeriods = currentDay.periods;
+              const status = getDayStatus(currentDay);
+              const hasAll = selectedPeriods.length === ALL_PERIODS.length;
 
               return (
                 <div
                   key={day.index}
                   className={cn(
-                    "flex flex-col gap-3 rounded-xl border p-3.5 transition-colors sm:flex-row sm:items-center sm:justify-between shadow-xs",
-                    selectedPeriods.length > 0
-                      ? "border-primary/30 bg-primary/2"
-                      : "bg-card hover:bg-muted/20",
+                    "flex flex-col gap-3 rounded-xl border p-3.5 shadow-xs transition-colors lg:flex-row lg:items-center lg:justify-between",
+                    status === "available" && "border-primary/30 bg-primary/[0.02]",
+                    status === "unavailable" &&
+                      "border-amber-500/25 bg-amber-500/[0.04]",
+                    status === "uninformed" && "bg-card hover:bg-muted/20",
                   )}
                 >
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-heading text-sm font-semibold text-foreground">
-                        {day.label}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-heading text-sm font-semibold text-foreground">
+                      {day.label}
+                    </span>
+
+                    {status === "uninformed" ? (
+                      <Badge
+                        variant="outline"
+                        className="gap-1 text-xs font-normal text-muted-foreground"
+                      >
+                        <CircleDashedIcon className="size-3" aria-hidden="true" />
+                        Não informado
+                      </Badge>
+                    ) : status === "unavailable" ? (
+                      <Badge className="gap-1 border-amber-500/20 bg-amber-500/10 text-xs text-amber-700 dark:text-amber-300">
+                        <CalendarX2Icon className="size-3" aria-hidden="true" />
+                        Indisponível
+                      </Badge>
+                    ) : (
+                      <Badge className="gap-1 border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-700 dark:text-emerald-300">
+                        <CheckCircle2Icon
+                          className="size-3"
+                          aria-hidden="true"
+                        />
+                        Disponível
+                      </Badge>
+                    )}
+
+                    {status === "available" ? (
+                      <span className="text-xs text-muted-foreground">
+                        {selectedPeriods.length} de 3 períodos
                       </span>
-                      {hasNone ? (
-                        <span className="text-[11px] text-muted-foreground italic">
-                          Indisponível
-                        </span>
-                      ) : (
-                        <Badge
-                          variant="secondary"
-                          className="font-mono text-[10px]"
-                        >
-                          {selectedPeriods.length === 3
-                            ? "Dia todo"
-                            : `${selectedPeriods.length} ${
-                                selectedPeriods.length === 1
-                                  ? "período"
-                                  : "períodos"
-                              }`}
-                        </Badge>
-                      )}
-                    </div>
+                    ) : null}
                   </div>
 
                   {/* Period buttons */}
@@ -219,37 +437,51 @@ export function AvailabilityEditor({ initialData }: AvailabilityEditorProps) {
                           key={period.id}
                           type="button"
                           onClick={() => togglePeriod(day.index, period.id)}
+                          aria-pressed={isSelected}
+                          aria-label={`${day.label}, ${period.label} (${period.hint})`}
+                          title={`${period.label} · ${period.hint}`}
                           className={cn(
-                            "flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary",
+                            "flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                             isSelected
-                              ? "border-primary bg-primary text-primary-foreground shadow-xs"
+                              ? "border-primary bg-primary text-primary-foreground shadow-xs hover:bg-primary/90"
                               : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
                           )}
-                          title={`${day.label} (${period.label})`}
                         >
-                          <Icon className="size-3.5" />
+                          <Icon className="size-4" aria-hidden="true" />
                           <span>{period.label}</span>
                         </button>
                       );
                     })}
 
-                    {/* Quick day actions */}
-                    <div className="ml-1 flex items-center gap-1">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={() => setAllPeriodsForDay(day.index, !hasAll)}
-                        title={
-                          hasAll
-                            ? "Limpar este dia"
-                            : "Marcar o dia todo como disponível"
-                        }
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <SparklesIcon className="size-3.5" />
-                      </Button>
-                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleWholeDay(day.index)}
+                      aria-label={
+                        hasAll
+                          ? `Marcar ${day.label} como indisponível`
+                          : `Marcar ${day.label} como disponível o dia todo`
+                      }
+                      title={
+                        hasAll
+                          ? "Limpar este dia"
+                          : "Marcar o dia todo como disponível"
+                      }
+                      className="min-h-11 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      {hasAll ? (
+                        <CalendarX2Icon className="size-4" aria-hidden="true" />
+                      ) : (
+                        <CalendarCheckIcon
+                          className="size-4"
+                          aria-hidden="true"
+                        />
+                      )}
+                      <span className="hidden sm:inline">
+                        {hasAll ? "Limpar dia" : "Dia todo"}
+                      </span>
+                    </Button>
                   </div>
                 </div>
               );
@@ -258,15 +490,21 @@ export function AvailabilityEditor({ initialData }: AvailabilityEditorProps) {
 
           {/* General Notes */}
           <div className="space-y-2 border-t pt-4">
-            <Label htmlFor="generalNotes" className="text-sm font-medium">
-              Observações ou restrições (opcional)
-            </Label>
+            <div className="flex items-center justify-between gap-3">
+              <Label htmlFor="generalNotes" className="text-sm font-medium">
+                Observações ou restrições (opcional)
+              </Label>
+              <span className="font-mono text-xs text-muted-foreground">
+                {generalNotes.length}/1000
+              </span>
+            </div>
             <Textarea
               id="generalNotes"
               placeholder="Ex.: 'Posso servir no 2º e 4º domingo de cada mês', 'No sábado só chego após as 18h', etc."
               value={generalNotes}
-              onChange={(e) => setGeneralNotes(e.target.value)}
+              onChange={(event) => setGeneralNotes(event.target.value)}
               rows={3}
+              maxLength={1000}
               className="resize-none"
             />
             <p className="text-xs text-muted-foreground">
@@ -277,25 +515,71 @@ export function AvailabilityEditor({ initialData }: AvailabilityEditorProps) {
 
           {/* Action Footer */}
           <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <ClockIcon className="size-3.5" />
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <ClockIcon className="size-3.5" aria-hidden="true" />
               Você pode alterar sua disponibilidade a qualquer momento.
             </span>
             <Button
               onClick={handleSave}
-              disabled={isPending}
-              className="w-full gap-2 sm:w-auto"
+              disabled={!isDirty || isPending}
+              className="min-h-11 w-full gap-2 sm:w-auto"
             >
               {isPending ? (
-                <Loader2Icon className="size-4 animate-spin" />
+                <Loader2Icon className="size-4 animate-spin" aria-hidden="true" />
               ) : (
-                <CheckIcon className="size-4" />
+                <CheckIcon className="size-4" aria-hidden="true" />
               )}
               Salvar disponibilidade
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Unsaved changes bar, kept above the mobile bottom navigation. */}
+      {isDirty ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-1/2 z-30 w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 rounded-xl border border-primary/30 bg-card/95 p-3 shadow-lg backdrop-blur md:bottom-4"
+        >
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-medium text-foreground">
+              Você tem alterações não salvas.
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleReset}
+                disabled={isPending}
+                className="min-h-11"
+              >
+                Desfazer
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSave}
+                disabled={isPending}
+                className="min-h-11 gap-2"
+              >
+                {isPending ? (
+                  <Loader2Icon
+                    className="size-4 animate-spin"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <CheckIcon className="size-4" aria-hidden="true" />
+                )}
+                Salvar alterações
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isDirty ? <div className="h-20 md:h-16" aria-hidden="true" /> : null}
     </div>
   );
 }

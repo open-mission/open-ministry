@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   CakeIcon,
@@ -33,35 +32,41 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { CalendarItem } from "@/lib/calendar";
+import { formatCalendarDate, type CalendarItem } from "@/lib/calendar";
 
 type EventDetailDialogProps = {
   item: CalendarItem | null;
   open: boolean;
+  timeZone?: string | null;
   onOpenChange: (open: boolean) => void;
 };
+
+function capitalizeFirst(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
 
 export function EventDetailDialog({
   item,
   open,
+  timeZone,
   onOpenChange,
 }: EventDetailDialogProps) {
   const isMobile = useIsMobile();
 
   if (!item) return null;
 
-  const startDate = parseISO(item.startsAt);
-  const endDate = parseISO(item.endsAt);
-
-  const formattedDate = format(
-    startDate,
-    "EEEE, dd 'de' MMMM 'de' yyyy",
-    { locale: ptBR },
+  const formattedDate = capitalizeFirst(
+    formatCalendarDate(item.startsAt, "EEEE, dd 'de' MMMM 'de' yyyy", {
+      timeZone,
+      locale: ptBR,
+    }),
   );
 
   const formattedTime = item.allDay
     ? "O dia todo"
-    : `${format(startDate, "HH:mm")} às ${format(endDate, "HH:mm")}`;
+    : `${formatCalendarDate(item.startsAt, "HH:mm", {
+        timeZone,
+      })} às ${formatCalendarDate(item.endsAt, "HH:mm", { timeZone })}`;
 
   const badgeContent = (
     <>
@@ -80,7 +85,9 @@ export function EventDetailDialog({
       {item.type === "unavailability" && (
         <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20 font-medium">
           <CalendarX2Icon className="size-3 mr-1" />
-          Indisponível
+          {item.metadata?.isMine === false
+            ? "Indisponibilidade da equipe"
+            : "Indisponível"}
         </Badge>
       )}
       {item.type === "birthday" && (
@@ -98,9 +105,7 @@ export function EventDetailDialog({
       <div className="flex items-start gap-2.5 rounded-lg border bg-muted/20 p-3">
         <ClockIcon className="size-4 shrink-0 text-muted-foreground mt-0.5" />
         <div className="space-y-0.5">
-          <p className="font-medium capitalize text-foreground">
-            {formattedDate}
-          </p>
+          <p className="font-medium text-foreground">{formattedDate}</p>
           <p className="text-xs text-muted-foreground">{formattedTime}</p>
         </div>
       </div>

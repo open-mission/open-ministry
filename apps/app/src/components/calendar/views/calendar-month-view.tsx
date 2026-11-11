@@ -3,33 +3,73 @@
 import { useMemo } from "react";
 import {
   eachDayOfInterval,
+  endOfMonth,
   endOfWeek,
   format,
   isSameMonth,
-  isToday,
-  parseISO,
-  startOfWeek,
   startOfMonth,
-  endOfMonth,
+  startOfWeek,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CakeIcon, CalendarX2Icon, CheckCircle2Icon } from "lucide-react";
+import {
+  CakeIcon,
+  CalendarDaysIcon,
+  CalendarX2Icon,
+  CheckCircle2Icon,
+} from "lucide-react";
 
-import type { CalendarItem } from "@/lib/calendar";
+import {
+  calendarDateKey,
+  calendarTimeLabel,
+  type CalendarItem,
+} from "@/lib/calendar";
 import { cn } from "@/lib/utils";
 
 type CalendarMonthViewProps = {
   currentDate: Date;
   items: CalendarItem[];
   weekStartsOn: 0 | 1;
+  timeZone?: string | null;
   onSelectDate: (date: Date) => void;
   onSelectItem: (item: CalendarItem) => void;
 };
+
+function ItemTypeIcon({
+  type,
+  className,
+}: {
+  type: CalendarItem["type"];
+  className?: string;
+}) {
+  if (type === "assignment") {
+    return (
+      <CheckCircle2Icon
+        className={cn("text-emerald-600 dark:text-emerald-400", className)}
+      />
+    );
+  }
+  if (type === "unavailability") {
+    return (
+      <CalendarX2Icon
+        className={cn("text-amber-600 dark:text-amber-400", className)}
+      />
+    );
+  }
+  if (type === "birthday") {
+    return (
+      <CakeIcon className={cn("text-rose-600 dark:text-rose-400", className)} />
+    );
+  }
+  return (
+    <CalendarDaysIcon className={cn("text-primary", className)} />
+  );
+}
 
 export function CalendarMonthView({
   currentDate,
   items,
   weekStartsOn,
+  timeZone,
   onSelectDate,
   onSelectItem,
 }: CalendarMonthViewProps) {
@@ -47,7 +87,7 @@ export function CalendarMonthView({
     const computedWeekDays = eachDayOfInterval({
       start: calendarStart,
       end: endOfWeek(calendarStart, { weekStartsOn }),
-    }).map((d) => format(d, "EEE", { locale: ptBR }));
+    }).map((day) => format(day, "EEE", { locale: ptBR }));
 
     return { days: computedDays, weekDays: computedWeekDays };
   }, [currentDate, weekStartsOn]);
@@ -56,7 +96,7 @@ export function CalendarMonthView({
     const map = new Map<string, CalendarItem[]>();
     for (const item of items) {
       try {
-        const dayKey = format(parseISO(item.startsAt), "yyyy-MM-dd");
+        const dayKey = calendarDateKey(item.startsAt, timeZone);
         const list = map.get(dayKey);
         if (list) {
           list.push(item);
@@ -64,19 +104,21 @@ export function CalendarMonthView({
           map.set(dayKey, [item]);
         }
       } catch {
-        // Ignora itens com data mal formatada
+        // Ignore items with malformed dates
       }
     }
     return map;
-  }, [items]);
+  }, [items, timeZone]);
+
+  const todayKey = calendarDateKey(new Date(), timeZone);
 
   return (
-    <div className="flex flex-col rounded-xl border bg-card shadow-xs overflow-hidden">
+    <div className="flex flex-col overflow-hidden rounded-xl border bg-card shadow-xs">
       {/* Weekday headers */}
       <div className="grid grid-cols-7 border-b bg-muted/40 text-center text-xs font-semibold capitalize text-muted-foreground">
-        {weekDays.map((wd, i) => (
-          <div key={i} className="py-2.5">
-            {wd}
+        {weekDays.map((weekDay, index) => (
+          <div key={index} className="py-2.5">
+            {weekDay}
           </div>
         ))}
       </div>
@@ -85,30 +127,45 @@ export function CalendarMonthView({
       <div className="grid grid-cols-7 divide-x divide-y border-b text-xs">
         {days.map((day) => {
           const isCurrentMonth = isSameMonth(day, currentDate);
-          const isDayToday = isToday(day);
-
           const dayKey = format(day, "yyyy-MM-dd");
+          const isDayToday = dayKey === todayKey;
           const dayItems = itemsByDay.get(dayKey) ?? [];
 
           const maxVisible = 3;
           const visibleItems = dayItems.slice(0, maxVisible);
           const remainingCount = dayItems.length - maxVisible;
+          const dayLabel = format(day, "EEEE, d 'de' MMMM 'de' yyyy", {
+            locale: ptBR,
+          });
 
           return (
             <div
               key={day.toISOString()}
-              onClick={() => onSelectDate(day)}
               className={cn(
-                "group relative flex min-h-[105px] sm:min-h-[125px] flex-col p-1.5 transition-colors cursor-pointer hover:bg-muted/30",
+                "group relative flex min-h-[84px] flex-col p-1.5 transition-colors sm:min-h-[125px]",
                 !isCurrentMonth && "bg-muted/15 text-muted-foreground/60",
                 isDayToday && "bg-primary/5",
               )}
             >
-              {/* Day header */}
-              <div className="flex items-center justify-between pb-1">
+              {/* Day header: the only control that opens the day */}
+              <button
+                type="button"
+                onClick={() => onSelectDate(day)}
+                aria-label={`Abrir ${dayLabel}${
+                  dayItems.length > 0
+                    ? `, ${dayItems.length} ${
+                        dayItems.length === 1 ? "compromisso" : "compromissos"
+                      }`
+                    : ", sem compromissos"
+                }`}
+                className={cn(
+                  "flex min-h-11 w-full items-center justify-between rounded-md px-1 text-left outline-none transition-colors hover:bg-muted/40 focus-visible:ring-3 focus-visible:ring-ring/50 sm:min-h-7",
+                  isDayToday && "bg-primary/5",
+                )}
+              >
                 <span
                   className={cn(
-                    "flex size-6 items-center justify-center rounded-full text-xs font-medium transition-colors",
+                    "flex size-7 items-center justify-center rounded-full text-xs font-medium transition-colors sm:size-6",
                     isDayToday
                       ? "bg-primary font-bold text-primary-foreground shadow-xs"
                       : "text-foreground group-hover:text-primary",
@@ -119,47 +176,60 @@ export function CalendarMonthView({
                 </span>
 
                 {dayItems.length > 0 ? (
-                  <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                  <span className="hidden pr-0.5 text-xs tabular-nums text-muted-foreground sm:inline">
                     {dayItems.length}
                   </span>
                 ) : null}
+              </button>
+
+              {/* Mobile: icon dots keep the cell readable at 375px */}
+              <div className="mt-0.5 flex flex-wrap items-center gap-0.5 px-1 sm:hidden">
+                {visibleItems.map((item) => (
+                  <ItemTypeIcon
+                    key={item.id}
+                    type={item.type}
+                    className="size-3"
+                  />
+                ))}
+                {remainingCount > 0 ? (
+                  <span className="text-xs font-medium tabular-nums text-muted-foreground">
+                    +{remainingCount}
+                  </span>
+                ) : null}
+                {dayItems.length === 0 ? (
+                  <span className="text-xs text-muted-foreground/50">—</span>
+                ) : null}
               </div>
 
-              {/* Items pills */}
-              <div className="flex flex-1 flex-col gap-1 overflow-hidden">
+              {/* Desktop: readable pills */}
+              <div className="hidden flex-1 flex-col gap-1 overflow-hidden pt-1 sm:flex">
                 {visibleItems.map((item) => {
-                  const startTime = format(parseISO(item.startsAt), "HH:mm");
+                  const startTime = calendarTimeLabel(item.startsAt, timeZone);
 
                   return (
                     <button
                       key={item.id}
                       type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectItem(item);
-                      }}
+                      onClick={() => onSelectItem(item)}
                       className={cn(
-                        "flex w-full items-center gap-1 truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium transition-transform hover:scale-[1.02] cursor-pointer",
+                        "flex w-full cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-left text-xs font-medium transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                         item.type === "assignment" &&
-                          "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30",
+                          "border border-emerald-500/30 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300",
                         item.type === "event" &&
-                          "bg-primary/10 text-primary border border-primary/20",
+                          "border border-primary/20 bg-primary/10 text-primary",
                         item.type === "unavailability" &&
-                          "bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30",
+                          "border border-amber-500/30 bg-amber-500/15 text-amber-800 dark:text-amber-300",
                         item.type === "birthday" &&
-                          "bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-rose-500/30",
+                          "border border-rose-500/30 bg-rose-500/15 text-rose-800 dark:text-rose-300",
                       )}
-                      title={`${item.title} (${item.allDay ? "Dia todo" : startTime})`}
+                      title={`${item.title} (${
+                        item.allDay ? "Dia todo" : startTime
+                      })`}
                     >
-                      {item.type === "assignment" && (
-                        <CheckCircle2Icon className="size-3 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                      )}
-                      {item.type === "unavailability" && (
-                        <CalendarX2Icon className="size-3 shrink-0 text-amber-600 dark:text-amber-400" />
-                      )}
-                      {item.type === "birthday" && (
-                        <CakeIcon className="size-3 shrink-0 text-rose-600 dark:text-rose-400" />
-                      )}
+                      <ItemTypeIcon
+                        type={item.type}
+                        className="size-3.5 shrink-0"
+                      />
                       <span className="truncate font-medium">{item.title}</span>
                     </button>
                   );
@@ -168,13 +238,14 @@ export function CalendarMonthView({
                 {remainingCount > 0 ? (
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectDate(day);
-                    }}
-                    className="text-[10px] font-medium text-muted-foreground hover:text-foreground text-left px-1 mt-auto"
+                    onClick={() => onSelectDate(day)}
+                    aria-label={`Ver os ${remainingCount} compromissos restantes de ${dayLabel}`}
+                    className="mt-auto px-1 text-left text-xs font-medium text-muted-foreground hover:text-foreground"
                   >
-                    +{remainingCount} mais
+                    +{remainingCount}{" "}
+                    <span className="hidden lg:inline">
+                      {remainingCount === 1 ? "compromisso" : "compromissos"}
+                    </span>
                   </button>
                 ) : null}
               </div>

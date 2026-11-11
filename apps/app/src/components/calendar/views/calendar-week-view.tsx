@@ -5,15 +5,18 @@ import {
   eachDayOfInterval,
   endOfWeek,
   format,
-  isSameDay,
-  isToday,
-  parseISO,
   startOfWeek,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CakeIcon, CalendarX2Icon, CheckCircle2Icon } from "lucide-react";
+import {
+  CakeIcon,
+  CalendarX2Icon,
+  CheckCircle2Icon,
+  MapPinIcon,
+} from "lucide-react";
 
 import {
+  calendarDateKey,
   computeGridHours,
   layoutDayTimedItems,
   type CalendarItem,
@@ -24,6 +27,7 @@ type CalendarWeekViewProps = {
   currentDate: Date;
   items: CalendarItem[];
   weekStartsOn: 0 | 1;
+  timeZone?: string | null;
   onSelectDate: (date: Date) => void;
   onSelectItem: (item: CalendarItem) => void;
 };
@@ -37,30 +41,41 @@ export function CalendarWeekView({
   currentDate,
   items,
   weekStartsOn,
+  timeZone,
   onSelectDate,
   onSelectItem,
 }: CalendarWeekViewProps) {
   const weekStart = startOfWeek(currentDate, { weekStartsOn });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn });
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
+  const todayKey = calendarDateKey(new Date(), timeZone);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Compute dynamic hours range covering all events in the week (default 07:00 - 23:00)
   const { minHour, hours } = useMemo(() => {
-    return computeGridHours(items, 7, 23);
-  }, [items]);
+    return computeGridHours(items, 7, 23, timeZone);
+  }, [items, timeZone]);
 
   const totalGridHeight = hours.length * HOUR_HEIGHT;
 
   // Auto-scroll on mount to earliest event or 08:00
   useEffect(() => {
     if (!scrollRef.current) return;
-    const timed = items.filter((i) => !i.allDay);
+    const timed = items.filter((item) => !item.allDay);
     let targetHour = 8;
     if (timed.length > 0) {
       const earliest = Math.min(
-        ...timed.map((i) => parseISO(i.startsAt).getHours()),
+        ...timed.map(
+          (item) =>
+            Number(
+              new Intl.DateTimeFormat("en-GB", {
+                hour: "2-digit",
+                hour12: false,
+                timeZone: timeZone ?? undefined,
+              }).format(new Date(item.startsAt)),
+            ),
+        ),
       );
       if (Number.isFinite(earliest) && earliest >= minHour) {
         targetHour = Math.max(minHour, earliest - 1);
@@ -68,7 +83,7 @@ export function CalendarWeekView({
     }
     const scrollTarget = (targetHour - minHour) * HOUR_HEIGHT;
     scrollRef.current.scrollTo({ top: scrollTarget, behavior: "instant" });
-  }, [items, minHour]);
+  }, [items, minHour, timeZone]);
 
   return (
     <div className="flex flex-col overflow-hidden rounded-xl border bg-card shadow-xs">
@@ -91,17 +106,22 @@ export function CalendarWeekView({
               Horário
             </div>
             {days.map((day) => {
-              const isDayToday = isToday(day);
+              const isDayToday = format(day, "yyyy-MM-dd") === todayKey;
+              const dayLabel = format(day, "EEEE, d 'de' MMMM", {
+                locale: ptBR,
+              });
               return (
-                <div
+                <button
                   key={day.toISOString()}
+                  type="button"
                   onClick={() => onSelectDate(day)}
+                  aria-label={`Abrir ${dayLabel}`}
                   className={cn(
-                    "cursor-pointer border-r py-2 text-center bg-card transition-colors last:border-r-0 hover:bg-muted/50",
+                    "cursor-pointer border-r bg-card py-2 text-center transition-colors last:border-r-0 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
                     isDayToday && "bg-primary/5",
                   )}
                 >
-                  <p className="text-[11px] font-medium capitalize text-muted-foreground">
+                  <p className="text-xs font-medium capitalize text-muted-foreground">
                     {format(day, "EEE", { locale: ptBR })}
                   </p>
                   <div className="mt-0.5 flex justify-center">
@@ -116,7 +136,7 @@ export function CalendarWeekView({
                       {format(day, "d")}
                     </span>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -128,13 +148,15 @@ export function CalendarWeekView({
               "sticky top-[58px] z-30 min-h-[44px] border-b bg-card shadow-2xs",
             )}
           >
-            <div className="sticky left-0 z-35 flex items-center justify-center border-r bg-card p-1 text-[11px] font-medium text-muted-foreground shadow-xs">
+            <div className="sticky left-0 z-35 flex items-center justify-center border-r bg-card p-1 text-xs font-medium text-muted-foreground shadow-xs">
               Dia todo
             </div>
             {days.map((day) => {
+              const dayKey = format(day, "yyyy-MM-dd");
               const dayAllDayItems = items.filter(
                 (item) =>
-                  item.allDay && isSameDay(parseISO(item.startsAt), day),
+                  item.allDay &&
+                  calendarDateKey(item.startsAt, timeZone) === dayKey,
               );
 
               return (
@@ -148,7 +170,7 @@ export function CalendarWeekView({
                       type="button"
                       onClick={() => onSelectItem(item)}
                       className={cn(
-                        "flex w-full cursor-pointer items-center gap-1 truncate rounded px-1.5 py-0.5 text-left text-[10px] font-medium transition-transform hover:scale-[1.02]",
+                        "flex min-h-7 w-full cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-left text-xs font-medium transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                         item.type === "birthday"
                           ? "border border-rose-500/30 bg-rose-500/15 text-rose-800 dark:text-rose-300"
                           : "border border-amber-500/30 bg-amber-500/15 text-amber-800 dark:text-amber-300",
@@ -156,9 +178,9 @@ export function CalendarWeekView({
                       title={item.title}
                     >
                       {item.type === "birthday" ? (
-                        <CakeIcon className="size-2.5 shrink-0 text-rose-600 dark:text-rose-400" />
+                        <CakeIcon className="size-3 shrink-0 text-rose-600 dark:text-rose-400" />
                       ) : (
-                        <CalendarX2Icon className="size-2.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <CalendarX2Icon className="size-3 shrink-0 text-amber-600 dark:text-amber-400" />
                       )}
                       <span className="truncate">{item.title}</span>
                     </button>
@@ -180,7 +202,7 @@ export function CalendarWeekView({
                   <div
                     key={hour}
                     style={{ height: `${HOUR_HEIGHT}px` }}
-                    className="flex items-start justify-center border-b border-border/40 pt-1 font-mono text-[11px] text-muted-foreground"
+                    className="flex items-start justify-center border-b border-border/40 pt-1 font-mono text-xs text-muted-foreground"
                   >
                     {String(hour).padStart(2, "0")}:00
                   </div>
@@ -189,16 +211,19 @@ export function CalendarWeekView({
 
               {/* 7 Day Columns with Event Layout */}
               {days.map((day) => {
-                const isDayToday = isToday(day);
+                const isDayToday = format(day, "yyyy-MM-dd") === todayKey;
+                const dayKey = format(day, "yyyy-MM-dd");
                 const dayTimedItems = items.filter(
                   (item) =>
-                    !item.allDay && isSameDay(parseISO(item.startsAt), day),
+                    !item.allDay &&
+                    calendarDateKey(item.startsAt, timeZone) === dayKey,
                 );
 
                 const positionedItems = layoutDayTimedItems(
                   dayTimedItems,
                   minHour,
                   HOUR_HEIGHT,
+                  timeZone,
                 );
 
                 return (
@@ -215,26 +240,23 @@ export function CalendarWeekView({
                         key={hour}
                         onClick={() => onSelectDate(day)}
                         style={{ height: `${HOUR_HEIGHT}px` }}
-                        className="border-b border-border/40 transition-colors hover:bg-muted/15 cursor-pointer"
+                        className="cursor-pointer border-b border-border/40 transition-colors hover:bg-muted/15"
                       />
                     ))}
 
                     {/* Positioned Events Layer */}
-                    {positionedItems.map((pos) => {
-                      const item = pos.item;
+                    {positionedItems.map((position) => {
+                      const item = position.item;
                       return (
                         <button
                           key={item.id}
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onSelectItem(item);
-                          }}
+                          onClick={() => onSelectItem(item)}
                           style={{
-                            top: `${pos.top}px`,
-                            height: `${pos.height}px`,
-                            left: `calc(${pos.leftPercent}% + 2px)`,
-                            width: `calc(${pos.widthPercent}% - 4px)`,
+                            top: `${position.top}px`,
+                            height: `${position.height}px`,
+                            left: `calc(${position.leftPercent}% + 2px)`,
+                            width: `calc(${position.widthPercent}% - 4px)`,
                           }}
                           className={cn(
                             "absolute z-10 flex cursor-pointer flex-col overflow-hidden rounded-md p-1.5 text-left text-xs shadow-2xs transition-all hover:z-20 hover:scale-[1.01] hover:shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
@@ -245,28 +267,29 @@ export function CalendarWeekView({
                             item.type === "unavailability" &&
                               "border border-amber-500/40 bg-amber-500/15 text-amber-950 dark:text-amber-100",
                           )}
-                          title={`${item.title} (${pos.startTimeLabel} - ${pos.endTimeLabel})`}
+                          title={`${item.title} (${position.startTimeLabel} - ${position.endTimeLabel})`}
                         >
-                          <div className="flex items-center gap-1 text-[11px] leading-tight font-semibold">
+                          <div className="flex items-center gap-1 text-xs leading-tight font-semibold">
                             {item.type === "assignment" && (
                               <CheckCircle2Icon className="size-3 shrink-0 text-emerald-600 dark:text-emerald-400" />
                             )}
                             <span className="truncate">{item.title}</span>
                           </div>
 
-                          <span className="font-mono text-[10px] text-muted-foreground">
-                            {pos.startTimeLabel} – {pos.endTimeLabel}
+                          <span className="font-mono text-[11px] text-muted-foreground">
+                            {position.startTimeLabel} – {position.endTimeLabel}
                           </span>
 
-                          {pos.height >= 58 && item.subtitle ? (
-                            <span className="truncate text-[10px] text-muted-foreground/90">
+                          {position.height >= 58 && item.subtitle ? (
+                            <span className="truncate text-[11px] text-muted-foreground/90">
                               {item.subtitle}
                             </span>
                           ) : null}
 
-                          {pos.height >= 90 && item.location ? (
-                            <span className="truncate text-[10px] text-muted-foreground/80">
-                              📍 {item.location}
+                          {position.height >= 90 && item.location ? (
+                            <span className="flex items-center gap-1 truncate text-[11px] text-muted-foreground/80">
+                              <MapPinIcon className="size-3 shrink-0" />
+                              {item.location}
                             </span>
                           ) : null}
                         </button>

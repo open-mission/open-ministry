@@ -19,6 +19,18 @@ import {
   deleteUnavailabilityAction,
   saveUnavailabilityAction,
 } from "@/app/actions/availability";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,10 +70,26 @@ const PERIOD_CONFIG: {
   { id: "evening", label: "Noite", icon: MoonIcon },
 ];
 
+function sortByDate(items: PersonUnavailabilityItem[]) {
+  return [...items].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function formatDisplayDate(dateStr: string) {
+  try {
+    return format(parseISO(dateStr), "EEEE, dd 'de' MMMM 'de' yyyy", {
+      locale: ptBR,
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
 export function UnavailabilitySection({
   initialItems,
 }: UnavailabilitySectionProps) {
-  const [items, setItems] = useState<PersonUnavailabilityItem[]>(initialItems);
+  const [items, setItems] = useState<PersonUnavailabilityItem[]>(() =>
+    sortByDate(initialItems),
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -70,25 +98,35 @@ export function UnavailabilitySection({
   const [date, setDate] = useState("");
   const [reason, setReason] = useState("");
   const [allDay, setAllDay] = useState(true);
-  const [selectedPeriods, setSelectedPeriods] = useState<AvailabilityPeriod[]>([]);
+  const [selectedPeriods, setSelectedPeriods] = useState<AvailabilityPeriod[]>(
+    [],
+  );
 
-  function togglePeriod(period: AvailabilityPeriod) {
-    setSelectedPeriods((prev) =>
-      prev.includes(period) ? prev.filter((p) => p !== period) : [...prev, period],
-    );
-  }
+  const today = format(new Date(), "yyyy-MM-dd");
 
-  function handleOpenDialog() {
+  function resetForm() {
     setDate("");
     setReason("");
     setAllDay(true);
     setSelectedPeriods([]);
-    setIsDialogOpen(true);
+  }
+
+  function handleDialogChange(open: boolean) {
+    if (open) resetForm();
+    setIsDialogOpen(open);
+  }
+
+  function togglePeriod(period: AvailabilityPeriod) {
+    setSelectedPeriods((prev) =>
+      prev.includes(period)
+        ? prev.filter((value) => value !== period)
+        : [...prev, period],
+    );
   }
 
   function handleSave() {
     if (!date) {
-      toast.error("Por favor, selecione a data do bloqueio.");
+      toast.error("Selecione a data do bloqueio.");
       return;
     }
 
@@ -106,26 +144,20 @@ export function UnavailabilitySection({
       });
 
       if (res.ok) {
-        toast.success("Data de indisponibilidade registrada com sucesso!");
+        setItems((prev) =>
+          sortByDate([
+            ...prev.filter(
+              (item) => item.id !== res.item.id && item.date !== res.item.date,
+            ),
+            res.item,
+          ]),
+        );
         setIsDialogOpen(false);
-        // Optimistically update list
-        setItems((prev) => {
-          const filtered = prev.filter((item) => item.date !== date);
-          const newItem: PersonUnavailabilityItem = {
-            id: `temp-${Date.now()}`,
-            organizationId: "",
-            personId: "",
-            date,
-            reason: reason.trim() || null,
-            allDay,
-            periods: allDay ? [] : selectedPeriods,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          };
-          return [...filtered, newItem].sort((a, b) =>
-            a.date.localeCompare(b.date),
-          );
-        });
+        toast.success(
+          res.updated
+            ? "Data de indisponibilidade atualizada."
+            : "Data de indisponibilidade registrada.",
+        );
       } else {
         toast.error(res.error || "Erro ao registrar indisponibilidade.");
       }
@@ -137,59 +169,56 @@ export function UnavailabilitySection({
     startTransition(async () => {
       const res = await deleteUnavailabilityAction(id);
       if (res.ok) {
-        toast.success("Bloqueio removido.");
         setItems((prev) => prev.filter((item) => item.id !== id));
+        toast.success(
+          res.deleted
+            ? "Data de indisponibilidade removida."
+            : "Essa data já não estava registrada.",
+        );
       } else {
-        toast.error(res.error || "Erro ao remover bloqueio.");
+        toast.error(res.error || "Erro ao remover indisponibilidade.");
       }
       setDeletingId(null);
     });
   }
 
-  function formatDisplayDate(dateStr: string) {
-    try {
-      const parsed = parseISO(dateStr);
-      return format(parsed, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
-    } catch {
-      return dateStr;
-    }
-  }
-
   return (
     <Card className="shadow-xs">
       <CardHeader>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1">
             <CardTitle className="font-heading text-xl tracking-tight">
-              Datas Específicas de Indisponibilidade
+              Datas específicas de indisponibilidade
             </CardTitle>
             <CardDescription>
-              Marque dias pontuais em que você terá viagens, compromissos ou
-              imprevistos e não poderá servir no ministério.
+              Bloqueie dias pontuais de viagem, trabalho ou imprevistos em que
+              você não poderá servir.
             </CardDescription>
           </div>
 
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
             <DialogTrigger asChild>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleOpenDialog}
-                className="gap-1.5 self-start sm:self-center"
+                className="min-h-11 gap-1.5 self-start sm:self-center"
               >
-                <PlusIcon className="size-4" />
+                <PlusIcon className="size-4" aria-hidden="true" />
                 Adicionar data
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 font-heading text-xl tracking-tight">
-                  <CalendarPlusIcon className="size-5 text-amber-500" />
-                  Registrar Indisponibilidade
+                  <CalendarPlusIcon
+                    className="size-5 text-amber-600 dark:text-amber-400"
+                    aria-hidden="true"
+                  />
+                  Registrar indisponibilidade
                 </DialogTitle>
                 <DialogDescription>
-                  Informe o dia e o motivo da sua ausência. Os líderes verão
-                  esse aviso ao montar as escalas.
+                  Informe o dia e, se quiser, o motivo. A liderança verá o
+                  bloqueio ao montar as escalas.
                 </DialogDescription>
               </DialogHeader>
 
@@ -200,65 +229,75 @@ export function UnavailabilitySection({
                     id="block-date"
                     type="date"
                     value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="h-10"
-                    min={new Date().toISOString().split("T")[0]}
+                    onChange={(event) => setDate(event.target.value)}
+                    className="h-11"
+                    min={today}
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="block-reason">
-                    Motivo ou observação (opcional)
-                  </Label>
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="block-reason">
+                      Motivo ou observação (opcional)
+                    </Label>
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {reason.length}/200
+                    </span>
+                  </div>
                   <Input
                     id="block-reason"
-                    placeholder="Ex.: Viagem de família, plantão no trabalho, etc."
+                    placeholder="Ex.: Viagem de família, plantão no trabalho…"
                     value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    className="h-10"
-                    maxLength={150}
+                    onChange={(event) => setReason(event.target.value)}
+                    className="h-11"
+                    maxLength={200}
                   />
                 </div>
 
                 <div className="space-y-3 rounded-lg border bg-muted/20 p-3.5">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-2">
                     <Checkbox
                       id="allDayCheckbox"
                       checked={allDay}
-                      onCheckedChange={(checked) => setAllDay(Boolean(checked))}
+                      onCheckedChange={(checked) =>
+                        setAllDay(Boolean(checked))
+                      }
                     />
                     <Label
                       htmlFor="allDayCheckbox"
-                      className="text-sm font-medium leading-none cursor-pointer"
+                      className="cursor-pointer text-sm font-medium leading-none"
                     >
                       Indisponível o dia todo
                     </Label>
                   </div>
 
                   {!allDay ? (
-                    <div className="pt-2">
+                    <div className="space-y-2 pt-2">
                       <Label className="text-xs text-muted-foreground">
                         Selecione os períodos de ausência:
                       </Label>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {PERIOD_CONFIG.map((p) => {
-                          const Icon = p.icon;
-                          const isSelected = selectedPeriods.includes(p.id);
+                      <div className="flex flex-wrap gap-2">
+                        {PERIOD_CONFIG.map((period) => {
+                          const Icon = period.icon;
+                          const isSelected = selectedPeriods.includes(
+                            period.id,
+                          );
                           return (
                             <button
-                              key={p.id}
+                              key={period.id}
                               type="button"
-                              onClick={() => togglePeriod(p.id)}
+                              onClick={() => togglePeriod(period.id)}
+                              aria-pressed={isSelected}
                               className={cn(
-                                "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all cursor-pointer",
+                                "flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                                 isSelected
-                                  ? "border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300 font-semibold"
+                                  ? "border-amber-500 bg-amber-500/10 font-semibold text-amber-700 dark:text-amber-300"
                                   : "border-border bg-background text-muted-foreground hover:bg-muted",
                               )}
                             >
-                              <Icon className="size-3.5" />
-                              {p.label}
+                              <Icon className="size-4" aria-hidden="true" />
+                              {period.label}
                             </button>
                           );
                         })}
@@ -273,18 +312,22 @@ export function UnavailabilitySection({
                   variant="outline"
                   onClick={() => setIsDialogOpen(false)}
                   disabled={isPending}
+                  className="min-h-11"
                 >
                   Cancelar
                 </Button>
                 <Button
                   onClick={handleSave}
                   disabled={isPending}
-                  className="gap-2"
+                  className="min-h-11 gap-2"
                 >
                   {isPending ? (
-                    <Loader2Icon className="size-4 animate-spin" />
+                    <Loader2Icon
+                      className="size-4 animate-spin"
+                      aria-hidden="true"
+                    />
                   ) : null}
-                  Confirmar bloqueio
+                  {isPending ? "Salvando…" : "Confirmar bloqueio"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -294,27 +337,27 @@ export function UnavailabilitySection({
 
       <CardContent>
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed py-10 px-4 text-center">
+          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-4 py-10 text-center">
             <div className="flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground">
-              <CalendarOffIcon className="size-5" />
+              <CalendarOffIcon className="size-5" aria-hidden="true" />
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium text-foreground">
-                Nenhuma data de ausência registrada
+                Nenhuma data bloqueada
               </p>
-              <p className="text-xs leading-relaxed text-muted-foreground max-w-sm">
-                Sua escala seguirá normalmente os dias da semana e horários que você
-                configurou acima.
+              <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
+                Sua escala seguirá normalmente os dias e períodos que você
+                informou acima.
               </p>
             </div>
             <Button
               variant="outline"
               size="sm"
-              onClick={handleOpenDialog}
-              className="mt-1 gap-1.5"
+              onClick={() => handleDialogChange(true)}
+              className="mt-1 min-h-11 gap-1.5"
             >
-              <PlusIcon className="size-3.5" />
-              Registrar ausência pontual
+              <PlusIcon className="size-4" aria-hidden="true" />
+              Registrar data
             </Button>
           </div>
         ) : (
@@ -324,59 +367,89 @@ export function UnavailabilitySection({
               return (
                 <div
                   key={item.id}
-                  className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between transition-colors hover:bg-muted/10"
+                  className="flex flex-col gap-3 p-4 transition-colors hover:bg-muted/10 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div className="space-y-1">
+                  <div className="min-w-0 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-heading text-sm font-semibold capitalize text-foreground">
                         {formatDisplayDate(item.date)}
                       </span>
                       {item.allDay ? (
-                        <Badge
-                          variant="secondary"
-                          className="font-mono text-[10px] text-amber-700 bg-amber-500/10 dark:text-amber-300 border-amber-500/20"
-                        >
+                        <Badge className="border-amber-500/20 bg-amber-500/10 font-mono text-xs text-amber-700 dark:text-amber-300">
                           Dia todo
                         </Badge>
                       ) : (
-                        <div className="flex gap-1">
-                          {item.periods.map((p) => {
-                            const found = PERIOD_CONFIG.find((c) => c.id === p);
+                        <span className="flex flex-wrap gap-1">
+                          {item.periods.map((period) => {
+                            const found = PERIOD_CONFIG.find(
+                              (config) => config.id === period,
+                            );
                             return (
                               <Badge
-                                key={p}
+                                key={period}
                                 variant="outline"
-                                className="font-mono text-[10px]"
+                                className="font-mono text-xs"
                               >
-                                {found?.label || p}
+                                {found?.label || period}
                               </Badge>
                             );
                           })}
-                        </div>
+                        </span>
                       )}
                     </div>
                     {item.reason ? (
                       <p className="text-xs text-muted-foreground">
-                        Motivo: <span className="text-foreground/90">{item.reason}</span>
+                        Motivo:{" "}
+                        <span className="text-foreground/90">{item.reason}</span>
                       </p>
                     ) : null}
                   </div>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(item.id)}
-                    disabled={isPending || isDeleting}
-                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 self-end sm:self-center gap-1.5"
-                    title="Remover indisponibilidade"
-                  >
-                    {isDeleting ? (
-                      <Loader2Icon className="size-3.5 animate-spin" />
-                    ) : (
-                      <Trash2Icon className="size-3.5" />
-                    )}
-                    <span className="text-xs">Remover</span>
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={isPending}
+                        className="min-h-11 gap-1.5 self-end text-muted-foreground hover:bg-destructive/10 hover:text-destructive sm:self-center"
+                        aria-label={`Remover indisponibilidade de ${formatDisplayDate(item.date)}`}
+                      >
+                        {isDeleting ? (
+                          <Loader2Icon
+                            className="size-4 animate-spin"
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <Trash2Icon className="size-4" aria-hidden="true" />
+                        )}
+                        Remover
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogMedia>
+                          <Trash2Icon className="text-destructive" />
+                        </AlertDialogMedia>
+                        <AlertDialogTitle>
+                          Remover esta indisponibilidade?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          O bloqueio de {formatDisplayDate(item.date)} será
+                          removido. Você poderá registrá-lo novamente depois.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Manter data</AlertDialogCancel>
+                        <AlertDialogAction
+                          variant="destructive"
+                          onClick={() => handleDelete(item.id)}
+                          disabled={isDeleting}
+                        >
+                          Remover
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               );
             })}

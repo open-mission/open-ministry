@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import {
   addDays,
   addMonths,
@@ -11,6 +11,7 @@ import {
   subWeeks,
   subYears,
 } from "date-fns";
+import { toast } from "sonner";
 
 import { CalendarHeader } from "@/components/calendar/calendar-header";
 import { EventDetailDialog } from "@/components/calendar/event-detail-dialog";
@@ -19,34 +20,70 @@ import { CalendarDayView } from "@/components/calendar/views/calendar-day-view";
 import { CalendarMonthView } from "@/components/calendar/views/calendar-month-view";
 import { CalendarWeekView } from "@/components/calendar/views/calendar-week-view";
 import { CalendarYearView } from "@/components/calendar/views/calendar-year-view";
-import type {
-  CalendarFilterType,
-  CalendarItem,
-  CalendarPreferences,
-  CalendarViewMode,
+import {
+  AGENDA_WINDOW_DAYS,
+  buildCalendarIcs,
+  dedupeCalendarItems,
+  getCalendarRange,
+  isCalendarItemInRange,
+  type CalendarFilterType,
+  type CalendarItem,
+  type CalendarPreferences,
+  type CalendarViewMode,
 } from "@/lib/calendar";
 
 type FullCalendarProps = {
   initialItems: CalendarItem[];
   initialPreferences: CalendarPreferences;
-  isAdmin?: boolean;
+  canCreateEvent?: boolean;
+  canViewTeamAvailability?: boolean;
   departments?: { id: string; name: string }[];
 };
+
+const MOBILE_QUERY = "(max-width: 639px)";
+
+function subscribeToMobile(callback: () => void) {
+  const query = window.matchMedia(MOBILE_QUERY);
+  query.addEventListener("change", callback);
+  return () => query.removeEventListener("change", callback);
+}
+
+function getMobileSnapshot() {
+  return window.matchMedia(MOBILE_QUERY).matches;
+}
+
+function getMobileServerSnapshot() {
+  return false;
+}
 
 export function FullCalendar({
   initialItems,
   initialPreferences,
-  isAdmin,
+  canCreateEvent,
+  canViewTeamAvailability,
   departments,
 }: FullCalendarProps) {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
-  const [viewMode, setViewMode] = useState<CalendarViewMode>("month");
+  const [chosenView, setChosenView] = useState<CalendarViewMode | null>(null);
   const [filterType, setFilterType] = useState<CalendarFilterType>("all");
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>("all");
   const preferences = initialPreferences;
 
+  // The member opens the app on a phone on Sunday; start where the answer is,
+  // not in a seven-column grid squeezed into 375px. The chosen view always wins.
+  const isMobile = useSyncExternalStore(
+    subscribeToMobile,
+    getMobileSnapshot,
+    getMobileServerSnapshot,
+  );
+  const viewMode = chosenView ?? (isMobile ? "agenda" : "month");
+
   const [selectedItem, setSelectedItem] = useState<CalendarItem | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  const handleViewChange = useCallback((view: CalendarViewMode) => {
+    setChosenView(view);
+  }, []);
 
   // Navigation Handlers
   const handlePrev = useCallback(() => {
@@ -61,7 +98,7 @@ export function FullCalendar({
         case "year":
           return subYears(prev, 1);
         case "agenda":
-          return subMonths(prev, 1);
+          return subDays(prev, AGENDA_WINDOW_DAYS);
       }
     });
   }, [viewMode]);
@@ -78,7 +115,7 @@ export function FullCalendar({
         case "year":
           return addYears(prev, 1);
         case "agenda":
-          return addMonths(prev, 1);
+          return addDays(prev, AGENDA_WINDOW_DAYS);
       }
     });
   }, [viewMode]);
@@ -88,13 +125,13 @@ export function FullCalendar({
   }, []);
 
   const handleSelectDate = useCallback((date: Date) => {
+    setChosenView("day");
     setCurrentDate(date);
-    setViewMode("day");
   }, []);
 
   const handleSelectMonth = useCallback((date: Date) => {
+    setChosenView("month");
     setCurrentDate(date);
-    setViewMode("month");
   }, []);
 
   const handleSelectItem = useCallback((item: CalendarItem) => {
@@ -102,10 +139,25 @@ export function FullCalendar({
     setIsDetailOpen(true);
   }, []);
 
+  // Only the range the view actually renders. Everything below — counts,
+  // filters, empty states — reads from it.
+  const visibleRange = useMemo(
+    () => getCalendarRange(viewMode, currentDate, preferences.weekStartsOn),
+    [currentDate, preferences.weekStartsOn, viewMode],
+  );
+
+  const visibleItems = useMemo(
+    () =>
+      initialItems.filter((item) =>
+        isCalendarItemInRange(item, visibleRange, preferences.timezone),
+      ),
+    [initialItems, preferences.timezone, visibleRange],
+  );
+
   // Department filtered items
   const departmentFilteredItems = useMemo(() => {
-    if (selectedDepartmentId === "all") return initialItems;
-    return initialItems.filter((item) => {
+    if (selectedDepartmentId === "all") return visibleItems;
+    return visibleItems.filter((item) => {
       if (item.type === "event") {
         return item.metadata?.departmentIds?.includes(selectedDepartmentId);
       }
@@ -119,19 +171,24 @@ export function FullCalendar({
         return item.metadata?.departmentIds?.includes(selectedDepartmentId);
       }
       if (item.type === "unavailability") {
-        return true;
+        return (
+          item.metadata?.departmentIds?.includes(selectedDepartmentId) ?? false
+        );
       }
       return true;
     });
-  }, [initialItems, selectedDepartmentId]);
+  }, [visibleItems, selectedDepartmentId]);
 
-  // Items count
+  // Items count for the visible range. "Todos" mirrors what is rendered
+  // (an assignment replaces its event card), while each type keeps its own
+  // count so the chip matches the filtered result.
   const itemsCount = useMemo(() => {
     return {
-      total: departmentFilteredItems.length,
+      total: dedupeCalendarItems(departmentFilteredItems).length,
       events: departmentFilteredItems.filter((i) => i.type === "event").length,
-      assignments: departmentFilteredItems.filter((i) => i.type === "assignment")
-        .length,
+      assignments: departmentFilteredItems.filter(
+        (i) => i.type === "assignment",
+      ).length,
       unavailabilities: departmentFilteredItems.filter(
         (i) => i.type === "unavailability",
       ).length,
@@ -151,22 +208,28 @@ export function FullCalendar({
     if (filterType === "birthdays")
       return departmentFilteredItems.filter((i) => i.type === "birthday");
 
-    // filterType === "all"
-    // Quando o usuário possui escala em um culto/evento, agrupamos priorizando a escala
-    // para não exibir dois cards (um de culto geral e outro de escala) para o mesmo evento.
-    const assignmentEventIds = new Set(
-      departmentFilteredItems
-        .filter((i) => i.type === "assignment" && i.metadata?.eventId)
-        .map((i) => i.metadata!.eventId!),
-    );
-
-    return departmentFilteredItems.filter((item) => {
-      if (item.type === "event" && item.metadata?.eventId) {
-        return !assignmentEventIds.has(item.metadata.eventId);
-      }
-      return true;
-    });
+    return dedupeCalendarItems(departmentFilteredItems);
   }, [departmentFilteredItems, filterType]);
+
+  const handleExport = useCallback(() => {
+    if (filteredItems.length === 0) {
+      toast.info("Não há compromissos para exportar neste período.");
+      return;
+    }
+
+    const ics = buildCalendarIcs(filteredItems, {
+      timeZone: preferences.timezone,
+      calendarName: "Agenda OpenMinistry",
+    });
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "agenda-openministry.ics";
+    anchor.click();
+    URL.revokeObjectURL(url);
+    toast.success("Agenda exportada para o seu calendário.");
+  }, [filteredItems, preferences.timezone]);
 
   return (
     <div className="space-y-6">
@@ -177,14 +240,17 @@ export function FullCalendar({
         filterType={filterType}
         selectedDepartmentId={selectedDepartmentId}
         preferences={preferences}
-        onViewChange={setViewMode}
+        visibleRange={visibleRange}
+        onViewChange={handleViewChange}
         onFilterChange={setFilterType}
         onDepartmentChange={setSelectedDepartmentId}
         onPrev={handlePrev}
         onNext={handleNext}
         onToday={handleToday}
+        onExport={handleExport}
         itemsCount={itemsCount}
-        isAdmin={isAdmin}
+        canCreateEvent={canCreateEvent}
+        canViewTeamAvailability={canViewTeamAvailability}
         departments={departments}
       />
 
@@ -195,6 +261,7 @@ export function FullCalendar({
             currentDate={currentDate}
             items={filteredItems}
             weekStartsOn={preferences.weekStartsOn}
+            timeZone={preferences.timezone}
             onSelectDate={handleSelectDate}
             onSelectItem={handleSelectItem}
           />
@@ -205,6 +272,7 @@ export function FullCalendar({
             currentDate={currentDate}
             items={filteredItems}
             weekStartsOn={preferences.weekStartsOn}
+            timeZone={preferences.timezone}
             onSelectDate={handleSelectDate}
             onSelectItem={handleSelectItem}
           />
@@ -214,8 +282,9 @@ export function FullCalendar({
           <CalendarDayView
             currentDate={currentDate}
             items={filteredItems}
+            timeZone={preferences.timezone}
             onSelectItem={handleSelectItem}
-            onSwitchToMonth={() => setViewMode("month")}
+            onSwitchToMonth={() => handleViewChange("month")}
           />
         )}
 
@@ -224,6 +293,7 @@ export function FullCalendar({
             currentDate={currentDate}
             items={filteredItems}
             weekStartsOn={preferences.weekStartsOn}
+            timeZone={preferences.timezone}
             onSelectDate={handleSelectDate}
             onSelectMonth={handleSelectMonth}
           />
@@ -233,7 +303,9 @@ export function FullCalendar({
           <CalendarAgendaView
             currentDate={currentDate}
             items={filteredItems}
+            timeZone={preferences.timezone}
             onSelectItem={handleSelectItem}
+            onToday={handleToday}
           />
         )}
       </div>
@@ -242,6 +314,7 @@ export function FullCalendar({
       <EventDetailDialog
         item={selectedItem}
         open={isDetailOpen}
+        timeZone={preferences.timezone}
         onOpenChange={setIsDetailOpen}
       />
     </div>
