@@ -80,6 +80,63 @@ export async function listEvents(organizationId: string) {
   );
 }
 
+/**
+ * Lean event projection for the calendar: only the fields rendered in the
+ * month/week views plus the acting departments and the assignments needed to
+ * highlight the current person's shifts. Avoids loading full people/users and
+ * department functions for up to 500 events.
+ */
+export async function listCalendarEvents(organizationId: string) {
+  return remember(
+    `org:${organizationId}:events:calendar`,
+    60,
+    async () => {
+      return db.query.event.findMany({
+        where: eq(schema.event.organizationId, organizationId),
+        columns: {
+          id: true,
+          title: true,
+          description: true,
+          kind: true,
+          location: true,
+          startsAt: true,
+          endsAt: true,
+        },
+        with: {
+          departments: {
+            columns: { departmentId: true },
+            with: {
+              department: {
+                columns: { name: true },
+              },
+            },
+          },
+          schedule: {
+            columns: { id: true },
+            with: {
+              assignments: {
+                columns: {
+                  personId: true,
+                  departmentId: true,
+                  functionId: true,
+                },
+                with: {
+                  function: {
+                    columns: { name: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: (events, { asc }) => [asc(events.startsAt)],
+        limit: 500,
+      });
+    },
+    [`events:${organizationId}`, `departments:${organizationId}`],
+  );
+}
+
 export async function getSeriesOccurrenceCount(
   organizationId: string,
   seriesId: string,

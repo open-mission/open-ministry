@@ -6,9 +6,9 @@ import { ShieldAlertIcon } from "lucide-react";
 import { getCalendarDataAction } from "@/app/actions/calendar";
 import { FullCalendar } from "@/components/calendar/full-calendar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { listDepartments } from "@/lib/departments";
+import { listDepartmentOptions } from "@/lib/departments";
 import { requireOrganizationContext } from "@/lib/organizations";
-import { can } from "@/lib/permissions/service";
+import { can, canAnyDepartment } from "@/lib/permissions/service";
 
 export const metadata: Metadata = {
   title: "Agenda",
@@ -50,25 +50,20 @@ async function CalendarContent() {
 
   const [data, departments] = await Promise.all([
     getCalendarDataAction(),
-    listDepartments(organization.id),
+    listDepartmentOptions(organization.id),
   ]);
 
-  const departmentOptions = departments.map((d) => ({
-    id: d.id,
-    name: d.name,
-  }));
+  const departmentOptions = departments;
 
   // The create action is delegable per department, so an admin check is not
   // enough: a department leader with the grant must see the button too.
   const canCreateEvent =
     isAdmin ||
-    (
-      await Promise.all(
-        departments.map((department) =>
-          can("agenda", "createEvent", { departmentId: department.id }),
-        ),
-      )
-    ).some(Boolean);
+    (await canAnyDepartment(
+      "agenda",
+      "createEvent",
+      departments.map((department) => department.id),
+    ));
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
