@@ -17,7 +17,7 @@
     "db:migrate": "turbo run db:migrate",
     "db:push": "turbo run db:push",
     "db:studio": "turbo run db:studio",
-    "vercel-build": "turbo run build --filter=@openministry/web..."
+    "vercel-build": "turbo run build --filter=@openministry/app..."
   },
   "devDependencies": {
     "turbo": "^2.10.7"
