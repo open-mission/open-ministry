@@ -6,6 +6,20 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.0.1] - 2026-11-11
+
+### Corrigido
+- **Desempenho de carregamento das páginas**:
+  - Permissões passaram a ser carregadas em bundles cacheados por organização e usuário, com deduplicação por requisição e verificação conjunta de departamentos. A página de evento deixou de executar dezenas de consultas ao banco por render.
+  - Home, calendário e página de evento agora carregam projeções enxutas de pessoas, departamentos e eventos, em paralelo, sem buscar relacionamentos que não são exibidos.
+  - O versículo do dia é renderizado em um limite de Suspense próprio e não bloqueia mais o carregamento inicial da home.
+  - O registro do usuário é consultado uma única vez por requisição e compartilhado entre os loaders do dashboard.
+  - Requisições simultâneas para a mesma chave de cache são agrupadas (single-flight), reduzindo idas ao Neon e ao Upstash Redis.
+  - O bundle offline deixou de ser sincronizado automaticamente em todas as páginas; a sincronização inicial fica restrita às telas que exibem esses dados e a ações explícitas.
+  - A API do YouVersion agora tem timeout curto (2,5s), evitando que uma falha externa segure o render.
+
+---
+
 ## [1.0.0] - 2026-11-11
 
 ### Adicionado
