@@ -18,7 +18,12 @@ export const SYSTEM_MODULES: Record<ModuleKey, SystemModule> = {
     badge: "Cultos",
     icon: CalendarRangeIcon,
     navGroups: [],
-    routePrefixes: ["/dashboard/calendar", "/dashboard/events"],
+    routePrefixes: [
+      "/calendar",
+      "/events",
+      "/dashboard/calendar",
+      "/dashboard/events",
+    ],
   },
   schedules: {
     key: "schedules",
@@ -29,7 +34,12 @@ export const SYSTEM_MODULES: Record<ModuleKey, SystemModule> = {
     badge: "Equipes",
     icon: ClipboardListIcon,
     navGroups: [],
-    routePrefixes: ["/dashboard/schedules", "/dashboard/availability"],
+    routePrefixes: [
+      "/schedules",
+      "/availability",
+      "/dashboard/schedules",
+      "/dashboard/availability",
+    ],
   },
   music: {
     key: "music",
@@ -44,7 +54,7 @@ export const SYSTEM_MODULES: Record<ModuleKey, SystemModule> = {
         title: "Repertório",
         items: [
           {
-            href: "/dashboard/songs",
+            href: "/songs",
             label: "Músicas",
             icon: Music2Icon,
             exact: false,
@@ -52,7 +62,7 @@ export const SYSTEM_MODULES: Record<ModuleKey, SystemModule> = {
         ],
       },
     ],
-    routePrefixes: ["/dashboard/songs"],
+    routePrefixes: ["/songs", "/dashboard/songs"],
   },
   announcements: {
     key: "announcements",
@@ -63,7 +73,7 @@ export const SYSTEM_MODULES: Record<ModuleKey, SystemModule> = {
     badge: "Comunicação",
     icon: MegaphoneIcon,
     navGroups: [],
-    routePrefixes: ["/dashboard/announcements"],
+    routePrefixes: ["/announcements", "/dashboard/announcements"],
   },
   tasks: {
     key: "tasks",
@@ -74,7 +84,7 @@ export const SYSTEM_MODULES: Record<ModuleKey, SystemModule> = {
     badge: "Produtividade",
     icon: CheckSquare2Icon,
     navGroups: [],
-    routePrefixes: ["/dashboard/tasks", "/tasks"],
+    routePrefixes: ["/tasks", "/dashboard/tasks"],
   },
 };
 

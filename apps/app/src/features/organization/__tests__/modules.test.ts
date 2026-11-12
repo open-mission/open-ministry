@@ -8,7 +8,7 @@ import {
 import {
   buildAccessibleMobileNavItems,
   buildAccessibleNavGroups,
-} from "@/lib/modules/service";
+} from "@/lib/modules/nav";
 
 describe("Modules System Foundation", () => {
   it("registers system modules properly", () => {
@@ -23,7 +23,7 @@ describe("Modules System Foundation", () => {
     expect(musicMod).not.toBeNull();
     expect(musicMod?.shortName).toBe("Música");
     expect(musicMod?.navGroups[0]?.title).toBe("Repertório");
-    expect(musicMod?.navGroups[0]?.items[0]?.href).toBe("/dashboard/songs");
+    expect(musicMod?.navGroups[0]?.items[0]?.href).toBe("/songs");
 
     const invalidMod = getSystemModule("invalid_key");
     expect(invalidMod).toBeNull();
@@ -54,9 +54,7 @@ describe("Modules System Foundation", () => {
 
     const repertoGroup = activeNav.find((g) => g.title === "Repertório");
     expect(repertoGroup).toBeDefined();
-    expect(repertoGroup?.items.some((i) => i.href === "/dashboard/songs")).toBe(
-      true,
-    );
+    expect(repertoGroup?.items.some((i) => i.href === "/songs")).toBe(true);
 
     // Deve posicionar "Repertório" de forma elegante logo após "Cultos & Escalas"
     const cultosIdx = titles.indexOf("Cultos & Escalas");
@@ -73,7 +71,7 @@ describe("Modules System Foundation", () => {
     const repertoGroup = activeNav.filter((g) => g.title === "Repertório");
     expect(repertoGroup.length).toBe(1);
     expect(
-      repertoGroup[0]?.items.filter((i) => i.href === "/dashboard/songs").length,
+      repertoGroup[0]?.items.filter((i) => i.href === "/songs").length,
     ).toBe(1);
   });
 
@@ -83,7 +81,7 @@ describe("Modules System Foundation", () => {
     expect(titles).toContain("Operações");
 
     const opsGroup = adminNav.find((g) => g.title === "Operações");
-    expect(opsGroup?.items.some((i) => i.href === "/dashboard/jobs")).toBe(true);
+    expect(opsGroup?.items.some((i) => i.href === "/jobs")).toBe(true);
   });
 
   it("injects WhatsApp and Emails nav items in Comunicação group when permitted", () => {
@@ -93,10 +91,10 @@ describe("Modules System Foundation", () => {
     });
     const defaultCom = defaultNav.find((g) => g.title === "Comunicação");
     expect(
-      defaultCom?.items.some((i) => i.href === "/dashboard/whatsapp") ?? false,
+      defaultCom?.items.some((i) => i.href === "/whatsapp") ?? false,
     ).toBe(false);
     expect(
-      defaultCom?.items.some((i) => i.href === "/dashboard/emails") ?? false,
+      defaultCom?.items.some((i) => i.href === "/emails") ?? false,
     ).toBe(false);
 
     const leaderNav = buildAccessibleNavGroups(["announcements"], {
@@ -104,12 +102,8 @@ describe("Modules System Foundation", () => {
       canAccessEmails: true,
     });
     const leaderCom = leaderNav.find((g) => g.title === "Comunicação");
-    expect(leaderCom?.items.some((i) => i.href === "/dashboard/whatsapp")).toBe(
-      true,
-    );
-    expect(leaderCom?.items.some((i) => i.href === "/dashboard/emails")).toBe(
-      true,
-    );
+    expect(leaderCom?.items.some((i) => i.href === "/whatsapp")).toBe(true);
+    expect(leaderCom?.items.some((i) => i.href === "/emails")).toBe(true);
   });
 
   it("hidesRoutesForUnavailableModules", () => {
@@ -117,19 +111,19 @@ describe("Modules System Foundation", () => {
     const nav = buildAccessibleNavGroups(["agenda"]);
     const allHrefs = nav.flatMap((g) => g.items.map((i) => i.href));
 
-    expect(allHrefs).toContain("/dashboard/calendar");
-    expect(allHrefs).toContain("/dashboard/events");
-    expect(allHrefs).not.toContain("/dashboard/schedules");
-    expect(allHrefs).not.toContain("/dashboard/availability");
-    expect(allHrefs).not.toContain("/dashboard/songs");
-    expect(allHrefs).not.toContain("/dashboard/announcements");
-    expect(allHrefs).not.toContain("/dashboard/tasks");
+    expect(allHrefs).toContain("/calendar");
+    expect(allHrefs).toContain("/events");
+    expect(allHrefs).not.toContain("/schedules");
+    expect(allHrefs).not.toContain("/availability");
+    expect(allHrefs).not.toContain("/songs");
+    expect(allHrefs).not.toContain("/announcements");
+    expect(allHrefs).not.toContain("/tasks");
   });
 
   it("includes tasks route when tasks module is active", () => {
     const nav = buildAccessibleNavGroups(["tasks"]);
     const allHrefs = nav.flatMap((g) => g.items.map((i) => i.href));
-    expect(allHrefs).toContain("/dashboard/tasks");
+    expect(allHrefs).toContain("/tasks");
   });
 
   it("keepsSettingsAccessibleWhenModuleIsOff", () => {
@@ -138,8 +132,8 @@ describe("Modules System Foundation", () => {
     const allHrefs = nav.flatMap((g) => g.items.map((i) => i.href));
 
     expect(allHrefs).toContain("/");
-    expect(allHrefs).toContain("/dashboard/members");
-    expect(allHrefs).toContain("/dashboard/departments");
+    expect(allHrefs).toContain("/members");
+    expect(allHrefs).toContain("/departments");
   });
 
   it("mobileNavigationUsesSameAccessProjection", () => {
@@ -148,7 +142,7 @@ describe("Modules System Foundation", () => {
     const hrefs = items.map((i) => i.href);
 
     expect(hrefs).toContain("/");
-    expect(hrefs).toContain("/dashboard/calendar");
-    expect(hrefs).not.toContain("/dashboard/schedules");
+    expect(hrefs).toContain("/calendar");
+    expect(hrefs).not.toContain("/schedules");
   });
 });

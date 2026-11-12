@@ -45,6 +45,7 @@ type TaskCardProps = {
   task: TaskItem;
   onEdit: (task: TaskItem) => void;
   onOpenAudit: (task: TaskItem) => void;
+  onDelete?: (taskId: string) => void;
   canManage?: boolean;
 };
 
@@ -52,6 +53,7 @@ export function TaskCard({
   task,
   onEdit,
   onOpenAudit,
+  onDelete,
   canManage = true,
 }: TaskCardProps) {
   const [isPending, startTransition] = useTransition();
@@ -105,6 +107,7 @@ export function TaskCard({
     if (!confirm(`Deseja remover a tarefa "${task.title}"?`)) {
       return;
     }
+    onDelete?.(task.id);
     startTransition(async () => {
       const res = await deleteTaskAction(task.id);
       if (!res.ok) {

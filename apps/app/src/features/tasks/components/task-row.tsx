@@ -41,6 +41,7 @@ type TaskRowProps = {
   task: TaskItem;
   onEdit: (task: TaskItem) => void;
   onOpenAudit: (task: TaskItem) => void;
+  onDelete?: (taskId: string) => void;
   canManage?: boolean;
 };
 
@@ -48,6 +49,7 @@ export function TaskRow({
   task,
   onEdit,
   onOpenAudit,
+  onDelete,
   canManage = true,
 }: TaskRowProps) {
   const [isPending, startTransition] = useTransition();
@@ -107,6 +109,7 @@ export function TaskRow({
     if (!confirm(`Deseja realmente remover a tarefa "${task.title}"?`)) {
       return;
     }
+    onDelete?.(task.id);
     startTransition(async () => {
       const res = await deleteTaskAction(task.id);
       if (!res.ok) {

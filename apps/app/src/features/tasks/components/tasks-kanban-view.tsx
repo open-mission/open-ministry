@@ -42,6 +42,7 @@ type TasksKanbanViewProps = {
   onEdit: (task: TaskItem) => void;
   onOpenAudit: (task: TaskItem) => void;
   onNewTask: (defaultStatus?: TaskStatus) => void;
+  onDelete?: (taskId: string) => void;
   canManage?: boolean;
 };
 
@@ -78,6 +79,7 @@ export function TasksKanbanView({
   onEdit,
   onOpenAudit,
   onNewTask,
+  onDelete,
   canManage = true,
 }: TasksKanbanViewProps) {
   const [prevTasks, setPrevTasks] = useState(tasks);
@@ -187,6 +189,7 @@ export function TasksKanbanView({
               onEdit={onEdit}
               onOpenAudit={onOpenAudit}
               onNewTask={onNewTask}
+              onDelete={onDelete}
               canManage={canManage}
             />
           );
@@ -215,6 +218,7 @@ function KanbanColumnContainer({
   onEdit,
   onOpenAudit,
   onNewTask,
+  onDelete,
   canManage,
 }: {
   column: KanbanColumn;
@@ -222,6 +226,7 @@ function KanbanColumnContainer({
   onEdit: (task: TaskItem) => void;
   onOpenAudit: (task: TaskItem) => void;
   onNewTask: (defaultStatus?: TaskStatus) => void;
+  onDelete?: (taskId: string) => void;
   canManage?: boolean;
 }) {
   const { setNodeRef, isOver } = useDroppable({
@@ -283,6 +288,7 @@ function KanbanColumnContainer({
               task={task}
               onEdit={onEdit}
               onOpenAudit={onOpenAudit}
+              onDelete={onDelete}
               canManage={canManage}
             />
           ))}

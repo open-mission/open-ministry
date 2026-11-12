@@ -51,6 +51,14 @@ export function TasksView({
   canDelegateDepartment = true,
   canDelegateChurch = false,
 }: TasksViewProps) {
+  const [prevInitialTasks, setPrevInitialTasks] = useState(initialTasks);
+  const [tasks, setTasks] = useState<TaskItem[]>(initialTasks);
+
+  if (initialTasks !== prevInitialTasks) {
+    setPrevInitialTasks(initialTasks);
+    setTasks(initialTasks);
+  }
+
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -75,6 +83,37 @@ export function TasksView({
   const [auditOpen, setAuditOpen] = useState(false);
   const [taskForAudit, setTaskForAudit] = useState<TaskItem | null>(null);
 
+  const handleTaskCreated = (newTask: TaskItem, tempId?: string) => {
+    setTasks((current) => {
+      if (tempId) {
+        const index = current.findIndex((t) => t.id === tempId);
+        if (index !== -1) {
+          const next = [...current];
+          next[index] = newTask;
+          return next;
+        }
+      }
+      if (current.some((t) => t.id === newTask.id)) {
+        return current.map((t) => (t.id === newTask.id ? newTask : t));
+      }
+      return [newTask, ...current];
+    });
+  };
+
+  const handleTaskFailed = (tempId: string) => {
+    setTasks((current) => current.filter((t) => t.id !== tempId));
+  };
+
+  const handleTaskUpdated = (updatedTask: TaskItem) => {
+    setTasks((current) =>
+      current.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
+    );
+  };
+
+  const handleTaskDeleted = (taskId: string) => {
+    setTasks((current) => current.filter((t) => t.id !== taskId));
+  };
+
   const handleChangeViewMode = (mode: ViewMode) => {
     setViewMode(mode);
     try {
@@ -86,7 +125,7 @@ export function TasksView({
 
   // Filtragem em memória
   const filteredTasks = useMemo(() => {
-    return initialTasks.filter((task) => {
+    return tasks.filter((task) => {
       // 1. Filtro por Aba
       if (activeTab === "personal") {
         const isMine =
@@ -133,13 +172,13 @@ export function TasksView({
 
       return true;
     });
-  }, [initialTasks, activeTab, statusFilter, selectedDeptId, searchQuery, currentUserId]);
+  }, [tasks, activeTab, statusFilter, selectedDeptId, searchQuery, currentUserId]);
 
   // Estatísticas do StatStrip
   const stats: StatItem[] = useMemo(() => {
-    const total = initialTasks.length;
-    const pending = initialTasks.filter((t) => t.status !== "completed").length;
-    const completed = initialTasks.filter((t) => t.status === "completed").length;
+    const total = tasks.length;
+    const pending = tasks.filter((t) => t.status !== "completed").length;
+    const completed = tasks.filter((t) => t.status === "completed").length;
 
     return [
       {
@@ -161,7 +200,7 @@ export function TasksView({
         hint: "Finalizadas com sucesso",
       },
     ];
-  }, [initialTasks]);
+  }, [tasks]);
 
   const handleEdit = (task: TaskItem) => {
     setTaskToEdit(task);
@@ -379,6 +418,7 @@ export function TasksView({
           tasks={filteredTasks}
           onEdit={handleEdit}
           onOpenAudit={handleOpenAudit}
+          onDelete={handleTaskDeleted}
           canManage={true}
         />
       ) : viewMode === "kanban" ? (
@@ -387,6 +427,7 @@ export function TasksView({
           onEdit={handleEdit}
           onOpenAudit={handleOpenAudit}
           onNewTask={handleNewTask}
+          onDelete={handleTaskDeleted}
           canManage={true}
         />
       ) : (
@@ -394,6 +435,7 @@ export function TasksView({
           tasks={filteredTasks}
           onEdit={handleEdit}
           onOpenAudit={handleOpenAudit}
+          onDelete={handleTaskDeleted}
           canManage={true}
         />
       )}
@@ -405,8 +447,12 @@ export function TasksView({
         taskToEdit={taskToEdit}
         departments={departments}
         members={members}
+        currentUserId={currentUserId}
         canDelegateDepartment={canDelegateDepartment}
         canDelegateChurch={canDelegateChurch}
+        onTaskCreated={handleTaskCreated}
+        onTaskFailed={handleTaskFailed}
+        onTaskUpdated={handleTaskUpdated}
       />
 
       {/* Modal de Histórico de Auditoria */}

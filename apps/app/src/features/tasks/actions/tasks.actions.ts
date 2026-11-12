@@ -1,9 +1,12 @@
 "use server";
 
 import * as Sentry from "@sentry/nextjs";
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { db } from "@/db";
+import * as schema from "@/db/schema";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { can } from "@/lib/permissions/service";
 import { sentryLogger } from "@/lib/telemetry/sentry";
@@ -16,6 +19,7 @@ import {
   toggleTaskPin,
   updateTask,
   updateTaskStatus,
+  type TaskItem,
   type TaskStatus,
 } from "../services/tasks-service";
 
@@ -50,7 +54,7 @@ export type ActionResponse<T = unknown> =
  */
 export async function createTaskAction(
   rawInput: unknown,
-): Promise<ActionResponse<{ id: string; createdCount: number }>> {
+): Promise<ActionResponse<{ id: string; createdCount: number; task?: TaskItem }>> {
   try {
     const { organization, session } = await requireOrganizationContext();
     const userId = session.user.id;
@@ -100,7 +104,7 @@ export async function createTaskAction(
       }
     }
 
-    const { primaryTask, createdCount } = await createTask(
+    const { primaryTask, createdCount, assignedMembers } = await createTask(
       organization.id,
       userId,
       {
@@ -118,27 +122,65 @@ export async function createTaskAction(
       },
     );
 
-    // Disparar notificações caso a tarefa tenha sido delegada para outro usuário
-    if (data.assigneeId && data.assigneeId !== userId) {
-      dispatchNotification({
-        organizationId: organization.id,
-        type: "assignment",
-        title: `Nova tarefa: ${data.title}`,
-        body: `${session.user.name ?? "A liderança"} delegou uma tarefa para você.`,
-        href: "/dashboard/tasks",
-        actorId: userId,
-        userId: data.assigneeId,
-        personId: data.assigneePersonId ?? undefined,
-        channels: ["in_app", "push"],
-      }).catch((err) => {
-        sentryLogger.warn("Falha ao enviar notificação de tarefa delegada", {
-          error: String(err),
+    // Disparar notificações push e in-app para cada membro atribuído
+    const recipients = new Set<string>();
+    for (const m of assignedMembers) {
+      if (m.userId && m.userId !== userId && !recipients.has(m.userId)) {
+        recipients.add(m.userId);
+        dispatchNotification({
+          organizationId: organization.id,
+          type: "assignment",
+          title: `Nova tarefa: ${data.title}`,
+          body: `${session.user.name ?? "A liderança"} delegou uma tarefa para você.`,
+          href: "/tasks",
+          actorId: userId,
+          userId: m.userId,
+          personId: m.personId ?? undefined,
+          channels: ["in_app", "push"],
+        }).catch((err) => {
+          sentryLogger.warn("Falha ao enviar notificação de tarefa delegada", {
+            error: String(err),
+          });
         });
-      });
+      }
     }
 
+    // Se foi tarefa compartilhada atribuída ao departamento inteiro
+    if (
+      data.scope === "department" &&
+      data.departmentId &&
+      data.delegationType !== "individual"
+    ) {
+      db.query.departmentMember
+        .findMany({
+          where: eq(schema.departmentMember.departmentId, data.departmentId),
+          with: { person: true },
+        })
+        .then((deptMembers) => {
+          for (const dm of deptMembers) {
+            const uid = dm.person?.userId;
+            if (uid && uid !== userId && !recipients.has(uid)) {
+              recipients.add(uid);
+              dispatchNotification({
+                organizationId: organization.id,
+                type: "assignment",
+                title: `Nova tarefa de equipe: ${data.title}`,
+                body: `${session.user.name ?? "A liderança"} criou uma tarefa compartilhada para o seu departamento.`,
+                href: "/tasks",
+                actorId: userId,
+                userId: uid,
+                personId: dm.person?.id,
+                channels: ["in_app", "push"],
+              }).catch(() => {});
+            }
+          }
+        })
+        .catch(() => {});
+    }
+
+    revalidatePath("/tasks");
     revalidatePath("/dashboard/tasks");
-    return { ok: true, data: { id: primaryTask.id, createdCount } };
+    return { ok: true, data: { id: primaryTask.id, createdCount, task: primaryTask } };
   } catch (error) {
     Sentry.captureException(error);
     sentryLogger.error(error instanceof Error ? error : String(error), {
@@ -158,7 +200,7 @@ export async function createTaskAction(
 export async function updateTaskAction(
   taskId: string,
   rawInput: unknown,
-): Promise<ActionResponse<{ id: string }>> {
+): Promise<ActionResponse<{ id: string; task?: TaskItem }>> {
   try {
     const { organization, session } = await requireOrganizationContext();
     const userId = session.user.id;
@@ -194,8 +236,28 @@ export async function updateTaskAction(
 
     sentryLogger.info(`Tarefa '${updated.title}' atualizada com sucesso`);
 
+    // Notificar novo responsável caso alterado e diferente do usuário atual
+    if (data.assigneeId && data.assigneeId !== userId) {
+      dispatchNotification({
+        organizationId: organization.id,
+        type: "assignment",
+        title: `Nova atribuição: ${updated.title}`,
+        body: `${session.user.name ?? "A liderança"} atribuiu uma tarefa para você.`,
+        href: "/tasks",
+        actorId: userId,
+        userId: data.assigneeId,
+        personId: data.assigneePersonId ?? undefined,
+        channels: ["in_app", "push"],
+      }).catch((err) => {
+        sentryLogger.warn("Falha ao enviar notificação de tarefa atribuída", {
+          error: String(err),
+        });
+      });
+    }
+
+    revalidatePath("/tasks");
     revalidatePath("/dashboard/tasks");
-    return { ok: true, data: { id: updated.id } };
+    return { ok: true, data: { id: updated.id, task: updated } };
   } catch (error) {
     Sentry.captureException(error);
     sentryLogger.error(error instanceof Error ? error : String(error), {
@@ -247,6 +309,7 @@ export async function updateTaskStatusAction(
       sentryLogger.fmt`Status da tarefa '${updated.title}' alterado para '${status}'`,
     );
 
+    revalidatePath("/tasks");
     revalidatePath("/dashboard/tasks");
     return { ok: true, data: { id: updated.id, status: updated.status as TaskStatus } };
   } catch (error) {
@@ -281,6 +344,7 @@ export async function reorderTasksAction(
 
     await reorderTasks(organization.id, userId, orderedTaskIds);
 
+    revalidatePath("/tasks");
     revalidatePath("/dashboard/tasks");
     return { ok: true, data: undefined };
   } catch (error) {
@@ -308,6 +372,7 @@ export async function toggleTaskPinAction(
 
     const isPinned = await toggleTaskPin(organization.id, userId, taskId);
 
+    revalidatePath("/tasks");
     revalidatePath("/dashboard/tasks");
     return { ok: true, data: { isPinned } };
   } catch (error) {
@@ -349,6 +414,7 @@ export async function deleteTaskAction(
 
     sentryLogger.info(`Tarefa excluída com sucesso`, { taskId });
 
+    revalidatePath("/tasks");
     revalidatePath("/dashboard/tasks");
     return { ok: true, data: undefined };
   } catch (error) {
