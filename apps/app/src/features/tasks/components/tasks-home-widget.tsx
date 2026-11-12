@@ -231,7 +231,8 @@ export function TasksHomeWidget({
               return (
                 <div
                   key={task.id}
-                  className="group flex items-center justify-between gap-3 px-4 py-3 sm:px-5 hover:bg-muted/40 transition-colors"
+                  onClick={() => handleOpenDetail(task)}
+                  className="group flex items-center justify-between gap-3 px-4 py-3 sm:px-5 hover:bg-muted/40 transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     {/* Botão de Checkbox Circular */}
@@ -253,16 +254,12 @@ export function TasksHomeWidget({
                       {isCompleted && <CheckIcon className="size-3 stroke-[3]" />}
                     </button>
 
-                    {/* Título e Metadados clicáveis para abrir detalhes */}
-                    <button
-                      type="button"
-                      onClick={() => handleOpenDetail(task)}
-                      className="text-left min-w-0 flex-1 group/title"
-                    >
+                    {/* Título e Metadados */}
+                    <div className="text-left min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <p
                           className={cn(
-                            "text-sm font-medium text-foreground group-hover/title:text-primary transition-colors line-clamp-1 break-words",
+                            "text-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1 break-words",
                             isCompleted && "line-through text-muted-foreground",
                           )}
                         >
@@ -302,19 +299,13 @@ export function TasksHomeWidget({
                           </span>
                         )}
                       </div>
-                    </button>
+                    </div>
                   </div>
 
-                  {/* Seta para abrir detalhes */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-7 text-muted-foreground/60 hover:text-foreground shrink-0 rounded-md"
-                    onClick={() => handleOpenDetail(task)}
-                    title="Ver detalhes da tarefa"
-                  >
+                  {/* Seta para indicar navegabilidade aos detalhes */}
+                  <div className="size-7 flex items-center justify-center text-muted-foreground/60 group-hover:text-foreground shrink-0 rounded-md">
                     <ChevronRightIcon className="size-4" />
-                  </Button>
+                  </div>
                 </div>
               );
             })

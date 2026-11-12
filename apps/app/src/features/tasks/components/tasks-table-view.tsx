@@ -187,8 +187,9 @@ export function TasksTableView({
             return (
               <TableRow
                 key={task.id}
+                onClick={() => onView(task)}
                 className={cn(
-                  "hover:bg-muted/30 transition-colors",
+                  "hover:bg-muted/30 transition-colors cursor-pointer",
                   isCompleted && "opacity-70 bg-muted/20",
                 )}
               >
@@ -196,7 +197,10 @@ export function TasksTableView({
                 <TableCell className="text-center p-2">
                   <button
                     type="button"
-                    onClick={() => handleToggleComplete(task)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleComplete(task);
+                    }}
                     className={cn(
                       "flex size-4 mx-auto items-center justify-center rounded-full border-2 transition-all",
                       isCompleted
@@ -330,6 +334,7 @@ export function TasksTableView({
                       href={task.url}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                       className="text-muted-foreground hover:text-foreground inline-flex"
                     >
                       <ExternalLinkIcon className="size-3.5" />
@@ -341,7 +346,12 @@ export function TasksTableView({
                 <TableCell className="text-right p-2">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="size-7">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-7"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <MoreVerticalIcon className="size-3.5 text-muted-foreground" />
                       </Button>
                     </DropdownMenuTrigger>

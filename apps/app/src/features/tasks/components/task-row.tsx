@@ -126,8 +126,9 @@ export function TaskRow({
     <div
       ref={setNodeRef}
       style={style}
+      onClick={() => onView(task)}
       className={cn(
-        "group relative flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card p-3 shadow-2xs transition-all hover:border-border hover:shadow-xs",
+        "group relative flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card p-3 shadow-2xs transition-all hover:border-border hover:shadow-xs cursor-pointer",
         isDragging && "z-50 opacity-60 shadow-lg border-primary",
         isCompleted && "bg-muted/30 opacity-75",
         task.isPinned && "border-l-4 border-l-primary",
@@ -137,7 +138,10 @@ export function TaskRow({
         {/* Circular Checkbox (Things 3 style) - Alinhado no canto */}
         <button
           type="button"
-          onClick={handleToggleComplete}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleToggleComplete();
+          }}
           disabled={isPending}
           aria-label={isCompleted ? "Reabrir tarefa" : "Concluir tarefa"}
           className={cn(
@@ -154,9 +158,8 @@ export function TaskRow({
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span
-              onClick={() => onView(task)}
               className={cn(
-                "text-sm font-medium text-foreground cursor-pointer hover:underline truncate",
+                "text-sm font-medium text-foreground transition-colors group-hover:text-primary truncate",
                 isCompleted && "line-through text-muted-foreground",
               )}
             >
@@ -234,6 +237,7 @@ export function TaskRow({
             href={task.url}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
             title="Abrir link de referência"
             className="flex size-7 items-center justify-center rounded-md border border-border/60 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
@@ -260,6 +264,7 @@ export function TaskRow({
               variant="ghost"
               size="icon"
               className="size-7 text-muted-foreground hover:text-foreground"
+              onClick={(e) => e.stopPropagation()}
             >
               <MoreVerticalIcon className="size-4" />
             </Button>
@@ -301,6 +306,7 @@ export function TaskRow({
           type="button"
           aria-label="Reordenar tarefa"
           title="Arrastar para reordenar"
+          onClick={(e) => e.stopPropagation()}
           className="cursor-grab touch-none p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity hover:text-foreground active:cursor-grabbing rounded"
         >
           <GripVerticalIcon className="size-4" />
