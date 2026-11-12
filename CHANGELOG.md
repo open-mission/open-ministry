@@ -6,6 +6,24 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.0.3] - 2026-11-12
+
+### Adicionado
+- **Central Pastoral & Usabilidade no Módulo de Pessoas**:
+  - **Ação Unificada "Adicionar pessoa"**: Elimina a separação técnica entre "Nova pessoa" e "Convidar", permitindo o pré-cadastro ministerial e o envio imediato de convites de acesso ao aplicativo por WhatsApp e e-mail no mesmo fluxo.
+  - **Busca em Tempo Real & Filtros Rápidos**: Campo de busca instantânea por nome, e-mail, telefone ou departamento/ministério, com chips de filtro rápido por status de conta (`Todos`, `Com conta`, `Sem conta`, `Convites pendentes`) e seletor por ministério.
+  - **Sinais Vitais de Cuidado Pastoral na Listagem**: Integração direta dos pedidos de oração e conversa do Felicitômetro na tabela de pessoas, com indicadores visuais dedicados (`Pediu oração`, `Pediu conversa`) e filtro rápido para acolhimento pastoral.
+  - **Menu de Ações Acessível (`PersonActionsDropdown`)**: Substituição de botões pequenos por um menu suspenso padronizado com área de toque mínima de 44px (WCAG 2.5.5), opções textuais descritivas e atalhos rápidos para perfil, edição, convite e vínculo.
+  - **Gestão de Vínculos & Desligamento Seguro**: Novo fluxo de desvinculação de conta (`unlinkPersonAction`) e exclusão protegida de voluntários sem perda do histórico de escalas e cultos servidos.
+  - **Recuperação de Convites Expirados**: Botão "Renovar convite" na listagem de convites pendentes para geração de novos links de 7 dias em 1 clique.
+
+### Corrigido
+- **Formatação de WhatsApp Internacional**: Tratamento inteligente de prefixos telefônicos para evitar duplicação do código de país em números brasileiros e internacionais.
+- **Tipografia e Acessibilidade**: Elevação de badges e tags inferiores a 11px para tokens legíveis (`text-xs` / `text-[11px]`) e rótulos acessíveis para leitores de tela e telas sensíveis ao toque.
+- **Remoção de Duplicações**: Padronização dos componentes legados de `components/people` como re-exports diretos dos módulos em `features/people`.
+
+---
+
 ## [1.0.2] - 2026-11-12
 
 ### Adicionado

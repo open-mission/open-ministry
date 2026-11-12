@@ -337,6 +337,57 @@ export async function cancelInvitationAction(
   return { ok: true };
 }
 
+export async function resendInvitationAction(
+  invitationId: string,
+): Promise<InvitationActionResult> {
+  if (!invitationId) {
+    return { ok: false, error: "Convite inválido." };
+  }
+
+  const session = await getSession();
+
+  if (!session) {
+    return { ok: false, error: "Sua sessão expirou. Entre novamente." };
+  }
+
+  const orgId = session.session.activeOrganizationId;
+  if (!orgId) {
+    return { ok: false, error: "Nenhuma igreja selecionada." };
+  }
+
+  const existingInvitation = await db.query.invitation.findFirst({
+    where: and(
+      eq(schema.invitation.id, invitationId),
+      eq(schema.invitation.organizationId, orgId),
+    ),
+  });
+
+  if (!existingInvitation) {
+    return { ok: false, error: "Convite não encontrado." };
+  }
+
+  try {
+    const requestHeaders = await headers();
+    await auth.api.createInvitation({
+      body: {
+        email: existingInvitation.email,
+        role: (existingInvitation.role as "member" | "admin") ?? "member",
+        organizationId: orgId,
+        resend: true,
+      },
+      headers: requestHeaders,
+    });
+
+    await cacheInvalidateTags(`org:${orgId}`, `people:${orgId}`);
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/members");
+
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: actionErrorMessage(error) };
+  }
+}
+
 export async function acceptInvitationAction(
   _state: AcceptInvitationState,
   formData: FormData,

@@ -10,6 +10,7 @@ export {
   isUserInOrganization,
   type LinkPersonResult,
   linkPersonToUser,
+  unlinkPersonFromUser,
   ensurePersonForUser,
   ensurePersonForEmail,
   syncPersonProfile,

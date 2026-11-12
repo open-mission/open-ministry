@@ -119,7 +119,7 @@ export function InviteDialog({
   );
 }
 
-function InviteForm({ onReset }: { onReset: () => void }) {
+export function InviteForm({ onReset }: { onReset: () => void }) {
   const [state, formAction] = useActionState<InviteFormState, FormData>(
     inviteMemberAction,
     undefined,
