@@ -8,6 +8,7 @@ import { songInputSchema } from "@/lib/music/songs-schema";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { can } from "@/lib/permissions/service";
 import {
+  getNextSongSortOrder,
   invalidateSongCache,
   listSongCollections,
   listSongs,
@@ -72,6 +73,7 @@ export async function POST(request: NextRequest) {
 
     const data = parsed.data;
     const id = crypto.randomUUID();
+    const sortOrder = await getNextSongSortOrder(organization.id);
 
     const [inserted] = await db
       .insert(schema.song)
@@ -82,6 +84,7 @@ export async function POST(request: NextRequest) {
         artist: data.artist,
         tone: data.tone,
         capo: data.capo ?? 0,
+        sortOrder,
         bpm: data.bpm,
         timeSignature: data.timeSignature,
         lyrics: data.lyrics,

@@ -4,6 +4,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  smallint,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
@@ -21,7 +22,8 @@ export const song = pgTable(
     title: text("title").notNull(),
     artist: text("artist"),
     tone: text("tone"),
-    capo: integer("capo").default(0).notNull(),
+    capo: smallint("capo").default(0).notNull(),
+    sortOrder: integer("sort_order").default(0).notNull(),
     bpm: integer("bpm"),
     timeSignature: text("time_signature"),
     lyrics: text("lyrics"),

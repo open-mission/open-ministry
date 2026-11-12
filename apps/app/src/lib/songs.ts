@@ -35,6 +35,18 @@ export async function canAccessMusicModule(
   return can("music", "read");
 }
 
+export async function getNextSongSortOrder(
+  organizationId: string,
+): Promise<number> {
+  const lastSong = await db.query.song.findFirst({
+    where: eq(schema.song.organizationId, organizationId),
+    orderBy: [desc(schema.song.sortOrder)],
+    columns: { sortOrder: true },
+  });
+
+  return (lastSong?.sortOrder ?? -1) + 1;
+}
+
 /**
  * Histórico de uso de todas as músicas da organização em cronogramas de cultos.
  * É cacheado por 60s e invalidado por alterações de músicas ou eventos.

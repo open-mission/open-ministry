@@ -32,6 +32,7 @@ const song = {
   artist: "Casa Worship",
   tone: null,
   capo: 0,
+  sortOrder: 0,
   bpm: null,
   timeSignature: "4/4",
   lyrics: null,

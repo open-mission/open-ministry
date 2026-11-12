@@ -17,6 +17,7 @@ import { songInputSchema } from "@/lib/music/songs-schema";
 import {
   getNextEventForSong,
   getNextPlanItemOrder,
+  getNextSongSortOrder,
   invalidateSongCache,
   type SongRecord,
 } from "@/lib/songs";
@@ -103,6 +104,7 @@ export async function createSongAction(
   try {
     const id = crypto.randomUUID();
     const data = parsed.data;
+    const sortOrder = await getNextSongSortOrder(organization.id);
 
     const [inserted] = await db
       .insert(schema.song)
@@ -113,6 +115,7 @@ export async function createSongAction(
         artist: data.artist,
         tone: data.tone,
         capo: data.capo ?? 0,
+        sortOrder,
         bpm: data.bpm,
         timeSignature: data.timeSignature,
         lyrics: data.lyrics,
@@ -135,6 +138,70 @@ export async function createSongAction(
   } catch (err) {
     console.error("[createSongAction] Erro ao cadastrar música:", err);
     return { ok: false, error: "Não foi possível cadastrar a música." };
+  }
+}
+
+export async function reorderSongsAction(
+  orderedSongIds: string[],
+): Promise<SongActionResult> {
+  const { organization } = await requireOrganizationContext();
+  const allowed = await can("music", "updateSong");
+  if (!allowed) {
+    return {
+      ok: false,
+      error: "Você não tem permissão para reordenar as músicas.",
+    };
+  }
+
+  if (
+    !Array.isArray(orderedSongIds) ||
+    orderedSongIds.some((id) => typeof id !== "string" || !id.trim()) ||
+    new Set(orderedSongIds).size !== orderedSongIds.length
+  ) {
+    return { ok: false, error: "A ordem enviada contém músicas inválidas." };
+  }
+
+  try {
+    const songs = await db.query.song.findMany({
+      where: eq(schema.song.organizationId, organization.id),
+      columns: { id: true },
+    });
+    const organizationSongIds = new Set(songs.map((song) => song.id));
+
+    if (
+      orderedSongIds.length !== organizationSongIds.size ||
+      orderedSongIds.some((id) => !organizationSongIds.has(id))
+    ) {
+      return {
+        ok: false,
+        error: "A lista precisa conter todas as músicas da organização.",
+      };
+    }
+
+    const updates = orderedSongIds.map((songId, sortOrder) =>
+      db
+        .update(schema.song)
+        .set({ sortOrder })
+        .where(
+          and(
+            eq(schema.song.id, songId),
+            eq(schema.song.organizationId, organization.id),
+          ),
+        ),
+    );
+
+    if (updates.length > 0) {
+      const [first, ...rest] = updates;
+      if (first) await db.batch([first, ...rest]);
+    }
+
+    await invalidateSongCache(organization.id);
+    revalidatePath("/dashboard/songs");
+
+    return { ok: true };
+  } catch (err) {
+    console.error("[reorderSongsAction] Erro ao reordenar músicas:", err);
+    return { ok: false, error: "Não foi possível reordenar as músicas." };
   }
 }
 
