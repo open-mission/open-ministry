@@ -31,15 +31,60 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.1.0";
+export const CURRENT_APP_VERSION = "1.1.1";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.1.1",
+    title: "Aprimoramentos de Usabilidade Mobile e Escalas",
+    subtitle: "Melhorias de navegação em dispositivos móveis no módulo de Tarefas, menus em gaveta e ajustes visuais nas Escalas.",
+    releaseDate: "12 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Módulo de Tarefas & Demandas",
+        badge: "Melhorias Mobile",
+        features: [
+          {
+            title: "Ações em Gaveta no Celular",
+            description:
+              "Ao tocar nas opções de qualquer tarefa no celular, as ações agora abrem em uma gaveta inferior espaçosa e fácil de usar, em vez de pequenos menus flutuantes.",
+            iconName: "SmartphoneIcon",
+            badge: "Mobile",
+          },
+          {
+            title: "Reordenação com Toque Longo",
+            description:
+              "Reorganize suas tarefas com facilidade tocando e segurando no próprio item, com uma experiência de arrastar e soltar muito mais intuitiva e sem botões confusos.",
+            iconName: "CheckSquare2Icon",
+          },
+          {
+            title: "Histórico de Auditoria Responsivo",
+            description:
+              "O histórico completo de alterações das tarefas agora conta com visualização adaptada para telas móveis, garantindo transparência em qualquer dispositivo.",
+            iconName: "ShieldCheckIcon",
+          },
+        ],
+      },
+      {
+        moduleName: "Módulo de Escalas & Voluntários",
+        badge: "Ajuste Visual",
+        features: [
+          {
+            title: "Visualização Fluida de Cobertura",
+            description:
+              "Os cartões de cobertura por departamento foram aprimorados para evitar qualquer corte ou vazamento lateral na tela do celular, com quebra harmoniosa de datas e funções.",
+            iconName: "CalendarDaysIcon",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.1.0",
     title: "Módulo de Tarefas & Gestão de Produtividade",
     subtitle: "Organize seus afazeres pessoais, rotinas de estudo e delegue demandas ministeriais para equipes e departamentos.",
     releaseDate: "12 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Módulo de Tarefas & Demandas",
