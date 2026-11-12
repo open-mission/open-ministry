@@ -9,29 +9,16 @@ import {
   ClockIcon,
   ExternalLinkIcon,
   GripVerticalIcon,
-  HistoryIcon,
-  MoreVerticalIcon,
   PinIcon,
   RepeatIcon,
-  Trash2Icon,
   UsersIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
-  deleteTaskAction,
-  toggleTaskPinAction,
   updateTaskStatusAction,
 } from "../actions/tasks.actions";
 import {
@@ -39,6 +26,7 @@ import {
   formatTaskWhen,
   getPriorityLabel,
 } from "../lib/task-utils";
+import { TaskActionsMenu } from "./task-actions-menu";
 import type { TaskItem, TaskPriority } from "../services/tasks-service";
 
 type TaskCardProps = {
@@ -91,28 +79,6 @@ export function TaskCard({
       const res = await updateTaskStatusAction(task.id, nextStatus);
       if (!res.ok) {
         setOptimisticCompleted(!nextCompleted);
-        toast.error(res.error);
-      }
-    });
-  };
-
-  const handleTogglePin = () => {
-    startTransition(async () => {
-      const res = await toggleTaskPinAction(task.id);
-      if (!res.ok) {
-        toast.error(res.error);
-      }
-    });
-  };
-
-  const handleDelete = () => {
-    if (!confirm(`Deseja remover a tarefa "${task.title}"?`)) {
-      return;
-    }
-    onDelete?.(task.id);
-    startTransition(async () => {
-      const res = await deleteTaskAction(task.id);
-      if (!res.ok) {
         toast.error(res.error);
       }
     });
@@ -183,45 +149,15 @@ export function TaskCard({
             <RepeatIcon className="size-3 text-emerald-600 dark:text-emerald-400" />
           )}
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-6 text-muted-foreground hover:text-foreground"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreVerticalIcon className="size-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="text-xs">
-              <DropdownMenuItem onClick={() => onView(task)}>
-                Visualizar detalhes
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(task)}>
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleTogglePin}>
-                {task.isPinned ? "Desafixar" : "Fixar no topo"}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onOpenAudit(task)}>
-                <HistoryIcon className="mr-2 size-3.5" />
-                Auditoria
-              </DropdownMenuItem>
-              {canManage && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={handleDelete}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Trash2Icon className="mr-2 size-3.5" />
-                    Excluir
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <TaskActionsMenu
+            task={task}
+            onView={onView}
+            onEdit={onEdit}
+            onOpenAudit={onOpenAudit}
+            onDelete={onDelete}
+            canManage={canManage}
+            triggerClassName="size-6 text-muted-foreground hover:text-foreground"
+          />
         </div>
       </div>
 

@@ -8,33 +8,18 @@ import {
   CheckIcon,
   ClockIcon,
   ExternalLinkIcon,
-  GripVerticalIcon,
-  HistoryIcon,
-  MoreVerticalIcon,
   PinIcon,
   RepeatIcon,
-  Trash2Icon,
   UsersIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import {
-  deleteTaskAction,
-  toggleTaskPinAction,
-  updateTaskStatusAction,
-} from "../actions/tasks.actions";
+import { updateTaskStatusAction } from "../actions/tasks.actions";
 import { formatTaskDeadline, formatTaskWhen } from "../lib/task-utils";
+import { TaskActionsMenu } from "./task-actions-menu";
 import type { TaskItem } from "../services/tasks-service";
 
 type TaskRowProps = {
@@ -63,7 +48,6 @@ export function TaskRow({
     attributes,
     listeners,
     setNodeRef,
-    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -96,40 +80,20 @@ export function TaskRow({
     });
   };
 
-  const handleTogglePin = () => {
-    startTransition(async () => {
-      const res = await toggleTaskPinAction(task.id);
-      if (!res.ok) {
-        toast.error(res.error);
-      } else {
-        toast.success(res.data.isPinned ? "Tarefa fixada no topo." : "Tarefa desafixada.");
-      }
-    });
-  };
-
-  const handleDelete = () => {
-    if (!confirm(`Deseja realmente remover a tarefa "${task.title}"?`)) {
-      return;
-    }
-    onDelete?.(task.id);
-    startTransition(async () => {
-      const res = await deleteTaskAction(task.id);
-      if (!res.ok) {
-        toast.error(res.error);
-      } else {
-        toast.success("Tarefa removida com sucesso.");
-      }
-    });
-  };
-
   return (
     <div
       ref={setNodeRef}
       style={style}
-      onClick={() => onView(task)}
+      {...attributes}
+      {...listeners}
+      onClick={() => {
+        if (!isDragging) {
+          onView(task);
+        }
+      }}
       className={cn(
-        "group relative flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card p-3 shadow-2xs transition-all hover:border-border hover:shadow-xs cursor-pointer",
-        isDragging && "z-50 opacity-60 shadow-lg border-primary",
+        "group relative flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card p-3 shadow-2xs transition-all hover:border-border hover:shadow-xs cursor-pointer select-none touch-pan-y",
+        isDragging && "z-50 opacity-60 shadow-lg border-primary scale-[1.01]",
         isCompleted && "bg-muted/30 opacity-75",
         task.isPinned && "border-l-4 border-l-primary",
       )}
@@ -138,6 +102,7 @@ export function TaskRow({
         {/* Circular Checkbox (Things 3 style) - Alinhado no canto */}
         <button
           type="button"
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
             handleToggleComplete();
@@ -237,6 +202,7 @@ export function TaskRow({
             href={task.url}
             target="_blank"
             rel="noopener noreferrer"
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
             title="Abrir link de referência"
             className="flex size-7 items-center justify-center rounded-md border border-border/60 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
@@ -257,60 +223,15 @@ export function TaskRow({
           </Avatar>
         ) : null}
 
-        {/* Menu de Ações */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 text-muted-foreground hover:text-foreground"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <MoreVerticalIcon className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="text-xs">
-            <DropdownMenuItem onClick={() => onView(task)}>
-              Visualizar Detalhes
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEdit(task)}>
-              Editar Detalhes
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleTogglePin}>
-              {task.isPinned ? "Desafixar do topo" : "Fixar no topo"}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onOpenAudit(task)}>
-              <HistoryIcon className="mr-2 size-3.5" />
-              Ver Auditoria
-            </DropdownMenuItem>
-            {canManage && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleDelete}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2Icon className="mr-2 size-3.5" />
-                  Excluir Tarefa
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Drag Handle (Hover no canto direito) */}
-        <button
-          ref={setActivatorNodeRef}
-          {...attributes}
-          {...listeners}
-          type="button"
-          aria-label="Reordenar tarefa"
-          title="Arrastar para reordenar"
-          onClick={(e) => e.stopPropagation()}
-          className="cursor-grab touch-none p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity hover:text-foreground active:cursor-grabbing rounded"
-        >
-          <GripVerticalIcon className="size-4" />
-        </button>
+        {/* Menu de Ações (Desktop: Dropdown, Mobile: Drawer) */}
+        <TaskActionsMenu
+          task={task}
+          onView={onView}
+          onEdit={onEdit}
+          onOpenAudit={onOpenAudit}
+          onDelete={onDelete}
+          canManage={canManage}
+        />
       </div>
     </div>
   );
