@@ -24,6 +24,7 @@ import { OpenMinistryRealtimeProvider } from "@/lib/realtime/client";
 import { PwaInstallBanner } from "@/components/pwa/pwa-install-banner";
 import { PwaInstallTracker } from "@/components/pwa/pwa-install-tracker";
 import { PwaNotificationPrompt } from "@/components/pwa/pwa-notification-prompt";
+import { ReleaseNotesModal } from "@/components/release-notes/release-notes-modal";
 import { WhatsAppPromptLoader } from "@/components/app/whatsapp-prompt-loader";
 import {
   UserMenuFallback,
@@ -101,6 +102,7 @@ export default function DashboardLayout({
               <Suspense fallback={null}>
                 <DashboardOnboardingLoader />
               </Suspense>
+              <ReleaseNotesModal />
             </SidebarInset>
           </SettingsModalProvider>
         </MobileMenuProvider>
