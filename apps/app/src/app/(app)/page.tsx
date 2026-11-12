@@ -22,6 +22,7 @@ import { UnreadAnnouncementsWidget } from "@/components/dashboard/unread-announc
 import { FelicitometroCard } from "@/components/felicitometro/felicitometro-card";
 import { InviteDialog } from "@/components/members/invite-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TasksHomeWidget, listTasks } from "@/features/tasks";
 import {
   getDepartmentAgenda,
   getPersonMembershipsForUser,
@@ -107,13 +108,22 @@ async function DashboardContent() {
   const isLeader = memberships.some((membership) => membership.isLeader);
 
   if (!isAdmin && !isLeader) {
-    const [assignments, agenda, todayMood] = person
+    const memberDeptIds = memberships.map((membership) => membership.departmentId);
+
+    const [assignments, agenda, todayMood, memberTasks] = person
       ? await Promise.all([
           getUpcomingAssignments(organization.id, person.id),
           getDepartmentAgenda(organization.id, person.id),
           getTodayMoodForPerson(organization.id, person.id),
+          listTasks({
+            organizationId: organization.id,
+            userId: session.user.id,
+            isAdmin: false,
+            memberDepartmentIds: memberDeptIds,
+            filter: { status: "active", tab: "all" },
+          }),
         ])
-      : [[], [], null];
+      : [[], [], null, []];
 
     const memberDepartmentIds = new Set(
       memberships.map((membership) => membership.departmentId),
@@ -146,12 +156,19 @@ async function DashboardContent() {
           </Suspense>
         }
         unreadAnnouncements={unreadAnnouncements}
+        tasks={memberTasks}
+        currentUserId={session.user.id}
       />
     );
   }
 
+  const ledDepartmentIds = memberships
+    .filter((membership) => membership.isLeader)
+    .map((membership) => membership.departmentId);
+  const memberDepartmentIds = memberships.map((membership) => membership.departmentId);
+
   // Dados para administradores e líderes: carregamento 100% paralelo com caching de alta performance
-  const [events, departments, evolutionResult, moodOverview, todayMood] =
+  const [events, departments, evolutionResult, moodOverview, todayMood, tasks] =
     await Promise.all([
       listUpcomingEvents(organization.id, 8),
       listDepartmentOptions(organization.id),
@@ -165,6 +182,14 @@ async function DashboardContent() {
       person
         ? getTodayMoodForPerson(organization.id, person.id)
         : Promise.resolve(null),
+      listTasks({
+        organizationId: organization.id,
+        userId: session.user.id,
+        isAdmin,
+        ledDepartmentIds,
+        memberDepartmentIds,
+        filter: { status: "active", tab: "all" },
+      }),
     ]);
 
   const birthdayEntries = buildBirthdayEntries(people, {
@@ -184,6 +209,15 @@ async function DashboardContent() {
     phone: p.phone,
     hasAccount: Boolean(p.userId),
   }));
+
+  const taskPeopleOptions = people
+    .filter((p) => Boolean(p.userId))
+    .map((p) => ({
+      userId: p.userId as string,
+      personId: p.id,
+      name: personDisplayName(p),
+      email: p.email,
+    }));
 
   const isWhatsAppConfigured = Boolean(evolutionResult?.config);
   const defaultDate = toInputDate(new Date());
@@ -244,6 +278,16 @@ async function DashboardContent() {
         isWhatsAppConfigured={isWhatsAppConfigured}
         defaultDate={defaultDate}
         terminology={departmentTerminology}
+      />
+
+      {/* 4. Minhas Tarefas */}
+      <TasksHomeWidget
+        initialTasks={tasks}
+        departments={departmentOptions}
+        people={taskPeopleOptions}
+        currentUserId={session.user.id}
+        canDelegateDepartment={isLeader || isAdmin}
+        canDelegateChurch={isAdmin}
       />
 
       {/* 2. Próximo Culto em Destaque */}

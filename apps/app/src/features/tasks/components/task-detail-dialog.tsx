@@ -4,7 +4,6 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
   CalendarDaysIcon,
-  CheckCircle2Icon,
   CheckIcon,
   ClockIcon,
   ExternalLinkIcon,
@@ -86,31 +85,17 @@ export function TaskDetailDialog({
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="p-0">
-          <DrawerHeader className="border-b px-5 pt-4 pb-3 !text-left text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
-            <div className="flex items-center gap-2">
-              <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <CheckCircle2Icon className="size-4" />
-              </span>
-              <DrawerTitle className="font-heading text-lg font-semibold tracking-tight">
-                Detalhes da Tarefa
-              </DrawerTitle>
-            </div>
-            <DrawerDescription className="text-xs text-muted-foreground text-left mt-0.5">
-              Consulte afazeres, prazos, responsável e histórico de execução.
-            </DrawerDescription>
-          </DrawerHeader>
-
-          <div className="max-h-[75vh] overflow-y-auto px-5 py-4 pb-6 [-webkit-overflow-scrolling:touch]">
-            <TaskDetailContent
-              task={task}
-              onClose={() => onOpenChange(false)}
-              onEdit={onEdit}
-              onOpenAudit={onOpenAudit}
-              onDelete={onDelete}
-              onTaskUpdated={onTaskUpdated}
-              canManage={canManage}
-            />
-          </div>
+          <TaskDetailBody
+            key={`${task.id}-${task.status}-${task.isPinned}`}
+            task={task}
+            isMobile={true}
+            onClose={() => onOpenChange(false)}
+            onEdit={onEdit}
+            onOpenAudit={onOpenAudit}
+            onDelete={onDelete}
+            onTaskUpdated={onTaskUpdated}
+            canManage={canManage}
+          />
         </DrawerContent>
       </Drawer>
     );
@@ -118,23 +103,11 @@ export function TaskDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl md:max-w-4xl max-h-[88vh] overflow-y-auto p-6 sm:p-7">
-        <DialogHeader>
-          <div className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <CheckCircle2Icon className="size-4" />
-            </span>
-            <DialogTitle className="font-heading text-xl font-semibold tracking-tight">
-              Detalhes da Tarefa
-            </DialogTitle>
-          </div>
-          <DialogDescription className="text-xs text-muted-foreground">
-            Consulte afazeres, prazos, responsável e histórico de execução.
-          </DialogDescription>
-        </DialogHeader>
-
-        <TaskDetailContent
+      <DialogContent className="sm:max-w-2xl md:max-w-3xl max-h-[88vh] overflow-y-auto p-6 sm:p-7">
+        <TaskDetailBody
+          key={`${task.id}-${task.status}-${task.isPinned}`}
           task={task}
+          isMobile={false}
           onClose={() => onOpenChange(false)}
           onEdit={onEdit}
           onOpenAudit={onOpenAudit}
@@ -147,8 +120,9 @@ export function TaskDetailDialog({
   );
 }
 
-function TaskDetailContent({
+function TaskDetailBody({
   task,
+  isMobile,
   onClose,
   onEdit,
   onOpenAudit,
@@ -157,6 +131,7 @@ function TaskDetailContent({
   canManage = true,
 }: {
   task: TaskItem;
+  isMobile: boolean;
   onClose: () => void;
   onEdit: (task: TaskItem) => void;
   onOpenAudit: (task: TaskItem) => void;
@@ -249,115 +224,103 @@ function TaskDetailContent({
     none: "bg-muted text-muted-foreground border-transparent",
   };
 
-  return (
-    <div className="space-y-5 pt-2">
-      {/* Título, Badges e Menu de Ações (canto superior direito) */}
-      <div className="space-y-2.5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
-            {/* Badge de Escopo */}
-            <Badge variant="outline" className="text-[11px] font-medium">
-              {currentTask.scope === "personal"
-                ? "Pessoal"
-                : currentTask.scope === "department"
-                  ? `Departamento: ${currentTask.department?.name ?? "Equipe"}`
-                  : "Toda a Igreja"}
-            </Badge>
+  const badgesAndMenu = (
+    <div className="flex items-start justify-between gap-3">
+      {/* Badges de Identificação */}
+      <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+        <Badge variant="outline" className="text-[11px] font-medium">
+          {currentTask.scope === "personal"
+            ? "Pessoal"
+            : currentTask.scope === "department"
+              ? `Departamento: ${currentTask.department?.name ?? "Equipe"}`
+              : "Toda a Igreja"}
+        </Badge>
 
-            {/* Badge de Status */}
-            <Badge
-              variant={isCompleted ? "default" : "secondary"}
-              className={cn(
-                "text-[11px] font-medium",
-                isCompleted && "bg-emerald-600 hover:bg-emerald-600 text-white",
-              )}
-            >
-              {getStatusLabel(currentTask.status)}
-            </Badge>
-
-            {/* Badge de Prioridade */}
-            {currentTask.priority !== "none" && (
-              <Badge
-                variant="outline"
-                className={cn("text-[11px] font-medium", priorityColor[currentTask.priority])}
-              >
-                Prioridade {getPriorityLabel(currentTask.priority)}
-              </Badge>
-            )}
-
-            {currentTask.isPinned && (
-              <Badge
-                variant="outline"
-                className="gap-1 border-primary/30 bg-primary/5 text-primary text-[11px]"
-              >
-                <PinIcon className="size-3 fill-primary" />
-                Fixada
-              </Badge>
-            )}
-
-            {currentTask.isRecurring && (
-              <Badge
-                variant="outline"
-                className="gap-1 border-emerald-500/30 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 text-[11px]"
-              >
-                <RepeatIcon className="size-3" />
-                Recorrente
-              </Badge>
-            )}
-          </div>
-
-          {/* Menu Dropdown de Opções perto do título */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-8 text-muted-foreground hover:text-foreground shrink-0 rounded-md -mt-1"
-                title="Mais opções da tarefa"
-              >
-                <MoreVerticalIcon className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52 text-xs">
-              <DropdownMenuItem onClick={handleTogglePin} disabled={isPending}>
-                <PinIcon className="mr-2 size-3.5" />
-                {currentTask.isPinned ? "Desafixar do topo" : "Fixar no topo"}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onOpenAudit(currentTask)}>
-                <HistoryIcon className="mr-2 size-3.5" />
-                Histórico de Auditoria
-              </DropdownMenuItem>
-              {canManage && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={handleDelete}
-                    disabled={isPending}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Trash2Icon className="mr-2 size-3.5" />
-                    Excluir Tarefa
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        <h3
+        <Badge
+          variant={isCompleted ? "default" : "secondary"}
           className={cn(
-            "text-xl sm:text-2xl font-heading font-semibold text-foreground leading-snug break-words",
-            isCompleted && "line-through text-muted-foreground",
+            "text-[11px] font-medium",
+            isCompleted && "bg-emerald-600 hover:bg-emerald-600 text-white",
           )}
         >
-          {currentTask.title}
-        </h3>
+          {getStatusLabel(currentTask.status)}
+        </Badge>
+
+        {currentTask.priority !== "none" && (
+          <Badge
+            variant="outline"
+            className={cn("text-[11px] font-medium", priorityColor[currentTask.priority])}
+          >
+            Prioridade {getPriorityLabel(currentTask.priority)}
+          </Badge>
+        )}
+
+        {currentTask.isPinned && (
+          <Badge
+            variant="outline"
+            className="gap-1 border-primary/30 bg-primary/5 text-primary text-[11px]"
+          >
+            <PinIcon className="size-3 fill-primary" />
+            Fixada
+          </Badge>
+        )}
+
+        {currentTask.isRecurring && (
+          <Badge
+            variant="outline"
+            className="gap-1 border-emerald-500/30 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 text-[11px]"
+          >
+            <RepeatIcon className="size-3" />
+            Recorrente
+          </Badge>
+        )}
       </div>
 
+      {/* Menu Dropdown de Opções */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8 text-muted-foreground hover:text-foreground shrink-0 rounded-md -mt-1"
+            title="Mais opções da tarefa"
+          >
+            <MoreVerticalIcon className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-52 text-xs">
+          <DropdownMenuItem onClick={handleTogglePin} disabled={isPending}>
+            <PinIcon className="mr-2 size-3.5" />
+            {currentTask.isPinned ? "Desafixar do topo" : "Fixar no topo"}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onOpenAudit(currentTask)}>
+            <HistoryIcon className="mr-2 size-3.5" />
+            Histórico de Auditoria
+          </DropdownMenuItem>
+          {canManage && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleDelete}
+                disabled={isPending}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2Icon className="mr-2 size-3.5" />
+                Excluir Tarefa
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+
+  const mainDetails = (
+    <>
       {/* Grid de Metadados: Responsável, Datas e Criador (se tarefa delegada) */}
       <div
         className={cn(
-          "grid gap-3.5 rounded-xl border bg-muted/20 p-4 text-xs",
+          "grid gap-3 rounded-xl border bg-muted/20 p-3.5 sm:p-4 text-xs",
           showCreatedBy
             ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-4"
             : "grid-cols-1 sm:grid-cols-3",
@@ -468,26 +431,10 @@ function TaskDetailContent({
         </div>
       </div>
 
-      {/* Descrição e Anotações */}
-      <div className="space-y-1.5">
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Descrição / Anotações
-        </span>
-        <div className="rounded-lg border bg-card p-3.5 text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed min-h-[70px]">
-          {currentTask.description ? (
-            currentTask.description
-          ) : (
-            <p className="text-muted-foreground italic">
-              Nenhuma anotação ou descrição fornecida para esta tarefa.
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Tags e URL */}
+      {/* Tags e Link Anexo */}
       {((Array.isArray(currentTask.tags) && currentTask.tags.length > 0) ||
         currentTask.url) && (
-        <div className="space-y-2 pt-1">
+        <div className="space-y-2 pt-0.5">
           {Array.isArray(currentTask.tags) && currentTask.tags.length > 0 && (
             <div className="flex items-center gap-1.5 flex-wrap">
               <TagIcon className="size-3.5 text-muted-foreground" />
@@ -570,6 +517,74 @@ function TaskDetailContent({
             Editar
           </Button>
         </div>
+      </div>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <>
+        <DrawerHeader className="border-b px-5 pt-4 pb-3.5 !text-left text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left space-y-2">
+          {badgesAndMenu}
+
+          <div className="space-y-1">
+            <DrawerTitle
+              className={cn(
+                "font-heading text-lg font-semibold tracking-tight text-foreground leading-snug break-words text-left",
+                isCompleted && "line-through text-muted-foreground",
+              )}
+            >
+              {currentTask.title}
+            </DrawerTitle>
+
+            {currentTask.description ? (
+              <DrawerDescription className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap text-left pt-0.5">
+                {currentTask.description}
+              </DrawerDescription>
+            ) : (
+              <DrawerDescription className="sr-only">
+                Detalhes da tarefa
+              </DrawerDescription>
+            )}
+          </div>
+        </DrawerHeader>
+
+        <div className="max-h-[75vh] overflow-y-auto px-5 py-4 pb-6 space-y-4 [-webkit-overflow-scrolling:touch]">
+          {mainDetails}
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <DialogHeader className="space-y-2.5 border-b pb-4 text-left">
+        {badgesAndMenu}
+
+        <div className="space-y-1.5">
+          <DialogTitle
+            className={cn(
+              "font-heading text-xl sm:text-2xl font-semibold tracking-tight text-foreground leading-snug break-words text-left",
+              isCompleted && "line-through text-muted-foreground",
+            )}
+          >
+            {currentTask.title}
+          </DialogTitle>
+
+          {currentTask.description ? (
+            <DialogDescription className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap text-left pt-0.5">
+              {currentTask.description}
+            </DialogDescription>
+          ) : (
+            <DialogDescription className="sr-only">
+              Detalhes da tarefa
+            </DialogDescription>
+          )}
+        </div>
+      </DialogHeader>
+
+      <div className="space-y-4">
+        {mainDetails}
       </div>
     </div>
   );
