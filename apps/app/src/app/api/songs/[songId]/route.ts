@@ -85,6 +85,7 @@ export async function PATCH(
         title: data.title,
         artist: data.artist,
         tone: data.tone,
+        capo: data.capo,
         bpm: data.bpm,
         timeSignature: data.timeSignature,
         lyrics: data.lyrics,
@@ -117,7 +118,7 @@ export async function PATCH(
     revalidatePath(`/dashboard/songs/${songId}`);
     revalidatePath("/dashboard/events");
 
-    // Recarregar os relacionamentos (createdBy, planItems)
+    // Recarregar os relacionamentos (histórico de cultos e uso)
     const refreshedSong = await getSong(organization.id, songId);
 
     return Response.json({ song: refreshedSong ?? updated });

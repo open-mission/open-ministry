@@ -71,6 +71,7 @@ type SongFormDialogProps = {
     title?: string;
     artist?: string;
     tone?: string;
+    capo?: number | null;
     bpm?: number | null;
     timeSignature?: string;
     lyrics?: string;
@@ -137,6 +138,9 @@ export function SongFormDialog({
   const [title, setTitle] = useState(initialData?.title ?? "");
   const [artist, setArtist] = useState(initialData?.artist ?? "");
   const [tone, setTone] = useState(initialData?.tone ?? "");
+  const [capo, setCapo] = useState(
+    initialData?.capo ? String(initialData.capo) : "",
+  );
   const [bpm, setBpm] = useState(
     initialData?.bpm ? String(initialData.bpm) : "",
   );
@@ -164,6 +168,7 @@ export function SongFormDialog({
     setTitle(initialData?.title ?? "");
     setArtist(initialData?.artist ?? "");
     setTone(initialData?.tone ?? "");
+    setCapo(initialData?.capo ? String(initialData.capo) : "");
     setBpm(initialData?.bpm ? String(initialData.bpm) : "");
     setTimeSignature(initialData?.timeSignature ?? "4/4");
     setLyrics(initialData?.lyrics ?? "");
@@ -181,6 +186,7 @@ export function SongFormDialog({
       title !== (initialData?.title ?? "") ||
       artist !== (initialData?.artist ?? "") ||
       tone !== (initialData?.tone ?? "") ||
+      capo !== (initialData?.capo ? String(initialData.capo) : "") ||
       bpm !== (initialData?.bpm ? String(initialData.bpm) : "") ||
       timeSignature !== (initialData?.timeSignature ?? "4/4") ||
       lyrics !== (initialData?.lyrics ?? "") ||
@@ -195,6 +201,7 @@ export function SongFormDialog({
     title,
     artist,
     tone,
+    capo,
     bpm,
     timeSignature,
     lyrics,
@@ -225,6 +232,7 @@ export function SongFormDialog({
     setTitle(initialData?.title ?? "");
     setArtist(initialData?.artist ?? "");
     setTone(initialData?.tone ?? "");
+    setCapo(initialData?.capo ? String(initialData.capo) : "");
     setBpm(initialData?.bpm ? String(initialData.bpm) : "");
     setTimeSignature(initialData?.timeSignature ?? "4/4");
     setLyrics(initialData?.lyrics ?? "");
@@ -293,6 +301,7 @@ export function SongFormDialog({
       title: title.trim(),
       artist: artist.trim() || null,
       tone: tone.trim() || null,
+      capo: capo.trim() ? Number(capo) : 0,
       bpm: bpm ? Number(bpm) : null,
       timeSignature: timeSignature.trim() || null,
       lyrics: lyrics.trim() || null,
@@ -458,9 +467,9 @@ export function SongFormDialog({
               />
             </div>
 
-            {/* GRUPO OU COLEÇÃO */}
+            {/* GRUPO DO REPERTÓRIO */}
             <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
-              <Label>Coleção ou Grupo</Label>
+              <Label>Grupo</Label>
               <CollectionCombobox
                 value={collection}
                 onChange={setCollection}
@@ -482,6 +491,25 @@ export function SongFormDialog({
                     Tom {t}
                   </option>
                 ))}
+              </NativeSelect>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="song-capo">Capotraste</Label>
+              <NativeSelect
+                id="song-capo"
+                value={capo}
+                onChange={(e) => setCapo(e.target.value)}
+                className="h-10"
+              >
+                <option value="">Sem capotraste</option>
+                {Array.from({ length: 12 }, (_, index) => index + 1).map(
+                  (position) => (
+                    <option key={position} value={String(position)}>
+                      Capo {position}ª casa
+                    </option>
+                  ),
+                )}
               </NativeSelect>
             </div>
 
@@ -540,12 +568,20 @@ export function SongFormDialog({
         >
           {/* CONTROLE DE SUB-ABAS NO MOBILE (CIFRA / LETRA) */}
           <div className="mb-2.5 flex shrink-0 items-center justify-between lg:hidden">
-            <div className="inline-flex h-8 items-center rounded-lg border border-border/80 bg-muted/40 p-0.5 text-xs">
+            <div
+              role="tablist"
+              aria-label="Cifra ou letra"
+              className="inline-flex h-8 items-center rounded-lg border border-border/80 bg-muted/40 p-0.5 text-xs"
+            >
               <button
                 type="button"
+                role="tab"
+                id="mobile-music-chords-tab"
+                aria-selected={mobileMusicTab === "chords"}
+                aria-controls="mobile-music-chords-panel"
                 onClick={() => setMobileMusicTab("chords")}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors",
+                  "flex items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   mobileMusicTab === "chords"
                     ? "bg-background text-foreground shadow-2xs font-semibold"
                     : "text-muted-foreground hover:text-foreground",
@@ -556,9 +592,13 @@ export function SongFormDialog({
               </button>
               <button
                 type="button"
+                role="tab"
+                id="mobile-music-lyrics-tab"
+                aria-selected={mobileMusicTab === "lyrics"}
+                aria-controls="mobile-music-lyrics-panel"
                 onClick={() => setMobileMusicTab("lyrics")}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors",
+                  "flex items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   mobileMusicTab === "lyrics"
                     ? "bg-background text-foreground shadow-2xs font-semibold"
                     : "text-muted-foreground hover:text-foreground",
@@ -588,6 +628,9 @@ export function SongFormDialog({
           <div className="grid h-full min-h-0 flex-1 grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2 lg:gap-5">
             {/* COLUNA 1: CIFRA */}
             <div
+              id="mobile-music-chords-panel"
+              role="tabpanel"
+              aria-labelledby="mobile-music-chords-tab"
               className={cn(
                 "flex h-full min-h-0 flex-1 flex-col space-y-1.5",
                 mobileMusicTab === "lyrics" ? "hidden lg:flex" : "flex",
@@ -621,6 +664,9 @@ export function SongFormDialog({
 
             {/* COLUNA 2: LETRA COMPLETA + BOTÃO DE SINCRONIZAÇÃO */}
             <div
+              id="mobile-music-lyrics-panel"
+              role="tabpanel"
+              aria-labelledby="mobile-music-lyrics-tab"
               className={cn(
                 "flex h-full min-h-0 flex-1 flex-col space-y-1.5",
                 mobileMusicTab === "chords" ? "hidden lg:flex" : "flex",
@@ -777,7 +823,7 @@ export function SongFormDialog({
         <div className="flex items-center gap-2">
           {isDirty ? (
             <span className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
-              <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+              <span className="size-2 rounded-full bg-amber-500 motion-safe:animate-pulse" />
               Alterações não salvas
             </span>
           ) : (

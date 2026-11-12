@@ -21,6 +21,7 @@ export const song = pgTable(
     title: text("title").notNull(),
     artist: text("artist"),
     tone: text("tone"),
+    capo: integer("capo").default(0).notNull(),
     bpm: integer("bpm"),
     timeSignature: text("time_signature"),
     lyrics: text("lyrics"),

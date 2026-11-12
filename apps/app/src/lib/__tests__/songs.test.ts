@@ -3,6 +3,8 @@ import { describe, expect, it } from "bun:test";
 import {
   classifySectionType,
   extractLyricsFromChords,
+  getSemitoneDistance,
+  getShapeTone,
   isChordLine,
   parseCifraClubTxt,
   parseSongSections,
@@ -11,7 +13,15 @@ import {
   transposeChord,
   transposeChordsText,
 } from "@/lib/music/chords-utils";
-import { generateStreamingSearchLinks } from "@/lib/music/lyrics-service";
+import {
+  generateStreamingSearchLinks,
+  isStreamingSearchUrl,
+} from "@/lib/music/lyrics-service";
+import { songInputSchema } from "@/lib/music/songs-schema";
+import {
+  buildSongUsageMap,
+  summarizeSongUsage,
+} from "@/lib/song-usage";
 
 describe("Music Module & Repertoire", () => {
   describe("Chord Transposer Engine", () => {
@@ -224,11 +234,174 @@ Vem me incendiar`;
       expect(parsed.title).toBe("A Casa É Sua");
       expect(parsed.artist).toBe("Casa Worship");
       expect(parsed.tone).toBe("E");
+      expect(parsed.capo).toBe(0);
       expect(parsed.chords).toContain("[Intro] C#m7  A9  E  B4");
       expect(parsed.chords).toContain("Cê é bem-vindo aqui");
       expect(parsed.lyrics).toContain("[Primeira Parte]");
       expect(parsed.lyrics).toContain("Cê é bem-vindo aqui");
       expect(parsed.lyrics).not.toContain("C#m7");
+    });
+
+    it("parses capo positions from Cifra Club metadata", () => {
+      const capoNumber = parseCifraClubTxt(
+        "Tom: E\nCapo: 2\n[Intro]\nE  B",
+      );
+      const capoFret = parseCifraClubTxt(
+        "Tom: A\nCapotraste na 4ª casa\n[Intro]\nA  E",
+      );
+
+      expect(capoNumber.capo).toBe(2);
+      expect(capoFret.capo).toBe(4);
+    });
+  });
+
+  describe("Capo tone helpers", () => {
+    it("calculates signed shortest semitone distances between keys", () => {
+      expect(getSemitoneDistance("E", "G")).toBe(3);
+      expect(getSemitoneDistance("G", "E")).toBe(-3);
+      expect(getSemitoneDistance("F#m", "A")).toBe(3);
+      expect(getSemitoneDistance("C", "F#")).toBe(6);
+    });
+
+    it("derives the chord shape key from sounding key and capo position", () => {
+      expect(getShapeTone("E", 4)).toBe("C");
+      expect(getShapeTone("G", 2)).toBe("F");
+      expect(getShapeTone("C#m", 2)).toBe("Bm");
+      expect(getShapeTone("A", 0)).toBe("A");
+      expect(getShapeTone(null, 3)).toBeNull();
+    });
+  });
+
+  describe("Song input normalization", () => {
+    it("coerces capo values and leaves an omitted capo undefined for partial updates", () => {
+      const withCapo = songInputSchema.parse({ title: "A Casa", capo: "4" });
+      const withoutCapo = songInputSchema.parse({ title: "A Casa" });
+
+      expect(withCapo.capo).toBe(4);
+      expect(withoutCapo.capo).toBeUndefined();
+      expect(songInputSchema.safeParse({ title: "A Casa", capo: 13 }).success).toBe(
+        false,
+      );
+    });
+
+    it("trims tags and removes empty or case-insensitive duplicates", () => {
+      const parsed = songInputSchema.parse({
+        title: "A Casa",
+        tags: ["  Adoração ", "adoração", "Jesus", "", " Jesus  "],
+      });
+
+      expect(parsed.tags).toEqual(["Adoração", "Jesus"]);
+    });
+  });
+
+  describe("Streaming link classification", () => {
+    it("recognizes generated platform search links but not direct media links", () => {
+      const searches = generateStreamingSearchLinks("A Casa É Sua", "Casa Worship");
+
+      expect(Object.values(searches).every(isStreamingSearchUrl)).toBe(true);
+      expect(
+        isStreamingSearchUrl("https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC"),
+      ).toBe(false);
+      expect(isStreamingSearchUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ")).toBe(
+        false,
+      );
+      expect(isStreamingSearchUrl("not a URL")).toBe(false);
+    });
+  });
+
+  describe("Song usage summaries", () => {
+    const now = new Date("2026-10-01T12:00:00.000Z");
+
+    it("finds the nearest upcoming and latest past event and counts distinct events", () => {
+      const summary = summarizeSongUsage(
+        [
+          {
+            songId: "song-1",
+            itemId: "item-future",
+            itemTitle: "Louvor de abertura",
+            eventId: "event-future",
+            eventTitle: "Culto de domingo",
+            startsAt: "2026-10-12T18:00:00.000Z",
+            responsible: "  Ana Silva  ",
+          },
+          {
+            songId: "song-1",
+            itemId: "item-past-latest",
+            itemTitle: "Adoração",
+            eventId: "event-past-latest",
+            eventTitle: "Culto da semana passada",
+            startsAt: new Date("2026-09-25T18:00:00.000Z"),
+            responsible: null,
+          },
+          {
+            songId: "song-1",
+            itemId: "item-past-oldest",
+            itemTitle: "Encerramento",
+            eventId: "event-past-oldest",
+            eventTitle: "Culto anterior",
+            startsAt: "2026-09-10T18:00:00.000Z",
+          },
+        ],
+        now,
+      );
+
+      expect(summary.nextEvent).toEqual({
+        eventId: "event-future",
+        eventTitle: "Culto de domingo",
+        itemId: "item-future",
+        itemTitle: "Louvor de abertura",
+        startsAt: new Date("2026-10-12T18:00:00.000Z"),
+        responsible: "Ana Silva",
+      });
+      expect(summary.lastEvent).toEqual({
+        eventId: "event-past-latest",
+        eventTitle: "Culto da semana passada",
+        itemId: "item-past-latest",
+        itemTitle: "Adoração",
+        startsAt: new Date("2026-09-25T18:00:00.000Z"),
+        responsible: null,
+      });
+      expect(summary.eventCount).toBe(3);
+      expect(summary.planItemCount).toBe(3);
+    });
+
+    it("groups usage rows by song and returns independent summaries", () => {
+      const usage = buildSongUsageMap(
+        [
+          {
+            songId: "song-1",
+            itemId: "item-1",
+            itemTitle: "Louvor",
+            eventId: "event-1",
+            eventTitle: "Culto passado",
+            startsAt: "2026-09-20T18:00:00.000Z",
+          },
+          {
+            songId: "song-2",
+            itemId: "item-2",
+            itemTitle: "Adoração",
+            eventId: "event-2",
+            eventTitle: "Próximo culto",
+            startsAt: "2026-10-05T18:00:00.000Z",
+          },
+          {
+            songId: "song-1",
+            itemId: "item-3",
+            itemTitle: "Louvor",
+            eventId: "event-3",
+            eventTitle: "Próximo culto",
+            startsAt: "2026-10-05T18:00:00.000Z",
+          },
+        ],
+        now,
+      );
+
+      expect(usage.get("song-1")?.eventCount).toBe(2);
+      expect(usage.get("song-1")?.planItemCount).toBe(2);
+      expect(usage.get("song-1")?.nextEvent?.eventId).toBe("event-3");
+      expect(usage.get("song-2")?.lastEvent).toBeNull();
+      expect(usage.get("song-2")?.nextEvent?.eventId).toBe("event-2");
+      expect(usage.has("song-3")).toBe(false);
     });
   });
 });

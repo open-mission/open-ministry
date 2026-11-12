@@ -454,9 +454,40 @@ export type ParsedCifraTxt = {
   title: string;
   artist: string;
   tone: string;
+  capo: number;
   chords: string;
   lyrics: string;
 };
+
+/**
+ * Retorna a distância em semitons entre dois tons (ex: E -> G = 3).
+ * A qualidade (maior/menor) não altera a distância da fundamental.
+ */
+export function getSemitoneDistance(from: string, to: string): number {
+  const parseRoot = (tone: string) => {
+    const match = tone.trim().match(/^([A-Ga-g][#b]?)/);
+    if (!match) return null;
+    return NOTE_NAME_MAP[normalizeTone(match[1]).replace(/m$/, "")] ?? null;
+  };
+
+  const fromIndex = parseRoot(from);
+  const toIndex = parseRoot(to);
+  if (fromIndex === undefined || fromIndex === null) return 0;
+  if (toIndex === undefined || toIndex === null) return 0;
+
+  const distance = (toIndex - fromIndex + 12) % 12;
+  return distance > 6 ? distance - 12 : distance;
+}
+
+/**
+ * Calcula o tom das formas (sem o capotraste) a partir do tom real.
+ * Ex: tom E com capotraste na 4ª casa -> formas em C.
+ */
+export function getShapeTone(tone: string | null | undefined, capo: number): string | null {
+  if (!tone?.trim()) return null;
+  if (!capo) return tone;
+  return transposeChord(tone, -capo);
+}
 
 /**
  * Normaliza o formato de um tom musical (ex: "f#m" -> "F#m", "c" -> "C", "bb" -> "Bb")
@@ -485,6 +516,7 @@ export function parseCifraClubTxt(
   let extractedTitle = "";
   let extractedArtist = "";
   let extractedTone = "";
+  let extractedCapo = 0;
 
   // 1. Tentar extrair do nome do arquivo (ex: "Casa Worship - A Casa É Sua.txt")
   if (fileName) {
@@ -534,8 +566,21 @@ export function parseCifraClubTxt(
       continue;
     }
 
-    // Capotraste / Afinação ignorados no cabeçalho
-    if (/^(?:capotraste|capo|afina[çc][ãa]o|tuning):/i.test(line)) {
+    // Capotraste: "Capotraste: 4", "Capo na 2ª casa", "Sem capo"
+    const capoMatch = line.match(
+      /^(?:capotraste|capo)(?:\s+na)?\s*:?\s*(sem\s+capo|nenhum|(\d{1,2})\s*(?:ª|a|º)?\s*(?:casa|fret|traste)?)/i,
+    );
+    if (capoMatch) {
+      const parsedCapo = capoMatch[2] ? Number(capoMatch[2]) : 0;
+      if (Number.isInteger(parsedCapo) && parsedCapo >= 0 && parsedCapo <= 12) {
+        extractedCapo = parsedCapo;
+      }
+      chordsStartIndex = i + 1;
+      continue;
+    }
+
+    // Outras afinações são ignoradas no cabeçalho
+    if (/^(?:afina[çc][ãa]o|tuning):/i.test(line)) {
       chordsStartIndex = i + 1;
       continue;
     }
@@ -579,6 +624,7 @@ export function parseCifraClubTxt(
     title: extractedTitle,
     artist: extractedArtist,
     tone: extractedTone,
+    capo: extractedCapo,
     chords,
     lyrics,
   };

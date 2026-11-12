@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
         title: data.title,
         artist: data.artist,
         tone: data.tone,
+        capo: data.capo ?? 0,
         bpm: data.bpm,
         timeSignature: data.timeSignature,
         lyrics: data.lyrics,

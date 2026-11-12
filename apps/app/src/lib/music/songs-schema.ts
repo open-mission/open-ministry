@@ -8,6 +8,15 @@ export const songInputSchema = z.object({
     .max(160, "O título deve ter no máximo 160 caracteres."),
   artist: z.string().trim().max(120).optional().nullable(),
   tone: z.string().trim().max(10).optional().nullable(),
+  capo: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? undefined : Number(v)),
+    z
+      .number()
+      .int()
+      .min(0, "O capotraste deve estar entre 0 e 12.")
+      .max(12, "O capotraste deve estar entre 0 e 12.")
+      .optional(),
+  ),
   bpm: z
     .preprocess(
       (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
@@ -47,7 +56,19 @@ export const songInputSchema = z.object({
   tags: z
     .array(z.string().trim())
     .optional()
-    .default([]),
+    .default([])
+    .transform((tags) => {
+      const seen = new Set<string>();
+      const result: string[] = [];
+      for (const tag of tags) {
+        const clean = tag.trim();
+        const key = clean.toLocaleLowerCase("pt-BR");
+        if (!clean || seen.has(key)) continue;
+        seen.add(key);
+        result.push(clean);
+      }
+      return result;
+    }),
 });
 
 export type SongInput = z.infer<typeof songInputSchema>;

@@ -1,13 +1,30 @@
 import "server-only";
 
-import { and, asc, eq, ilike, or } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  ilike,
+  isNotNull,
+  notInArray,
+  or,
+} from "drizzle-orm";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { cacheInvalidateTags, remember } from "@/lib/cache";
 import { can } from "@/lib/permissions/service";
+import {
+  buildSongUsageMap,
+  EMPTY_SONG_USAGE,
+  type SongUsageRow,
+  type SongUsageSummary,
+} from "@/lib/song-usage";
 
 export type SongRecord = typeof schema.song.$inferSelect;
+export type SongWithUsage = SongRecord & { usage: SongUsageSummary };
 export type SongWithDetails = NonNullable<Awaited<ReturnType<typeof getSong>>>;
 
 export async function canAccessMusicModule(
@@ -18,67 +35,169 @@ export async function canAccessMusicModule(
   return can("music", "read");
 }
 
-export async function listSongs(
-  organizationId: string,
-  search?: string,
-): Promise<SongRecord[]> {
-  const cleanSearch = search?.trim();
-
-  if (cleanSearch) {
-    const pattern = `%${cleanSearch}%`;
-    return db.query.song.findMany({
-      where: and(
-        eq(schema.song.organizationId, organizationId),
-        or(
-          ilike(schema.song.title, pattern),
-          ilike(schema.song.artist, pattern),
-          ilike(schema.song.tone, pattern),
-        ),
-      ),
-      orderBy: [asc(schema.song.title)],
-    });
-  }
-
-  return remember(
-    `org:${organizationId}:songs:all`,
-    300,
+/**
+ * Histórico de uso de todas as músicas da organização em cronogramas de cultos.
+ * É cacheado por 60s e invalidado por alterações de músicas ou eventos.
+ */
+async function listSongUsageRows(organizationId: string): Promise<SongUsageRow[]> {
+  const rows = await remember(
+    `org:${organizationId}:songs:usage`,
+    60,
     async () => {
-      return db.query.song.findMany({
-        where: eq(schema.song.organizationId, organizationId),
-        orderBy: [asc(schema.song.title)],
-      });
+      return db
+        .select({
+          songId: schema.eventPlanItem.songId,
+          itemId: schema.eventPlanItem.id,
+          itemTitle: schema.eventPlanItem.title,
+          eventId: schema.event.id,
+          eventTitle: schema.event.title,
+          startsAt: schema.event.startsAt,
+          customResponsible: schema.eventPlanItem.customResponsible,
+          personName: schema.person.name,
+        })
+        .from(schema.eventPlanItem)
+        .innerJoin(
+          schema.event,
+          eq(schema.eventPlanItem.eventId, schema.event.id),
+        )
+        .leftJoin(
+          schema.person,
+          eq(schema.eventPlanItem.personId, schema.person.id),
+        )
+        .where(
+          and(
+            eq(schema.event.organizationId, organizationId),
+            isNotNull(schema.eventPlanItem.songId),
+          ),
+        )
+        .orderBy(asc(schema.event.startsAt));
     },
-    [`songs:${organizationId}`],
+    [`songs:${organizationId}`, `events:${organizationId}`],
+  );
+
+  return rows.flatMap((row) =>
+    row.songId
+      ? [
+          {
+            songId: row.songId,
+            itemId: row.itemId,
+            itemTitle: row.itemTitle,
+            eventId: row.eventId,
+            eventTitle: row.eventTitle,
+            startsAt: row.startsAt,
+            responsible:
+              row.customResponsible?.trim() || row.personName?.trim() || null,
+          },
+        ]
+      : [],
   );
 }
 
-export async function getSong(
+async function getUsageMap(
   organizationId: string,
-  songId: string,
-) {
-  return remember(
-    `org:${organizationId}:song:${songId}`,
-    300,
-    async () => {
-      return db.query.song.findFirst({
+): Promise<Map<string, SongUsageSummary>> {
+  return buildSongUsageMap(await listSongUsageRows(organizationId));
+}
+
+export async function listSongs(
+  organizationId: string,
+  search?: string,
+): Promise<SongWithUsage[]> {
+  const cleanSearch = search?.trim();
+  const usageMap = await getUsageMap(organizationId);
+
+  const songs = cleanSearch
+    ? await db.query.song.findMany({
         where: and(
-          eq(schema.song.id, songId),
           eq(schema.song.organizationId, organizationId),
+          or(
+            ilike(schema.song.title, `%${cleanSearch}%`),
+            ilike(schema.song.artist, `%${cleanSearch}%`),
+            ilike(schema.song.tone, `%${cleanSearch}%`),
+          ),
         ),
-        with: {
-          createdBy: true,
-          planItems: {
-            with: {
-              event: true,
-            },
-            limit: 5,
-            orderBy: (items, { desc }) => [desc(items.createdAt)],
-          },
+        orderBy: [asc(schema.song.title)],
+      })
+    : await remember(
+        `org:${organizationId}:songs:all`,
+        60,
+        async () => {
+          return db.query.song.findMany({
+            where: eq(schema.song.organizationId, organizationId),
+            orderBy: [asc(schema.song.title)],
+          });
         },
-      });
+        [`songs:${organizationId}`],
+      );
+
+  return songs.map((song) => ({
+    ...song,
+    usage: usageMap.get(song.id) ?? EMPTY_SONG_USAGE,
+  }));
+}
+
+/**
+ * Detalhes da música. Não é cacheado porque o histórico de cultos muda com
+ * frequência; os dados básicos da listagem continuam cacheados.
+ */
+export async function getSong(organizationId: string, songId: string) {
+  const song = await db.query.song.findFirst({
+    where: and(
+      eq(schema.song.id, songId),
+      eq(schema.song.organizationId, organizationId),
+    ),
+  });
+
+  if (!song) return null;
+
+  const [usageMap, planItemRows] = await Promise.all([
+    getUsageMap(organizationId),
+    db
+      .select({
+        id: schema.eventPlanItem.id,
+        title: schema.eventPlanItem.title,
+        eventId: schema.event.id,
+        eventTitle: schema.event.title,
+        eventStartsAt: schema.event.startsAt,
+        customResponsible: schema.eventPlanItem.customResponsible,
+        personName: schema.person.name,
+      })
+      .from(schema.eventPlanItem)
+      .innerJoin(
+        schema.event,
+        eq(schema.eventPlanItem.eventId, schema.event.id),
+      )
+      .leftJoin(
+        schema.person,
+        eq(schema.eventPlanItem.personId, schema.person.id),
+      )
+      .where(
+        and(
+          eq(schema.event.organizationId, organizationId),
+          eq(schema.eventPlanItem.songId, songId),
+        ),
+      )
+      // Histórico por data do culto, não por data de criação do item.
+      .orderBy(desc(schema.event.startsAt))
+      .limit(8),
+  ]);
+
+  const planItems = planItemRows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    eventId: row.eventId,
+    responsible:
+      row.customResponsible?.trim() || row.personName?.trim() || null,
+    event: {
+      id: row.eventId,
+      title: row.eventTitle,
+      startsAt: row.eventStartsAt,
     },
-    [`songs:${organizationId}`, `song:${songId}`],
-  );
+  }));
+
+  const usage = usageMap.get(songId) ?? EMPTY_SONG_USAGE;
+
+  return { ...song, planItems, usage };
 }
 
 export async function getSongStats(organizationId: string) {
@@ -131,4 +250,46 @@ export async function invalidateSongCache(
     tags.push(`song:${songId}`);
   }
   await cacheInvalidateTags(...tags);
+}
+
+/**
+ * Retorna o próximo evento da organização que ainda não tem esta música no
+ * cronograma. Usado pelo atalho "adicionar ao próximo culto".
+ */
+export async function getNextEventForSong(
+  organizationId: string,
+  songId: string,
+) {
+  const now = new Date();
+  const usedItems = await db.query.eventPlanItem.findMany({
+    where: eq(schema.eventPlanItem.songId, songId),
+    columns: { eventId: true },
+  });
+  const usedEventIds = Array.from(
+    new Set(usedItems.map((item) => item.eventId)),
+  );
+
+  return db.query.event.findFirst({
+    where:
+      usedEventIds.length > 0
+        ? and(
+            eq(schema.event.organizationId, organizationId),
+            gte(schema.event.startsAt, now),
+            notInArray(schema.event.id, usedEventIds),
+          )
+        : and(
+            eq(schema.event.organizationId, organizationId),
+            gte(schema.event.startsAt, now),
+          ),
+    orderBy: [asc(schema.event.startsAt)],
+    columns: { id: true, title: true, startsAt: true },
+  });
+}
+
+export async function getNextPlanItemOrder(eventId: string) {
+  const items = await db.query.eventPlanItem.findMany({
+    where: eq(schema.eventPlanItem.eventId, eventId),
+    columns: { order: true },
+  });
+  return items.reduce((max, item) => Math.max(max, item.order), -1) + 1;
 }

@@ -1,14 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import {
+  CalendarPlusIcon,
   MoreVerticalIcon,
   Music2Icon,
   PencilIcon,
   Trash2Icon,
 } from "lucide-react";
+import { toast } from "sonner";
 
+import { addSongToNextServiceAction } from "@/app/actions/songs";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -27,6 +31,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { songKeys } from "@/hooks/use-songs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { SongRecord } from "@/lib/songs";
 import { DeleteSongDialog } from "./delete-song-dialog";
@@ -42,7 +47,9 @@ export function SongDetailHeaderActions({
   canDelete?: boolean;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const [isAddingToPlan, startAddingToPlan] = useTransition();
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -50,6 +57,26 @@ export function SongDetailHeaderActions({
   if (!canUpdate && !canDelete) {
     return null;
   }
+
+  const handleAddToNextService = () => {
+    setMenuOpen(false);
+    startAddingToPlan(async () => {
+      const result = await addSongToNextServiceAction(song.id);
+      if (!result.ok) {
+        toast.error(result.error ?? "Não foi possível adicionar ao culto.");
+        return;
+      }
+      toast.success(
+        `“${song.title}” adicionada ao cronograma de ${result.eventTitle}.`,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: songKeys.lists() }),
+        queryClient.invalidateQueries({
+          queryKey: songKeys.detail(song.id),
+        }),
+      ]);
+    });
+  };
 
   return (
     <>
@@ -95,6 +122,20 @@ export function SongDetailHeaderActions({
                   <span>Editar música</span>
                 </Button>
               ) : null}
+
+              <Button
+                variant="ghost"
+                onClick={handleAddToNextService}
+                disabled={isAddingToPlan}
+                className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium"
+              >
+                <CalendarPlusIcon className="size-4 text-muted-foreground" />
+                <span>
+                  {isAddingToPlan
+                    ? "Adicionando..."
+                    : "Adicionar ao próximo culto"}
+                </span>
+              </Button>
 
               {canUpdate && canDelete ? (
                 <div className="my-1 border-t border-border/60" />
@@ -144,6 +185,15 @@ export function SongDetailHeaderActions({
                 Editar música
               </DropdownMenuItem>
             ) : null}
+            <DropdownMenuItem
+              onClick={handleAddToNextService}
+              disabled={isAddingToPlan}
+            >
+              <CalendarPlusIcon className="size-4 mr-2" />
+              {isAddingToPlan
+                ? "Adicionando..."
+                : "Adicionar ao próximo culto"}
+            </DropdownMenuItem>
             {canUpdate && canDelete ? <DropdownMenuSeparator /> : null}
             {canDelete ? (
               <DropdownMenuItem
@@ -167,6 +217,7 @@ export function SongDetailHeaderActions({
             title: song.title,
             artist: song.artist ?? "",
             tone: song.tone ?? "",
+            capo: song.capo,
             bpm: song.bpm,
             timeSignature: song.timeSignature ?? "4/4",
             lyrics: song.lyrics ?? "",

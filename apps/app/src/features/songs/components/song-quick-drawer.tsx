@@ -28,6 +28,7 @@ export type QuickDrawerSong = {
   title: string;
   artist?: string | null;
   tone?: string | null;
+  capo?: number | null;
   bpm?: number | null;
   timeSignature?: string | null;
   chords?: string | null;
@@ -72,6 +73,11 @@ export function SongQuickDrawer({
                 Tom: {song.tone}
               </Badge>
             ) : null}
+            {song.capo && song.capo > 0 ? (
+              <Badge variant="secondary" className="text-[10px]">
+                Capo {song.capo}
+              </Badge>
+            ) : null}
             {song.bpm ? (
               <Badge variant="secondary" className="font-mono text-[10px]">
                 {song.bpm} BPM
@@ -111,12 +117,18 @@ export function SongQuickDrawer({
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           <Tabs defaultValue={song.chords ? "cifra" : "letra"} className="w-full">
-            <TabsList className="h-9 mb-3">
-              <TabsTrigger value="cifra" className="gap-1.5 text-xs">
+            <TabsList className="mb-3 h-9 w-full justify-start overflow-x-auto scrollbar-none sm:w-fit">
+              <TabsTrigger
+                value="cifra"
+                className="shrink-0 gap-1.5 text-xs"
+              >
                 <FileMusicIcon className="size-3.5" />
                 Cifra & Transposição
               </TabsTrigger>
-              <TabsTrigger value="letra" className="gap-1.5 text-xs">
+              <TabsTrigger
+                value="letra"
+                className="shrink-0 gap-1.5 text-xs"
+              >
                 <FileTextIcon className="size-3.5" />
                 Letra
               </TabsTrigger>
@@ -127,6 +139,7 @@ export function SongQuickDrawer({
                 <ChordsViewer
                   chords={song.chords}
                   originalTone={song.tone}
+                  capo={song.capo}
                   songTitle={song.title}
                   songArtist={song.artist ?? undefined}
                 />

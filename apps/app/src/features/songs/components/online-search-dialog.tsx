@@ -8,6 +8,7 @@ import {
   Loader2Icon,
   Music2Icon,
   SearchIcon,
+  XIcon,
 } from "lucide-react";
 
 import {
@@ -49,6 +50,15 @@ export function OnlineSearchDialog({
   } | null>(null);
   const [formOpen, setFormOpen] = useState(false);
 
+  const handleOpenChange = (nextOpen: boolean) => {
+    onOpenChange(nextOpen);
+    if (!nextOpen) {
+      setQuery("");
+      setResults([]);
+      setHasSearched(false);
+    }
+  };
+
   const handleSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const clean = query.trim();
@@ -75,7 +85,7 @@ export function OnlineSearchDialog({
           artist: item.artist,
           lyrics,
         });
-        onOpenChange(false);
+        handleOpenChange(false);
         setFormOpen(true);
       } catch (err) {
         toast.error("Não foi possível carregar a letra completa.");
@@ -86,7 +96,7 @@ export function OnlineSearchDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader className="gap-1.5 text-left">
             <div className="flex items-center gap-2">
@@ -98,7 +108,8 @@ export function OnlineSearchDialog({
               </DialogTitle>
             </div>
             <DialogDescription className="text-xs text-muted-foreground sm:text-sm">
-              Digite o nome do louvor ou do cantor para importar automaticamente.
+              Digite o nome do louvor ou do cantor para importar
+              automaticamente. Fontes: Vagalume e LRCLIB.
             </DialogDescription>
           </DialogHeader>
 
@@ -109,9 +120,21 @@ export function OnlineSearchDialog({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Ex: A Casa É Sua, Bondade de Deus..."
-                className="pl-9"
+                className={query ? "pl-9 pr-9" : "pl-9"}
+                aria-label="Pesquisar música ou artista"
                 autoFocus
               />
+              {query ? (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  className="absolute top-1/2 right-2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label="Limpar busca"
+                  title="Limpar busca"
+                >
+                  <XIcon className="size-3.5" />
+                </button>
+              ) : null}
             </div>
             <Button
               type="submit"
@@ -157,7 +180,8 @@ export function OnlineSearchDialog({
                         </p>
                         <p className="truncate text-xs text-muted-foreground">
                           {item.artist || "Artista desconhecido"}
-                          {item.album ? ` · ${item.album}` : ""}
+                          {item.album ? ` · ${item.album}` : ""} ·{" "}
+                          {item.source === "vagalume" ? "Vagalume" : "LRCLIB"}
                         </p>
                       </div>
                     </div>

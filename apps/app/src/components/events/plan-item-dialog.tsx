@@ -63,6 +63,7 @@ export type SongOption = {
   title: string;
   artist?: string | null;
   tone?: string | null;
+  capo?: number | null;
   collection?: string | null;
   tags?: string[] | null;
 };
