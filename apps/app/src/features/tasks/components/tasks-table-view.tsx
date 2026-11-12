@@ -5,24 +5,13 @@ import {
   ArrowUpDownIcon,
   CheckIcon,
   ExternalLinkIcon,
-  HistoryIcon,
-  MoreVerticalIcon,
   PinIcon,
   RepeatIcon,
-  Trash2Icon,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -34,8 +23,6 @@ import {
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
-  deleteTaskAction,
-  toggleTaskPinAction,
   updateTaskStatusAction,
 } from "../actions/tasks.actions";
 import {
@@ -43,6 +30,7 @@ import {
   formatTaskWhen,
   getPriorityLabel,
 } from "../lib/task-utils";
+import { TaskActionsMenu } from "./task-actions-menu";
 import type { TaskItem } from "../services/tasks-service";
 
 type TasksTableViewProps = {
@@ -116,24 +104,6 @@ export function TasksTableView({
       toast.success(
         nextStatus === "completed" ? "Tarefa concluída!" : "Tarefa reaberta.",
       );
-    }
-  };
-
-  const handleTogglePin = async (taskId: string) => {
-    const res = await toggleTaskPinAction(taskId);
-    if (!res.ok) {
-      toast.error(res.error);
-    }
-  };
-
-  const handleDelete = async (task: TaskItem) => {
-    if (!confirm(`Remover tarefa "${task.title}"?`)) return;
-    onDelete?.(task.id);
-    const res = await deleteTaskAction(task.id);
-    if (!res.ok) {
-      toast.error(res.error);
-    } else {
-      toast.success("Tarefa removida.");
     }
   };
 
@@ -342,47 +312,17 @@ export function TasksTableView({
                   ) : null}
                 </TableCell>
 
-                {/* Ações */}
+                {/* Ações (Desktop: Dropdown, Mobile: Drawer) */}
                 <TableCell className="text-right p-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-7"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MoreVerticalIcon className="size-3.5 text-muted-foreground" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="text-xs">
-                      <DropdownMenuItem onClick={() => onView(task)}>
-                        Visualizar detalhes
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onEdit(task)}>
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleTogglePin(task.id)}>
-                        {task.isPinned ? "Desafixar" : "Fixar no topo"}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onOpenAudit(task)}>
-                        <HistoryIcon className="mr-2 size-3.5" />
-                        Auditoria
-                      </DropdownMenuItem>
-                      {canManage && (
-                        <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(task)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2Icon className="mr-2 size-3.5" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <TaskActionsMenu
+                    task={task}
+                    onView={onView}
+                    onEdit={onEdit}
+                    onOpenAudit={onOpenAudit}
+                    onDelete={onDelete}
+                    canManage={canManage}
+                    triggerClassName="size-7 text-muted-foreground hover:text-foreground"
+                  />
                 </TableCell>
               </TableRow>
             );

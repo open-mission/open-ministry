@@ -33,7 +33,7 @@ export function DepartmentCoverageBoard({
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 min-w-0">
         {departments.map((department) => {
           const hasFunctions = department.totalSlots > 0;
           const percentage = !hasFunctions
@@ -47,10 +47,10 @@ export function DepartmentCoverageBoard({
           return (
             <div
               key={department.departmentId}
-              className="flex flex-col rounded-xl border border-border/70 bg-card p-4"
+              className="flex flex-col min-w-0 rounded-xl border border-border/70 bg-card p-4 overflow-hidden"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+              <div className="flex items-start justify-between gap-3 min-w-0">
+                <div className="min-w-0 flex-1">
                   <h3 className="truncate font-heading text-lg tracking-tight">
                     <Link
                       href={`/dashboard/departments/${department.departmentId}`}
@@ -114,19 +114,21 @@ export function DepartmentCoverageBoard({
                 <Link
                   href={`/dashboard/events/${department.nextGap.eventId}?tab=teams`}
                   prefetch={true}
-                  className="mt-3 block rounded-lg border border-amber-500/25 bg-amber-500/10 p-2.5 transition-colors hover:bg-amber-500/15"
+                  className="mt-3 block min-w-0 rounded-lg border border-amber-500/25 bg-amber-500/10 p-2.5 transition-colors hover:bg-amber-500/15 overflow-hidden"
                 >
-                  <span className="flex items-center gap-1.5 text-[0.8125rem] font-medium text-amber-900 dark:text-amber-200">
-                    <ClipboardListIcon className="size-3.5 shrink-0" />
-                    Faltam {department.nextGap.missingFunctions.length}{" "}
-                    {department.nextGap.missingFunctions.length === 1
-                      ? "função"
-                      : "funções"}{" "}
-                    ·{" "}
-                    {gapDay ??
-                      formatEventFullDate(department.nextGap.startsAt)}
-                  </span>
-                  <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                  <div className="flex items-start gap-1.5 text-[0.8125rem] font-medium text-amber-900 dark:text-amber-200 min-w-0">
+                    <ClipboardListIcon className="mt-0.5 size-3.5 shrink-0" />
+                    <span className="min-w-0 flex-1 break-words leading-snug">
+                      Faltam {department.nextGap.missingFunctions.length}{" "}
+                      {department.nextGap.missingFunctions.length === 1
+                        ? "função"
+                        : "funções"}{" "}
+                      ·{" "}
+                      {gapDay ??
+                        formatEventFullDate(department.nextGap.startsAt)}
+                    </span>
+                  </div>
+                  <span className="mt-1 block truncate text-xs text-muted-foreground">
                     {department.nextGap.missingFunctions.join(", ")}
                   </span>
                   <span className="mt-1 block truncate text-xs font-medium text-foreground">

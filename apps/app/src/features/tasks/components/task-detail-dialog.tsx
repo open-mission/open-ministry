@@ -7,13 +7,10 @@ import {
   CheckIcon,
   ClockIcon,
   ExternalLinkIcon,
-  HistoryIcon,
-  MoreVerticalIcon,
   PencilIcon,
   PinIcon,
   RepeatIcon,
   TagIcon,
-  Trash2Icon,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -33,19 +30,10 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
-  deleteTaskAction,
-  toggleTaskPinAction,
   updateTaskStatusAction,
 } from "../actions/tasks.actions";
 import {
@@ -54,6 +42,7 @@ import {
   getPriorityLabel,
   getStatusLabel,
 } from "../lib/task-utils";
+import { TaskActionsMenu } from "./task-actions-menu";
 import type { TaskItem, TaskPriority, TaskStatus } from "../services/tasks-service";
 
 type TaskDetailDialogProps = {
@@ -179,44 +168,6 @@ function TaskDetailBody({
     });
   };
 
-  const handleTogglePin = () => {
-    const nextPinned = !currentTask.isPinned;
-    const optimisticTask: TaskItem = {
-      ...currentTask,
-      isPinned: nextPinned,
-    };
-
-    setCurrentTask(optimisticTask);
-    onTaskUpdated?.(optimisticTask);
-
-    startTransition(async () => {
-      const res = await toggleTaskPinAction(currentTask.id);
-      if (!res.ok) {
-        toast.error(res.error || "Erro ao atualizar fixação");
-        setCurrentTask(currentTask);
-        onTaskUpdated?.(currentTask);
-        return;
-      }
-      toast.success(nextPinned ? "Tarefa fixada no topo!" : "Tarefa desafixada.");
-    });
-  };
-
-  const handleDelete = () => {
-    if (!confirm("Tem certeza que deseja excluir esta tarefa?")) return;
-
-    onClose();
-    onDelete?.(currentTask.id);
-
-    startTransition(async () => {
-      const res = await deleteTaskAction(currentTask.id);
-      if (!res.ok) {
-        toast.error(res.error || "Erro ao excluir tarefa");
-        return;
-      }
-      toast.success("Tarefa excluída.");
-    });
-  };
-
   const priorityColor: Record<TaskPriority, string> = {
     high: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
     medium: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
@@ -276,42 +227,27 @@ function TaskDetailBody({
         )}
       </div>
 
-      {/* Menu Dropdown de Opções */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-8 text-muted-foreground hover:text-foreground shrink-0 rounded-md -mt-1"
-            title="Mais opções da tarefa"
-          >
-            <MoreVerticalIcon className="size-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-52 text-xs">
-          <DropdownMenuItem onClick={handleTogglePin} disabled={isPending}>
-            <PinIcon className="mr-2 size-3.5" />
-            {currentTask.isPinned ? "Desafixar do topo" : "Fixar no topo"}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onOpenAudit(currentTask)}>
-            <HistoryIcon className="mr-2 size-3.5" />
-            Histórico de Auditoria
-          </DropdownMenuItem>
-          {canManage && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={handleDelete}
-                disabled={isPending}
-                className="text-destructive focus:text-destructive"
-              >
-                <Trash2Icon className="mr-2 size-3.5" />
-                Excluir Tarefa
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {/* Menu de Ações (Desktop: Dropdown, Mobile: Drawer) */}
+      <TaskActionsMenu
+        task={currentTask}
+        onEdit={(t) => {
+          onClose();
+          onEdit(t);
+        }}
+        onOpenAudit={(t) => onOpenAudit(t)}
+        onDelete={(taskId) => {
+          onClose();
+          onDelete?.(taskId);
+        }}
+        onPinToggled={(isPinned) => {
+          const updated = { ...currentTask, isPinned };
+          setCurrentTask(updated);
+          onTaskUpdated?.(updated);
+        }}
+        canManage={canManage}
+        triggerClassName="size-8 text-muted-foreground hover:text-foreground shrink-0 rounded-md -mt-1"
+        isNestedInDrawer={isMobile}
+      />
     </div>
   );
 
