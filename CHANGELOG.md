@@ -6,6 +6,24 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.0.2] - 2026-11-12
+
+### Adicionado
+- **Drawer de Pré-definições de Disponibilidade no Mobile**:
+  - Novo botão de pré-definições substitui os atalhos inline no mobile, abrindo um Drawer inferior com opções rápidas: Fins de semana, Noites nos dias úteis, Fins de semana e noites úteis, Semana inteira e Limpar tudo.
+  - Feedback visual imediato com notificação (*toast*) e fechamento automático para visualizar o calendário atualizado.
+- **Overhaul do Módulo de Músicas & Repertório**:
+  - Ordenação manual e alfabética de músicas nos cultos e eventos.
+  - Links de streaming para busca rápida no YouTube, YouTube Music e Spotify.
+  - Transposição harmônica de cifras com suporte a acordes invertidos e capo.
+
+### Alterado
+- **Navegação Móvel Otimizada**:
+  - Remoção do ícone de disponibilidade da barra inferior no mobile, liberando espaço e alinhando perfeitamente os 5 itens principais (Início, Escalas, Agenda, Músicas e Menu).
+  - Disponibilidade continua acessível diretamente pelo Menu de navegação.
+
+---
+
 ## [1.0.1] - 2026-11-11
 
 ### Corrigido
