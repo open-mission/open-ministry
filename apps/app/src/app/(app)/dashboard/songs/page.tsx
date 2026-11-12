@@ -26,9 +26,10 @@ async function SongsContent() {
   await connection();
 
   const { organization } = await requireOrganizationContext();
-  const [hasAccess, canCreate] = await Promise.all([
+  const [hasAccess, canCreate, canReorder] = await Promise.all([
     can("music", "read"),
     can("music", "createSong"),
+    can("music", "updateSong"),
   ]);
 
   if (!hasAccess) {
@@ -62,6 +63,7 @@ async function SongsContent() {
         existingCollections={collections}
         canManage={canCreate}
         canAddToNextService={hasAccess}
+        canReorder={canReorder}
       />
     </div>
   );

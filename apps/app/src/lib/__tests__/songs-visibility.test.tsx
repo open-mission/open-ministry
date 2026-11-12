@@ -1,6 +1,8 @@
 import { describe, expect, it, mock } from "bun:test";
 import { Fragment, createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { DndContext } from "@dnd-kit/core";
+import { SortableContext } from "@dnd-kit/sortable";
 
 import type { SongWithUsage } from "@/lib/songs";
 
@@ -81,5 +83,31 @@ describe("song action visibility for repertoire readers", () => {
     expect(markup).toContain("Adicionar ao próximo culto");
     expect(markup).not.toContain("Editar música");
     expect(markup).not.toContain("Excluir música");
+  });
+
+  it("renders an accessible 44px drag handle on sortable song cards", async () => {
+    const sortableModule = await import(
+      "@/features/songs/components/sortable-song-card"
+    ).catch(() => null);
+    const SortableSongCard = sortableModule?.SortableSongCard;
+    const markup = SortableSongCard
+      ? renderToStaticMarkup(
+          createElement(
+            DndContext,
+            null,
+            <SortableContext items={[song.id]}>
+              <SortableSongCard
+                song={song}
+                canManage={false}
+                canAddToNextService={false}
+              />
+            </SortableContext>,
+          ),
+        )
+      : "";
+
+    expect(markup).toContain('aria-label="Reordenar A Casa É Sua"');
+    expect(markup).toContain('aria-roledescription="sortable"');
+    expect(markup).toContain("size-11");
   });
 });

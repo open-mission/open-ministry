@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -54,6 +54,7 @@ type SongCardProps = {
   canManage?: boolean;
   canAddToNextService?: boolean;
   existingCollections?: string[];
+  dragHandle?: ReactNode;
   onSongUpdated?: (song: SongRecord) => void;
   onSongDeleted?: (songId: string) => void;
 };
@@ -63,6 +64,7 @@ export function SongCard({
   canManage = true,
   canAddToNextService = false,
   existingCollections = [],
+  dragHandle,
   onSongUpdated,
   onSongDeleted,
 }: SongCardProps) {
@@ -141,6 +143,8 @@ export function SongCard({
                 {song.artist || "Artista não informado"}
               </p>
             </Link>
+
+            {dragHandle}
 
             {canManage || canAddToNextService ? (
               isMobile ? (

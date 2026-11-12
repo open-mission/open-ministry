@@ -1,6 +1,21 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  rectSortingStrategy,
+  SortableContext,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
 import {
   CalendarDaysIcon,
   CheckIcon,
@@ -14,7 +29,9 @@ import {
   SearchIcon,
   XIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 
+import { reorderSongsAction } from "@/app/actions/songs";
 import { PageInfo } from "@/components/app/page-info";
 import { StatStrip, type StatItem } from "@/components/app/stat-strip";
 import { Button } from "@/components/ui/button";
@@ -40,18 +57,25 @@ import {
 } from "@/components/ui/input-group";
 import { NativeSelect } from "@/components/ui/native-select";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useSongsQuery } from "@/hooks/use-songs";
+import { songKeys, useSongsQuery } from "@/hooks/use-songs";
 import { STANDARD_TONES } from "@/lib/music/chords-utils";
+import {
+  getManualSongOrderIds,
+  isSongReorderingEnabled,
+  moveSongId,
+} from "@/lib/songs-order";
 import type { SongWithUsage } from "@/lib/songs";
 import { cn } from "@/lib/utils";
 import { AddSongChoiceDialog } from "./add-song-choice-dialog";
 import { SongCard } from "./song-card";
+import { SortableSongCard } from "./sortable-song-card";
 
 type SongsListViewProps = {
   songs: SongWithUsage[];
   existingCollections?: string[];
   canManage?: boolean;
   canAddToNextService?: boolean;
+  canReorder?: boolean;
 };
 
 type StatusFilter =
@@ -60,7 +84,12 @@ type StatusFilter =
   | "missing-lyrics"
   | "scheduled"
   | "never";
-type SortOption = "title" | "usage" | "updated";
+type SortOption = "manual" | "title" | "usage" | "updated";
+
+const songReorderInstructions = {
+  draggable:
+    "Para reordenar uma música, pressione espaço. Use as setas para escolher a posição e pressione espaço para confirmar ou Escape para cancelar.",
+};
 
 const STATUS_LABEL: Record<Exclude<StatusFilter, "all">, string> = {
   "missing-chords": "Sem cifra",
@@ -81,10 +110,12 @@ export function SongsListView({
   existingCollections = [],
   canManage = true,
   canAddToNextService = false,
+  canReorder = false,
 }: SongsListViewProps) {
   const { data } = useSongsQuery({
     initialData: { songs: initialSongs, collections: existingCollections },
   });
+  const queryClient = useQueryClient();
 
   const songs = data?.songs ?? initialSongs;
   const dataCollections = data?.collections;
@@ -113,6 +144,34 @@ export function SongsListView({
   const [collectionFilter, setCollectionFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortOption, setSortOption] = useState<SortOption>("title");
+  const [optimisticManualOrder, setOptimisticManualOrder] = useState<
+    string[] | null
+  >(null);
+  const [isReordering, setIsReordering] = useState(false);
+
+  const hasActiveFilters =
+    Boolean(search.trim() || toneFilter || collectionFilter) ||
+    statusFilter !== "all";
+  const persistedManualOrder = useMemo(
+    () => getManualSongOrderIds(songs),
+    [songs],
+  );
+  const manualOrderIds = optimisticManualOrder ?? persistedManualOrder;
+  const manualOrderPositions = useMemo(
+    () => new Map(manualOrderIds.map((id, index) => [id, index])),
+    [manualOrderIds],
+  );
+  const canReorderVisibleSongs = isSongReorderingEnabled(
+    canReorder,
+    sortOption,
+    hasActiveFilters,
+  );
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   const filteredSongs = useMemo(() => {
     let result = songs;
@@ -157,6 +216,12 @@ export function SongsListView({
 
     const collator = new Intl.Collator("pt-BR", { sensitivity: "base" });
     return [...result].sort((a, b) => {
+      if (sortOption === "manual") {
+        const manualOrderDiff =
+          (manualOrderPositions.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+          (manualOrderPositions.get(b.id) ?? Number.MAX_SAFE_INTEGER);
+        if (manualOrderDiff !== 0) return manualOrderDiff;
+      }
       if (sortOption === "usage") {
         const usageDiff = b.usage.eventCount - a.usage.eventCount;
         if (usageDiff !== 0) return usageDiff;
@@ -175,7 +240,15 @@ export function SongsListView({
       }
       return collator.compare(a.title, b.title);
     });
-  }, [songs, search, toneFilter, collectionFilter, statusFilter, sortOption]);
+  }, [
+    songs,
+    search,
+    toneFilter,
+    collectionFilter,
+    statusFilter,
+    sortOption,
+    manualOrderPositions,
+  ]);
 
   const missingChordsCount = useMemo(
     () => songs.filter((s) => !s.chords?.trim()).length,
@@ -216,15 +289,56 @@ export function SongsListView({
     ];
   }, [songs, missingChordsCount, missingLyricsCount]);
 
-  const hasActiveFilters =
-    Boolean(search || toneFilter || collectionFilter) || statusFilter !== "all";
-
   const clearFilters = () => {
     setSearch("");
     setToneFilter("");
     setCollectionFilter("");
     setStatusFilter("all");
   };
+
+  const handleSongDragEnd = async ({ active, over }: DragEndEvent) => {
+    if (!over || !canReorderVisibleSongs || isReordering) return;
+
+    const nextOrder = moveSongId(
+      manualOrderIds,
+      String(active.id),
+      String(over.id),
+    );
+    if (nextOrder === manualOrderIds) return;
+
+    setOptimisticManualOrder(nextOrder);
+    setIsReordering(true);
+
+    try {
+      const result = await reorderSongsAction(nextOrder);
+      if (!result.ok) {
+        toast.error(result.error ?? "Não foi possível salvar a ordem.");
+        return;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: songKeys.lists() });
+      toast.success("Ordem do repertório salva.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível salvar a ordem do repertório.",
+      );
+    } finally {
+      setOptimisticManualOrder(null);
+      setIsReordering(false);
+    }
+  };
+
+  const renderSongCard = (song: SongWithUsage) => (
+    <SongCard
+      key={song.id}
+      song={song}
+      canManage={canManage}
+      canAddToNextService={canAddToNextService}
+      existingCollections={collections}
+    />
+  );
 
   return (
     <div className="space-y-6 min-w-0 max-w-full">
@@ -583,12 +697,19 @@ export function SongsListView({
             aria-label="Ordenar músicas"
             className="w-full [&_select]:h-10 [&_select]:text-xs sm:w-44"
           >
+            <option value="manual">Ordem manual</option>
             <option value="title">Título (A-Z)</option>
             <option value="usage">Mais usadas</option>
             <option value="updated">Atualizadas recentemente</option>
           </NativeSelect>
         </div>
       </div>
+
+      {canReorder && sortOption === "manual" && hasActiveFilters ? (
+        <p role="status" className="text-xs text-muted-foreground">
+          Limpe a busca e os filtros para reordenar as músicas.
+        </p>
+      ) : null}
 
       {/* ATALHOS DE PENDÊNCIAS DO REPERTÓRIO */}
       <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -771,17 +892,36 @@ export function SongsListView({
 
       {/* GRID DE MÚSICAS */}
       {filteredSongs.length > 0 ? (
-        <div className="grid min-w-0 max-w-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredSongs.map((song) => (
-            <SongCard
-              key={song.id}
-              song={song}
-              canManage={canManage}
-              canAddToNextService={canAddToNextService}
-              existingCollections={collections}
-            />
-          ))}
-        </div>
+        canReorderVisibleSongs ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleSongDragEnd}
+            accessibility={{ screenReaderInstructions: songReorderInstructions }}
+          >
+            <SortableContext
+              items={filteredSongs.map((song) => song.id)}
+              strategy={rectSortingStrategy}
+            >
+              <div className="grid min-w-0 max-w-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredSongs.map((song) => (
+                  <SortableSongCard
+                    key={song.id}
+                    song={song}
+                    canManage={canManage}
+                    canAddToNextService={canAddToNextService}
+                    existingCollections={collections}
+                    disabled={isReordering}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        ) : (
+          <div className="grid min-w-0 max-w-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredSongs.map(renderSongCard)}
+          </div>
+        )
       ) : songs.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border/80 bg-card/60 p-8 text-center sm:p-12">
           <span className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">

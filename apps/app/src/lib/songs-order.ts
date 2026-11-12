@@ -16,3 +16,35 @@ export function moveSongId(
 
   return reordered;
 }
+
+type ManualOrderSong = {
+  id: string;
+  title: string;
+  sortOrder: number;
+};
+
+const titleCollator = new Intl.Collator("pt-BR", { sensitivity: "base" });
+
+export function isSongReorderingEnabled(
+  canReorder: boolean,
+  sortOption: string,
+  hasActiveFilters: boolean,
+): boolean {
+  return canReorder && sortOption === "manual" && !hasActiveFilters;
+}
+
+export function getManualSongOrderIds(
+  songs: readonly ManualOrderSong[],
+): string[] {
+  return [...songs]
+    .sort((a, b) => {
+      const orderDifference = a.sortOrder - b.sortOrder;
+      if (orderDifference !== 0) return orderDifference;
+
+      const titleDifference = titleCollator.compare(a.title, b.title);
+      if (titleDifference !== 0) return titleDifference;
+
+      return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+    })
+    .map((song) => song.id);
+}

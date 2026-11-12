@@ -2,12 +2,25 @@ import { describe, expect, it } from "bun:test";
 import { getTableConfig } from "drizzle-orm/pg-core";
 
 import { song } from "@/db/schema/songs";
+import * as songsOrder from "@/lib/songs-order";
 
 type MoveSongId = (
   ids: string[],
   activeId: string,
   overId: string,
 ) => string[];
+
+type ManualOrderSong = { id: string; title: string; sortOrder: number };
+type SongOrderHelpers = {
+  isSongReorderingEnabled?: (
+    canReorder: boolean,
+    sortOption: string,
+    hasActiveFilters: boolean,
+  ) => boolean;
+  getManualSongOrderIds?: (songs: ManualOrderSong[]) => string[];
+};
+
+const orderHelpers = songsOrder as unknown as SongOrderHelpers;
 
 async function moveSongId(
   ids: string[],
@@ -36,6 +49,52 @@ describe("shared song ordering", () => {
 
     expect(moved).toEqual(["song-a", "song-d", "song-b", "song-c"]);
     expect(ids).toEqual(["song-a", "song-b", "song-c", "song-d"]);
+  });
+
+  it("allows reordering for an authorized, unfiltered manual-order list", () => {
+    expect(
+      orderHelpers.isSongReorderingEnabled?.(true, "manual", false),
+    ).toBe(true);
+  });
+
+  it("disables reordering while search or filters hide songs", () => {
+    expect(
+      orderHelpers.isSongReorderingEnabled?.(true, "manual", true),
+    ).toBe(false);
+  });
+
+  it("disables reordering outside manual sort mode or without permission", () => {
+    expect(
+      orderHelpers.isSongReorderingEnabled?.(true, "title", false),
+    ).toBe(false);
+    expect(
+      orderHelpers.isSongReorderingEnabled?.(false, "manual", false),
+    ).toBe(false);
+  });
+
+  it("calculates complete manual order by position, title, and stable ID", () => {
+    const songs = [
+      { id: "song-z", title: "Hino Z", sortOrder: 1 },
+      { id: "song-c", title: "Hino A", sortOrder: 1 },
+      { id: "song-d", title: "Canção D", sortOrder: 2 },
+      { id: "song-b", title: "Abertura", sortOrder: 0 },
+      { id: "song-a", title: "Hino A", sortOrder: 1 },
+      { id: "song-e", title: "Canção C", sortOrder: 2 },
+    ];
+
+    const ids = orderHelpers.getManualSongOrderIds?.(songs);
+
+    expect(ids).toEqual([
+      "song-b",
+      "song-a",
+      "song-c",
+      "song-z",
+      "song-e",
+      "song-d",
+    ]);
+    expect(
+      songsOrder.moveSongId(ids ?? [], "song-a", "song-d"),
+    ).toEqual(["song-b", "song-c", "song-z", "song-e", "song-d", "song-a"]);
   });
 
   it("keeps capo smallint and defines a defaulted integer manual order", () => {
