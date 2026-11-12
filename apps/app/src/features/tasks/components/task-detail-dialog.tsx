@@ -9,6 +9,7 @@ import {
   ClockIcon,
   ExternalLinkIcon,
   HistoryIcon,
+  MoreVerticalIcon,
   PencilIcon,
   PinIcon,
   RepeatIcon,
@@ -33,6 +34,13 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -110,7 +118,7 @@ export function TaskDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto p-6">
+      <DialogContent className="sm:max-w-3xl md:max-w-4xl max-h-[88vh] overflow-y-auto p-6 sm:p-7">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -162,6 +170,12 @@ function TaskDetailContent({
   const isCompleted = currentTask.status === "completed";
   const whenText = formatTaskWhen(currentTask.date);
   const deadlineInfo = formatTaskDeadline(currentTask.deadline, isCompleted);
+
+  // Só exibe "Criado por" se a tarefa foi criada por outra pessoa ou delegada
+  const isSelfTask =
+    currentTask.scope === "personal" &&
+    (!currentTask.assigneeId || currentTask.assigneeId === currentTask.createdById);
+  const showCreatedBy = !isSelfTask && Boolean(currentTask.createdBy);
 
   const handleToggleComplete = () => {
     const nextStatus: TaskStatus = isCompleted ? "todo" : "completed";
@@ -237,63 +251,102 @@ function TaskDetailContent({
 
   return (
     <div className="space-y-5 pt-2">
-      {/* Título & Badges principais */}
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {/* Badge de Escopo */}
-          <Badge variant="outline" className="text-[11px] font-medium">
-            {currentTask.scope === "personal"
-              ? "Pessoal"
-              : currentTask.scope === "department"
-                ? `Departamento: ${currentTask.department?.name ?? "Equipe"}`
-                : "Toda a Igreja"}
-          </Badge>
+      {/* Título, Badges e Menu de Ações (canto superior direito) */}
+      <div className="space-y-2.5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+            {/* Badge de Escopo */}
+            <Badge variant="outline" className="text-[11px] font-medium">
+              {currentTask.scope === "personal"
+                ? "Pessoal"
+                : currentTask.scope === "department"
+                  ? `Departamento: ${currentTask.department?.name ?? "Equipe"}`
+                  : "Toda a Igreja"}
+            </Badge>
 
-          {/* Badge de Status */}
-          <Badge
-            variant={isCompleted ? "default" : "secondary"}
-            className={cn(
-              "text-[11px] font-medium",
-              isCompleted && "bg-emerald-600 hover:bg-emerald-600 text-white",
+            {/* Badge de Status */}
+            <Badge
+              variant={isCompleted ? "default" : "secondary"}
+              className={cn(
+                "text-[11px] font-medium",
+                isCompleted && "bg-emerald-600 hover:bg-emerald-600 text-white",
+              )}
+            >
+              {getStatusLabel(currentTask.status)}
+            </Badge>
+
+            {/* Badge de Prioridade */}
+            {currentTask.priority !== "none" && (
+              <Badge
+                variant="outline"
+                className={cn("text-[11px] font-medium", priorityColor[currentTask.priority])}
+              >
+                Prioridade {getPriorityLabel(currentTask.priority)}
+              </Badge>
             )}
-          >
-            {getStatusLabel(currentTask.status)}
-          </Badge>
 
-          {/* Badge de Prioridade */}
-          {currentTask.priority !== "none" && (
-            <Badge
-              variant="outline"
-              className={cn("text-[11px] font-medium", priorityColor[currentTask.priority])}
-            >
-              Prioridade {getPriorityLabel(currentTask.priority)}
-            </Badge>
-          )}
+            {currentTask.isPinned && (
+              <Badge
+                variant="outline"
+                className="gap-1 border-primary/30 bg-primary/5 text-primary text-[11px]"
+              >
+                <PinIcon className="size-3 fill-primary" />
+                Fixada
+              </Badge>
+            )}
 
-          {currentTask.isPinned && (
-            <Badge
-              variant="outline"
-              className="gap-1 border-primary/30 bg-primary/5 text-primary text-[11px]"
-            >
-              <PinIcon className="size-3 fill-primary" />
-              Fixada
-            </Badge>
-          )}
+            {currentTask.isRecurring && (
+              <Badge
+                variant="outline"
+                className="gap-1 border-emerald-500/30 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 text-[11px]"
+              >
+                <RepeatIcon className="size-3" />
+                Recorrente
+              </Badge>
+            )}
+          </div>
 
-          {currentTask.isRecurring && (
-            <Badge
-              variant="outline"
-              className="gap-1 border-emerald-500/30 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 text-[11px]"
-            >
-              <RepeatIcon className="size-3" />
-              Recorrente
-            </Badge>
-          )}
+          {/* Menu Dropdown de Opções perto do título */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8 text-muted-foreground hover:text-foreground shrink-0 rounded-md -mt-1"
+                title="Mais opções da tarefa"
+              >
+                <MoreVerticalIcon className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52 text-xs">
+              <DropdownMenuItem onClick={handleTogglePin} disabled={isPending}>
+                <PinIcon className="mr-2 size-3.5" />
+                {currentTask.isPinned ? "Desafixar do topo" : "Fixar no topo"}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onOpenAudit(currentTask)}>
+                <HistoryIcon className="mr-2 size-3.5" />
+                Histórico de Auditoria
+              </DropdownMenuItem>
+              {canManage && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleDelete}
+                    disabled={isPending}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2Icon className="mr-2 size-3.5" />
+                    Excluir Tarefa
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <h3
           className={cn(
-            "text-lg sm:text-xl font-heading font-semibold text-foreground leading-snug",
+            "text-xl sm:text-2xl font-heading font-semibold text-foreground leading-snug break-words",
             isCompleted && "line-through text-muted-foreground",
           )}
         >
@@ -301,17 +354,24 @@ function TaskDetailContent({
         </h3>
       </div>
 
-      {/* Grid de Metadados: Responsável, Datas e Departamento */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border bg-muted/20 p-3.5 text-xs">
+      {/* Grid de Metadados: Responsável, Datas e Criador (se tarefa delegada) */}
+      <div
+        className={cn(
+          "grid gap-3.5 rounded-xl border bg-muted/20 p-4 text-xs",
+          showCreatedBy
+            ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-4"
+            : "grid-cols-1 sm:grid-cols-3",
+        )}
+      >
         {/* Responsável */}
-        <div className="space-y-1">
+        <div className="space-y-1 min-w-0">
           <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
             Responsável
           </span>
-          <div className="flex items-center gap-2 pt-0.5">
+          <div className="flex items-center gap-2 pt-0.5 min-w-0">
             {currentTask.assignee ? (
               <>
-                <Avatar className="size-6">
+                <Avatar className="size-6 shrink-0">
                   <AvatarImage src={currentTask.assignee.image ?? undefined} />
                   <AvatarFallback className="text-[10px]">
                     {getInitials(currentTask.assignee.name || "U")}
@@ -322,7 +382,10 @@ function TaskDetailContent({
                     {currentTask.assignee.name ?? "Membro"}
                   </p>
                   {currentTask.assignee.email && (
-                    <p className="text-[11px] text-muted-foreground truncate">
+                    <p
+                      className="text-[11px] text-muted-foreground truncate"
+                      title={currentTask.assignee.email}
+                    >
                       {currentTask.assignee.email}
                     </p>
                   )}
@@ -330,7 +393,7 @@ function TaskDetailContent({
               </>
             ) : currentTask.assigneePerson ? (
               <>
-                <Avatar className="size-6">
+                <Avatar className="size-6 shrink-0">
                   <AvatarImage src={currentTask.assigneePerson.image ?? undefined} />
                   <AvatarFallback className="text-[10px]">
                     {getInitials(currentTask.assigneePerson.name || "P")}
@@ -348,52 +411,48 @@ function TaskDetailContent({
           </div>
         </div>
 
-        {/* Criado por */}
-        <div className="space-y-1">
-          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-            Criado por
-          </span>
-          <div className="flex items-center gap-2 pt-0.5">
-            {currentTask.createdBy ? (
-              <>
-                <Avatar className="size-6">
-                  <AvatarImage src={currentTask.createdBy.image ?? undefined} />
-                  <AvatarFallback className="text-[10px]">
-                    {getInitials(currentTask.createdBy.name || "U")}
-                  </AvatarFallback>
-                </Avatar>
-                <p className="font-medium text-foreground truncate">
-                  {currentTask.createdBy.name ?? "Usuário"}
-                </p>
-              </>
-            ) : (
-              <span className="text-muted-foreground">—</span>
-            )}
+        {/* Criado por (Visível apenas para tarefas delegadas / criadas por terceiros) */}
+        {showCreatedBy && currentTask.createdBy && (
+          <div className="space-y-1 min-w-0">
+            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+              Criado por
+            </span>
+            <div className="flex items-center gap-2 pt-0.5 min-w-0">
+              <Avatar className="size-6 shrink-0">
+                <AvatarImage src={currentTask.createdBy.image ?? undefined} />
+                <AvatarFallback className="text-[10px]">
+                  {getInitials(currentTask.createdBy.name || "U")}
+                </AvatarFallback>
+              </Avatar>
+              <p className="font-medium text-foreground truncate">
+                {currentTask.createdBy.name ?? "Usuário"}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Quando (Início) */}
-        <div className="space-y-1 border-t sm:border-t-0 pt-2 sm:pt-0">
+        <div className="space-y-1 min-w-0">
           <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
             <CalendarDaysIcon className="size-3 text-emerald-600 dark:text-emerald-400" />
             Quando trabalhar
           </span>
-          <p className="font-medium text-foreground pt-0.5">
+          <p className="font-medium text-foreground pt-0.5 truncate">
             {whenText ?? "Nenhuma data definida"}
           </p>
         </div>
 
         {/* Prazo Limite (Deadline) */}
-        <div className="space-y-1 border-t sm:border-t-0 pt-2 sm:pt-0">
+        <div className="space-y-1 min-w-0">
           <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
             <ClockIcon className="size-3 text-amber-600 dark:text-amber-400" />
             Prazo limite
           </span>
-          <div className="pt-0.5 flex items-center gap-1.5">
+          <div className="pt-0.5 flex items-center gap-1.5 min-w-0">
             {deadlineInfo ? (
               <span
                 className={cn(
-                  "font-medium",
+                  "font-medium truncate",
                   deadlineInfo.isOverdue
                     ? "text-destructive font-semibold"
                     : "text-foreground",
@@ -462,46 +521,15 @@ function TaskDetailContent({
 
       {/* Barra de Ações Inferior */}
       <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 border-t pt-4">
-        <div className="flex items-center gap-2">
-          {canManage && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleDelete}
-              disabled={isPending}
-              className="text-destructive hover:text-destructive hover:bg-destructive/10 h-9 sm:h-8"
-            >
-              <Trash2Icon className="mr-1.5 size-3.5" />
-              Excluir
-            </Button>
-          )}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handleTogglePin}
-            disabled={isPending}
-            className={cn(
-              "text-muted-foreground hover:text-foreground h-9 sm:h-8 gap-1.5",
-              currentTask.isPinned && "text-primary hover:text-primary",
-            )}
-            title={currentTask.isPinned ? "Desafixar do topo" : "Fixar no topo"}
-          >
-            <PinIcon className={cn("size-3.5", currentTask.isPinned && "fill-primary")} />
-            {currentTask.isPinned ? "Desafixar" : "Fixar"}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => onOpenAudit(currentTask)}
-            className="text-muted-foreground hover:text-foreground h-9 sm:h-8"
-          >
-            <HistoryIcon className="mr-1.5 size-3.5" />
-            Histórico
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onClose}
+          className="h-9 sm:h-8"
+        >
+          Fechar
+        </Button>
 
         <div className="flex items-center gap-2">
           <Button
