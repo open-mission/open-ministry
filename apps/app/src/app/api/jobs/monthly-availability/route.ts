@@ -1,36 +1,22 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { getQStashReceiver } from "@/lib/queue";
+import { verifyQueueEndpointAuth } from "@/lib/queue";
 import { dispatchNotification } from "@/lib/notification-service";
 import { eq } from "drizzle-orm";
 
 export async function POST(req: Request) {
   try {
     const rawBody = await req.text();
-    const receiver = getQStashReceiver();
 
-    if (receiver) {
-      const signature = req.headers.get("upstash-signature");
-      if (!signature) {
-        return NextResponse.json(
-          { error: "Assinatura QStash ausente" },
-          { status: 401 },
-        );
-      }
-
-      const isValid = await receiver.verify({
-        signature,
-        body: rawBody,
-        url: req.url,
-      });
-
-      if (!isValid) {
-        return NextResponse.json(
-          { error: "Assinatura QStash inválida" },
-          { status: 401 },
-        );
-      }
+    // Falhe fechado: sem assinatura válida (ou CRON_SECRET) o job não roda —
+    // evita disparo de broadcast de WhatsApp não autenticado.
+    const auth = await verifyQueueEndpointAuth(req, rawBody);
+    if (!auth.ok) {
+      return NextResponse.json(
+        { error: `Assinatura QStash inválida (${auth.reason})` },
+        { status: 401 },
+      );
     }
 
     // Find all organizations with active WhatsApp notification channel

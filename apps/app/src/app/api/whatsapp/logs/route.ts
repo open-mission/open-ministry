@@ -1,7 +1,7 @@
 import { connection } from "next/server";
 import type { NextRequest } from "next/server";
 
-import { isUserLeaderInAnyDepartment } from "@/lib/departments";
+import { isUserLeaderInAnyDepartment, listUserLeaderDepartments } from "@/lib/departments";
 import { listEvolutionMessageLogs } from "@/lib/notification-service";
 import { getOrganizationContext } from "@/lib/organizations";
 
@@ -45,6 +45,21 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || "";
     const batchId = searchParams.get("batchId") || undefined;
 
+    // Escopo de líder: apenas logs de pessoas dos departamentos que lidera.
+    let departmentIds: string[] | undefined;
+    if (!context.isAdmin) {
+      const ledDepartments = await listUserLeaderDepartments(
+        context.organization.id,
+        context.session.user.id,
+      );
+
+      if (ledDepartments.length === 0) {
+        return Response.json({ logs: [], total: 0 });
+      }
+
+      departmentIds = ledDepartments.map((department) => department.id);
+    }
+
     const data = await listEvolutionMessageLogs(context.organization.id, {
       limit,
       offset,
@@ -52,6 +67,7 @@ export async function GET(request: NextRequest) {
       type,
       search,
       batchId,
+      departmentIds,
     });
 
     return Response.json(data);

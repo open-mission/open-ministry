@@ -1,58 +1,21 @@
 import { NextResponse } from "next/server";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { getQStashReceiver } from "@/lib/queue";
+import { verifyQueueEndpointAuth } from "@/lib/queue";
 import { sendWebPushToUser } from "@/lib/push-notifications";
 import { getTodayDateString } from "@/lib/felicitometro-types";
-import { getSession } from "@/lib/session";
-
-async function verifyAuth(req: Request, rawBody: string): Promise<boolean> {
-  const receiver = getQStashReceiver();
-  if (receiver) {
-    const signature = req.headers.get("upstash-signature");
-    if (signature) {
-      const isValid = await receiver.verify({
-        signature,
-        body: rawBody,
-        url: req.url,
-      });
-      if (isValid) return true;
-    }
-  }
-
-  // Verificar Authorization Bearer CRON_SECRET se configurado
-  const authHeader = req.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
-    return true;
-  }
-
-  // Ou verificar sessão de administrador
-  try {
-    const session = await getSession();
-    if (session?.user) {
-      return true;
-    }
-  } catch {
-    // Ignora erro de sessão
-  }
-
-  // Em desenvolvimento local sem chaves configuradas, permite execução
-  if (process.env.NODE_ENV !== "production") {
-    return true;
-  }
-
-  return false;
-}
 
 export async function POST(req: Request) {
   try {
     const rawBody = await req.text();
-    const isAuthorized = await verifyAuth(req, rawBody);
 
-    if (!isAuthorized) {
+    // Falhe fechado: apenas assinatura QStash válida (ou CRON_SECRET) dispara o
+    // job. O fallback de sessão anterior deixava qualquer membro disparar push
+    // em massa para a igreja inteira.
+    const auth = await verifyQueueEndpointAuth(req, rawBody);
+    if (!auth.ok) {
       return NextResponse.json(
         { error: "Não autorizado" },
         { status: 401 },
@@ -149,6 +112,7 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET(req: Request) {
-  return POST(req);
+export async function GET() {
+  // GET não dispara o job: agendamento usa POST assinado.
+  return NextResponse.json({ error: "Método não permitido" }, { status: 405 });
 }

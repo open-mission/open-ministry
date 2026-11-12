@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { getQStashReceiver, type NotificationJob } from "@/lib/queue";
+import { verifyQueueEndpointAuth, type NotificationJob } from "@/lib/queue";
 import {
   getOrganizationEvolutionConfig,
   buildWhatsAppMessageText,
@@ -12,30 +12,15 @@ import { sendEvolutionTextMessage } from "@/lib/evolution-api";
 export async function POST(req: Request) {
   try {
     const rawBody = await req.text();
-    const receiver = getQStashReceiver();
 
-    // Verify signature if QStash signing keys are configured
-    if (receiver) {
-      const signature = req.headers.get("upstash-signature");
-      if (!signature) {
-        return NextResponse.json(
-          { error: "Assinatura QStash ausente" },
-          { status: 401 },
-        );
-      }
-
-      const isValid = await receiver.verify({
-        signature,
-        body: rawBody,
-        url: req.url,
-      });
-
-      if (!isValid) {
-        return NextResponse.json(
-          { error: "Assinatura QStash inválida" },
-          { status: 401 },
-        );
-      }
+    // Falhe fechado: sem assinatura válida (ou CRON_SECRET) o endpoint não
+    // dispara mensagens — evita envio de WhatsApp não autenticado.
+    const auth = await verifyQueueEndpointAuth(req, rawBody);
+    if (!auth.ok) {
+      return NextResponse.json(
+        { error: `Assinatura QStash inválida (${auth.reason})` },
+        { status: 401 },
+      );
     }
 
     const job = JSON.parse(rawBody) as NotificationJob;

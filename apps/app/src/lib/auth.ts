@@ -19,11 +19,40 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { getAppBaseUrl } from "@/lib/app-url";
 import { sendTransactionalEmail } from "@/lib/email/service";
+import { getRedisClient, isRedisConfigured } from "@/lib/queue";
+import {
+  createRedisRateLimitStorage,
+} from "@/lib/rate-limit-storage";
 
 export const auth = betterAuth({
   appName: "OpenMinistry",
   baseURL: getAppBaseUrl(),
   secret: process.env.BETTER_AUTH_SECRET,
+  rateLimit: {
+    // Limites por IP; o better-auth habilita o limiter em produção e deixa
+    // desligado em desenvolvimento (default). Janela global: default 10s/100.
+    window: 10,
+    max: 100,
+    customRules: {
+      // Credenciais: 10 tentativas por minuto por IP por endpoint.
+      "/sign-in/email": { window: 60, max: 10 },
+      "/sign-in/username": { window: 60, max: 10 },
+      // Envio de e-mail (magic link, reset): 5 por 5 minutos por IP.
+      "/sign-in/magic-link": { window: 300, max: 5 },
+      "/forget-password": { window: 300, max: 5 },
+      "/reset-password": { window: 300, max: 10 },
+      // Cadastro: 20 por hora por IP.
+      "/sign-up/email": { window: 3600, max: 20 },
+    },
+    // Contadores no Redis Upstash (compartilhados entre instâncias; o storage
+    // "memory" default é efêmero por instância serverless). Quando o Redis
+    // não está configurado, fica o default sem customStorage.
+    ...(isRedisConfigured()
+      ? {
+          customStorage: createRedisRateLimitStorage(getRedisClient()),
+        }
+      : {}),
+  },
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,

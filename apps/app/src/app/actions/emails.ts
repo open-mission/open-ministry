@@ -1,13 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, desc, eq, ilike, or } from "drizzle-orm";
+import { and, eq, inArray, or } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { isUserLeaderInAnyDepartment } from "@/lib/departments";
 import {
+  isUserLeaderInAnyDepartment,
+  listUserLeaderDepartments,
+} from "@/lib/departments";
+import {
+  listEmailMessageLogs,
   resendLoggedEmail,
   sendTestEmail,
 } from "@/lib/email/service";
@@ -82,57 +86,44 @@ export async function listEmailLogsAction(filters?: ListEmailLogsFilter): Promis
   }
 
   try {
-    const conditions = [
-      or(
-        eq(schema.emailMessageLog.organizationId, context.organization.id),
-        // Permite que admins vejam emails de autenticação associados ao seu usuário
-        eq(schema.emailMessageLog.userId, context.session.user.id),
-      ),
-    ];
+    const options: NonNullable<Parameters<typeof listEmailMessageLogs>[1]> = {
+      status: filters?.status,
+      type: filters?.type,
+      search: filters?.search,
+      limit: filters?.limit,
+      viewerUserId: context.session.user.id,
+    };
 
-    if (filters?.status && filters.status !== "all") {
-      conditions.push(eq(schema.emailMessageLog.status, filters.status));
-    }
+    if (!context.isAdmin) {
+      // Escopo de líder: apenas logs de pessoas dos departamentos que lidera
+      // (o gate acima só verifica o papel, não restringe o volume).
+      const ledDepartments = await listUserLeaderDepartments(
+        context.organization.id,
+        context.session.user.id,
+      );
 
-    if (filters?.type && filters.type !== "all") {
-      conditions.push(eq(schema.emailMessageLog.type, filters.type));
-    }
+      if (ledDepartments.length === 0) {
+        return {
+          ok: true,
+          logs: [],
+          stats: { total: 0, sent: 0, failed: 0 },
+        };
+      }
 
-    if (filters?.search && filters.search.trim().length > 0) {
-      const query = `%${filters.search.trim()}%`;
-      conditions.push(
-        or(
-          ilike(schema.emailMessageLog.recipientEmail, query),
-          ilike(schema.emailMessageLog.recipientName, query),
-          ilike(schema.emailMessageLog.subject, query),
-        )!,
+      options.departmentIds = ledDepartments.map(
+        (department) => department.id,
       );
     }
 
-    const whereClause = and(...conditions);
-
-    const logs = await db.query.emailMessageLog.findMany({
-      where: whereClause,
-      orderBy: [desc(schema.emailMessageLog.createdAt)],
-      limit: filters?.limit ?? 100,
-    });
-
-    // Calcula estatísticas básicas da organização
-    const allOrgLogs = await db.query.emailMessageLog.findMany({
-      where: eq(schema.emailMessageLog.organizationId, context.organization.id),
-      columns: { status: true },
-    });
-
-    const stats: EmailStats = {
-      total: allOrgLogs.length,
-      sent: allOrgLogs.filter((l) => l.status === "sent").length,
-      failed: allOrgLogs.filter((l) => l.status === "failed").length,
-    };
+    const result = await listEmailMessageLogs(
+      context.organization.id,
+      options,
+    );
 
     return {
       ok: true,
-      logs: logs as EmailLogItem[],
-      stats,
+      logs: result.logs as EmailLogItem[],
+      stats: result.stats,
     };
   } catch (error) {
     console.error("Erro ao listar logs de emails:", error);
@@ -168,7 +159,68 @@ export async function resendEmailAction(
     return { ok: false, error: "Permissão insuficiente para reenviar emails." };
   }
 
-  const result = await resendLoggedEmail(logId, targetEmailOverride);
+  // Busca sempre escopada: logs da organização ativa (admin) ou os e-mails
+  // de autenticação do próprio usuário — nunca registros de outra igreja.
+  const log = await db.query.emailMessageLog.findFirst({
+    where: and(
+      eq(schema.emailMessageLog.id, logId),
+      or(
+        eq(schema.emailMessageLog.organizationId, context.organization.id),
+        eq(schema.emailMessageLog.userId, context.session.user.id),
+      ),
+    ),
+    columns: { personId: true, userId: true },
+  });
+
+  if (!log) {
+    return { ok: false, error: "Registro de email não encontrado." };
+  }
+
+  if (!context.isAdmin) {
+    // Escopo de líder: o próprio e-mail de autenticação, ou e-mails de
+    // pessoas dos departamentos que lidera. E-mail sem pessoa/usuário
+    // vinculado (broadcast) fica fora do escopo.
+    let inScope = log.userId === context.session.user.id;
+
+    if (!inScope) {
+      const ledDepartments = await listUserLeaderDepartments(
+        context.organization.id,
+        context.session.user.id,
+      );
+
+      if (ledDepartments.length === 0) {
+        return { ok: false, error: "Você não lidera nenhum departamento." };
+      }
+
+      inScope = log.personId
+        ? Boolean(
+            await db.query.departmentMember.findFirst({
+              where: and(
+                eq(schema.departmentMember.personId, log.personId),
+                inArray(
+                  schema.departmentMember.departmentId,
+                  ledDepartments.map((department) => department.id),
+                ),
+              ),
+              columns: { id: true },
+            }),
+          )
+        : false;
+    }
+
+    if (!inScope) {
+      return {
+        ok: false,
+        error: "Você só pode reenviar e-mails do seu departamento.",
+      };
+    }
+  }
+
+  const result = await resendLoggedEmail(
+    logId,
+    targetEmailOverride,
+    context.organization.id,
+  );
   revalidatePath("/dashboard/emails");
   return result;
 }

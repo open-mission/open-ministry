@@ -7,6 +7,7 @@ import * as schema from "@/db/schema";
 import { cacheInvalidateTags } from "@/lib/cache";
 import { requireOrganizationContext } from "@/lib/organizations";
 import {
+  isActionDelegable,
   isValidModule,
   isValidModuleAction,
   MODULE_KEYS,
@@ -147,6 +148,18 @@ export async function setOrganizationRolePermissionAction(
 
   if (!isValidModuleAction(moduleKey, action)) {
     return { ok: false, error: "Ação inválida para o módulo especificado." };
+  }
+
+  // Permissões marcadas como não-delegáveis no catálogo não podem ser
+  // ligadas para papéis abaixo de admin (o mesmo gate da concessão por
+  // departamento em department-permissions.ts). Revogar (enabled: false)
+  // continua permitido, para limpar concessões indevidas.
+  if (enabled && role !== "admin" && !isActionDelegable(moduleKey, action)) {
+    return {
+      ok: false,
+      error:
+        "Esta permissão não é delegável: apenas o papel de administrador a possui.",
+    };
   }
 
   const context = await requireOrganizationContext();

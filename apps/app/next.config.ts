@@ -1,11 +1,24 @@
 import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 
+import { buildSecurityHeaders } from "./src/lib/security-headers";
+
 const nextConfig: NextConfig = {
   /* config options here */
   transpilePackages: ["@openministry/ui", "@openministry/db"],
   cacheComponents: true,
   partialPrefetching: true,
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: buildSecurityHeaders({
+          nodeEnv: process.env.NODE_ENV ?? "development",
+          realtimeUrl: process.env.NEXT_PUBLIC_NEON_REALTIME_URL,
+        }),
+      },
+    ];
+  },
   experimental: {
     staleTimes: {
       dynamic: 30,
