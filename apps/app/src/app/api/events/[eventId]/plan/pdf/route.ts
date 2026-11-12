@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt, isNull, or } from "drizzle-orm";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth";
 import { computePlanItemTimes } from "@/lib/plan-utils";
 import { formatEventFullDate, formatEventTimeRange } from "@/lib/events";
 import { eventKindLabels, type EventKind } from "@/lib/event-options";
+import { PUBLIC_SHARE_MAX_AGE_DAYS } from "@/lib/public-share";
 import { generateEventPlanPdfStream } from "@/lib/pdf/generator";
 
 export async function GET(
@@ -28,6 +29,17 @@ export async function GET(
           eq(schema.event.publicShareToken, token),
           eq(schema.event.isPublicShareEnabled, true),
           eq(schema.event.publicShareAllowPdf, true),
+          // Link expirado (achado 8) não baixa PDF; linhas legadas sem
+          // publicShareUpdatedAt continuam válidas.
+          or(
+            isNull(schema.event.publicShareUpdatedAt),
+            gt(
+              schema.event.publicShareUpdatedAt,
+              new Date(
+                Date.now() - PUBLIC_SHARE_MAX_AGE_DAYS * 24 * 60 * 60 * 1000,
+              ),
+            ),
+          ),
         ),
         with: {
           organization: true,

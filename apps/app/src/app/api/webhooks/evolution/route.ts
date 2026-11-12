@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { authenticateEvolutionWebhook } from "@/lib/evolution-webhook";
 import { formatPhoneNumberForEvolution } from "@/lib/evolution-api";
 import { sentryLogger } from "@/lib/telemetry/sentry";
 
@@ -32,7 +33,6 @@ export async function POST(req: Request) {
   try {
     const url = new URL(req.url);
     const tokenParam = url.searchParams.get("token")?.trim();
-    const orgIdParam = url.searchParams.get("orgId")?.trim();
 
     const rawBody = await req.json().catch(() => null);
     if (!rawBody || typeof rawBody !== "object") {
@@ -52,31 +52,31 @@ export async function POST(req: Request) {
       instanceName,
     });
 
-    // 1. Identify organization
-    let organizationId: string | null = orgIdParam || null;
+    // 1. Identify organization (falhe fechado: em produção, um token válido é
+    // obrigatório; o token identifica a organização e autentica o webhook).
+    const organizationId = await authenticateEvolutionWebhook(
+      tokenParam,
+      async (candidate) => {
+        const channel = await db.query.organizationNotificationChannel.findFirst({
+          where: eq(
+            schema.organizationNotificationChannel.webhookSecret,
+            candidate,
+          ),
+          columns: { organizationId: true },
+        });
+        return channel ?? null;
+      },
+      process.env.NODE_ENV ?? "development",
+    );
 
-    if (!organizationId && tokenParam) {
-      const channel = await db.query.organizationNotificationChannel.findFirst({
-        where: or(
-          eq(schema.organizationNotificationChannel.webhookSecret, tokenParam),
-          eq(schema.organizationNotificationChannel.apiKey, tokenParam),
-        ),
-        columns: { organizationId: true },
-      });
-      if (channel) {
-        organizationId = channel.organizationId;
-      }
+    if (!organizationId.ok) {
+      return NextResponse.json(
+        { error: "Token de webhook inválido" },
+        { status: 401 },
+      );
     }
 
-    if (!organizationId && instanceName) {
-      const channel = await db.query.organizationNotificationChannel.findFirst({
-        where: eq(schema.organizationNotificationChannel.instanceName, instanceName),
-        columns: { organizationId: true },
-      });
-      if (channel) {
-        organizationId = channel.organizationId;
-      }
-    }
+    const orgScopeId = organizationId.organizationId;
 
     // 2. Handle Status Updates (messages.update / message.update / etc.)
     if (eventRaw.includes("update")) {
@@ -132,30 +132,34 @@ export async function POST(req: Request) {
           updateFields.sentAt = sql`COALESCE(${schema.whatsappMessageLog.sentAt}, NOW())`;
         }
 
-        // Try updating by Evolution Message ID first
+        // Try updating by Evolution Message ID first (escopado pela organização
+        // do token; sem organização, apenas em dev local)
         if (messageId) {
           const res = await db
             .update(schema.whatsappMessageLog)
             .set(updateFields)
-            .where(eq(schema.whatsappMessageLog.evolutionMessageId, messageId));
+            .where(
+              and(
+                eq(schema.whatsappMessageLog.evolutionMessageId, messageId),
+                orgScopeId
+                  ? eq(schema.whatsappMessageLog.organizationId, orgScopeId)
+                  : undefined,
+              ),
+            );
 
           if (res.rowCount && res.rowCount > 0) {
             continue;
           }
         }
 
-        // Fallback: match by phone number for recent log in the same organization
-        if (cleanPhone) {
-          const whereClause = organizationId
-            ? and(
-                eq(schema.whatsappMessageLog.organizationId, organizationId),
-                eq(schema.whatsappMessageLog.recipientPhone, cleanPhone),
-                inArray(schema.whatsappMessageLog.status, ["pending", "sending", "sent", "delivered"]),
-              )
-            : and(
-                eq(schema.whatsappMessageLog.recipientPhone, cleanPhone),
-                inArray(schema.whatsappMessageLog.status, ["pending", "sending", "sent", "delivered"]),
-              );
+        // Fallback: match by phone number for the most recent pending log of
+        // the token's organization (nunca cruza organizações)
+        if (cleanPhone && orgScopeId) {
+          const whereClause = and(
+            eq(schema.whatsappMessageLog.organizationId, orgScopeId),
+            eq(schema.whatsappMessageLog.recipientPhone, cleanPhone),
+            inArray(schema.whatsappMessageLog.status, ["pending", "sending", "sent", "delivered"]),
+          );
 
           const recentLog = await db.query.whatsappMessageLog.findFirst({
             where: whereClause,
@@ -206,13 +210,16 @@ export async function POST(req: Request) {
               and(
                 eq(schema.whatsappMessageLog.evolutionMessageId, messageId),
                 inArray(schema.whatsappMessageLog.status, ["pending", "sending"]),
+                orgScopeId
+                  ? eq(schema.whatsappMessageLog.organizationId, orgScopeId)
+                  : undefined,
               ),
             );
-        } else if (cleanPhone && organizationId) {
+        } else if (cleanPhone && orgScopeId) {
           // Try to link with latest pending message to that phone
           const pending = await db.query.whatsappMessageLog.findFirst({
             where: and(
-              eq(schema.whatsappMessageLog.organizationId, organizationId),
+              eq(schema.whatsappMessageLog.organizationId, orgScopeId),
               eq(schema.whatsappMessageLog.recipientPhone, cleanPhone),
               inArray(schema.whatsappMessageLog.status, ["pending", "sending"]),
             ),
@@ -238,7 +245,7 @@ export async function POST(req: Request) {
       sentryLogger.fmt`Evolution webhook event processed: ${eventRaw}`,
       {
         instanceName,
-        organizationId: organizationId ?? "unknown",
+        organizationId: orgScopeId ?? "unknown",
         event: eventRaw,
       },
     );

@@ -58,6 +58,60 @@ export function getQStashReceiver(): Receiver | null {
   return receiverInstance;
 }
 
+export type QueueAuthResult =
+  | { ok: true }
+  | {
+      ok: false;
+      reason: "missing_signature" | "invalid_signature" | "unconfigured";
+    };
+
+type QueueSignatureReceiver = {
+  verify(args: { signature: string; body: string; url: string }): Promise<boolean>;
+};
+
+/**
+ * Autenticação fail-closed para endpoints disparados por fila (QStash) ou cron.
+ *
+ * Regras: bearer `CRON_SECRET` autoriza operação manual; com receiver
+ * configurado, a assinatura é sempre obrigatória; sem receiver, apenas
+ * ambientes fora de produção aceitam requests sem assinatura.
+ */
+export async function verifyQueueEndpointAuth(
+  req: Request,
+  rawBody: string,
+  environment: string = process.env.NODE_ENV ?? "development",
+  receiver: QueueSignatureReceiver | null = getQStashReceiver(),
+): Promise<QueueAuthResult> {
+  const authHeader = req.headers.get("authorization");
+  const cronSecret = process.env.CRON_SECRET;
+
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    return { ok: true };
+  }
+
+  const signature = req.headers.get("upstash-signature");
+
+  if (receiver && signature) {
+    const isValid = await receiver.verify({
+      signature,
+      body: rawBody,
+      url: req.url,
+    });
+
+    return isValid ? { ok: true } : { ok: false, reason: "invalid_signature" };
+  }
+
+  if (receiver && !signature) {
+    return { ok: false, reason: "missing_signature" };
+  }
+
+  if (environment !== "production") {
+    return { ok: true };
+  }
+
+  return { ok: false, reason: "unconfigured" };
+}
+
 export type NotificationJob = {
   whatsappLogId?: string;
   batchId?: string;

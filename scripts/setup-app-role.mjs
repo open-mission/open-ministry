@@ -25,6 +25,9 @@ function buildAuthenticatedUrl(password) {
     url.host = url.host.replace(/^(ep-[^.]+)\./, "$1-pooler.");
   }
 
+  // TLS obrigatório para a credencial do app em produção (achado 10).
+  url.searchParams.set("sslmode", "require");
+
   return url.toString();
 }
 
@@ -60,6 +63,15 @@ async function main() {
     }
 
     password = decodeURIComponent(parsed.password);
+
+    // URL gerada por versão antiga do script: avisa para atualizar o .env.
+    if (parsed.searchParams.get("sslmode") !== "require") {
+      parsed.searchParams.set("sslmode", "require");
+      authenticatedUrl = parsed.toString();
+      console.warn(
+        `Aviso: ${ENV_KEY} existente está sem sslmode=require. Atualize a entrada no .env para:\n${authenticatedUrl}`,
+      );
+    }
   } else {
     password = randomBytes(24).toString("base64url");
     authenticatedUrl = buildAuthenticatedUrl(password);

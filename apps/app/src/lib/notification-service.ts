@@ -1,7 +1,7 @@
 import "server-only";
 
 import { randomUUID } from "node:crypto";
-import { eq, and, sql, desc, or, ilike } from "drizzle-orm";
+import { eq, and, sql, desc, or, ilike, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { remember } from "@/lib/cache";
@@ -16,6 +16,7 @@ import {
 } from "@/lib/queue";
 import { getAppBaseUrl } from "@/lib/app-url";
 import { sendWebPushToUser } from "@/lib/push-notifications";
+import { decryptSecret } from "@/lib/secret-crypto";
 import type { MessageTemplateType } from "@/lib/message-templates";
 import { renderOrganizationMessageText } from "@/lib/message-templates-server";
 import { sendTransactionalEmail } from "@/lib/email/service";
@@ -61,18 +62,20 @@ export async function getOrganizationEvolutionConfig(
           ),
         });
 
+        const apiKey = channel ? decryptSecret(channel.apiKey) : null;
+
         if (
           channel &&
           channel.isActive &&
           channel.apiUrl &&
-          channel.apiKey &&
+          apiKey &&
           channel.instanceName
         ) {
           return {
             channel,
             config: {
               apiUrl: channel.apiUrl,
-              apiKey: channel.apiKey,
+              apiKey,
               instanceName: channel.instanceName,
             },
           };
@@ -552,6 +555,7 @@ export async function retryWhatsAppMessage(
 export async function retryFailedWhatsAppMessages(
   organizationId: string,
   batchId?: string,
+  departmentIds?: string[],
 ): Promise<{ total: number; sent: number; failed: number }> {
   const conditions = [
     eq(schema.whatsappMessageLog.organizationId, organizationId),
@@ -563,6 +567,22 @@ export async function retryFailedWhatsAppMessages(
 
   if (batchId) {
     conditions.push(eq(schema.whatsappMessageLog.batchId, batchId));
+  }
+
+  if (departmentIds) {
+    if (departmentIds.length === 0) {
+      return { total: 0, sent: 0, failed: 0 };
+    }
+
+    conditions.push(
+      inArray(
+        schema.whatsappMessageLog.personId,
+        db
+          .select({ id: schema.person.id })
+          .from(schema.departmentMember)
+          .where(inArray(schema.departmentMember.departmentId, departmentIds)),
+      ),
+    );
   }
 
   const pendingList = await db.query.whatsappMessageLog.findMany({
@@ -626,6 +646,11 @@ export async function listEvolutionMessageLogs(
     search?: string;
     type?: string;
     batchId?: string;
+    /**
+     * Escopo de líder: quando definido, só aparecem logs de pessoas membros
+     * desses departamentos. Array vazio = nenhum acesso (fail-closed).
+     */
+    departmentIds?: string[];
   },
 ): Promise<{ logs: EvolutionMessageLogItem[]; total: number }> {
   const limit = options?.limit ?? 50;
@@ -634,6 +659,27 @@ export async function listEvolutionMessageLogs(
   const conditions = [
     eq(schema.whatsappMessageLog.organizationId, organizationId),
   ];
+
+  if (options?.departmentIds) {
+    if (options.departmentIds.length === 0) {
+      return { logs: [], total: 0 };
+    }
+
+    conditions.push(
+      inArray(
+        schema.whatsappMessageLog.personId,
+        db
+          .select({ id: schema.person.id })
+          .from(schema.departmentMember)
+          .where(
+            inArray(
+              schema.departmentMember.departmentId,
+              options.departmentIds,
+            ),
+          ),
+      ),
+    );
+  }
 
   if (options?.status && options.status !== "all") {
     conditions.push(eq(schema.whatsappMessageLog.status, options.status));

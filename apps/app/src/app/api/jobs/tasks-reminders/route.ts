@@ -4,7 +4,7 @@ import * as Sentry from "@sentry/nextjs";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { getQStashReceiver } from "@/lib/queue";
+import { verifyQueueEndpointAuth } from "@/lib/queue";
 import { dispatchNotification } from "@/lib/notification-service";
 import { sentryLogger } from "@/lib/telemetry/sentry";
 
@@ -12,31 +12,22 @@ export async function POST(req: Request) {
   return handleTasksReminders(req);
 }
 
-export async function GET(req: Request) {
-  return handleTasksReminders(req);
+export async function GET() {
+  // GET não pode disparar efeitos colaterais; o agendamento usa POST assinado.
+  return NextResponse.json({ error: "Método não permitido" }, { status: 405 });
 }
 
 async function handleTasksReminders(req: Request) {
   try {
-    const receiver = getQStashReceiver();
-
-    if (receiver) {
-      const signature = req.headers.get("upstash-signature");
-      if (signature) {
-        const rawBody = await req.text();
-        const isValid = await receiver.verify({
-          signature,
-          body: rawBody,
-          url: req.url,
-        });
-
-        if (!isValid) {
-          return NextResponse.json(
-            { error: "Assinatura QStash inválida" },
-            { status: 401 },
-          );
-        }
-      }
+    // Falhe fechado: sem assinatura válida (ou CRON_SECRET) o job não roda —
+    // antes, um request sem o header upstash-signature passava direto.
+    const rawBody = await req.text();
+    const auth = await verifyQueueEndpointAuth(req, rawBody);
+    if (!auth.ok) {
+      return NextResponse.json(
+        { error: `Assinatura QStash inválida (${auth.reason})` },
+        { status: 401 },
+      );
     }
 
     sentryLogger.setScopeContext({

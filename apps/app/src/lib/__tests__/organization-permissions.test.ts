@@ -213,3 +213,92 @@ describe("Church and Role Permission Settings Actions", () => {
     expect(fakeOrgModules.get("org-1:music")).toBe(true);
   });
 });
+
+describe("setOrganizationRolePermissionAction — permissões não-delegáveis", () => {
+  it("não concede permissão não-delegável a papel de líder", async () => {
+    mockContext = {
+      ...mockContext,
+      role: "admin",
+      isAdmin: true,
+    };
+    fakeRolePermissions.clear();
+
+    const result = await setOrganizationRolePermissionAction(
+      "leader",
+      "announcements",
+      "retryDelivery",
+      true,
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toContain("deleg");
+    }
+    expect(
+      fakeRolePermissions.has("org-1:leader:announcements:retryDelivery"),
+    ).toBe(false);
+  });
+
+  it("continua permitindo revogar (enabled: false) permissão não-delegável", async () => {
+    mockContext = {
+      ...mockContext,
+      role: "admin",
+      isAdmin: true,
+    };
+    fakeRolePermissions.clear();
+
+    const result = await setOrganizationRolePermissionAction(
+      "leader",
+      "announcements",
+      "retryDelivery",
+      false,
+    );
+
+    expect(result.ok).toBe(true);
+    expect(
+      fakeRolePermissions.get("org-1:leader:announcements:retryDelivery"),
+    ).toBe(false);
+  });
+
+  it("continua concedendo permissões delegáveis a líder", async () => {
+    mockContext = {
+      ...mockContext,
+      role: "admin",
+      isAdmin: true,
+    };
+    fakeRolePermissions.clear();
+
+    const result = await setOrganizationRolePermissionAction(
+      "leader",
+      "announcements",
+      "sendDepartment",
+      true,
+    );
+
+    expect(result.ok).toBe(true);
+    expect(
+      fakeRolePermissions.get("org-1:leader:announcements:sendDepartment"),
+    ).toBe(true);
+  });
+
+  it("papel de destino admin mantém acesso inclusive a não-delegáveis", async () => {
+    mockContext = {
+      ...mockContext,
+      role: "admin",
+      isAdmin: true,
+    };
+    fakeRolePermissions.clear();
+
+    const result = await setOrganizationRolePermissionAction(
+      "admin",
+      "announcements",
+      "retryDelivery",
+      true,
+    );
+
+    expect(result.ok).toBe(true);
+    expect(
+      fakeRolePermissions.get("org-1:admin:announcements:retryDelivery"),
+    ).toBe(true);
+  });
+});

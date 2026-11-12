@@ -1,7 +1,16 @@
 import "server-only";
 
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  isNull,
+  or,
+  type SQL,
+} from "drizzle-orm";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
@@ -147,9 +156,22 @@ export async function sendTransactionalEmail(
 export async function resendLoggedEmail(
   logId: string,
   targetEmailOverride?: string,
+  organizationId?: string,
 ): Promise<{ ok: boolean; error?: string }> {
   const log = await db.query.emailMessageLog.findFirst({
-    where: eq(schema.emailMessageLog.id, logId),
+    // Com organizationId informado, a busca fica escopada: logs da
+    // organização do chamador ou e-mails de plataforma (organizationId
+    // nulo). A autorização fina (dono do e-mail/departamento) fica na
+    // camada de actions.
+    where: organizationId
+      ? and(
+          eq(schema.emailMessageLog.id, logId),
+          or(
+            eq(schema.emailMessageLog.organizationId, organizationId),
+            isNull(schema.emailMessageLog.organizationId),
+          ),
+        )
+      : eq(schema.emailMessageLog.id, logId),
   });
 
   if (!log) {
@@ -177,6 +199,125 @@ export async function resendLoggedEmail(
     .where(eq(schema.emailMessageLog.id, logId));
 
   return brevoResult;
+}
+
+export type EmailLogStats = {
+  total: number;
+  sent: number;
+  failed: number;
+};
+
+/**
+ * Lista logs de e-mail com escopo de autorização embutido:
+ * - Sem `departmentIds` (admin): todos os logs da organização, somados aos
+ *   e-mails de autenticação do próprio usuário (organizationId nulo).
+ * - Com `departmentIds` (líder): apenas logs de pessoas membros desses
+ *   departamentos (subquery em departmentMember), somados aos e-mails do
+ *   próprio usuário. Array vazio = fail-closed (nenhum acesso).
+ * As estatísticas seguem o recorte da organização (com departamentos
+ * quando aplicável), sem o ramo de e-mails de autenticação do usuário.
+ */
+export async function listEmailMessageLogs(
+  organizationId: string,
+  options?: {
+    limit?: number;
+    status?: "all" | "sent" | "failed";
+    type?: string;
+    search?: string;
+    departmentIds?: string[];
+    viewerUserId?: string;
+  },
+): Promise<{
+  logs: (typeof schema.emailMessageLog.$inferSelect)[];
+  stats: EmailLogStats;
+}> {
+  const limit = options?.limit ?? 100;
+
+  const orgCondition = eq(
+    schema.emailMessageLog.organizationId,
+    organizationId,
+  );
+
+  let departmentScope: SQL | undefined;
+  if (options?.departmentIds) {
+    if (options.departmentIds.length === 0) {
+      return { logs: [], stats: { total: 0, sent: 0, failed: 0 } };
+    }
+
+    departmentScope = inArray(
+      schema.emailMessageLog.personId,
+      db
+        .select({ id: schema.person.id })
+        .from(schema.departmentMember)
+        .where(
+          inArray(
+            schema.departmentMember.departmentId,
+            options.departmentIds,
+          ),
+        ),
+    );
+  }
+
+  const viewerCondition = options?.viewerUserId
+    ? eq(schema.emailMessageLog.userId, options.viewerUserId)
+    : undefined;
+
+  const baseConditions = viewerCondition
+    ? departmentScope
+      ? or(and(orgCondition, departmentScope), viewerCondition)
+      : or(orgCondition, viewerCondition)
+    : departmentScope
+      ? and(orgCondition, departmentScope)
+      : orgCondition;
+
+  const filterConditions: SQL[] = [];
+
+  if (options?.status && options.status !== "all") {
+    filterConditions.push(eq(schema.emailMessageLog.status, options.status));
+  }
+
+  if (options?.type && options.type !== "all") {
+    filterConditions.push(eq(schema.emailMessageLog.type, options.type));
+  }
+
+  if (options?.search && options.search.trim().length > 0) {
+    const query = `%${options.search.trim()}%`;
+    filterConditions.push(
+      or(
+        ilike(schema.emailMessageLog.recipientEmail, query),
+        ilike(schema.emailMessageLog.recipientName, query),
+        ilike(schema.emailMessageLog.subject, query),
+      )!,
+    );
+  }
+
+  const logsWhere = filterConditions.length
+    ? and(baseConditions, ...filterConditions)
+    : baseConditions;
+
+  const statsWhere = departmentScope
+    ? and(orgCondition, departmentScope)
+    : orgCondition;
+
+  const [logs, statRows] = await Promise.all([
+    db.query.emailMessageLog.findMany({
+      where: logsWhere,
+      orderBy: [desc(schema.emailMessageLog.createdAt)],
+      limit,
+    }),
+    db.query.emailMessageLog.findMany({
+      where: statsWhere,
+      columns: { status: true },
+    }),
+  ]);
+
+  const stats: EmailLogStats = {
+    total: statRows.length,
+    sent: statRows.filter((row) => row.status === "sent").length,
+    failed: statRows.filter((row) => row.status === "failed").length,
+  };
+
+  return { logs, stats };
 }
 
 /**

@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@/db";
@@ -22,10 +22,15 @@ import {
 } from "@/lib/notification-service";
 import { getOrganizationContext, requireOrganizationContext } from "@/lib/organizations";
 import { syncPersonProfile, listPeople } from "@/lib/people";
-import { isUserLeaderInAnyDepartment, listDepartments } from "@/lib/departments";
+import {
+  isUserLeaderInAnyDepartment,
+  listDepartments,
+  listUserLeaderDepartments,
+} from "@/lib/departments";
 import { getOrganizationMessageTemplates } from "@/lib/message-templates-server";
 import { birthdayFieldSchema, updateBirthday } from "@/lib/profile";
 import { getSession } from "@/lib/session";
+import { decryptSecret, encryptSecret } from "@/lib/secret-crypto";
 import { getOrganizationPermissionSettingsAction } from "@/app/actions/permissions";
 
 export type SessionItem = {
@@ -326,6 +331,19 @@ export async function getEvolutionSettingsAction(): Promise<EvolutionSettingsVie
     };
   }
 
+  // Gate no servidor: a UI filtra por papel, mas a action é um endpoint
+  // chamável — sem esse check, qualquer membro receberia a apiKey do gateway
+  // de WhatsApp e a URL de webhook com segredo.
+  if (!context.isAdmin) {
+    return {
+      id: null,
+      apiUrl: "",
+      apiKey: "",
+      instanceName: "",
+      isActive: false,
+    };
+  }
+
   const channel = await db.query.organizationNotificationChannel.findFirst({
     where: and(
       eq(schema.organizationNotificationChannel.organizationId, context.organization.id),
@@ -347,10 +365,14 @@ export async function getEvolutionSettingsAction(): Promise<EvolutionSettingsVie
     ? `${baseUrl.replace(/\/+$/, "")}/api/webhooks/evolution?token=${secret}`
     : `${baseUrl.replace(/\/+$/, "")}/api/webhooks/evolution`;
 
+  // apiKey é cifrada em repouso (SECRETS_ENCRYPTION_KEY); valores legados sem
+  // prefixo passam direto até serem re-salvos.
+  const apiKey = channel ? (decryptSecret(channel.apiKey) ?? "") : "";
+
   return {
     id: channel?.id ?? null,
     apiUrl: channel?.apiUrl ?? "",
-    apiKey: channel?.apiKey ?? "",
+    apiKey,
     instanceName: channel?.instanceName ?? "",
     isActive: channel?.isActive ?? true,
     webhookSecret: secret ?? null,
@@ -409,12 +431,14 @@ export async function saveEvolutionSettingsAction(
       ),
     });
 
+    const encryptedApiKey = encryptSecret(parsed.data.apiKey);
+
     if (existing) {
       await db
         .update(schema.organizationNotificationChannel)
         .set({
           apiUrl: parsed.data.apiUrl,
-          apiKey: parsed.data.apiKey,
+          apiKey: encryptedApiKey,
           instanceName: parsed.data.instanceName,
           isActive: parsed.data.isActive,
         })
@@ -425,7 +449,7 @@ export async function saveEvolutionSettingsAction(
         organizationId: context.organization.id,
         channel: "evolution_whatsapp",
         apiUrl: parsed.data.apiUrl,
-        apiKey: parsed.data.apiKey,
+        apiKey: encryptedApiKey,
         instanceName: parsed.data.instanceName,
         webhookSecret: randomUUID(),
         isActive: parsed.data.isActive,
@@ -499,7 +523,7 @@ export async function sendTestEvolutionMessageAction(
   const result = await sendEvolutionTextMessage({
     config: {
       apiUrl: channel.apiUrl,
-      apiKey: channel.apiKey,
+      apiKey: decryptSecret(channel.apiKey) ?? "",
       instanceName: channel.instanceName,
     },
     to: formatted,
@@ -562,6 +586,25 @@ export async function getEvolutionMessageLogsAction(options?: {
     return { logs: [], total: 0 };
   }
 
+  if (!context.isAdmin) {
+    // Escopo de líder: apenas logs de pessoas dos departamentos que lidera —
+    // o gate acima só verifica o papel, não restringe o volume.
+    const ledDepartments = await listUserLeaderDepartments(
+      context.organization.id,
+      context.session.user.id,
+    );
+    const departmentIds = ledDepartments.map((department) => department.id);
+
+    if (departmentIds.length === 0) {
+      return { logs: [], total: 0 };
+    }
+
+    return listEvolutionMessageLogs(context.organization.id, {
+      ...options,
+      departmentIds,
+    });
+  }
+
   return listEvolutionMessageLogs(context.organization.id, options);
 }
 
@@ -585,6 +628,49 @@ export async function retryEvolutionMessageAction(
       ok: false,
       error: "Apenas administradores ou líderes de departamento podem reenviar mensagens.",
     };
+  }
+
+  if (!context.isAdmin) {
+    // Escopo de líder: só pode reenviar mensagens de pessoas dos departamentos
+    // que lidera. Logs de broadcast sem pessoa vinculada ficam fora do escopo.
+    const ledDepartments = await listUserLeaderDepartments(
+      context.organization.id,
+      context.session.user.id,
+    );
+
+    if (ledDepartments.length === 0) {
+      return { ok: false, error: "Você não lidera nenhum departamento." };
+    }
+
+    const log = await db.query.whatsappMessageLog.findFirst({
+      where: and(
+        eq(schema.whatsappMessageLog.id, logId),
+        eq(schema.whatsappMessageLog.organizationId, context.organization.id),
+      ),
+      columns: { personId: true },
+    });
+
+    const inScope = log?.personId
+      ? Boolean(
+          await db.query.departmentMember.findFirst({
+            where: and(
+              eq(schema.departmentMember.personId, log.personId),
+              inArray(
+                schema.departmentMember.departmentId,
+                ledDepartments.map((department) => department.id),
+              ),
+            ),
+            columns: { id: true },
+          }),
+        )
+      : false;
+
+    if (!inScope) {
+      return {
+        ok: false,
+        error: "Você só pode reenviar mensagens do seu departamento.",
+      };
+    }
   }
 
   const res = await retryWhatsAppMessage(logId, context.organization.id);
@@ -613,7 +699,27 @@ export async function retryAllFailedEvolutionMessagesAction(
     return { total: 0, sent: 0, failed: 0 };
   }
 
-  const res = await retryFailedWhatsAppMessages(context.organization.id, batchId);
+  // Escopo de líder: o reenvio em massa fica restrito às pessoas dos
+  // departamentos que lidera (admins continuam com visão da organização).
+  let departmentIds: string[] | undefined;
+  if (!context.isAdmin) {
+    const ledDepartments = await listUserLeaderDepartments(
+      context.organization.id,
+      context.session.user.id,
+    );
+
+    if (ledDepartments.length === 0) {
+      return { total: 0, sent: 0, failed: 0 };
+    }
+
+    departmentIds = ledDepartments.map((department) => department.id);
+  }
+
+  const res = await retryFailedWhatsAppMessages(
+    context.organization.id,
+    batchId,
+    departmentIds,
+  );
   revalidatePath("/dashboard/whatsapp");
   revalidatePath("/dashboard/settings");
   revalidatePath("/dashboard/announcements");

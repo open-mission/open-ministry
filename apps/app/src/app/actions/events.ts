@@ -10,6 +10,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { cacheInvalidateTags } from "@/lib/cache";
 import { EVENT_KINDS, RECURRENCE_OPTIONS } from "@/lib/event-options";
+import { generatePublicShareToken } from "@/lib/public-share";
 import {
   applyTimeOfDay,
   endOfDayInZone,
@@ -1786,7 +1787,7 @@ export async function toggleEventPublicShareAction(input: {
   }
 
   const token =
-    event.publicShareToken || randomUUID().replace(/-/g, "").slice(0, 16);
+    event.publicShareToken || generatePublicShareToken();
   const allowPdf =
     input.allowPdf !== undefined ? input.allowPdf : event.publicShareAllowPdf;
 
@@ -1830,7 +1831,7 @@ export async function regenerateEventPublicShareTokenAction(eventId: string) {
     };
   }
 
-  const newToken = randomUUID().replace(/-/g, "").slice(0, 16);
+  const newToken = generatePublicShareToken();
 
   await db
     .update(schema.event)

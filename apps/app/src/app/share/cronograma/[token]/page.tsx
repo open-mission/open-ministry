@@ -17,6 +17,7 @@ import {
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { isPublicShareExpired } from "@/lib/public-share";
 import { computePlanItemTimes } from "@/lib/plan-utils";
 import { formatEventFullDate, formatEventTimeRange } from "@/lib/events";
 import { eventKindLabels, type EventKind } from "@/lib/event-options";
@@ -64,7 +65,11 @@ async function PublicCronogramaContent({
     },
   });
 
-  if (!event || !event.isPublicShareEnabled) {
+  if (
+    !event ||
+    !event.isPublicShareEnabled ||
+    isPublicShareExpired(event.publicShareUpdatedAt)
+  ) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-muted/30 px-4 text-center">
         <div className="flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground mb-4">
