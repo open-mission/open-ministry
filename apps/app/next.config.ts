@@ -12,6 +12,14 @@ const nextConfig: NextConfig = {
       static: 180,
     },
   },
+  async rewrites() {
+    return [
+      {
+        source: "/tasks",
+        destination: "/dashboard/tasks",
+      },
+    ];
+  },
   turbopack: {
     rules: {
       "*.css": {
