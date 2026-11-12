@@ -55,6 +55,7 @@ async function SongDetailContent({
       songId={songId}
       canUpdate={canUpdate}
       canDelete={canDelete}
+      canAddToNextService={hasAccess}
     />
   );
 }

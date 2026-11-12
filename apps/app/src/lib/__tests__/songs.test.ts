@@ -1,8 +1,14 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
+import type { SQL } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
 
 import {
   classifySectionType,
   extractLyricsFromChords,
+  getSemitoneDistance,
+  getShapeTone,
+  getStageShortcutAction,
+  getTargetTones,
   isChordLine,
   parseCifraClubTxt,
   parseSongSections,
@@ -11,7 +17,15 @@ import {
   transposeChord,
   transposeChordsText,
 } from "@/lib/music/chords-utils";
-import { generateStreamingSearchLinks } from "@/lib/music/lyrics-service";
+import {
+  generateStreamingSearchLinks,
+  isStreamingSearchUrl,
+} from "@/lib/music/lyrics-service";
+import { songInputSchema } from "@/lib/music/songs-schema";
+import {
+  buildSongUsageMap,
+  summarizeSongUsage,
+} from "@/lib/song-usage";
 
 describe("Music Module & Repertoire", () => {
   describe("Chord Transposer Engine", () => {
@@ -61,6 +75,38 @@ Me esvazio de mim`;
       // A linha de letra deve permanecer inalterada
       expect(transposedSheet).toContain("Você é bem-vindo aqui");
       expect(transposedSheet).toContain("A casa é sua pode entrar");
+    });
+
+    it("offers only target tones in the original major or minor mode", () => {
+      const majorTones = getTargetTones("C");
+      const minorTones = getTargetTones("Am");
+
+      expect(majorTones).toContain("C");
+      expect(majorTones.every((tone) => !tone.endsWith("m"))).toBe(true);
+      expect(majorTones).not.toContain("Am");
+      expect(minorTones).toContain("Am");
+      expect(minorTones.every((tone) => tone.endsWith("m"))).toBe(true);
+      expect(minorTones).not.toContain("C");
+    });
+
+    it("maps stage shortcuts only in fullscreen and outside interactive controls", () => {
+      expect(getStageShortcutAction("T", true, false, true)).toBe("focusTone");
+      expect(getStageShortcutAction("C", true, false, true)).toBe("copy");
+      expect(getStageShortcutAction("+", true, false, true)).toBe(
+        "transposeUp",
+      );
+      expect(getStageShortcutAction("ArrowDown", true, false, true)).toBe(
+        "fontSizeDown",
+      );
+      expect(getStageShortcutAction("Escape", true, false, true)).toBe(
+        "close",
+      );
+      expect(getStageShortcutAction("t", false, false, true)).toBeNull();
+      expect(getStageShortcutAction("c", true, true, true)).toBeNull();
+    });
+
+    it("does not map stage shortcuts when focus is outside the fullscreen viewer", () => {
+      expect(getStageShortcutAction("t", true, false, false)).toBeNull();
     });
   });
 
@@ -224,11 +270,260 @@ Vem me incendiar`;
       expect(parsed.title).toBe("A Casa É Sua");
       expect(parsed.artist).toBe("Casa Worship");
       expect(parsed.tone).toBe("E");
+      expect(parsed.capo).toBe(0);
       expect(parsed.chords).toContain("[Intro] C#m7  A9  E  B4");
       expect(parsed.chords).toContain("Cê é bem-vindo aqui");
       expect(parsed.lyrics).toContain("[Primeira Parte]");
       expect(parsed.lyrics).toContain("Cê é bem-vindo aqui");
       expect(parsed.lyrics).not.toContain("C#m7");
+    });
+
+    it("parses capo positions from Cifra Club metadata", () => {
+      const capoNumber = parseCifraClubTxt(
+        "Tom: E\nCapo: 2\n[Intro]\nE  B",
+      );
+      const capoFret = parseCifraClubTxt(
+        "Tom: A\nCapotraste na 4ª casa\n[Intro]\nA  E",
+      );
+
+      expect(capoNumber.capo).toBe(2);
+      expect(capoFret.capo).toBe(4);
+    });
+  });
+
+  describe("Capo tone helpers", () => {
+    it("calculates signed shortest semitone distances between keys", () => {
+      expect(getSemitoneDistance("E", "G")).toBe(3);
+      expect(getSemitoneDistance("G", "E")).toBe(-3);
+      expect(getSemitoneDistance("F#m", "A")).toBe(3);
+      expect(getSemitoneDistance("C", "F#")).toBe(6);
+    });
+
+    it("derives the chord shape key from sounding key and capo position", () => {
+      expect(getShapeTone("E", 4)).toBe("C");
+      expect(getShapeTone("G", 2)).toBe("F");
+      expect(getShapeTone("C#m", 2)).toBe("Bm");
+      expect(getShapeTone("A", 0)).toBe("A");
+      expect(getShapeTone(null, 3)).toBeNull();
+    });
+  });
+
+  describe("Song input normalization", () => {
+    it("coerces capo values and leaves an omitted capo undefined for partial updates", () => {
+      const withCapo = songInputSchema.parse({ title: "A Casa", capo: "4" });
+      const withoutCapo = songInputSchema.parse({ title: "A Casa" });
+
+      expect(withCapo.capo).toBe(4);
+      expect(withoutCapo.capo).toBeUndefined();
+      expect(songInputSchema.safeParse({ title: "A Casa", capo: 13 }).success).toBe(
+        false,
+      );
+    });
+
+    it("trims tags and removes empty or case-insensitive duplicates", () => {
+      const parsed = songInputSchema.parse({
+        title: "A Casa",
+        tags: ["  Adoração ", "adoração", "Jesus", "", " Jesus  "],
+      });
+
+      expect(parsed.tags).toEqual(["Adoração", "Jesus"]);
+    });
+  });
+
+  describe("Streaming link classification", () => {
+    it("recognizes generated platform search links but not direct media links", () => {
+      const searches = generateStreamingSearchLinks("A Casa É Sua", "Casa Worship");
+
+      expect(Object.values(searches).every(isStreamingSearchUrl)).toBe(true);
+      expect(
+        isStreamingSearchUrl("https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC"),
+      ).toBe(false);
+      expect(isStreamingSearchUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ")).toBe(
+        false,
+      );
+      expect(isStreamingSearchUrl("not a URL")).toBe(false);
+    });
+  });
+
+  describe("Song usage summaries", () => {
+    const now = new Date("2026-10-01T12:00:00.000Z");
+
+    it("finds the nearest upcoming and latest past event and counts distinct events", () => {
+      const summary = summarizeSongUsage(
+        [
+          {
+            songId: "song-1",
+            eventKind: "service",
+            itemId: "item-future",
+            itemTitle: "Louvor de abertura",
+            eventId: "event-future",
+            eventTitle: "Culto de domingo",
+            startsAt: "2026-10-12T18:00:00.000Z",
+            responsible: "  Ana Silva  ",
+          },
+          {
+            songId: "song-1",
+            eventKind: "service",
+            itemId: "item-past-latest",
+            itemTitle: "Adoração",
+            eventId: "event-past-latest",
+            eventTitle: "Culto da semana passada",
+            startsAt: new Date("2026-09-25T18:00:00.000Z"),
+            responsible: null,
+          },
+          {
+            songId: "song-1",
+            eventKind: "service",
+            itemId: "item-past-oldest",
+            itemTitle: "Encerramento",
+            eventId: "event-past-oldest",
+            eventTitle: "Culto anterior",
+            startsAt: "2026-09-10T18:00:00.000Z",
+          },
+        ],
+        now,
+      );
+
+      expect(summary.nextEvent).toEqual({
+        eventId: "event-future",
+        eventTitle: "Culto de domingo",
+        itemId: "item-future",
+        itemTitle: "Louvor de abertura",
+        startsAt: new Date("2026-10-12T18:00:00.000Z"),
+        responsible: "Ana Silva",
+      });
+      expect(summary.lastEvent).toEqual({
+        eventId: "event-past-latest",
+        eventTitle: "Culto da semana passada",
+        itemId: "item-past-latest",
+        itemTitle: "Adoração",
+        startsAt: new Date("2026-09-25T18:00:00.000Z"),
+        responsible: null,
+      });
+      expect(summary.eventCount).toBe(3);
+      expect(summary.planItemCount).toBe(3);
+    });
+
+    it("ignores generic events when calculating song service usage", () => {
+      const summary = summarizeSongUsage(
+        [
+          {
+            songId: "song-1",
+            eventKind: "event",
+            itemId: "generic-upcoming",
+            itemTitle: "Atração",
+            eventId: "generic-event",
+            eventTitle: "Encontro de jovens",
+            startsAt: "2026-10-03T18:00:00.000Z",
+          },
+          {
+            songId: "song-1",
+            eventKind: "service",
+            itemId: "service-past",
+            itemTitle: "Louvor",
+            eventId: "service-past",
+            eventTitle: "Culto anterior",
+            startsAt: "2026-09-20T18:00:00.000Z",
+          },
+          {
+            songId: "song-1",
+            eventKind: "service",
+            itemId: "service-upcoming",
+            itemTitle: "Adoração",
+            eventId: "service-upcoming",
+            eventTitle: "Culto de domingo",
+            startsAt: "2026-10-05T18:00:00.000Z",
+          },
+        ],
+        now,
+      );
+
+      expect(summary.nextEvent?.eventId).toBe("service-upcoming");
+      expect(summary.lastEvent?.eventId).toBe("service-past");
+      expect(summary.eventCount).toBe(2);
+      expect(summary.planItemCount).toBe(2);
+    });
+
+    it("groups usage rows by song and returns independent summaries", () => {
+      const usage = buildSongUsageMap(
+        [
+          {
+            songId: "song-1",
+            eventKind: "service",
+            itemId: "item-1",
+            itemTitle: "Louvor",
+            eventId: "event-1",
+            eventTitle: "Culto passado",
+            startsAt: "2026-09-20T18:00:00.000Z",
+          },
+          {
+            songId: "song-2",
+            eventKind: "service",
+            itemId: "item-2",
+            itemTitle: "Adoração",
+            eventId: "event-2",
+            eventTitle: "Próximo culto",
+            startsAt: "2026-10-05T18:00:00.000Z",
+          },
+          {
+            songId: "song-1",
+            eventKind: "event",
+            itemId: "generic-item",
+            itemTitle: "Atração",
+            eventId: "generic-event",
+            eventTitle: "Encontro",
+            startsAt: "2026-10-02T18:00:00.000Z",
+          },
+          {
+            songId: "song-1",
+            eventKind: "service",
+            itemId: "item-3",
+            itemTitle: "Louvor",
+            eventId: "event-3",
+            eventTitle: "Próximo culto",
+            startsAt: "2026-10-05T18:00:00.000Z",
+          },
+        ],
+        now,
+      );
+
+      expect(usage.get("song-1")?.eventCount).toBe(2);
+      expect(usage.get("song-1")?.planItemCount).toBe(2);
+      expect(usage.get("song-1")?.nextEvent?.eventId).toBe("event-3");
+      expect(usage.get("song-2")?.lastEvent).toBeNull();
+      expect(usage.get("song-2")?.nextEvent?.eventId).toBe("event-2");
+      expect(usage.has("song-3")).toBe(false);
+    });
+  });
+
+  describe("Next service query", () => {
+    it("adds a service-kind predicate so a nearer generic event is skipped", async () => {
+      let eventWhere: SQL | undefined;
+
+      mock.module("@/db", () => ({
+        db: {
+          query: new Proxy(
+            {},
+            {
+              get: (_target, table: string) => ({
+                findMany: async () => [],
+                findFirst: async (query: { where: SQL }) => {
+                  if (table === "event") eventWhere = query.where;
+                  return null;
+                },
+              }),
+            },
+          ),
+        },
+      }));
+
+      const { getNextEventForSong } = await import("@/lib/songs");
+      await getNextEventForSong("org-1", "song-1");
+
+      expect(eventWhere).toBeDefined();
+      const query = new PgDialect().sqlToQuery(eventWhere!);
+      expect(query.sql).toContain('"kind" =');
+      expect(query.params).toContain("service");
     });
   });
 });

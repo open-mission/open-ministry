@@ -12,6 +12,7 @@ import {
   MailIcon,
   MegaphoneIcon,
   MessageSquareIcon,
+  Music2Icon,
   UsersIcon,
 } from "lucide-react";
 
@@ -153,6 +154,12 @@ export const mobileNavItems: NavItem[] = [
     href: "/dashboard/calendar",
     label: "Agenda",
     icon: CalendarDaysIcon,
+    exact: false,
+  },
+  {
+    href: "/dashboard/songs",
+    label: "Músicas",
+    icon: Music2Icon,
     exact: false,
   },
   {

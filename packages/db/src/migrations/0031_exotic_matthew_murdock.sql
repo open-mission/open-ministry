@@ -1,0 +1,1 @@
+ALTER TABLE "song" ADD COLUMN "capo" integer DEFAULT 0 NOT NULL;

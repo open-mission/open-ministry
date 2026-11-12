@@ -155,6 +155,23 @@ export async function fetchLyricsDetails(
 }
 
 /**
+ * Indica se a URL é um link de busca (gerado automaticamente) em vez de
+ * apontar para uma faixa/álbum específico.
+ */
+export function isStreamingSearchUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.pathname.includes("/results") ||
+      parsed.pathname.startsWith("/search") ||
+      parsed.searchParams.has("search_query")
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Gera links de busca nas plataformas de streaming caso o usuário queira encontrar rapidamente.
  */
 export function generateStreamingSearchLinks(title: string, artist?: string) {
