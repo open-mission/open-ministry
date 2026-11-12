@@ -1,4 +1,6 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
+
+mock.module("server-only", () => ({}));
 
 import {
   AVAILABLE_MODULES,

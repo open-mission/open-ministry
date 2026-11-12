@@ -124,6 +124,11 @@ export async function getUserAccessibleModuleKeys(
         activeKeys.add("music");
       }
 
+      // Se Tarefas estiver ativa na igreja, todos os membros têm acesso às suas tarefas pessoais
+      if (enabledOrgModules.has("tasks")) {
+        activeKeys.add("tasks");
+      }
+
       for (const dept of userDepartments) {
         if (dept.modules) {
           for (const mod of dept.modules) {

@@ -218,6 +218,27 @@
       "when": 1794371824746,
       "tag": "0030_real_earthquake",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1794437460615,
+      "tag": "0031_exotic_matthew_murdock",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794446294076,
+      "tag": "0032_clear_bastion",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794466439076,
+      "tag": "0033_blushing_smasher",
+      "breakpoints": true
     }
   ]
 }

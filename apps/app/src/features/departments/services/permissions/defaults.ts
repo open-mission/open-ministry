@@ -48,6 +48,14 @@ export const DEFAULT_PERMISSION_POLICY: FullPermissionPolicy = {
       sendAll: true,
       retryDelivery: true,
     },
+    tasks: {
+      read: true,
+      createPersonal: true,
+      createDepartment: true,
+      createOrganization: true,
+      update: true,
+      delete: true,
+    },
   },
   leader: {
     agenda: {
@@ -76,6 +84,14 @@ export const DEFAULT_PERMISSION_POLICY: FullPermissionPolicy = {
       sendAll: false,
       retryDelivery: false,
     },
+    tasks: {
+      read: true,
+      createPersonal: true,
+      createDepartment: true,
+      createOrganization: false,
+      update: true,
+      delete: true,
+    },
   },
   member: {
     agenda: {
@@ -103,6 +119,14 @@ export const DEFAULT_PERMISSION_POLICY: FullPermissionPolicy = {
       sendPerson: false,
       sendAll: false,
       retryDelivery: false,
+    },
+    tasks: {
+      read: true,
+      createPersonal: true,
+      createDepartment: false,
+      createOrganization: false,
+      update: true,
+      delete: true,
     },
   },
 };

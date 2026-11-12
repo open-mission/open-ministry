@@ -1,5 +1,6 @@
 import {
   CalendarRangeIcon,
+  CheckSquare2Icon,
   ClipboardListIcon,
   MegaphoneIcon,
   Music2Icon,
@@ -63,6 +64,17 @@ export const SYSTEM_MODULES: Record<ModuleKey, SystemModule> = {
     icon: MegaphoneIcon,
     navGroups: [],
     routePrefixes: ["/dashboard/announcements"],
+  },
+  tasks: {
+    key: "tasks",
+    name: "Tarefas",
+    shortName: "Tarefas",
+    description:
+      "Organize afazeres pessoais, rotinas de estudo e delegue tarefas para equipes e departamentos.",
+    badge: "Produtividade",
+    icon: CheckSquare2Icon,
+    navGroups: [],
+    routePrefixes: ["/dashboard/tasks"],
   },
 };
 
