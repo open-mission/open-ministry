@@ -46,3 +46,15 @@ Todo modal de formulário (criação/edição), confirmação ou visualização 
 - **No Mobile (`< 768px`)**: renderize `Drawer` / `DrawerContent` (bottom-sheet via `vaul`) ancorado na parte inferior com área de toque mínima de 44px (`min-h-[44px]`), header com `!text-left`, e container de rolagem suave (`max-h-[85vh] overflow-y-auto [-webkit-overflow-scrolling:touch]`).
 - **Detecção de Dispositivo**: utilize o hook `useIsMobile()` de `@/hooks/use-mobile`.
 
+## Notas de Versão e Modal de Novidades (Changelog)
+
+Sempre que uma nova release for preparada ou publicada:
+- **Atualize `apps/app/src/config/release-notes.ts`**:
+  - Incremente `CURRENT_APP_VERSION` correspondente à versão da release (ex: `1.2.0`).
+  - Adicione a nova entrada em `RELEASE_NOTES` no topo da lista.
+  - **Agrupe as novidades por módulo** (ex: *Módulo de Tarefas & Demandas*, *Módulo de Músicas & Repertório*, *Cuidado Pastoral & Plataforma* etc.).
+  - **Linguagem acessível e sem jargões**: NUNCA utilize referências a aplicativos ou termos obscuros de terceiros (como "estilo Things 3" ou termos internos de tecnologia). Descreva claramente o benefício prático e a funcionalidade para os membros e líderes da igreja.
+  - No Desktop, o modal exibe layout horizontal de 2 colunas se houver múltiplos módulos/itens, e no Mobile mantém o Drawer fluido com bottom-sheet.
+- **Atualize a versão** no `package.json` da raiz e no `apps/app/package.json`.
+
+
