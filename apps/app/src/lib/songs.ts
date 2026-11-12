@@ -47,6 +47,7 @@ async function listSongUsageRows(organizationId: string): Promise<SongUsageRow[]
       return db
         .select({
           songId: schema.eventPlanItem.songId,
+          eventKind: schema.event.kind,
           itemId: schema.eventPlanItem.id,
           itemTitle: schema.eventPlanItem.title,
           eventId: schema.event.id,
@@ -67,6 +68,7 @@ async function listSongUsageRows(organizationId: string): Promise<SongUsageRow[]
         .where(
           and(
             eq(schema.event.organizationId, organizationId),
+            eq(schema.event.kind, "service"),
             isNotNull(schema.eventPlanItem.songId),
           ),
         )
@@ -80,6 +82,7 @@ async function listSongUsageRows(organizationId: string): Promise<SongUsageRow[]
       ? [
           {
             songId: row.songId,
+            eventKind: row.eventKind,
             itemId: row.itemId,
             itemTitle: row.itemTitle,
             eventId: row.eventId,
@@ -174,6 +177,7 @@ export async function getSong(organizationId: string, songId: string) {
       .where(
         and(
           eq(schema.event.organizationId, organizationId),
+          eq(schema.event.kind, "service"),
           eq(schema.eventPlanItem.songId, songId),
         ),
       )
@@ -274,11 +278,13 @@ export async function getNextEventForSong(
       usedEventIds.length > 0
         ? and(
             eq(schema.event.organizationId, organizationId),
+            eq(schema.event.kind, "service"),
             gte(schema.event.startsAt, now),
             notInArray(schema.event.id, usedEventIds),
           )
         : and(
             eq(schema.event.organizationId, organizationId),
+            eq(schema.event.kind, "service"),
             gte(schema.event.startsAt, now),
           ),
     orderBy: [asc(schema.event.startsAt)],

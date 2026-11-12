@@ -1,5 +1,6 @@
 export type SongUsageRow = {
   songId: string;
+  eventKind: string;
   itemId: string;
   itemTitle: string;
   eventId: string;
@@ -51,9 +52,10 @@ export function summarizeSongUsage(
   rows: SongUsageRow[],
   now: Date = new Date(),
 ): SongUsageSummary {
-  if (rows.length === 0) return EMPTY_SONG_USAGE;
+  const serviceRows = rows.filter((row) => row.eventKind === "service");
+  if (serviceRows.length === 0) return EMPTY_SONG_USAGE;
 
-  const sorted = [...rows].sort(
+  const sorted = [...serviceRows].sort(
     (a, b) =>
       new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
   );
@@ -78,7 +80,7 @@ export function summarizeSongUsage(
     nextEvent: nextRow ? toUsageEvent(nextRow) : null,
     lastEvent: lastRow ? toUsageEvent(lastRow) : null,
     eventCount: eventIds.size,
-    planItemCount: rows.length,
+    planItemCount: serviceRows.length,
   };
 }
 
@@ -93,6 +95,8 @@ export function buildSongUsageMap(
   const grouped = new Map<string, SongUsageRow[]>();
 
   for (const row of rows) {
+    if (row.eventKind !== "service") continue;
+
     const list = grouped.get(row.songId);
     if (list) {
       list.push(row);

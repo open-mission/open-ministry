@@ -1,4 +1,6 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
+import type { SQL } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
 
 import {
   classifySectionType,
@@ -317,6 +319,7 @@ Vem me incendiar`;
         [
           {
             songId: "song-1",
+            eventKind: "service",
             itemId: "item-future",
             itemTitle: "Louvor de abertura",
             eventId: "event-future",
@@ -326,6 +329,7 @@ Vem me incendiar`;
           },
           {
             songId: "song-1",
+            eventKind: "service",
             itemId: "item-past-latest",
             itemTitle: "Adoração",
             eventId: "event-past-latest",
@@ -335,6 +339,7 @@ Vem me incendiar`;
           },
           {
             songId: "song-1",
+            eventKind: "service",
             itemId: "item-past-oldest",
             itemTitle: "Encerramento",
             eventId: "event-past-oldest",
@@ -365,11 +370,52 @@ Vem me incendiar`;
       expect(summary.planItemCount).toBe(3);
     });
 
+    it("ignores generic events when calculating song service usage", () => {
+      const summary = summarizeSongUsage(
+        [
+          {
+            songId: "song-1",
+            eventKind: "event",
+            itemId: "generic-upcoming",
+            itemTitle: "Atração",
+            eventId: "generic-event",
+            eventTitle: "Encontro de jovens",
+            startsAt: "2026-10-03T18:00:00.000Z",
+          },
+          {
+            songId: "song-1",
+            eventKind: "service",
+            itemId: "service-past",
+            itemTitle: "Louvor",
+            eventId: "service-past",
+            eventTitle: "Culto anterior",
+            startsAt: "2026-09-20T18:00:00.000Z",
+          },
+          {
+            songId: "song-1",
+            eventKind: "service",
+            itemId: "service-upcoming",
+            itemTitle: "Adoração",
+            eventId: "service-upcoming",
+            eventTitle: "Culto de domingo",
+            startsAt: "2026-10-05T18:00:00.000Z",
+          },
+        ],
+        now,
+      );
+
+      expect(summary.nextEvent?.eventId).toBe("service-upcoming");
+      expect(summary.lastEvent?.eventId).toBe("service-past");
+      expect(summary.eventCount).toBe(2);
+      expect(summary.planItemCount).toBe(2);
+    });
+
     it("groups usage rows by song and returns independent summaries", () => {
       const usage = buildSongUsageMap(
         [
           {
             songId: "song-1",
+            eventKind: "service",
             itemId: "item-1",
             itemTitle: "Louvor",
             eventId: "event-1",
@@ -378,6 +424,7 @@ Vem me incendiar`;
           },
           {
             songId: "song-2",
+            eventKind: "service",
             itemId: "item-2",
             itemTitle: "Adoração",
             eventId: "event-2",
@@ -386,6 +433,16 @@ Vem me incendiar`;
           },
           {
             songId: "song-1",
+            eventKind: "event",
+            itemId: "generic-item",
+            itemTitle: "Atração",
+            eventId: "generic-event",
+            eventTitle: "Encontro",
+            startsAt: "2026-10-02T18:00:00.000Z",
+          },
+          {
+            songId: "song-1",
+            eventKind: "service",
             itemId: "item-3",
             itemTitle: "Louvor",
             eventId: "event-3",
@@ -402,6 +459,37 @@ Vem me incendiar`;
       expect(usage.get("song-2")?.lastEvent).toBeNull();
       expect(usage.get("song-2")?.nextEvent?.eventId).toBe("event-2");
       expect(usage.has("song-3")).toBe(false);
+    });
+  });
+
+  describe("Next service query", () => {
+    it("adds a service-kind predicate so a nearer generic event is skipped", async () => {
+      let eventWhere: SQL | undefined;
+
+      mock.module("@/db", () => ({
+        db: {
+          query: new Proxy(
+            {},
+            {
+              get: (_target, table: string) => ({
+                findMany: async () => [],
+                findFirst: async (query: { where: SQL }) => {
+                  if (table === "event") eventWhere = query.where;
+                  return null;
+                },
+              }),
+            },
+          ),
+        },
+      }));
+
+      const { getNextEventForSong } = await import("@/lib/songs");
+      await getNextEventForSong("org-1", "song-1");
+
+      expect(eventWhere).toBeDefined();
+      const query = new PgDialect().sqlToQuery(eventWhere!);
+      expect(query.sql).toContain('"kind" =');
+      expect(query.params).toContain("service");
     });
   });
 });
