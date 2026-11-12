@@ -41,10 +41,12 @@ export function SongDetailHeaderActions({
   song,
   canUpdate = true,
   canDelete = true,
+  canAddToNextService = false,
 }: {
   song: SongRecord;
   canUpdate?: boolean;
   canDelete?: boolean;
+  canAddToNextService?: boolean;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -54,7 +56,7 @@ export function SongDetailHeaderActions({
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  if (!canUpdate && !canDelete) {
+  if (!canUpdate && !canDelete && !canAddToNextService) {
     return null;
   }
 
@@ -123,21 +125,23 @@ export function SongDetailHeaderActions({
                 </Button>
               ) : null}
 
-              <Button
-                variant="ghost"
-                onClick={handleAddToNextService}
-                disabled={isAddingToPlan}
-                className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium"
-              >
-                <CalendarPlusIcon className="size-4 text-muted-foreground" />
-                <span>
-                  {isAddingToPlan
-                    ? "Adicionando..."
-                    : "Adicionar ao próximo culto"}
-                </span>
-              </Button>
+              {canAddToNextService ? (
+                <Button
+                  variant="ghost"
+                  onClick={handleAddToNextService}
+                  disabled={isAddingToPlan}
+                  className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium"
+                >
+                  <CalendarPlusIcon className="size-4 text-muted-foreground" />
+                  <span>
+                    {isAddingToPlan
+                      ? "Adicionando..."
+                      : "Adicionar ao próximo culto"}
+                  </span>
+                </Button>
+              ) : null}
 
-              {canUpdate && canDelete ? (
+              {canDelete && (canUpdate || canAddToNextService) ? (
                 <div className="my-1 border-t border-border/60" />
               ) : null}
 
@@ -185,16 +189,20 @@ export function SongDetailHeaderActions({
                 Editar música
               </DropdownMenuItem>
             ) : null}
-            <DropdownMenuItem
-              onClick={handleAddToNextService}
-              disabled={isAddingToPlan}
-            >
-              <CalendarPlusIcon className="size-4 mr-2" />
-              {isAddingToPlan
-                ? "Adicionando..."
-                : "Adicionar ao próximo culto"}
-            </DropdownMenuItem>
-            {canUpdate && canDelete ? <DropdownMenuSeparator /> : null}
+            {canAddToNextService ? (
+              <DropdownMenuItem
+                onClick={handleAddToNextService}
+                disabled={isAddingToPlan}
+              >
+                <CalendarPlusIcon className="size-4 mr-2" />
+                {isAddingToPlan
+                  ? "Adicionando..."
+                  : "Adicionar ao próximo culto"}
+              </DropdownMenuItem>
+            ) : null}
+            {canDelete && (canUpdate || canAddToNextService) ? (
+              <DropdownMenuSeparator />
+            ) : null}
             {canDelete ? (
               <DropdownMenuItem
                 onClick={() => setDeleteOpen(true)}

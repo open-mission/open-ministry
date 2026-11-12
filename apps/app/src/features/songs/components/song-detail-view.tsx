@@ -38,6 +38,7 @@ type SongDetailViewProps = {
   songId: string;
   canUpdate: boolean;
   canDelete: boolean;
+  canAddToNextService: boolean;
 };
 
 export function SongDetailView({
@@ -45,6 +46,7 @@ export function SongDetailView({
   songId,
   canUpdate,
   canDelete,
+  canAddToNextService,
 }: SongDetailViewProps) {
   const { data } = useSongQuery(songId, {
     initialData: { song: initialSong },
@@ -165,6 +167,7 @@ export function SongDetailView({
               song={song}
               canUpdate={canUpdate}
               canDelete={canDelete}
+              canAddToNextService={canAddToNextService}
             />
           </div>
         </div>

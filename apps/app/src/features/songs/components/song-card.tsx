@@ -52,6 +52,7 @@ import { getStreamingLinks, streamingLinkLabel } from "./song-streaming-links";
 type SongCardProps = {
   song: SongWithUsage;
   canManage?: boolean;
+  canAddToNextService?: boolean;
   existingCollections?: string[];
   onSongUpdated?: (song: SongRecord) => void;
   onSongDeleted?: (songId: string) => void;
@@ -60,6 +61,7 @@ type SongCardProps = {
 export function SongCard({
   song,
   canManage = true,
+  canAddToNextService = false,
   existingCollections = [],
   onSongUpdated,
   onSongDeleted,
@@ -140,7 +142,7 @@ export function SongCard({
               </p>
             </Link>
 
-            {canManage ? (
+            {canManage || canAddToNextService ? (
               isMobile ? (
                 <Drawer open={menuOpen} onOpenChange={setMenuOpen}>
                   <DrawerTrigger asChild>
@@ -185,45 +187,52 @@ export function SongCard({
                         </Link>
                       </Button>
 
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          setMenuOpen(false);
-                          setEditOpen(true);
-                        }}
-                        className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium"
-                      >
-                        <PencilIcon className="size-4 text-muted-foreground" />
-                        <span>Editar música</span>
-                      </Button>
+                      {canManage ? (
+                        <>
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              setMenuOpen(false);
+                              setEditOpen(true);
+                            }}
+                            className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium"
+                          >
+                            <PencilIcon className="size-4 text-muted-foreground" />
+                            <span>Editar música</span>
+                          </Button>
 
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          setMenuOpen(false);
-                          setGroupOpen(true);
-                        }}
-                        className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium"
-                      >
-                        <FolderIcon className="size-4 text-muted-foreground" />
-                        <span>Definir grupo</span>
-                      </Button>
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              setMenuOpen(false);
+                              setGroupOpen(true);
+                            }}
+                            className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium"
+                          >
+                            <FolderIcon className="size-4 text-muted-foreground" />
+                            <span>Definir grupo</span>
+                          </Button>
+                        </>
+                      ) : null}
 
-                      {addToPlanItem}
+                      {canAddToNextService ? addToPlanItem : null}
 
-                      <div className="my-1 border-t border-border/60" />
-
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          setMenuOpen(false);
-                          setDeleteOpen(true);
-                        }}
-                        className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive"
-                      >
-                        <Trash2Icon className="size-4" />
-                        <span>Excluir</span>
-                      </Button>
+                      {canManage ? (
+                        <>
+                          <div className="my-1 border-t border-border/60" />
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              setMenuOpen(false);
+                              setDeleteOpen(true);
+                            }}
+                            className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          >
+                            <Trash2Icon className="size-4" />
+                            <span>Excluir</span>
+                          </Button>
+                        </>
+                      ) : null}
                     </div>
 
                     <DrawerFooter className="border-t pt-2 pb-4">
@@ -255,31 +264,41 @@ export function SongCard({
                         Ver detalhes
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setEditOpen(true)}>
-                      <PencilIcon className="mr-2 size-4" />
-                      Editar música
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setGroupOpen(true)}>
-                      <FolderIcon className="mr-2 size-4" />
-                      Definir grupo
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={handleAddToNextService}
-                      disabled={isAddingToPlan}
-                    >
-                      <CalendarPlusIcon className="mr-2 size-4" />
-                      {isAddingToPlan
-                        ? "Adicionando..."
-                        : "Adicionar ao próximo culto"}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => setDeleteOpen(true)}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash2Icon className="mr-2 size-4" />
-                      Excluir
-                    </DropdownMenuItem>
+                    {canManage ? (
+                      <>
+                        <DropdownMenuItem onClick={() => setEditOpen(true)}>
+                          <PencilIcon className="mr-2 size-4" />
+                          Editar música
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setGroupOpen(true)}>
+                          <FolderIcon className="mr-2 size-4" />
+                          Definir grupo
+                        </DropdownMenuItem>
+                      </>
+                    ) : null}
+                    {canAddToNextService ? (
+                      <DropdownMenuItem
+                        onClick={handleAddToNextService}
+                        disabled={isAddingToPlan}
+                      >
+                        <CalendarPlusIcon className="mr-2 size-4" />
+                        {isAddingToPlan
+                          ? "Adicionando..."
+                          : "Adicionar ao próximo culto"}
+                      </DropdownMenuItem>
+                    ) : null}
+                    {canManage ? (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => setDeleteOpen(true)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2Icon className="mr-2 size-4" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </>
+                    ) : null}
                   </DropdownMenuContent>
                 </DropdownMenu>
               )

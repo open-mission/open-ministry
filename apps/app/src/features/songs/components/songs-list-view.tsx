@@ -51,6 +51,7 @@ type SongsListViewProps = {
   songs: SongWithUsage[];
   existingCollections?: string[];
   canManage?: boolean;
+  canAddToNextService?: boolean;
 };
 
 type StatusFilter =
@@ -79,6 +80,7 @@ export function SongsListView({
   songs: initialSongs,
   existingCollections = [],
   canManage = true,
+  canAddToNextService = false,
 }: SongsListViewProps) {
   const { data } = useSongsQuery({
     initialData: { songs: initialSongs, collections: existingCollections },
@@ -775,6 +777,7 @@ export function SongsListView({
               key={song.id}
               song={song}
               canManage={canManage}
+              canAddToNextService={canAddToNextService}
               existingCollections={collections}
             />
           ))}
