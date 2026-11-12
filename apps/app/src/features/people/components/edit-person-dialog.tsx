@@ -42,23 +42,39 @@ type Person = {
   } | null;
 };
 
-export function EditPersonDialog({ person }: { person: Person }) {
-  const [open, setOpen] = useState(false);
+export function EditPersonDialog({
+  person,
+  open: controlledOpen,
+  onOpenChange: setControlledOpen,
+  trigger,
+}: {
+  person: Person;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: React.ReactNode;
+}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = setControlledOpen ?? setInternalOpen;
   const displayName = person.user?.name ?? person.name;
   const displayEmail = person.user?.email ?? person.email;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={`Editar ${displayName}`}
-          title="Editar pessoa"
-        >
-          <PencilIcon />
-        </Button>
-      </DialogTrigger>
+      {trigger !== null ? (
+        <DialogTrigger asChild>
+          {trigger ?? (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={`Editar ${displayName}`}
+              title="Editar pessoa"
+            >
+              <PencilIcon />
+            </Button>
+          )}
+        </DialogTrigger>
+      ) : null}
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-heading text-2xl tracking-tight">

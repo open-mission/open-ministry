@@ -2,6 +2,7 @@ import { ClockIcon, MailIcon } from "lucide-react";
 
 import { CancelInvitationButton } from "@/components/members/cancel-invitation-button";
 import { CopyInvitationLink } from "@/components/members/copy-invitation-link";
+import { ResendInvitationButton } from "@/components/members/resend-invitation-button";
 import { WhatsAppInvitationDialog } from "@/components/members/whatsapp-invitation-dialog";
 import { RoleBadge } from "@/components/members/role-badge";
 import { Badge } from "@/components/ui/badge";
@@ -91,11 +92,17 @@ export function PendingInvitations({
                     </div>
 
                     <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-border/40">
-                      <WhatsAppInvitationDialog
-                        invitationId={invitation.id}
-                        email={invitation.email}
-                      />
-                      <CopyInvitationLink invitationId={invitation.id} />
+                      {expired ? (
+                        <ResendInvitationButton invitationId={invitation.id} />
+                      ) : (
+                        <>
+                          <WhatsAppInvitationDialog
+                            invitationId={invitation.id}
+                            email={invitation.email}
+                          />
+                          <CopyInvitationLink invitationId={invitation.id} />
+                        </>
+                      )}
                       <CancelInvitationButton
                         invitationId={invitation.id}
                         email={invitation.email}
@@ -143,11 +150,17 @@ export function PendingInvitations({
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-end gap-1.5">
-                            <WhatsAppInvitationDialog
-                              invitationId={invitation.id}
-                              email={invitation.email}
-                            />
-                            <CopyInvitationLink invitationId={invitation.id} />
+                            {expired ? (
+                              <ResendInvitationButton invitationId={invitation.id} />
+                            ) : (
+                              <>
+                                <WhatsAppInvitationDialog
+                                  invitationId={invitation.id}
+                                  email={invitation.email}
+                                />
+                                <CopyInvitationLink invitationId={invitation.id} />
+                              </>
+                            )}
                             <CancelInvitationButton
                               invitationId={invitation.id}
                               email={invitation.email}

@@ -42,25 +42,38 @@ export type InvitePersonTarget = {
 export function InvitePersonDialog({
   person,
   disabled,
+  open: controlledOpen,
+  onOpenChange: setControlledOpen,
+  trigger,
 }: {
   person: InvitePersonTarget;
   disabled?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = setControlledOpen ?? setInternalOpen;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          disabled={disabled || Boolean(person.userId)}
-        >
-          <UserPlusIcon data-icon="inline-start" />
-          Convidar
-        </Button>
-      </DialogTrigger>
+      {trigger !== null ? (
+        <DialogTrigger asChild>
+          {trigger ?? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={disabled || Boolean(person.userId)}
+              aria-label={`Convidar ${person.name} para o aplicativo`}
+            >
+              <UserPlusIcon data-icon="inline-start" />
+              Convidar
+            </Button>
+          )}
+        </DialogTrigger>
+      ) : null}
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="font-heading text-2xl tracking-tight">
