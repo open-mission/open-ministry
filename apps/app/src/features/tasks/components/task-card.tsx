@@ -122,8 +122,9 @@ export function TaskCard({
     <div
       ref={setNodeRef}
       style={style}
+      onClick={() => onView(task)}
       className={cn(
-        "group relative flex flex-col justify-between gap-2.5 rounded-xl border border-border/70 bg-card p-3 shadow-2xs transition-all hover:border-border hover:shadow-xs",
+        "group relative flex flex-col justify-between gap-2.5 rounded-xl border border-border/70 bg-card p-3 shadow-2xs transition-all hover:border-border hover:shadow-xs cursor-pointer",
         isDragging && "z-50 opacity-50 shadow-xl border-primary",
         isCompleted && "bg-muted/30 opacity-70",
         task.isPinned && "border-t-2 border-t-primary",
@@ -138,6 +139,7 @@ export function TaskCard({
             {...listeners}
             type="button"
             aria-label="Arrastar card"
+            onClick={(e) => e.stopPropagation()}
             className="cursor-grab touch-none p-0.5 text-muted-foreground/40 hover:text-foreground mt-0.5"
           >
             <GripVerticalIcon className="size-3.5" />
@@ -145,7 +147,10 @@ export function TaskCard({
 
           <button
             type="button"
-            onClick={handleToggleComplete}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggleComplete();
+            }}
             disabled={isPending}
             className={cn(
               "flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-all mt-0.5",
@@ -159,9 +164,8 @@ export function TaskCard({
 
           <div className="min-w-0 flex-1">
             <h4
-              onClick={() => onView(task)}
               className={cn(
-                "text-xs font-semibold text-foreground cursor-pointer hover:underline line-clamp-2",
+                "text-xs font-semibold text-foreground transition-colors group-hover:text-primary line-clamp-2",
                 isCompleted && "line-through text-muted-foreground",
               )}
             >
@@ -185,6 +189,7 @@ export function TaskCard({
                 variant="ghost"
                 size="icon"
                 className="size-6 text-muted-foreground hover:text-foreground"
+                onClick={(e) => e.stopPropagation()}
               >
                 <MoreVerticalIcon className="size-3" />
               </Button>
@@ -291,6 +296,7 @@ export function TaskCard({
                 href={task.url}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
                 title="Abrir link"
                 className="text-muted-foreground hover:text-foreground"
               >
