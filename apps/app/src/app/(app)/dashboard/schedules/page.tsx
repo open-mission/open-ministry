@@ -120,7 +120,7 @@ async function SchedulesContent({
   const coverageBoard = buildDepartmentCoverage(upcoming, departmentOptions);
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 min-w-0">
       <header className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="font-heading text-4xl leading-none tracking-tight">
