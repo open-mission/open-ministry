@@ -90,15 +90,23 @@ Me esvazio de mim`;
     });
 
     it("maps stage shortcuts only in fullscreen and outside interactive controls", () => {
-      expect(getStageShortcutAction("T", true, false)).toBe("focusTone");
-      expect(getStageShortcutAction("C", true, false)).toBe("copy");
-      expect(getStageShortcutAction("+", true, false)).toBe("transposeUp");
-      expect(getStageShortcutAction("ArrowDown", true, false)).toBe(
+      expect(getStageShortcutAction("T", true, false, true)).toBe("focusTone");
+      expect(getStageShortcutAction("C", true, false, true)).toBe("copy");
+      expect(getStageShortcutAction("+", true, false, true)).toBe(
+        "transposeUp",
+      );
+      expect(getStageShortcutAction("ArrowDown", true, false, true)).toBe(
         "fontSizeDown",
       );
-      expect(getStageShortcutAction("Escape", true, false)).toBe("close");
-      expect(getStageShortcutAction("t", false, false)).toBeNull();
-      expect(getStageShortcutAction("c", true, true)).toBeNull();
+      expect(getStageShortcutAction("Escape", true, false, true)).toBe(
+        "close",
+      );
+      expect(getStageShortcutAction("t", false, false, true)).toBeNull();
+      expect(getStageShortcutAction("c", true, true, true)).toBeNull();
+    });
+
+    it("does not map stage shortcuts when focus is outside the fullscreen viewer", () => {
+      expect(getStageShortcutAction("t", true, false, false)).toBeNull();
     });
   });
 

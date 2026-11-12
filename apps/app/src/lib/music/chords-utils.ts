@@ -73,8 +73,9 @@ export function getStageShortcutAction(
   key: string,
   isFullscreen: boolean,
   isInteractiveTarget: boolean,
+  isWithinStage: boolean,
 ): StageShortcutAction | null {
-  if (!isFullscreen || isInteractiveTarget) return null;
+  if (!isFullscreen || !isWithinStage || isInteractiveTarget) return null;
 
   switch (key) {
     case "+":

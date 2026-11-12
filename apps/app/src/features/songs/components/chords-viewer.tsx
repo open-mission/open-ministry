@@ -292,10 +292,14 @@ export function ChordsViewer({
             "a[href], button, input, select, textarea, [contenteditable]:not([contenteditable='false']), [role='button'], [role='link'], [role='textbox']",
           ),
         );
+      const isWithinStage =
+        target instanceof Node &&
+        Boolean(fullscreenRef.current?.contains(target));
       const action = getStageShortcutAction(
         event.key,
         isFullscreen,
         isInteractiveTarget,
+        isWithinStage,
       );
       if (!action) return;
 
