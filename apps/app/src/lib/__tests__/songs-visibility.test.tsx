@@ -27,6 +27,7 @@ import { SongDetailHeaderActions } from "@/features/songs/components/song-detail
 
 const song = {
   id: "song-1",
+  organizationId: "org-1",
   title: "A Casa É Sua",
   artist: "Casa Worship",
   tone: null,
@@ -40,6 +41,8 @@ const song = {
   spotifyUrl: null,
   collection: null,
   tags: [],
+  createdById: null,
+  createdAt: new Date("2026-01-01T00:00:00.000Z"),
   updatedAt: new Date("2026-01-01T00:00:00.000Z"),
   usage: {
     nextEvent: null,
