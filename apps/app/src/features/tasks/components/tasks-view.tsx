@@ -24,6 +24,7 @@ import {
 import { NativeSelect } from "@/components/ui/native-select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TaskAuditHistoryDialog } from "./task-audit-history-dialog";
+import { TaskDetailDialog } from "./task-detail-dialog";
 import { TaskFormDialog } from "./task-form-dialog";
 import { TasksKanbanView } from "./tasks-kanban-view";
 import { TasksListView } from "./tasks-list-view";
@@ -80,6 +81,7 @@ export function TasksView({
   // Modais
   const [formOpen, setFormOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<TaskItem | null>(null);
+  const [taskForDetail, setTaskForDetail] = useState<TaskItem | null>(null);
   const [auditOpen, setAuditOpen] = useState(false);
   const [taskForAudit, setTaskForAudit] = useState<TaskItem | null>(null);
 
@@ -205,6 +207,10 @@ export function TasksView({
   const handleEdit = (task: TaskItem) => {
     setTaskToEdit(task);
     setFormOpen(true);
+  };
+
+  const handleView = (task: TaskItem) => {
+    setTaskForDetail(task);
   };
 
   const handleOpenAudit = (task: TaskItem) => {
@@ -416,6 +422,7 @@ export function TasksView({
       ) : viewMode === "list" ? (
         <TasksListView
           tasks={filteredTasks}
+          onView={handleView}
           onEdit={handleEdit}
           onOpenAudit={handleOpenAudit}
           onDelete={handleTaskDeleted}
@@ -424,6 +431,7 @@ export function TasksView({
       ) : viewMode === "kanban" ? (
         <TasksKanbanView
           tasks={filteredTasks}
+          onView={handleView}
           onEdit={handleEdit}
           onOpenAudit={handleOpenAudit}
           onNewTask={handleNewTask}
@@ -433,12 +441,35 @@ export function TasksView({
       ) : (
         <TasksTableView
           tasks={filteredTasks}
+          onView={handleView}
           onEdit={handleEdit}
           onOpenAudit={handleOpenAudit}
           onDelete={handleTaskDeleted}
           canManage={true}
         />
       )}
+
+      {/* Modal de Detalhes da Tarefa (Modo Visualização) */}
+      <TaskDetailDialog
+        task={taskForDetail}
+        open={Boolean(taskForDetail)}
+        onOpenChange={(open) => {
+          if (!open) setTaskForDetail(null);
+        }}
+        onEdit={(task) => {
+          setTaskForDetail(null);
+          handleEdit(task);
+        }}
+        onOpenAudit={(task) => {
+          handleOpenAudit(task);
+        }}
+        onDelete={handleTaskDeleted}
+        onTaskUpdated={(updatedTask) => {
+          handleTaskUpdated(updatedTask);
+          setTaskForDetail(updatedTask);
+        }}
+        canManage={true}
+      />
 
       {/* Modal de Formulário (Criação/Edição) */}
       <TaskFormDialog

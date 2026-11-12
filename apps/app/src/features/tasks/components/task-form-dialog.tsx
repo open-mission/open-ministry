@@ -21,10 +21,18 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -79,6 +87,72 @@ export function TaskFormDialog({
   onTaskUpdated,
 }: TaskFormDialogProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <>
+        <Drawer open={open} onOpenChange={onOpenChange}>
+          <DrawerContent className="p-0">
+            <DrawerHeader className="border-b px-5 pt-4 pb-3 !text-left text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+              <div className="flex items-center justify-between pr-2">
+                <div className="flex items-center gap-2">
+                  <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <CheckSquare2Icon className="size-4" />
+                  </span>
+                  <DrawerTitle className="font-heading text-lg font-semibold tracking-tight">
+                    {taskToEdit ? "Editar Tarefa" : "Nova Tarefa"}
+                  </DrawerTitle>
+                </div>
+                {taskToEdit ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => setHistoryOpen(true)}
+                  >
+                    <HistoryIcon className="size-3.5" />
+                    Auditoria
+                  </Button>
+                ) : null}
+              </div>
+              <DrawerDescription className="text-xs text-muted-foreground text-left mt-0.5">
+                Organize seu dia, planeje datas de execução e defina prazos ministeriais.
+              </DrawerDescription>
+            </DrawerHeader>
+
+            <div className="max-h-[75vh] overflow-y-auto px-5 py-4 pb-8 [-webkit-overflow-scrolling:touch]">
+              {open && (
+                <TaskFormContent
+                  key={taskToEdit?.id ?? "new"}
+                  taskToEdit={taskToEdit}
+                  departments={departments}
+                  members={members}
+                  currentUserId={currentUserId}
+                  canDelegateDepartment={canDelegateDepartment}
+                  canDelegateChurch={canDelegateChurch}
+                  onClose={() => onOpenChange(false)}
+                  onOpenHistory={() => setHistoryOpen(true)}
+                  onTaskCreated={onTaskCreated}
+                  onTaskFailed={onTaskFailed}
+                  onTaskUpdated={onTaskUpdated}
+                  hideHeader
+                  isMobile
+                />
+              )}
+            </div>
+          </DrawerContent>
+        </Drawer>
+
+        <TaskAuditHistoryDialog
+          task={taskToEdit ?? null}
+          open={historyOpen}
+          onOpenChange={setHistoryOpen}
+        />
+      </>
+    );
+  }
 
   return (
     <>
@@ -103,7 +177,6 @@ export function TaskFormDialog({
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de Histórico de Auditoria */}
       <TaskAuditHistoryDialog
         task={taskToEdit ?? null}
         open={historyOpen}
@@ -125,6 +198,8 @@ function TaskFormContent({
   onTaskCreated,
   onTaskFailed,
   onTaskUpdated,
+  hideHeader = false,
+  isMobile = false,
 }: {
   taskToEdit?: TaskItem | null;
   departments: DepartmentOption[];
@@ -137,6 +212,8 @@ function TaskFormContent({
   onTaskCreated?: (task: TaskItem, tempId?: string) => void;
   onTaskFailed?: (tempId: string) => void;
   onTaskUpdated?: (task: TaskItem) => void;
+  hideHeader?: boolean;
+  isMobile?: boolean;
 }) {
   const isEditing = Boolean(taskToEdit);
   const [isPending, startTransition] = useTransition();
@@ -358,33 +435,35 @@ function TaskFormContent({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <DialogHeader>
-        <div className="flex items-center justify-between pr-4">
-          <div className="flex items-center gap-2">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <CheckSquare2Icon className="size-4" />
-            </span>
-            <DialogTitle>
-              {isEditing ? "Editar Tarefa" : "Nova Tarefa"}
-            </DialogTitle>
+      {!hideHeader && (
+        <DialogHeader>
+          <div className="flex items-center justify-between pr-4">
+            <div className="flex items-center gap-2">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <CheckSquare2Icon className="size-4" />
+              </span>
+              <DialogTitle>
+                {isEditing ? "Editar Tarefa" : "Nova Tarefa"}
+              </DialogTitle>
+            </div>
+            {isEditing && taskToEdit ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                onClick={onOpenHistory}
+              >
+                <HistoryIcon className="size-3.5" />
+                Auditoria
+              </Button>
+            ) : null}
           </div>
-          {isEditing && taskToEdit ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-              onClick={onOpenHistory}
-            >
-              <HistoryIcon className="size-3.5" />
-              Auditoria
-            </Button>
-          ) : null}
-        </div>
-        <DialogDescription>
-          Organize seu dia, planeje datas de execução e defina prazos ministeriais.
-        </DialogDescription>
-      </DialogHeader>
+          <DialogDescription>
+            Organize seu dia, planeje datas de execução e defina prazos ministeriais.
+          </DialogDescription>
+        </DialogHeader>
+      )}
 
       {/* Título */}
       <div className="space-y-1.5">
@@ -727,24 +806,35 @@ function TaskFormContent({
         ) : null}
       </div>
 
-      <DialogFooter className="border-t pt-3">
+      <div
+        className={cn(
+          "border-t pt-3 flex items-center justify-end gap-2",
+          isMobile && "flex-col-reverse w-full gap-2.5",
+        )}
+      >
         <Button
           type="button"
           variant="outline"
           size="sm"
           onClick={onClose}
           disabled={isPending}
+          className={cn(isMobile && "w-full h-10 min-h-[44px]")}
         >
           Cancelar
         </Button>
-        <Button type="submit" size="sm" disabled={isPending}>
+        <Button
+          type="submit"
+          size="sm"
+          disabled={isPending}
+          className={cn(isMobile && "w-full h-10 min-h-[44px] font-semibold")}
+        >
           {isPending
             ? "Salvando..."
             : isEditing
               ? "Salvar Alterações"
               : "Criar Tarefa"}
         </Button>
-      </DialogFooter>
+      </div>
     </form>
   );
 }
