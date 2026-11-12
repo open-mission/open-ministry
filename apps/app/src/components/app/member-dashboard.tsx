@@ -19,6 +19,7 @@ import {
   FelicitometroCard,
   type InitialMoodData,
 } from "@/components/felicitometro/felicitometro-card";
+import { TasksHomeWidget, type TaskItem } from "@/features/tasks";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,6 +51,8 @@ export function MemberDashboard({
   terminology,
   votdSlot,
   unreadAnnouncements,
+  tasks = [],
+  currentUserId,
 }: {
   firstName: string;
   organizationName: string;
@@ -65,6 +68,8 @@ export function MemberDashboard({
   };
   votdSlot?: ReactNode;
   unreadAnnouncements?: UnreadAnnouncementItem[];
+  tasks?: TaskItem[];
+  currentUserId?: string;
 }) {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 pb-4 sm:gap-12">
@@ -90,6 +95,16 @@ export function MemberDashboard({
       ) : null}
 
       <QuickActions isAdmin={false} terminology={terminology} />
+
+      {/* Tarefas Pessoais e Ministeriais */}
+      <TasksHomeWidget
+        initialTasks={tasks}
+        currentUserId={currentUserId}
+        departments={memberships.map((m) => ({
+          id: m.departmentId,
+          name: m.department.name,
+        }))}
+      />
 
       <FelicitometroCard initialMood={initialMood} userName={firstName} />
 
