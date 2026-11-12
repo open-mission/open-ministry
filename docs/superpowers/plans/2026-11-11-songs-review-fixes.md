@@ -216,15 +216,15 @@ Run: `bun run build` from the repository root.
 Expected: exit 0; if Google Fonts DNS still fails, record the exact external blocker without changing font/product code.
 - [x] **Step 4: Review final diff against this spec and all review focus cases**
 - [x] **Step 5: Commit any final review fixes with Conventional Commit messages**
-- [ ] **Step 6: Merge `feature/songs-module-overhaul` into `develop` with `--no-ff`, verify the merged test suite, and delete the feature branch**
+- [x] **Step 6: Merge `feature/songs-module-overhaul` into `develop` with `--no-ff`, verify the merged test suite, and delete the feature branch**
 
 
 #### Verification results
 
-- App tests: `bun run test` — 284 passed, 2 skipped, 0 failed (48 files).
+- App tests: `bun run test` — 284 passed, 2 skipped, 0 failed (48 files), on both the feature branch and the merged `develop` tree.
 - Root lint: `bun run lint` — exit 0; 21 warnings remain in unrelated files.
 - Root typecheck: `bun run typecheck` — exit 0.
 - Root build: `bun run build` attempted; the app build is blocked because DNS returns `ENOTFOUND fonts.googleapis.com` while Next.js fetches Fraunces and Geist. No font or product code was changed.
 - Final review: no Critical findings; stage shortcuts were additionally scoped to the fullscreen element. Deferred Minor: the next-service query has predicate coverage but no DB fixture asserting the selected service end-to-end.
 - Commits: `f2b12d6` (manual reorder UI), `5ffd373` (fullscreen shortcut scope).
-- Integration merge remains pending.
+- Integration: `feature/songs-module-overhaul` was merged locally into `develop` with `--no-ff` (merge commit `09339dc`); the merged app test suite passed. The feature branch is retained until final cleanup after this plan update is integrated.
