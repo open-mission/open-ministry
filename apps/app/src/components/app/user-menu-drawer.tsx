@@ -11,6 +11,7 @@ import {
   LogOutIcon,
   MonitorIcon,
   MoonIcon,
+  RocketIcon,
   SettingsIcon,
   SparklesIcon,
   SunIcon,
@@ -33,6 +34,8 @@ import {
 } from "@/components/ui/drawer";
 import { authClient } from "@/lib/auth-client";
 import { useDeviceSessions } from "@/hooks/use-device-sessions";
+import { releaseNotesStore } from "@/lib/release-notes-store";
+import { CURRENT_APP_VERSION } from "@/config/release-notes";
 import { getInitials, roleLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -302,6 +305,33 @@ export function UserMenuDrawer({
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Rever introdução e recursos do OpenMinistry
+                </p>
+              </div>
+              <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                releaseNotesStore.open();
+              }}
+              className="flex min-h-12 w-full items-center gap-3 border-t border-border/50 px-3.5 py-2.5 text-left transition-colors hover:bg-muted/50 active:bg-muted/70 cursor-pointer"
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <RocketIcon className="size-4.5" />
+              </span>
+              <div className="min-w-0 flex-1 text-left">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-medium text-foreground">
+                    Novidades da Versão
+                  </p>
+                  <span className="rounded bg-primary/10 px-1.5 py-0.2 text-[10px] font-semibold text-primary">
+                    v{CURRENT_APP_VERSION}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Recursos novos e atualizações do sistema
                 </p>
               </div>
               <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40" />

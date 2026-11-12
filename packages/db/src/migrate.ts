@@ -14,7 +14,7 @@ if (!connectionString) {
 const sql = neon(connectionString);
 const db = drizzle(sql);
 
-const migrationsFolder = path.resolve(process.cwd(), "src/migrations");
+const migrationsFolder = path.resolve(import.meta.dirname, "migrations");
 
 console.log("Applying database migrations with Neon HTTP driver...");
 try {

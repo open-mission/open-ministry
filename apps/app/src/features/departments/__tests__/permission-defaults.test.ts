@@ -13,7 +13,7 @@ describe("Permission and Module Provisioning Defaults", () => {
     const orgId = "org-test-123";
     const rows = buildOrganizationModuleRows(orgId);
 
-    expect(rows).toHaveLength(4);
+    expect(rows).toHaveLength(5);
     const keys = rows.map((r) => r.moduleKey);
     expect(keys.sort()).toEqual([...MODULE_KEYS].sort());
 
@@ -29,10 +29,15 @@ describe("Permission and Module Provisioning Defaults", () => {
     const deptId = "dept-test-456";
     const rows = buildDepartmentModuleRows(orgId, deptId);
 
-    // Initial common department modules: agenda, schedules, announcements (music is opt-in)
-    expect(rows).toHaveLength(3);
+    // Initial common department modules: agenda, schedules, announcements, tasks (music is opt-in)
+    expect(rows).toHaveLength(4);
     const keys = rows.map((r) => r.moduleKey);
-    expect(keys.sort()).toEqual(["agenda", "announcements", "schedules"]);
+    expect(keys.sort()).toEqual([
+      "agenda",
+      "announcements",
+      "schedules",
+      "tasks",
+    ]);
 
     // Music must NEVER appear in the default department seed
     expect(keys).not.toContain("music");
@@ -47,7 +52,13 @@ describe("Permission and Module Provisioning Defaults", () => {
     const orgRows = buildOrganizationModuleRows(orgId);
 
     // Verify only known initial modules are seeded
-    const knownKeys = new Set(["agenda", "schedules", "music", "announcements"]);
+    const knownKeys = new Set([
+      "agenda",
+      "schedules",
+      "music",
+      "announcements",
+      "tasks",
+    ]);
     for (const row of orgRows) {
       expect(knownKeys.has(row.moduleKey)).toBe(true);
     }

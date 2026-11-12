@@ -10,6 +10,7 @@ import {
   ChevronsUpDownIcon,
   LogOutIcon,
   SettingsIcon,
+  SparklesIcon,
   UserIcon,
   UserPlusIcon,
 } from "lucide-react";
@@ -33,6 +34,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { authClient } from "@/lib/auth-client";
+import { releaseNotesStore } from "@/lib/release-notes-store";
+import { CURRENT_APP_VERSION } from "@/config/release-notes";
 import { useDeviceSessions } from "@/hooks/use-device-sessions";
 import { getInitials, roleLabel } from "@/lib/format";
 
@@ -225,6 +228,16 @@ export function NavUser({
                   <BellIcon className="size-4" />
                   <span>Notificações</span>
                 </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => releaseNotesStore.open()}
+                className="cursor-pointer gap-2"
+              >
+                <SparklesIcon className="size-4 text-primary" />
+                <span>O que há de novo</span>
+                <span className="ml-auto rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                  v{CURRENT_APP_VERSION}
+                </span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

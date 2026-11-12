@@ -7,6 +7,7 @@ export const MODULE_KEYS: readonly ModuleKey[] = [
   "schedules",
   "music",
   "announcements",
+  "tasks",
 ] as const;
 
 export type PermissionRole = "admin" | "leader" | "member";
@@ -36,6 +37,13 @@ export type ModuleActionMap = {
     | "sendPerson"
     | "sendAll"
     | "retryDelivery";
+  tasks:
+    | "read"
+    | "createPersonal"
+    | "createDepartment"
+    | "createOrganization"
+    | "update"
+    | "delete";
 };
 
 export type PermissionAction<M extends ModuleKey = ModuleKey> =
@@ -202,6 +210,55 @@ export const PERMISSION_CATALOG: {
         description: "Permite reprocessar envios pendentes ou com falha.",
         scope: "organization",
         delegable: false,
+      },
+    },
+  },
+  tasks: {
+    key: "tasks",
+    name: "Tarefas",
+    description: "Gestão de tarefas pessoais, afazeres da equipe e demandas ministeriais.",
+    actions: {
+      read: {
+        key: "read",
+        label: "Visualizar tarefas",
+        description: "Permite acessar a lista e o quadro de tarefas.",
+        scope: "organization",
+        delegable: false,
+      },
+      createPersonal: {
+        key: "createPersonal",
+        label: "Criar tarefas pessoais",
+        description: "Permite criar e gerenciar afazeres para si próprio.",
+        scope: "self",
+        delegable: false,
+      },
+      createDepartment: {
+        key: "createDepartment",
+        label: "Delegar tarefas para o departamento",
+        description: "Permite criar tarefas para a equipe ou membros do departamento.",
+        scope: "department",
+        delegable: true,
+      },
+      createOrganization: {
+        key: "createOrganization",
+        label: "Criar tarefas para toda a igreja",
+        description: "Permite criar demandas e tarefas institucionais de nível geral.",
+        scope: "organization",
+        delegable: false,
+      },
+      update: {
+        key: "update",
+        label: "Editar e atualizar status",
+        description: "Permite alterar status, prazos e detalhes de tarefas pertinentes.",
+        scope: "department",
+        delegable: true,
+      },
+      delete: {
+        key: "delete",
+        label: "Excluir tarefas",
+        description: "Permite remover tarefas sob sua responsabilidade ou liderança.",
+        scope: "department",
+        delegable: true,
       },
     },
   },

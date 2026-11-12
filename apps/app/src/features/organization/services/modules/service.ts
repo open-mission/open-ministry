@@ -98,13 +98,14 @@ export async function getUserAccessibleModuleKeys(
         );
       }
 
-      // Se não houver registros gravados, assume os 4 iniciais habilitados
+      // Módulos sem registro explícito no banco são considerados habilitados por padrão (opt-out).
+      const moduleState = new Map(
+        orgModuleRows.map((row) => [row.moduleKey as ModuleKey, row.enabled]),
+      );
       const enabledOrgModules = new Set<ModuleKey>(
-        orgModuleRows.length > 0
-          ? orgModuleRows
-              .filter((r) => r.enabled)
-              .map((r) => r.moduleKey as ModuleKey)
-          : (Object.keys(SYSTEM_MODULES) as ModuleKey[]),
+        (Object.keys(SYSTEM_MODULES) as ModuleKey[]).filter(
+          (key) => moduleState.get(key) ?? true,
+        ),
       );
 
       if (isAdmin) {
@@ -122,6 +123,11 @@ export async function getUserAccessibleModuleKeys(
       // Se Música estiver ativa na igreja, membro tem acesso à leitura
       if (enabledOrgModules.has("music")) {
         activeKeys.add("music");
+      }
+
+      // Se Tarefas estiver ativa na igreja, todos os membros têm acesso às suas tarefas pessoais
+      if (enabledOrgModules.has("tasks")) {
+        activeKeys.add("tasks");
       }
 
       for (const dept of userDepartments) {

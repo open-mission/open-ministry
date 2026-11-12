@@ -5,6 +5,7 @@ import {
   CalendarCheckIcon,
   CalendarDaysIcon,
   CalendarRangeIcon,
+  CheckSquare2Icon,
   ClipboardListIcon,
   HandHeartIcon,
   LayersIcon,
@@ -39,9 +40,15 @@ export const navGroups: NavGroup[] = [
         exact: true,
       },
       {
-        href: "/dashboard/bible",
+        href: "/bible",
         label: "Bíblia",
         icon: BookOpenIcon,
+        exact: false,
+      },
+      {
+        href: "/tasks",
+        label: "Tarefas",
+        icon: CheckSquare2Icon,
         exact: false,
       },
     ],
@@ -50,25 +57,25 @@ export const navGroups: NavGroup[] = [
     title: "Cultos & Escalas",
     items: [
       {
-        href: "/dashboard/calendar",
+        href: "/calendar",
         label: "Agenda",
         icon: CalendarRangeIcon,
         exact: false,
       },
       {
-        href: "/dashboard/events",
+        href: "/events",
         label: "Cultos e eventos",
         icon: CalendarDaysIcon,
         exact: false,
       },
       {
-        href: "/dashboard/schedules",
+        href: "/schedules",
         label: "Escalas",
         icon: ClipboardListIcon,
         exact: false,
       },
       {
-        href: "/dashboard/availability",
+        href: "/availability",
         label: "Disponibilidade",
         icon: CalendarCheckIcon,
         exact: false,
@@ -79,19 +86,19 @@ export const navGroups: NavGroup[] = [
     title: "Pessoas & Equipes",
     items: [
       {
-        href: "/dashboard/members",
+        href: "/members",
         label: "Pessoas",
         icon: UsersIcon,
         exact: false,
       },
       {
-        href: "/dashboard/departments",
+        href: "/departments",
         label: "Departamentos",
         icon: HandHeartIcon,
         exact: false,
       },
       {
-        href: "/dashboard/birthdays",
+        href: "/birthdays",
         label: "Aniversariantes",
         icon: CakeIcon,
         exact: false,
@@ -102,7 +109,7 @@ export const navGroups: NavGroup[] = [
     title: "Comunicação",
     items: [
       {
-        href: "/dashboard/announcements",
+        href: "/announcements",
         label: "Avisos",
         icon: MegaphoneIcon,
         exact: false,
@@ -112,7 +119,7 @@ export const navGroups: NavGroup[] = [
 ];
 
 export const jobsNavItem: NavItem = {
-  href: "/dashboard/jobs",
+  href: "/jobs",
   label: "Tarefas agendadas",
   icon: LayersIcon,
   exact: false,
@@ -124,14 +131,14 @@ export const jobsNavGroup: NavGroup = {
 };
 
 export const whatsappNavItem: NavItem = {
-  href: "/dashboard/whatsapp",
+  href: "/whatsapp",
   label: "WhatsApp",
   icon: MessageSquareIcon,
   exact: false,
 };
 
 export const emailsNavItem: NavItem = {
-  href: "/dashboard/emails",
+  href: "/emails",
   label: "Emails",
   icon: MailIcon,
   exact: false,
@@ -145,19 +152,19 @@ export const mobileNavItems: NavItem[] = [
     exact: true,
   },
   {
-    href: "/dashboard/schedules",
+    href: "/schedules",
     label: "Escalas",
     icon: ClipboardListIcon,
     exact: false,
   },
   {
-    href: "/dashboard/calendar",
+    href: "/calendar",
     label: "Agenda",
     icon: CalendarDaysIcon,
     exact: false,
   },
   {
-    href: "/dashboard/songs",
+    href: "/songs",
     label: "Músicas",
     icon: Music2Icon,
     exact: false,
@@ -168,14 +175,26 @@ export function isNavItemActive(item: NavItem, pathname: string) {
   if (item.href === "/") {
     return pathname === "/" || pathname === "/dashboard";
   }
-  return item.exact ? pathname === item.href : pathname.startsWith(item.href);
+  if (item.exact) {
+    return pathname === item.href || pathname === `/dashboard${item.href}`;
+  }
+  return (
+    pathname === item.href ||
+    pathname.startsWith(`${item.href}/`) ||
+    pathname === `/dashboard${item.href}` ||
+    pathname.startsWith(`/dashboard${item.href}/`)
+  );
 }
 
 export function isMobileNavRoute(pathname: string) {
   return (
     pathname === "/" ||
     pathname === "/dashboard" ||
-    mobileNavItems.some((item) => item.href === pathname)
+    mobileNavItems.some(
+      (item) =>
+        pathname === item.href ||
+        pathname === `/dashboard${item.href}`,
+    )
   );
 }
 

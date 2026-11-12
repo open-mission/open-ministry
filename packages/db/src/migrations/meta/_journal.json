@@ -232,6 +232,13 @@
       "when": 1794446294076,
       "tag": "0032_clear_bastion",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794466439076,
+      "tag": "0033_blushing_smasher",
+      "breakpoints": true
     }
   ]
 }
