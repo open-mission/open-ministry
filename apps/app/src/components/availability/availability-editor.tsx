@@ -9,6 +9,7 @@ import {
   CalendarX2Icon,
   CheckCircle2Icon,
   CheckIcon,
+  ChevronRightIcon,
   CircleDashedIcon,
   ClockIcon,
   Loader2Icon,
@@ -35,6 +36,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { AvailabilityPeriod } from "@/db/schema/people";
@@ -122,6 +133,7 @@ export function AvailabilityEditor({ initialData }: AvailabilityEditorProps) {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(
     initialData.updatedAt,
   );
+  const [isPresetsOpen, setIsPresetsOpen] = useState(false);
 
   const currentSnapshot = useMemo(
     () => snapshot(days, generalNotes),
@@ -203,11 +215,103 @@ export function AvailabilityEditor({ initialData }: AvailabilityEditorProps) {
     );
   }
 
+  function applyWeekendsAndWeeknightsPreset() {
+    setDays((prev) =>
+      prev.map((day) => {
+        if (day.dayOfWeek === 0 || day.dayOfWeek === 6) {
+          return { ...day, informed: true, periods: [...ALL_PERIODS] };
+        }
+        const periods = day.periods.includes("evening")
+          ? day.periods
+          : ALL_PERIODS.filter(
+              (period) => period === "evening" || day.periods.includes(period),
+            );
+        return { ...day, informed: true, periods };
+      }),
+    );
+  }
+
+  function applyAllDaysPreset() {
+    setDays((prev) =>
+      prev.map((day) => ({
+        ...day,
+        informed: true,
+        periods: [...ALL_PERIODS],
+      })),
+    );
+  }
+
   function clearAll() {
     setDays((prev) =>
       prev.map((day) => ({ ...day, informed: true, periods: [] })),
     );
   }
+
+  const presets = useMemo(
+    () => [
+      {
+        id: "weekends",
+        label: "Fins de semana",
+        description: "Sábado e domingo livres o dia todo (manhã, tarde e noite)",
+        icon: CalendarCheckIcon,
+        iconColor: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
+        action: () => {
+          applyWeekendPreset();
+          setIsPresetsOpen(false);
+          toast.success("Pré-definição aplicada: Fins de semana.");
+        },
+      },
+      {
+        id: "weeknights",
+        label: "Noites nos dias úteis",
+        description: "Segunda a sexta-feira no período da noite (18h às 23h)",
+        icon: MoonIcon,
+        iconColor: "text-indigo-600 dark:text-indigo-400 bg-indigo-500/10",
+        action: () => {
+          applyWeeknightsPreset();
+          setIsPresetsOpen(false);
+          toast.success("Pré-definição aplicada: Noites nos dias úteis.");
+        },
+      },
+      {
+        id: "weekends-weeknights",
+        label: "Fins de semana e noites úteis",
+        description: "Fins de semana o dia todo + noites durante a semana",
+        icon: SparklesIcon,
+        iconColor: "text-amber-600 dark:text-amber-400 bg-amber-500/10",
+        action: () => {
+          applyWeekendsAndWeeknightsPreset();
+          setIsPresetsOpen(false);
+          toast.success("Pré-definição aplicada: Fins de semana e noites úteis.");
+        },
+      },
+      {
+        id: "all-days",
+        label: "Semana inteira (todos os horários)",
+        description: "Disponível todos os dias em todos os períodos",
+        icon: CalendarDaysIcon,
+        iconColor: "text-sky-600 dark:text-sky-400 bg-sky-500/10",
+        action: () => {
+          applyAllDaysPreset();
+          setIsPresetsOpen(false);
+          toast.success("Pré-definição aplicada: Semana inteira.");
+        },
+      },
+      {
+        id: "clear",
+        label: "Limpar todos os dias",
+        description: "Marcar toda a semana como indisponível",
+        icon: RotateCcwIcon,
+        iconColor: "text-muted-foreground bg-muted",
+        action: () => {
+          clearAll();
+          setIsPresetsOpen(false);
+          toast.info("Disponibilidade limpa.");
+        },
+      },
+    ],
+    [],
+  );
 
   function handleReset() {
     setDays(buildEditableDays(baseline.days));
@@ -313,7 +417,95 @@ export function AvailabilityEditor({ initialData }: AvailabilityEditorProps) {
             </p>
           )}
 
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Mobile: Botão de pré-definições que abre o Drawer */}
+          <div className="sm:hidden">
+            <Drawer open={isPresetsOpen} onOpenChange={setIsPresetsOpen}>
+              <DrawerTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="min-h-11 w-full justify-between gap-2 rounded-xl bg-card/60 px-3.5 py-2.5 text-sm font-medium shadow-2xs hover:bg-muted/50 active:scale-[0.99]"
+                >
+                  <span className="flex items-center gap-2">
+                    <SparklesIcon
+                      className="size-4 text-primary shrink-0"
+                      aria-hidden="true"
+                    />
+                    <span className="font-semibold text-foreground">
+                      Pré-definições
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    Atalhos rápidos
+                    <ChevronRightIcon
+                      className="size-3.5"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </Button>
+              </DrawerTrigger>
+              <DrawerContent className="gap-0 rounded-t-[28px] border-x-0 border-b-0 bg-background p-0 pb-safe sm:max-w-md sm:mx-auto">
+                <DrawerHeader className="px-5 pt-4 pb-2 text-left">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <SparklesIcon className="size-4.5" aria-hidden="true" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <DrawerTitle className="font-heading text-lg font-semibold tracking-tight">
+                        Pré-definições
+                      </DrawerTitle>
+                      <DrawerDescription className="text-xs text-muted-foreground">
+                        Selecione um modelo para preencher seus horários da semana.
+                      </DrawerDescription>
+                    </div>
+                  </div>
+                </DrawerHeader>
+
+                <div className="space-y-2 px-4 py-2">
+                  {presets.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={preset.action}
+                      className="group flex w-full items-center gap-3.5 rounded-2xl border border-border/70 bg-card p-3 text-left shadow-2xs transition-all hover:border-border hover:bg-muted/50 active:scale-[0.99] cursor-pointer"
+                    >
+                      <div
+                        className={cn(
+                          "flex size-10 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105",
+                          preset.iconColor,
+                        )}
+                      >
+                        <preset.icon className="size-5" aria-hidden="true" />
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <p className="text-sm font-semibold text-foreground">
+                          {preset.label}
+                        </p>
+                        <p className="text-xs leading-tight text-muted-foreground">
+                          {preset.description}
+                        </p>
+                      </div>
+                      <ChevronRightIcon
+                        className="size-4 shrink-0 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5"
+                        aria-hidden="true"
+                      />
+                    </button>
+                  ))}
+                </div>
+
+                <DrawerFooter className="px-4 pt-1 pb-6">
+                  <DrawerClose asChild>
+                    <Button variant="ghost" className="min-h-11 w-full">
+                      Fechar
+                    </Button>
+                  </DrawerClose>
+                </DrawerFooter>
+              </DrawerContent>
+            </Drawer>
+          </div>
+
+          {/* Desktop: Atalhos inline */}
+          <div className="hidden sm:flex sm:flex-wrap sm:items-center sm:gap-2">
             <span className="text-xs font-medium text-muted-foreground">
               Atalhos:
             </span>
@@ -321,7 +513,10 @@ export function AvailabilityEditor({ initialData }: AvailabilityEditorProps) {
               type="button"
               variant="outline"
               size="sm"
-              onClick={applyWeekendPreset}
+              onClick={() => {
+                applyWeekendPreset();
+                toast.success("Pré-definição aplicada: Fins de semana.");
+              }}
               className="min-h-11 gap-1.5"
             >
               <CalendarCheckIcon className="size-4" aria-hidden="true" />
@@ -331,7 +526,10 @@ export function AvailabilityEditor({ initialData }: AvailabilityEditorProps) {
               type="button"
               variant="outline"
               size="sm"
-              onClick={applyWeeknightsPreset}
+              onClick={() => {
+                applyWeeknightsPreset();
+                toast.success("Pré-definição aplicada: Noites nos dias úteis.");
+              }}
               className="min-h-11 gap-1.5"
             >
               <MoonIcon className="size-4" aria-hidden="true" />
@@ -341,7 +539,10 @@ export function AvailabilityEditor({ initialData }: AvailabilityEditorProps) {
               type="button"
               variant="ghost"
               size="sm"
-              onClick={clearAll}
+              onClick={() => {
+                clearAll();
+                toast.info("Disponibilidade limpa.");
+              }}
               className="min-h-11 gap-1.5 text-muted-foreground"
             >
               <RotateCcwIcon className="size-4" aria-hidden="true" />

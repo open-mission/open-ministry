@@ -19,6 +19,7 @@ const routeLabels: Record<string, string> = {
   dashboard: "Início",
   events: "Cultos e eventos",
   schedules: "Escalas",
+  availability: "Disponibilidade",
   members: "Pessoas",
   departments: "Departamentos",
   birthdays: "Aniversariantes",
