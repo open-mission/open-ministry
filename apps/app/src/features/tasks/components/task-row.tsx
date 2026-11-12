@@ -134,19 +134,7 @@ export function TaskRow({
       )}
     >
       <div className="flex items-center gap-3 min-w-0 flex-1">
-        {/* Drag Handle */}
-        <button
-          ref={setActivatorNodeRef}
-          {...attributes}
-          {...listeners}
-          type="button"
-          aria-label="Reordenar tarefa"
-          className="cursor-grab touch-none p-0.5 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity hover:text-foreground"
-        >
-          <GripVerticalIcon className="size-4" />
-        </button>
-
-        {/* Circular Checkbox (Things 3 style) */}
+        {/* Circular Checkbox (Things 3 style) - Alinhado no canto */}
         <button
           type="button"
           onClick={handleToggleComplete}
@@ -304,6 +292,19 @@ export function TaskRow({
             )}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Drag Handle (Hover no canto direito) */}
+        <button
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...listeners}
+          type="button"
+          aria-label="Reordenar tarefa"
+          title="Arrastar para reordenar"
+          className="cursor-grab touch-none p-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity hover:text-foreground active:cursor-grabbing rounded"
+        >
+          <GripVerticalIcon className="size-4" />
+        </button>
       </div>
     </div>
   );

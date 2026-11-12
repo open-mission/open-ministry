@@ -179,7 +179,7 @@ export function TasksKanbanView({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+      <div className="flex md:grid md:grid-cols-3 gap-4 items-start overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth -mx-4 px-4 sm:mx-0 sm:px-0">
         {COLUMNS.map((col) => {
           const colItems = columnTasks[col.id] || [];
 
@@ -246,6 +246,7 @@ function KanbanColumnContainer({
       ref={setNodeRef}
       className={cn(
         "flex flex-col rounded-2xl border border-border/70 bg-muted/20 p-3 min-h-[420px] transition-colors",
+        "w-[85vw] max-w-[340px] shrink-0 snap-center md:w-auto md:max-w-none md:shrink",
         isOver && "border-primary bg-primary/5 ring-1 ring-primary",
       )}
     >
