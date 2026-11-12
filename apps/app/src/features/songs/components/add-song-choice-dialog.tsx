@@ -51,11 +51,13 @@ export function AddSongChoiceDialog({
   const [onlineOpen, setOnlineOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
+  const [manualFormKey, setManualFormKey] = useState(0);
   const [manualInitialData, setManualInitialData] = useState<
     | {
         title?: string;
         artist?: string;
         tone?: string;
+        capo?: number | null;
         chords?: string;
         lyrics?: string;
         collection?: string | null;
@@ -65,6 +67,7 @@ export function AddSongChoiceDialog({
 
   const handleOpenManual = () => {
     setManualInitialData(undefined);
+    setManualFormKey((current) => current + 1);
     setManualOpen(true);
   };
 
@@ -75,10 +78,12 @@ export function AddSongChoiceDialog({
       title: data.title,
       artist: data.artist,
       tone: data.tone,
+      capo: data.capo,
       chords: data.chords,
       lyrics: data.lyrics,
       collection: data.collection,
     });
+    setManualFormKey((current) => current + 1);
     setManualOpen(true);
   };
 
@@ -173,7 +178,7 @@ export function AddSongChoiceDialog({
                     Buscar na internet
                   </span>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Pesquise letra e informações online no Vagalume/Letras.
+                    Pesquise letras no Vagalume e no LRCLIB.
                   </p>
                 </div>
               </button>
@@ -242,11 +247,9 @@ export function AddSongChoiceDialog({
 
       {/* FORMULÁRIO COMPLETO DA MÚSICA */}
       <SongFormDialog
-        key={
-          manualInitialData
-            ? `${manualInitialData.title}-${manualInitialData.tone}`
-            : "new-song"
-        }
+        key={`${manualInitialData?.title ?? "new-song"}-${
+          manualInitialData?.tone ?? ""
+        }-${manualFormKey}`}
         open={manualOpen}
         onOpenChange={setManualOpen}
         initialData={manualInitialData}

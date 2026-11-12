@@ -3,7 +3,6 @@ import { Fraunces, Geist } from "next/font/google";
 import { Suspense } from "react";
 
 import { QueryProvider } from "@/components/providers/query-provider";
-import { PwaMobileZoomLock } from "@/components/pwa/pwa-mobile-zoom-lock";
 import { ServiceWorker } from "@/components/app/service-worker";
 import { UploadThingSSR } from "@/components/app/uploadthing-ssr";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -44,8 +43,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: "cover",
   themeColor: "#264a3a",
 };
@@ -73,7 +70,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               {children}
               <Toaster mobileOffset={{ bottom: 80 }} />
               <ServiceWorker />
-              <PwaMobileZoomLock />
             </TooltipProvider>
           </QueryProvider>
         </ThemeProvider>

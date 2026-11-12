@@ -18,8 +18,17 @@ mock.module("@/db", () => ({
     query: new Proxy(
       {},
       {
-        get: () => ({
-          findFirst: async () => null,
+        get: (_target, table: string) => ({
+          findFirst: async () =>
+            table === "song"
+              ? { id: "song-123", title: "Canção" }
+              : table === "event"
+                ? {
+                    id: "event-1",
+                    title: "Culto próximo",
+                    startsAt: new Date("2026-11-15T18:00:00.000Z"),
+                  }
+                : null,
           findMany: async () => [],
         }),
       },
@@ -80,6 +89,7 @@ mock.module("@/lib/permissions/service", () => ({
 }));
 
 import {
+  addSongToNextServiceAction,
   createSongAction,
   deleteSongAction,
   searchOnlineSongsAction,
@@ -109,6 +119,20 @@ describe("Music Module Permissions Enforcement", () => {
     const res = await createSongAction(formData);
     expect(res.ok).toBe(false);
     expect(res.error).toBeDefined();
+  });
+
+  it("blocks adding a song when the reader cannot edit the selected service plan", async () => {
+    mockIsAdmin = false;
+    mockIsLeader = false;
+    mockMusicDeptActive = false;
+    mockOrgMusicEnabled = true;
+
+    const result = await addSongToNextServiceAction("song-123");
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Você não tem permissão para editar o cronograma deste culto.",
+    });
   });
 
   it("leaderCanCreateOnlyWithActiveMusicDepartment", async () => {

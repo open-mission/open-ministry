@@ -262,6 +262,7 @@ async function EventContent({
               title: s.title,
               artist: s.artist,
               tone: s.tone,
+              capo: s.capo,
             }))}
             canManage={canManagePlan}
           />

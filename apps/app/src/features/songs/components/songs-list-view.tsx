@@ -1,8 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  rectSortingStrategy,
+  SortableContext,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
+import {
+  CalendarDaysIcon,
   CheckIcon,
   ChevronDownIcon,
   FileMusicIcon,
@@ -14,7 +29,10 @@ import {
   SearchIcon,
   XIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 
+import { reorderSongsAction } from "@/app/actions/songs";
+import { PageInfo } from "@/components/app/page-info";
 import { StatStrip, type StatItem } from "@/components/app/stat-strip";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,28 +55,67 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { NativeSelect } from "@/components/ui/native-select";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { songKeys, useSongsQuery } from "@/hooks/use-songs";
 import { STANDARD_TONES } from "@/lib/music/chords-utils";
-import type { SongRecord } from "@/lib/songs";
+import {
+  getManualSongOrderIds,
+  isSongReorderingEnabled,
+  moveSongId,
+} from "@/lib/songs-order";
+import type { SongWithUsage } from "@/lib/songs";
 import { cn } from "@/lib/utils";
 import { AddSongChoiceDialog } from "./add-song-choice-dialog";
 import { SongCard } from "./song-card";
+import { SortableSongCard } from "./sortable-song-card";
 
 type SongsListViewProps = {
-  songs: SongRecord[];
+  songs: SongWithUsage[];
   existingCollections?: string[];
   canManage?: boolean;
+  canAddToNextService?: boolean;
+  canReorder?: boolean;
 };
+
+type StatusFilter =
+  | "all"
+  | "missing-chords"
+  | "missing-lyrics"
+  | "scheduled"
+  | "never";
+type SortOption = "manual" | "title" | "usage" | "updated";
+
+const songReorderInstructions = {
+  draggable:
+    "Para reordenar uma música, pressione espaço. Use as setas para escolher a posição e pressione espaço para confirmar ou Escape para cancelar.",
+};
+
+const STATUS_LABEL: Record<Exclude<StatusFilter, "all">, string> = {
+  "missing-chords": "Sem cifra",
+  "missing-lyrics": "Sem letra",
+  scheduled: "Agendadas",
+  never: "Nunca usadas",
+};
+
+function normalizeSearch(value: string | null | undefined): string {
+  return (value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
 
 export function SongsListView({
   songs: initialSongs,
   existingCollections = [],
   canManage = true,
+  canAddToNextService = false,
+  canReorder = false,
 }: SongsListViewProps) {
   const { data } = useSongsQuery({
     initialData: { songs: initialSongs, collections: existingCollections },
   });
+  const queryClient = useQueryClient();
 
   const songs = data?.songs ?? initialSongs;
   const dataCollections = data?.collections;
@@ -80,22 +137,41 @@ export function SongsListView({
     return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
   }, [existingCollections, dataCollections, songs]);
 
-  const queryClient = useQueryClient();
-
-  // Pré-alimenta o cache de detalhes com os dados básicos já carregados na listagem
-  useEffect(() => {
-    for (const song of songs) {
-      if (!queryClient.getQueryData(songKeys.detail(song.id))) {
-        queryClient.setQueryData(songKeys.detail(song.id), { song });
-      }
-    }
-  }, [songs, queryClient]);
-
   const isMobile = useIsMobile();
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [toneFilter, setToneFilter] = useState("");
   const [collectionFilter, setCollectionFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [sortOption, setSortOption] = useState<SortOption>("title");
+  const [optimisticManualOrder, setOptimisticManualOrder] = useState<
+    string[] | null
+  >(null);
+  const [isReordering, setIsReordering] = useState(false);
+
+  const hasActiveFilters =
+    Boolean(search.trim() || toneFilter || collectionFilter) ||
+    statusFilter !== "all";
+  const persistedManualOrder = useMemo(
+    () => getManualSongOrderIds(songs),
+    [songs],
+  );
+  const manualOrderIds = optimisticManualOrder ?? persistedManualOrder;
+  const manualOrderPositions = useMemo(
+    () => new Map(manualOrderIds.map((id, index) => [id, index])),
+    [manualOrderIds],
+  );
+  const canReorderVisibleSongs = isSongReorderingEnabled(
+    canReorder,
+    sortOption,
+    hasActiveFilters,
+  );
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   const filteredSongs = useMemo(() => {
     let result = songs;
@@ -108,20 +184,84 @@ export function SongsListView({
       result = result.filter((s) => s.tone === toneFilter);
     }
 
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      result = result.filter(
-        (s) =>
-          s.title.toLowerCase().includes(q) ||
-          s.artist?.toLowerCase().includes(q) ||
-          s.collection?.toLowerCase().includes(q) ||
-          s.tags?.some((t) => t.toLowerCase().includes(q)) ||
-          s.tone?.toLowerCase().includes(q),
+    switch (statusFilter) {
+      case "missing-chords":
+        result = result.filter((s) => !s.chords?.trim());
+        break;
+      case "missing-lyrics":
+        result = result.filter((s) => !s.lyrics?.trim());
+        break;
+      case "scheduled":
+        result = result.filter((s) => Boolean(s.usage.nextEvent));
+        break;
+      case "never":
+        result = result.filter((s) => s.usage.eventCount === 0);
+        break;
+      default:
+        break;
+    }
+
+    const query = normalizeSearch(search.trim());
+    if (query) {
+      result = result.filter((s) =>
+        [
+          s.title,
+          s.artist,
+          s.collection,
+          s.tone,
+          ...(s.tags ?? []),
+        ].some((value) => normalizeSearch(value).includes(query)),
       );
     }
 
-    return result;
-  }, [songs, search, toneFilter, collectionFilter]);
+    const collator = new Intl.Collator("pt-BR", { sensitivity: "base" });
+    return [...result].sort((a, b) => {
+      if (sortOption === "manual") {
+        const manualOrderDiff =
+          (manualOrderPositions.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+          (manualOrderPositions.get(b.id) ?? Number.MAX_SAFE_INTEGER);
+        if (manualOrderDiff !== 0) return manualOrderDiff;
+      }
+      if (sortOption === "usage") {
+        const usageDiff = b.usage.eventCount - a.usage.eventCount;
+        if (usageDiff !== 0) return usageDiff;
+        const nextA = a.usage.nextEvent?.startsAt
+          ? new Date(a.usage.nextEvent.startsAt).getTime()
+          : Number.MAX_SAFE_INTEGER;
+        const nextB = b.usage.nextEvent?.startsAt
+          ? new Date(b.usage.nextEvent.startsAt).getTime()
+          : Number.MAX_SAFE_INTEGER;
+        if (nextA !== nextB) return nextA - nextB;
+      }
+      if (sortOption === "updated") {
+        const updatedDiff =
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+        if (updatedDiff !== 0) return updatedDiff;
+      }
+      return collator.compare(a.title, b.title);
+    });
+  }, [
+    songs,
+    search,
+    toneFilter,
+    collectionFilter,
+    statusFilter,
+    sortOption,
+    manualOrderPositions,
+  ]);
+
+  const missingChordsCount = useMemo(
+    () => songs.filter((s) => !s.chords?.trim()).length,
+    [songs],
+  );
+  const missingLyricsCount = useMemo(
+    () => songs.filter((s) => !s.lyrics?.trim()).length,
+    [songs],
+  );
+  const neverUsedCount = useMemo(
+    () => songs.filter((s) => s.usage.eventCount === 0).length,
+    [songs],
+  );
 
   const statsItems: StatItem[] = useMemo(() => {
     const withChords = songs.filter((s) => Boolean(s.chords?.trim())).length;
@@ -138,29 +278,96 @@ export function SongsListView({
         icon: FileMusicIcon,
         label: "Com Cifra",
         value: withChords,
-        hint: "Prontas para tocar",
+        hint: `${missingChordsCount} sem cifra`,
       },
       {
         icon: FileTextIcon,
         label: "Com Letra",
         value: withLyrics,
-        hint: "Com texto completo",
+        hint: `${missingLyricsCount} sem letra`,
       },
     ];
-  }, [songs]);
+  }, [songs, missingChordsCount, missingLyricsCount]);
+
+  const clearFilters = () => {
+    setSearch("");
+    setToneFilter("");
+    setCollectionFilter("");
+    setStatusFilter("all");
+  };
+
+  const handleSongDragEnd = async ({ active, over }: DragEndEvent) => {
+    if (!over || !canReorderVisibleSongs || isReordering) return;
+
+    const nextOrder = moveSongId(
+      manualOrderIds,
+      String(active.id),
+      String(over.id),
+    );
+    if (nextOrder === manualOrderIds) return;
+
+    setOptimisticManualOrder(nextOrder);
+    setIsReordering(true);
+
+    try {
+      const result = await reorderSongsAction(nextOrder);
+      if (!result.ok) {
+        toast.error(result.error ?? "Não foi possível salvar a ordem.");
+        return;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: songKeys.lists() });
+      toast.success("Ordem do repertório salva.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível salvar a ordem do repertório.",
+      );
+    } finally {
+      setOptimisticManualOrder(null);
+      setIsReordering(false);
+    }
+  };
+
+  const renderSongCard = (song: SongWithUsage) => (
+    <SongCard
+      key={song.id}
+      song={song}
+      canManage={canManage}
+      canAddToNextService={canAddToNextService}
+      existingCollections={collections}
+    />
+  );
 
   return (
     <div className="space-y-6 min-w-0 max-w-full">
       {/* HEADER DA PÁGINA */}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
-          Repertório de Músicas
-        </h1>
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <h1 className="line-clamp-2 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
+            Repertório de Músicas
+          </h1>
+          <PageInfo
+            title="Repertório de Músicas"
+            description={
+              <>
+                <p>
+                  Use a busca e os filtros para encontrar músicas por título,
+                  artista, tom, grupo ou pendência (sem cifra ou sem letra).
+                </p>
+                <p className="mt-2">
+                  Em cada música você pode abrir a cifra, transpor o tom,
+                  definir capotraste, adicionar ao próximo culto e consultar em
+                  quais cultos ela já foi usada.
+                </p>
+              </>
+            }
+          />
+        </div>
 
         {canManage ? (
-          <AddSongChoiceDialog
-            existingCollections={collections}
-          />
+          <AddSongChoiceDialog existingCollections={collections} />
         ) : null}
       </header>
 
@@ -187,8 +394,9 @@ export function SongsListView({
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="mr-1 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="mr-1 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 title="Limpar busca"
+                aria-label="Limpar busca"
               >
                 <XIcon className="size-3.5" />
               </button>
@@ -464,6 +672,102 @@ export function SongsListView({
             </div>
           </InputGroup>
         </div>
+
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+          <NativeSelect
+            value={statusFilter}
+            onChange={(event) =>
+              setStatusFilter(event.target.value as StatusFilter)
+            }
+            aria-label="Filtrar por pendência"
+            className="w-full [&_select]:h-10 [&_select]:text-xs sm:w-44"
+          >
+            <option value="all">Todas as músicas</option>
+            <option value="missing-chords">Sem cifra ({missingChordsCount})</option>
+            <option value="missing-lyrics">Sem letra ({missingLyricsCount})</option>
+            <option value="scheduled">Agendadas</option>
+            <option value="never">Nunca usadas ({neverUsedCount})</option>
+          </NativeSelect>
+
+          <NativeSelect
+            value={sortOption}
+            onChange={(event) =>
+              setSortOption(event.target.value as SortOption)
+            }
+            aria-label="Ordenar músicas"
+            className="w-full [&_select]:h-10 [&_select]:text-xs sm:w-44"
+          >
+            <option value="manual">Ordem manual</option>
+            <option value="title">Título (A-Z)</option>
+            <option value="usage">Mais usadas</option>
+            <option value="updated">Atualizadas recentemente</option>
+          </NativeSelect>
+        </div>
+      </div>
+
+      {canReorder && sortOption === "manual" && hasActiveFilters ? (
+        <p role="status" className="text-xs text-muted-foreground">
+          Limpe a busca e os filtros para reordenar as músicas.
+        </p>
+      ) : null}
+
+      {/* ATALHOS DE PENDÊNCIAS DO REPERTÓRIO */}
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-muted-foreground">Pendências:</span>
+        <button
+          type="button"
+          onClick={() =>
+            setStatusFilter((current) =>
+              current === "missing-chords" ? "all" : "missing-chords",
+            )
+          }
+          aria-pressed={statusFilter === "missing-chords"}
+          className={cn(
+            "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 font-medium transition-colors",
+            statusFilter === "missing-chords"
+              ? "border-amber-500/40 bg-amber-500/15 text-amber-900 dark:text-amber-200"
+              : "border-border/70 bg-card/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+          )}
+        >
+          <FileMusicIcon className="size-3.5" />
+          {missingChordsCount} sem cifra
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            setStatusFilter((current) =>
+              current === "missing-lyrics" ? "all" : "missing-lyrics",
+            )
+          }
+          aria-pressed={statusFilter === "missing-lyrics"}
+          className={cn(
+            "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 font-medium transition-colors",
+            statusFilter === "missing-lyrics"
+              ? "border-amber-500/40 bg-amber-500/15 text-amber-900 dark:text-amber-200"
+              : "border-border/70 bg-card/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+          )}
+        >
+          <FileTextIcon className="size-3.5" />
+          {missingLyricsCount} sem letra
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            setStatusFilter((current) =>
+              current === "never" ? "all" : "never",
+            )
+          }
+          aria-pressed={statusFilter === "never"}
+          className={cn(
+            "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 font-medium transition-colors",
+            statusFilter === "never"
+              ? "border-primary/30 bg-primary/10 text-primary"
+              : "border-border/70 bg-card/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+          )}
+        >
+          <CalendarDaysIcon className="size-3.5" />
+          {neverUsedCount} nunca usadas
+        </button>
       </div>
 
       {/* SELETOR RÁPIDO DE COLEÇÃO / GRUPO */}
@@ -472,8 +776,9 @@ export function SongsListView({
           <button
             type="button"
             onClick={() => setCollectionFilter("")}
+            aria-pressed={!collectionFilter}
             className={cn(
-              "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-colors",
+              "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               !collectionFilter
                 ? "bg-foreground text-background shadow-2xs"
                 : "border border-border/70 bg-card/60 text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -491,8 +796,9 @@ export function SongsListView({
                 key={col}
                 type="button"
                 onClick={() => setCollectionFilter(isSelected ? "" : col)}
+                aria-pressed={isSelected}
                 className={cn(
-                  "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
+                  "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   isSelected
                     ? "border border-primary/30 bg-primary/10 font-bold text-primary shadow-2xs"
                     : "border border-border/70 bg-card/60 text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -517,9 +823,22 @@ export function SongsListView({
       ) : null}
 
       {/* CHIP DE FILTRO ATIVO SELECIONADO */}
-      {(search || toneFilter || collectionFilter) && (
+      {hasActiveFilters && (
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <span>Filtros ativos:</span>
+          {statusFilter !== "all" ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 font-medium text-primary">
+              {STATUS_LABEL[statusFilter]}
+              <button
+                type="button"
+                onClick={() => setStatusFilter("all")}
+                className="rounded p-0.5 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Remover filtro de pendência"
+              >
+                <XIcon className="size-3" />
+              </button>
+            </span>
+          ) : null}
           {collectionFilter ? (
             <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 font-medium text-primary">
               <FolderIcon className="size-3" />
@@ -527,7 +846,8 @@ export function SongsListView({
               <button
                 type="button"
                 onClick={() => setCollectionFilter("")}
-                className="hover:text-destructive"
+                className="rounded p-0.5 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Remover filtro de grupo"
               >
                 <XIcon className="size-3" />
               </button>
@@ -539,7 +859,8 @@ export function SongsListView({
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="hover:text-destructive"
+                className="rounded p-0.5 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Remover busca"
               >
                 <XIcon className="size-3" />
               </button>
@@ -552,7 +873,8 @@ export function SongsListView({
               <button
                 type="button"
                 onClick={() => setToneFilter("")}
-                className="hover:text-destructive"
+                className="rounded p-0.5 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Remover filtro de tom"
               >
                 <XIcon className="size-3" />
               </button>
@@ -560,12 +882,8 @@ export function SongsListView({
           ) : null}
           <button
             type="button"
-            onClick={() => {
-              setSearch("");
-              setToneFilter("");
-              setCollectionFilter("");
-            }}
-            className="text-xs text-primary hover:underline font-medium ml-1"
+            onClick={clearFilters}
+            className="ml-1 text-xs font-medium text-primary hover:underline"
           >
             Limpar todos
           </button>
@@ -574,16 +892,36 @@ export function SongsListView({
 
       {/* GRID DE MÚSICAS */}
       {filteredSongs.length > 0 ? (
-        <div className="grid min-w-0 max-w-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredSongs.map((song) => (
-            <SongCard
-              key={song.id}
-              song={song}
-              canManage={canManage}
-              existingCollections={collections}
-            />
-          ))}
-        </div>
+        canReorderVisibleSongs ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleSongDragEnd}
+            accessibility={{ screenReaderInstructions: songReorderInstructions }}
+          >
+            <SortableContext
+              items={filteredSongs.map((song) => song.id)}
+              strategy={rectSortingStrategy}
+            >
+              <div className="grid min-w-0 max-w-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredSongs.map((song) => (
+                  <SortableSongCard
+                    key={song.id}
+                    song={song}
+                    canManage={canManage}
+                    canAddToNextService={canAddToNextService}
+                    existingCollections={collections}
+                    disabled={isReordering}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        ) : (
+          <div className="grid min-w-0 max-w-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredSongs.map(renderSongCard)}
+          </div>
+        )
       ) : songs.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border/80 bg-card/60 p-8 text-center sm:p-12">
           <span className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -612,14 +950,10 @@ export function SongsListView({
           <p className="mt-1 text-xs text-muted-foreground">
             Tente pesquisar com outros termos ou limpar o filtro de tom.
           </p>
-          {(search || toneFilter || collectionFilter) && (
+          {hasActiveFilters && (
             <button
               type="button"
-              onClick={() => {
-                setSearch("");
-                setToneFilter("");
-                setCollectionFilter("");
-              }}
+              onClick={clearFilters}
               className="mt-3 text-xs font-medium text-primary hover:underline"
             >
               Limpar filtros

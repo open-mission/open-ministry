@@ -3,10 +3,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { SongInput } from "@/lib/music/songs-schema";
-import type { SongRecord, SongWithDetails } from "@/lib/songs";
+import { EMPTY_SONG_USAGE } from "@/lib/song-usage";
+import type { SongRecord, SongWithDetails, SongWithUsage } from "@/lib/songs";
 
 export type SongsApiResponse = {
-  songs: SongRecord[];
+  songs: SongWithUsage[];
   collections: string[];
 };
 
@@ -127,10 +128,14 @@ export function useCreateSongMutation() {
     mutationFn: createSongRequest,
     onSuccess: (result) => {
       // Invalida listas e adiciona pré-populado nos detalhes
-      queryClient.setQueryData(
-        songKeys.detail(result.song.id),
-        { song: result.song },
-      );
+      const createdSong: SongWithDetails = {
+        ...result.song,
+        planItems: [],
+        usage: EMPTY_SONG_USAGE,
+      };
+      queryClient.setQueryData(songKeys.detail(result.song.id), {
+        song: createdSong,
+      });
 
       const previousLists = queryClient.getQueriesData<SongsApiResponse>({
         queryKey: songKeys.lists(),
@@ -143,7 +148,10 @@ export function useCreateSongMutation() {
           }
           queryClient.setQueryData<SongsApiResponse>(key, {
             ...cachedList,
-            songs: [result.song, ...(cachedList.songs ?? [])],
+            songs: [
+              { ...result.song, usage: EMPTY_SONG_USAGE },
+              ...(cachedList.songs ?? []),
+            ],
             collections: Array.from(nextCollections).sort((a, b) =>
               a.localeCompare(b, "pt-BR"),
             ),

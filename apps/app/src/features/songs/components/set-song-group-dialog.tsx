@@ -89,7 +89,8 @@ export function SetSongGroupDialog({
             </DialogTitle>
           </div>
           <DialogDescription className="text-xs text-muted-foreground">
-            Organize &ldquo;{song.title}&rdquo; vinculando-a a um grupo ou coleção.
+            Organize &ldquo;{song.title}&rdquo; vinculando-a a um grupo do
+            repertório.
           </DialogDescription>
         </DialogHeader>
 
@@ -149,7 +150,7 @@ function SetSongGroupMobileForm({
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">
-              Grupo / Coleção de repertório
+              Grupo do repertório
             </label>
             <CollectionCombobox
               value={collection}
@@ -226,7 +227,7 @@ function SetSongGroupDesktopForm({
       <div className="space-y-4 py-2">
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">
-            Grupo / Coleção de repertório
+            Grupo do repertório
           </label>
           <CollectionCombobox
             value={collection}
