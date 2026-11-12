@@ -25,6 +25,7 @@ export const COMMON_DEPARTMENT_MODULES: readonly ModuleKey[] = [
   "agenda",
   "schedules",
   "announcements",
+  "tasks",
 ] as const;
 
 /**

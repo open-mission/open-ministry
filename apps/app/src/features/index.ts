@@ -7,4 +7,5 @@ export * as jobsFeature from "./jobs";
 export * as felicitometroFeature from "./felicitometro";
 export * as organizationFeature from "./organization";
 export * as authFeature from "./auth";
+export * as tasksFeature from "./tasks";
 export * as offlineFeature from "./offline";
