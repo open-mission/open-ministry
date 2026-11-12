@@ -39,6 +39,7 @@ import type { TaskItem } from "../services/tasks-service";
 
 type TaskRowProps = {
   task: TaskItem;
+  onView: (task: TaskItem) => void;
   onEdit: (task: TaskItem) => void;
   onOpenAudit: (task: TaskItem) => void;
   onDelete?: (taskId: string) => void;
@@ -47,6 +48,7 @@ type TaskRowProps = {
 
 export function TaskRow({
   task,
+  onView,
   onEdit,
   onOpenAudit,
   onDelete,
@@ -164,7 +166,7 @@ export function TaskRow({
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span
-              onClick={() => onEdit(task)}
+              onClick={() => onView(task)}
               className={cn(
                 "text-sm font-medium text-foreground cursor-pointer hover:underline truncate",
                 isCompleted && "line-through text-muted-foreground",
@@ -275,6 +277,9 @@ export function TaskRow({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="text-xs">
+            <DropdownMenuItem onClick={() => onView(task)}>
+              Visualizar Detalhes
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(task)}>
               Editar Detalhes
             </DropdownMenuItem>

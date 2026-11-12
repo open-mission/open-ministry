@@ -39,6 +39,7 @@ import type { TaskItem, TaskStatus } from "../services/tasks-service";
 
 type TasksKanbanViewProps = {
   tasks: TaskItem[];
+  onView: (task: TaskItem) => void;
   onEdit: (task: TaskItem) => void;
   onOpenAudit: (task: TaskItem) => void;
   onNewTask: (defaultStatus?: TaskStatus) => void;
@@ -76,6 +77,7 @@ const COLUMNS: KanbanColumn[] = [
 
 export function TasksKanbanView({
   tasks,
+  onView,
   onEdit,
   onOpenAudit,
   onNewTask,
@@ -186,6 +188,7 @@ export function TasksKanbanView({
               key={col.id}
               column={col}
               tasks={colItems}
+              onView={onView}
               onEdit={onEdit}
               onOpenAudit={onOpenAudit}
               onNewTask={onNewTask}
@@ -201,6 +204,7 @@ export function TasksKanbanView({
           <div className="rotate-2 scale-105 shadow-2xl">
             <TaskCard
               task={activeTask}
+              onView={() => {}}
               onEdit={() => {}}
               onOpenAudit={() => {}}
               canManage={false}
@@ -215,6 +219,7 @@ export function TasksKanbanView({
 function KanbanColumnContainer({
   column,
   tasks,
+  onView,
   onEdit,
   onOpenAudit,
   onNewTask,
@@ -223,6 +228,7 @@ function KanbanColumnContainer({
 }: {
   column: KanbanColumn;
   tasks: TaskItem[];
+  onView: (task: TaskItem) => void;
   onEdit: (task: TaskItem) => void;
   onOpenAudit: (task: TaskItem) => void;
   onNewTask: (defaultStatus?: TaskStatus) => void;
@@ -286,6 +292,7 @@ function KanbanColumnContainer({
             <TaskCard
               key={task.id}
               task={task}
+              onView={onView}
               onEdit={onEdit}
               onOpenAudit={onOpenAudit}
               onDelete={onDelete}

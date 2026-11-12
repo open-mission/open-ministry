@@ -43,6 +43,7 @@ import type { TaskItem, TaskPriority } from "../services/tasks-service";
 
 type TaskCardProps = {
   task: TaskItem;
+  onView: (task: TaskItem) => void;
   onEdit: (task: TaskItem) => void;
   onOpenAudit: (task: TaskItem) => void;
   onDelete?: (taskId: string) => void;
@@ -51,6 +52,7 @@ type TaskCardProps = {
 
 export function TaskCard({
   task,
+  onView,
   onEdit,
   onOpenAudit,
   onDelete,
@@ -157,7 +159,7 @@ export function TaskCard({
 
           <div className="min-w-0 flex-1">
             <h4
-              onClick={() => onEdit(task)}
+              onClick={() => onView(task)}
               className={cn(
                 "text-xs font-semibold text-foreground cursor-pointer hover:underline line-clamp-2",
                 isCompleted && "line-through text-muted-foreground",
@@ -188,6 +190,9 @@ export function TaskCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="text-xs">
+              <DropdownMenuItem onClick={() => onView(task)}>
+                Visualizar detalhes
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(task)}>
                 Editar
               </DropdownMenuItem>

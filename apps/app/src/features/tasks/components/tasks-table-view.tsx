@@ -47,6 +47,7 @@ import type { TaskItem } from "../services/tasks-service";
 
 type TasksTableViewProps = {
   tasks: TaskItem[];
+  onView: (task: TaskItem) => void;
   onEdit: (task: TaskItem) => void;
   onOpenAudit: (task: TaskItem) => void;
   onDelete?: (taskId: string) => void;
@@ -57,6 +58,7 @@ type SortField = "title" | "date" | "deadline" | "status" | "priority";
 
 export function TasksTableView({
   tasks,
+  onView,
   onEdit,
   onOpenAudit,
   onDelete,
@@ -218,7 +220,7 @@ export function TasksTableView({
                   <div className="space-y-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span
-                        onClick={() => onEdit(task)}
+                        onClick={() => onView(task)}
                         className={cn(
                           "cursor-pointer hover:underline text-foreground",
                           isCompleted && "line-through text-muted-foreground",
@@ -344,6 +346,9 @@ export function TasksTableView({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="text-xs">
+                      <DropdownMenuItem onClick={() => onView(task)}>
+                        Visualizar detalhes
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onEdit(task)}>
                         Editar
                       </DropdownMenuItem>

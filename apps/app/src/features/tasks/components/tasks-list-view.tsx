@@ -33,6 +33,7 @@ import type { TaskItem } from "../services/tasks-service";
 
 type TasksListViewProps = {
   tasks: TaskItem[];
+  onView: (task: TaskItem) => void;
   onEdit: (task: TaskItem) => void;
   onOpenAudit: (task: TaskItem) => void;
   onDelete?: (taskId: string) => void;
@@ -41,6 +42,7 @@ type TasksListViewProps = {
 
 export function TasksListView({
   tasks,
+  onView,
   onEdit,
   onOpenAudit,
   onDelete,
@@ -151,6 +153,7 @@ export function TasksListView({
                   <TaskRow
                     key={task.id}
                     task={task}
+                    onView={onView}
                     onEdit={onEdit}
                     onOpenAudit={onOpenAudit}
                     onDelete={onDelete}
@@ -176,6 +179,7 @@ export function TasksListView({
                   <TaskRow
                     key={task.id}
                     task={task}
+                    onView={onView}
                     onEdit={onEdit}
                     onOpenAudit={onOpenAudit}
                     onDelete={onDelete}
@@ -201,6 +205,7 @@ export function TasksListView({
                   <TaskRow
                     key={task.id}
                     task={task}
+                    onView={onView}
                     onEdit={onEdit}
                     onOpenAudit={onOpenAudit}
                     onDelete={onDelete}
@@ -226,6 +231,7 @@ export function TasksListView({
                   <TaskRow
                     key={task.id}
                     task={task}
+                    onView={onView}
                     onEdit={onEdit}
                     onOpenAudit={onOpenAudit}
                     onDelete={onDelete}
@@ -262,6 +268,7 @@ export function TasksListView({
                     <TaskRow
                       key={task.id}
                       task={task}
+                      onView={onView}
                       onEdit={onEdit}
                       onOpenAudit={onOpenAudit}
                       onDelete={onDelete}
