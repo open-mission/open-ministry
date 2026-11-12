@@ -37,6 +37,76 @@ export const STANDARD_TONES = [
   "Bm",
 ] as const;
 
+export function getTargetTones(
+  originalTone: string | null | undefined,
+): string[] {
+  const normalizedTone = normalizeTone(originalTone ?? "");
+  if (!normalizedTone) return [...STANDARD_TONES];
+
+  const isMinor = normalizedTone.endsWith("m");
+  const tones: string[] = STANDARD_TONES.filter(
+    (tone) => tone.endsWith("m") === isMinor,
+  );
+  const exactOriginalTone = originalTone?.trim();
+  if (
+    exactOriginalTone &&
+    !tones.includes(exactOriginalTone)
+  ) {
+    tones.push(exactOriginalTone);
+  }
+
+  return tones;
+}
+
+export type StageShortcutAction =
+  | "transposeUp"
+  | "transposeDown"
+  | "resetTone"
+  | "fontSizeUp"
+  | "fontSizeDown"
+  | "toggleFullscreen"
+  | "close"
+  | "focusTone"
+  | "copy";
+
+export function getStageShortcutAction(
+  key: string,
+  isFullscreen: boolean,
+  isInteractiveTarget: boolean,
+): StageShortcutAction | null {
+  if (!isFullscreen || isInteractiveTarget) return null;
+
+  switch (key) {
+    case "+":
+    case "=":
+    case "ArrowRight":
+      return "transposeUp";
+    case "-":
+    case "_":
+    case "ArrowLeft":
+      return "transposeDown";
+    case "0":
+      return "resetTone";
+    case "ArrowUp":
+      return "fontSizeUp";
+    case "ArrowDown":
+      return "fontSizeDown";
+    case "f":
+    case "F":
+      return "toggleFullscreen";
+    case "Escape":
+      return "close";
+    case "t":
+    case "T":
+      return "focusTone";
+    case "c":
+    case "C":
+      return "copy";
+    default:
+      return null;
+  }
+}
+
 export const STANDARD_TIME_SIGNATURES = [
   "4/4",
   "6/8",

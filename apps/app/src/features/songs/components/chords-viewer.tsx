@@ -32,9 +32,10 @@ import { NativeSelect } from "@/components/ui/native-select";
 import {
   getSemitoneDistance,
   getShapeTone,
+  getStageShortcutAction,
+  getTargetTones,
   isChordLine,
   parseSongSections,
-  STANDARD_TONES,
   tokenizeChordLine,
   transposeChord,
   transposeChordsText,
@@ -183,11 +184,10 @@ export function ChordsViewer({
     [transposedText],
   );
 
-  const toneOptions = useMemo(() => {
-    const set = new Set<string>(STANDARD_TONES);
-    if (originalTone) set.add(originalTone);
-    return Array.from(set);
-  }, [originalTone]);
+  const toneOptions = useMemo(
+    () => getTargetTones(originalTone),
+    [originalTone],
+  );
 
   const closeFullscreen = useCallback(() => setIsFullscreen(false), []);
 
@@ -206,70 +206,6 @@ export function ChordsViewer({
       return FONT_SIZES[next] ?? current;
     });
   }, []);
-
-  // Atalhos de teclado para ensaio e palco. Ignora campos de formulário.
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (
-        target?.closest(
-          "input, textarea, select, [contenteditable='true'], [role='textbox']",
-        )
-      ) {
-        return;
-      }
-      if (event.metaKey || event.ctrlKey || event.altKey) return;
-
-      switch (event.key) {
-        case "+":
-        case "=":
-          event.preventDefault();
-          setSemitones((value) => value + 1);
-          break;
-        case "-":
-        case "_":
-          event.preventDefault();
-          setSemitones((value) => value - 1);
-          break;
-        case "0":
-          event.preventDefault();
-          setSemitones(0);
-          break;
-        case "ArrowRight":
-          event.preventDefault();
-          setSemitones((value) => value + 1);
-          break;
-        case "ArrowLeft":
-          event.preventDefault();
-          setSemitones((value) => value - 1);
-          break;
-        case "ArrowUp":
-          event.preventDefault();
-          moveFontSize(1);
-          break;
-        case "ArrowDown":
-          event.preventDefault();
-          moveFontSize(-1);
-          break;
-        case "f":
-        case "F":
-          event.preventDefault();
-          toggleFullscreen();
-          break;
-        case "Escape":
-          if (isFullscreen) {
-            event.preventDefault();
-            closeFullscreen();
-          }
-          break;
-        default:
-          break;
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [closeFullscreen, isFullscreen, moveFontSize, toggleFullscreen]);
 
   // Tela cheia acessível: trava o foco, bloqueia o scroll e restaura o foco.
   useEffect(() => {
@@ -330,7 +266,7 @@ export function ChordsViewer({
     };
   }, [isFullscreen]);
 
-  const handleCopy = async () => {
+  const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(transposedText);
       setCopied(true);
@@ -339,7 +275,73 @@ export function ChordsViewer({
     } catch {
       toast.error("Não foi possível copiar.");
     }
-  };
+  }, [transposedText]);
+
+  // Atalhos ficam ativos apenas no modo palco e não interceptam controles.
+  useEffect(() => {
+    if (!isFullscreen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+      const target = event.target;
+      const isInteractiveTarget =
+        target instanceof Element &&
+        Boolean(
+          target.closest(
+            "a[href], button, input, select, textarea, [contenteditable]:not([contenteditable='false']), [role='button'], [role='link'], [role='textbox']",
+          ),
+        );
+      const action = getStageShortcutAction(
+        event.key,
+        isFullscreen,
+        isInteractiveTarget,
+      );
+      if (!action) return;
+
+      event.preventDefault();
+      switch (action) {
+        case "transposeUp":
+          setSemitones((value) => value + 1);
+          break;
+        case "transposeDown":
+          setSemitones((value) => value - 1);
+          break;
+        case "resetTone":
+          setSemitones(0);
+          break;
+        case "fontSizeUp":
+          moveFontSize(1);
+          break;
+        case "fontSizeDown":
+          moveFontSize(-1);
+          break;
+        case "toggleFullscreen":
+          toggleFullscreen();
+          break;
+        case "close":
+          closeFullscreen();
+          break;
+        case "focusTone":
+          fullscreenRef.current
+            ?.querySelector<HTMLSelectElement>("[data-stage-target-tone]")
+            ?.focus();
+          break;
+        case "copy":
+          void handleCopy();
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    closeFullscreen,
+    handleCopy,
+    isFullscreen,
+    moveFontSize,
+    toggleFullscreen,
+  ]);
 
   const handleTargetToneChange = (target: string) => {
     if (!originalTone) return;
@@ -429,6 +431,8 @@ export function ChordsViewer({
           value={currentTone ?? ""}
           onChange={(event) => handleTargetToneChange(event.target.value)}
           disabled={!originalTone}
+          title="Selecionar tom alvo (T)"
+          data-stage-target-tone
           className="[&_select]:h-11 [&_select]:text-xs sm:[&_select]:h-9"
           aria-label="Selecionar tom alvo"
         >
@@ -527,6 +531,7 @@ export function ChordsViewer({
           onClick={handleCopy}
           className="h-11 gap-1.5 px-3 text-xs font-medium shadow-2xs sm:h-9"
           aria-label={copied ? "Cifra copiada" : "Copiar cifra"}
+          title="Copiar cifra (C)"
         >
           {copied ? (
             <CheckIcon className="size-4 text-emerald-700 dark:text-emerald-300" />
@@ -668,7 +673,6 @@ export function ChordsViewer({
                     onClick={closeFullscreen}
                     className="h-11 gap-1.5 px-3 text-xs font-semibold shadow-2xs sm:h-9 sm:px-3.5"
                     aria-label="Sair do modo palco (Esc)"
-                    data-autofocus
                   >
                     <Minimize2Icon className="size-4" />
                     <span>Sair</span>

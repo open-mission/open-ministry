@@ -7,6 +7,8 @@ import {
   extractLyricsFromChords,
   getSemitoneDistance,
   getShapeTone,
+  getStageShortcutAction,
+  getTargetTones,
   isChordLine,
   parseCifraClubTxt,
   parseSongSections,
@@ -73,6 +75,30 @@ Me esvazio de mim`;
       // A linha de letra deve permanecer inalterada
       expect(transposedSheet).toContain("Você é bem-vindo aqui");
       expect(transposedSheet).toContain("A casa é sua pode entrar");
+    });
+
+    it("offers only target tones in the original major or minor mode", () => {
+      const majorTones = getTargetTones("C");
+      const minorTones = getTargetTones("Am");
+
+      expect(majorTones).toContain("C");
+      expect(majorTones.every((tone) => !tone.endsWith("m"))).toBe(true);
+      expect(majorTones).not.toContain("Am");
+      expect(minorTones).toContain("Am");
+      expect(minorTones.every((tone) => tone.endsWith("m"))).toBe(true);
+      expect(minorTones).not.toContain("C");
+    });
+
+    it("maps stage shortcuts only in fullscreen and outside interactive controls", () => {
+      expect(getStageShortcutAction("T", true, false)).toBe("focusTone");
+      expect(getStageShortcutAction("C", true, false)).toBe("copy");
+      expect(getStageShortcutAction("+", true, false)).toBe("transposeUp");
+      expect(getStageShortcutAction("ArrowDown", true, false)).toBe(
+        "fontSizeDown",
+      );
+      expect(getStageShortcutAction("Escape", true, false)).toBe("close");
+      expect(getStageShortcutAction("t", false, false)).toBeNull();
+      expect(getStageShortcutAction("c", true, true)).toBeNull();
     });
   });
 
