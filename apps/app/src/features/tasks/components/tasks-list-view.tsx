@@ -35,6 +35,7 @@ type TasksListViewProps = {
   tasks: TaskItem[];
   onEdit: (task: TaskItem) => void;
   onOpenAudit: (task: TaskItem) => void;
+  onDelete?: (taskId: string) => void;
   canManage?: boolean;
 };
 
@@ -42,6 +43,7 @@ export function TasksListView({
   tasks,
   onEdit,
   onOpenAudit,
+  onDelete,
   canManage = true,
 }: TasksListViewProps) {
   const [completedOpen, setCompletedOpen] = useState(false);
@@ -151,6 +153,7 @@ export function TasksListView({
                     task={task}
                     onEdit={onEdit}
                     onOpenAudit={onOpenAudit}
+                    onDelete={onDelete}
                     canManage={canManage}
                   />
                 ))}
@@ -175,6 +178,7 @@ export function TasksListView({
                     task={task}
                     onEdit={onEdit}
                     onOpenAudit={onOpenAudit}
+                    onDelete={onDelete}
                     canManage={canManage}
                   />
                 ))}
@@ -199,6 +203,7 @@ export function TasksListView({
                     task={task}
                     onEdit={onEdit}
                     onOpenAudit={onOpenAudit}
+                    onDelete={onDelete}
                     canManage={canManage}
                   />
                 ))}
@@ -223,6 +228,7 @@ export function TasksListView({
                     task={task}
                     onEdit={onEdit}
                     onOpenAudit={onOpenAudit}
+                    onDelete={onDelete}
                     canManage={canManage}
                   />
                 ))}
@@ -258,6 +264,7 @@ export function TasksListView({
                       task={task}
                       onEdit={onEdit}
                       onOpenAudit={onOpenAudit}
+                      onDelete={onDelete}
                       canManage={canManage}
                     />
                   ))}

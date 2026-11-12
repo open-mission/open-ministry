@@ -262,6 +262,45 @@ export async function listTasks(options: {
   );
 }
 
+async function getHydratedTask(taskId: string): Promise<TaskItem | null> {
+  const row = await db.query.task.findFirst({
+    where: eq(schema.task.id, taskId),
+    with: {
+      createdBy: {
+        columns: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+        },
+      },
+      assignee: {
+        columns: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+        },
+      },
+      assigneePerson: {
+        columns: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+        },
+      },
+      department: {
+        columns: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+  return (row as TaskItem) ?? null;
+}
+
 /**
  * Cria uma nova tarefa (pessoal, compartilhada de departamento ou individual para membros).
  */
@@ -269,7 +308,11 @@ export async function createTask(
   organizationId: string,
   actorUserId: string,
   data: CreateTaskInput,
-): Promise<{ primaryTask: typeof schema.task.$inferSelect; createdCount: number }> {
+): Promise<{
+  primaryTask: TaskItem;
+  createdCount: number;
+  assignedMembers: { userId: string; personId?: string }[];
+}> {
   const scope = data.scope ?? "personal";
   const delegationType = data.delegationType ?? "single";
 
@@ -379,9 +422,17 @@ export async function createTask(
 
     await cacheInvalidateTags(`tasks:${organizationId}`);
 
+    const hydrated = (await getHydratedTask(parentId)) ?? (parentTask as unknown as TaskItem);
+
     return {
-      primaryTask: parentTask,
+      primaryTask: hydrated,
       createdCount: childTasksToInsert.length + 1,
+      assignedMembers: members
+        .filter((m) => m.person?.userId)
+        .map((m) => ({
+          userId: m.person!.userId!,
+          personId: m.person?.id ?? undefined,
+        })),
     };
   }
 
@@ -432,7 +483,15 @@ export async function createTask(
 
   await cacheInvalidateTags(`tasks:${organizationId}`);
 
-  return { primaryTask: created, createdCount: 1 };
+  const hydrated = (await getHydratedTask(taskId)) ?? (created as unknown as TaskItem);
+
+  return {
+    primaryTask: hydrated,
+    createdCount: 1,
+    assignedMembers: created.assigneeId
+      ? [{ userId: created.assigneeId, personId: created.assigneePersonId ?? undefined }]
+      : [],
+  };
 }
 
 /**
@@ -443,7 +502,7 @@ export async function updateTask(
   actorUserId: string,
   taskId: string,
   data: UpdateTaskInput,
-): Promise<typeof schema.task.$inferSelect> {
+): Promise<TaskItem> {
   const existing = await db.query.task.findFirst({
     where: and(
       eq(schema.task.id, taskId),
@@ -569,7 +628,8 @@ export async function updateTask(
 
   await cacheInvalidateTags(`tasks:${organizationId}`);
 
-  return updated;
+  const hydrated = await getHydratedTask(taskId);
+  return (hydrated ?? (updated as unknown as TaskItem));
 }
 
 /**
@@ -580,7 +640,7 @@ export async function updateTaskStatus(
   actorUserId: string,
   taskId: string,
   status: TaskStatus,
-): Promise<typeof schema.task.$inferSelect> {
+): Promise<TaskItem> {
   return updateTask(organizationId, actorUserId, taskId, { status });
 }
 

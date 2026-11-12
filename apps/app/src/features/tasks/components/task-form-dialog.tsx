@@ -57,8 +57,12 @@ type TaskFormDialogProps = {
   taskToEdit?: TaskItem | null;
   departments?: DepartmentOption[];
   members?: MemberOption[];
+  currentUserId?: string;
   canDelegateDepartment?: boolean;
   canDelegateChurch?: boolean;
+  onTaskCreated?: (task: TaskItem, tempId?: string) => void;
+  onTaskFailed?: (tempId: string) => void;
+  onTaskUpdated?: (task: TaskItem) => void;
 };
 
 export function TaskFormDialog({
@@ -67,8 +71,12 @@ export function TaskFormDialog({
   taskToEdit,
   departments = [],
   members = [],
+  currentUserId,
   canDelegateDepartment = true,
   canDelegateChurch = false,
+  onTaskCreated,
+  onTaskFailed,
+  onTaskUpdated,
 }: TaskFormDialogProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
 
@@ -82,10 +90,14 @@ export function TaskFormDialog({
               taskToEdit={taskToEdit}
               departments={departments}
               members={members}
+              currentUserId={currentUserId}
               canDelegateDepartment={canDelegateDepartment}
               canDelegateChurch={canDelegateChurch}
               onClose={() => onOpenChange(false)}
               onOpenHistory={() => setHistoryOpen(true)}
+              onTaskCreated={onTaskCreated}
+              onTaskFailed={onTaskFailed}
+              onTaskUpdated={onTaskUpdated}
             />
           )}
         </DialogContent>
@@ -105,18 +117,26 @@ function TaskFormContent({
   taskToEdit,
   departments = [],
   members = [],
+  currentUserId,
   canDelegateDepartment = true,
   canDelegateChurch = false,
   onClose,
   onOpenHistory,
+  onTaskCreated,
+  onTaskFailed,
+  onTaskUpdated,
 }: {
   taskToEdit?: TaskItem | null;
   departments: DepartmentOption[];
   members: MemberOption[];
+  currentUserId?: string;
   canDelegateDepartment: boolean;
   canDelegateChurch: boolean;
   onClose: () => void;
   onOpenHistory: () => void;
+  onTaskCreated?: (task: TaskItem, tempId?: string) => void;
+  onTaskFailed?: (tempId: string) => void;
+  onTaskUpdated?: (task: TaskItem) => void;
 }) {
   const isEditing = Boolean(taskToEdit);
   const [isPending, startTransition] = useTransition();
@@ -234,17 +254,93 @@ function TaskFormContent({
       };
 
       if (isEditing && taskToEdit) {
+        // Atualização otimista imediata na interface
+        const updatedOptimistic: TaskItem = {
+          ...taskToEdit,
+          ...payload,
+          date: payload.date ? new Date(payload.date) : null,
+          deadline: payload.deadline ? new Date(payload.deadline) : null,
+          updatedAt: new Date(),
+        };
+        onTaskUpdated?.(updatedOptimistic);
+        onClose();
+
         const res = await updateTaskAction(taskToEdit.id, payload);
         if (!res.ok) {
           toast.error(res.error);
+          onTaskUpdated?.(taskToEdit); // rollback em caso de falha
         } else {
           toast.success("Tarefa atualizada com sucesso!");
-          onClose();
+          if (res.data?.task) {
+            onTaskUpdated?.(res.data.task);
+          }
         }
       } else {
+        // Criação otimista instantânea (0ms de atraso)
+        const tempId = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        const assignedMember = members.find((m) => m.userId === resolvedAssigneeId);
+        const assignedDept = departments.find((d) => d.id === resolvedDeptId);
+
+        const optimisticTask: TaskItem = {
+          id: tempId,
+          organizationId: "",
+          title: payload.title,
+          description: payload.description,
+          date: payload.date ? new Date(payload.date) : null,
+          deadline: payload.deadline ? new Date(payload.deadline) : null,
+          tags: payload.tags,
+          isPinned: payload.isPinned,
+          status: "todo",
+          priority: payload.priority,
+          url: payload.url,
+          scope: payload.scope,
+          departmentId: payload.departmentId,
+          createdById: currentUserId ?? "",
+          assigneeId: payload.assigneeId,
+          assigneePersonId: payload.assigneePersonId,
+          delegationType: payload.delegationType,
+          parentTaskId: null,
+          isRecurring: payload.isRecurring,
+          recurrenceRule: payload.recurrenceRule,
+          sortOrder: 0,
+          completedAt: null,
+          completedById: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          createdBy: {
+            id: currentUserId ?? "",
+            name: "Você",
+            email: null,
+            image: null,
+          },
+          assignee: assignedMember
+            ? {
+                id: assignedMember.userId,
+                name: assignedMember.name,
+                email: assignedMember.email ?? null,
+                image: null,
+              }
+            : payload.scope === "personal"
+              ? {
+                  id: currentUserId ?? "",
+                  name: "Você",
+                  email: null,
+                  image: null,
+                }
+              : null,
+          assigneePerson: null,
+          completedBy: null,
+          department: assignedDept ? { id: assignedDept.id, name: assignedDept.name } : null,
+        };
+
+        // Insere imediatamente na interface
+        onTaskCreated?.(optimisticTask, tempId);
+        onClose();
+
         const res = await createTaskAction(payload);
         if (!res.ok) {
           toast.error(res.error);
+          onTaskFailed?.(tempId);
         } else {
           const count = res.data?.createdCount ?? 1;
           toast.success(
@@ -252,7 +348,9 @@ function TaskFormContent({
               ? `${count} tarefas geradas para os membros da equipe!`
               : "Tarefa criada com sucesso!",
           );
-          onClose();
+          if (res.data?.task) {
+            onTaskCreated?.(res.data.task, tempId);
+          }
         }
       }
     });

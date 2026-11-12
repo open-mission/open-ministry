@@ -49,6 +49,7 @@ type TasksTableViewProps = {
   tasks: TaskItem[];
   onEdit: (task: TaskItem) => void;
   onOpenAudit: (task: TaskItem) => void;
+  onDelete?: (taskId: string) => void;
   canManage?: boolean;
 };
 
@@ -58,6 +59,7 @@ export function TasksTableView({
   tasks,
   onEdit,
   onOpenAudit,
+  onDelete,
   canManage = true,
 }: TasksTableViewProps) {
   const [sortField, setSortField] = useState<SortField>("deadline");
@@ -124,6 +126,7 @@ export function TasksTableView({
 
   const handleDelete = async (task: TaskItem) => {
     if (!confirm(`Remover tarefa "${task.title}"?`)) return;
+    onDelete?.(task.id);
     const res = await deleteTaskAction(task.id);
     if (!res.ok) {
       toast.error(res.error);
