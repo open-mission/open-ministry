@@ -5,11 +5,19 @@ import {
   ExternalLinkIcon,
   FileMusicIcon,
   FileTextIcon,
+  HeadphonesIcon,
   Music2Icon,
+  SearchIcon,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Drawer,
   DrawerClose,
@@ -20,7 +28,9 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { isStreamingSearchUrl } from "@/lib/music/lyrics-service";
 import { ChordsViewer } from "./chords-viewer";
+import { getStreamingLinks, streamingLinkLabel } from "./song-streaming-links";
 import { SongLyricsViewer } from "./song-lyrics-viewer";
 
 export type QuickDrawerSong = {
@@ -50,6 +60,7 @@ export function SongQuickDrawer({
   onOpenChange,
 }: SongQuickDrawerProps) {
   if (!song) return null;
+  const streamingLinks = getStreamingLinks(song);
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -89,28 +100,40 @@ export function SongQuickDrawer({
               </Badge>
             ) : null}
 
-            {song.youtubeUrl ? (
-              <a
-                href={song.youtubeUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 rounded bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-600 dark:text-red-400"
-              >
-                YouTube
-                <ExternalLinkIcon className="size-2.5" />
-              </a>
-            ) : null}
-
-            {song.spotifyUrl ? (
-              <a
-                href={song.spotifyUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400"
-              >
-                Spotify
-                <ExternalLinkIcon className="size-2.5" />
-              </a>
+            {streamingLinks.length > 0 ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 gap-1 px-2.5 text-[10px]"
+                    aria-label="Links de áudio da música"
+                  >
+                    <HeadphonesIcon className="size-3" />
+                    Ouvir
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  {streamingLinks.map((link) => (
+                    <DropdownMenuItem key={link.platform} asChild>
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="gap-2"
+                      >
+                        {isStreamingSearchUrl(link.url) ? (
+                          <SearchIcon className="size-4 text-muted-foreground" />
+                        ) : (
+                          <ExternalLinkIcon className="size-4 text-muted-foreground" />
+                        )}
+                        <span>{streamingLinkLabel(link)}</span>
+                      </a>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : null}
           </div>
         </DrawerHeader>
