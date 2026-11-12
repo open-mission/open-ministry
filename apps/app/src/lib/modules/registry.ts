@@ -74,7 +74,7 @@ export const SYSTEM_MODULES: Record<ModuleKey, SystemModule> = {
     badge: "Produtividade",
     icon: CheckSquare2Icon,
     navGroups: [],
-    routePrefixes: ["/dashboard/tasks"],
+    routePrefixes: ["/dashboard/tasks", "/tasks"],
   },
 };
 

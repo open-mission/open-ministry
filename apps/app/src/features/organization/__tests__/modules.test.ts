@@ -123,6 +123,13 @@ describe("Modules System Foundation", () => {
     expect(allHrefs).not.toContain("/dashboard/availability");
     expect(allHrefs).not.toContain("/dashboard/songs");
     expect(allHrefs).not.toContain("/dashboard/announcements");
+    expect(allHrefs).not.toContain("/dashboard/tasks");
+  });
+
+  it("includes tasks route when tasks module is active", () => {
+    const nav = buildAccessibleNavGroups(["tasks"]);
+    const allHrefs = nav.flatMap((g) => g.items.map((i) => i.href));
+    expect(allHrefs).toContain("/dashboard/tasks");
   });
 
   it("keepsSettingsAccessibleWhenModuleIsOff", () => {
