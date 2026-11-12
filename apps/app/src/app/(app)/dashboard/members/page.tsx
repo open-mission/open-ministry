@@ -5,7 +5,6 @@ import { Suspense } from "react";
 import { SparklesIcon, UsersIcon } from "lucide-react";
 
 import { FelicitometroDashboard } from "@/components/felicitometro/felicitometro-dashboard";
-import { InviteDialog } from "@/components/members/invite-dialog";
 import { PendingInvitations } from "@/components/members/pending-invitations";
 import { CreatePersonDialog } from "@/components/people/create-person-dialog";
 import { PeopleTable } from "@/components/people/people-table";
@@ -162,21 +161,40 @@ async function MembersContent() {
       .map((inv) => inv.email.toLowerCase()),
   );
 
+  const careByPersonId: Record<
+    string,
+    { needsPrayer: boolean; needsTalk: boolean; date: string }
+  > = {};
+
+  if (moodOverview?.recentCareRequests) {
+    for (const care of moodOverview.recentCareRequests) {
+      if (!careByPersonId[care.personId]) {
+        careByPersonId[care.personId] = {
+          needsPrayer: care.needsPrayer,
+          needsTalk: care.needsTalk,
+          date: care.date,
+        };
+      } else {
+        if (care.needsPrayer) careByPersonId[care.personId].needsPrayer = true;
+        if (care.needsTalk) careByPersonId[care.personId].needsTalk = true;
+      }
+    }
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-2">
-          <p className="text-xs font-medium tracking-[0.18em] text-primary uppercase">
-            Pessoas
-          </p>
-          <h1 className="font-heading text-4xl leading-none tracking-tight">
-            Sua equipe
+        <div className="space-y-1.5">
+          <h1 className="font-heading text-3xl sm:text-4xl leading-none tracking-tight">
+            Pessoas e Voluntários
           </h1>
+          <p className="text-sm text-muted-foreground">
+            Membros e voluntários que servem e participam da comunidade.
+          </p>
         </div>
         {isAdmin ? (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
             <CreatePersonDialog />
-            <InviteDialog variant="outline" />
           </div>
         ) : null}
       </header>
@@ -196,7 +214,10 @@ async function MembersContent() {
               Felicitômetro
               {moodOverview.prayerRequestsCount > 0 ||
               moodOverview.talkRequestsCount > 0 ? (
-                <span className="flex size-2 rounded-full bg-amber-500 animate-pulse" />
+                <span
+                  className="flex size-2 rounded-full bg-amber-500"
+                  aria-label="Há novos pedidos de acolhimento"
+                />
               ) : null}
             </TabsTrigger>
           </TabsList>
@@ -210,6 +231,7 @@ async function MembersContent() {
               currentUserId={session.user.id}
               terminology={terminology}
               pendingInvitationEmails={pendingInvitationEmails}
+              careByPersonId={careByPersonId}
             />
 
             {isAdmin ? (
@@ -231,6 +253,7 @@ async function MembersContent() {
             currentUserId={session.user.id}
             terminology={terminology}
             pendingInvitationEmails={pendingInvitationEmails}
+            careByPersonId={careByPersonId}
           />
 
           {isAdmin ? (
@@ -246,8 +269,7 @@ function MembersSkeleton() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8" aria-hidden>
       <div className="space-y-2">
-        <Skeleton className="h-3 w-16" />
-        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-9 w-64" />
         <Skeleton className="h-4 w-96 max-w-full" />
       </div>
       <Skeleton className="h-80 rounded-xl" />

@@ -18,6 +18,7 @@ import {
   findPersonByUserId,
   getPerson,
   linkPersonToUser,
+  unlinkPersonFromUser,
   normalizeEmail,
 } from "@/lib/people";
 import { birthdayFieldSchema } from "@/lib/profile";
@@ -36,6 +37,7 @@ export type PersonFormState =
         birthday?: string[];
       };
       success?: boolean;
+      personId?: string;
     }
   | undefined;
 
@@ -196,7 +198,7 @@ export async function createPersonAction(
   }
 
   await revalidatePeople(organizationId);
-  return { success: true };
+  return { success: true, personId };
 }
 
 export async function updatePersonAction(
@@ -274,11 +276,12 @@ export async function updatePersonAction(
   }
 
   await revalidatePeople(organizationId);
-  return { success: true };
+  return { success: true, personId: person.id };
 }
 
 export async function deletePersonAction(
   personId: string,
+  options?: { forceUnlink?: boolean },
 ): Promise<PersonActionResult> {
   if (!personId) {
     return { ok: false, error: "Pessoa inválida." };
@@ -299,19 +302,48 @@ export async function deletePersonAction(
     return { ok: false, error: "Pessoa não encontrada." };
   }
 
-  if (person.userId) {
+  if (person.userId && !options?.forceUnlink) {
     return {
       ok: false,
       error:
-        "Essa pessoa tem uma conta vinculada e não pode ser excluída. Edite os dados no perfil ou remova o vínculo.",
+        "Essa pessoa tem uma conta vinculada. Desvincule a conta antes de excluir ou confirme a exclusão completa.",
     };
   }
 
   try {
+    if (person.userId && options?.forceUnlink) {
+      await unlinkPersonFromUser(result.context.organization.id, person.id);
+    }
     await db.delete(schema.person).where(eq(schema.person.id, person.id));
   } catch (error) {
     console.error("Erro ao excluir pessoa", error);
     return { ok: false, error: "Não foi possível excluir a pessoa." };
+  }
+
+  await revalidatePeople(result.context.organization.id);
+  return { ok: true };
+}
+
+export async function unlinkPersonAction(
+  personId: string,
+): Promise<PersonActionResult> {
+  if (!personId) {
+    return { ok: false, error: "Pessoa inválida." };
+  }
+
+  const result = await getAdminContext();
+
+  if ("error" in result) {
+    return { ok: false, error: result.error };
+  }
+
+  const unlinked = await unlinkPersonFromUser(
+    result.context.organization.id,
+    personId,
+  );
+
+  if (!unlinked.ok) {
+    return { ok: false, error: unlinked.error };
   }
 
   await revalidatePeople(result.context.organization.id);

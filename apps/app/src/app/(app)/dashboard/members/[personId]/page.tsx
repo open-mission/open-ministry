@@ -135,6 +135,11 @@ async function MemberPageContent({
     : null;
 
   const phoneClean = person.phone?.replace(/\D/g, "");
+  const waPhone = phoneClean
+    ? phoneClean.length === 10 || phoneClean.length === 11
+      ? `55${phoneClean}`
+      : phoneClean
+    : null;
 
   // Felicitômetro stats
   const totalMoods = moodHistory.length;
@@ -207,6 +212,8 @@ async function MemberPageContent({
                     <span
                       className="text-2xl"
                       title={`Sentimento recente: ${MOOD_LEVELS[latestMood.score]?.label}`}
+                      aria-label={`Sentimento recente: ${MOOD_LEVELS[latestMood.score]?.label}`}
+                      role="img"
                     >
                       {MOOD_LEVELS[latestMood.score]?.emoji}
                     </span>
@@ -283,7 +290,7 @@ async function MemberPageContent({
                 />
               ) : null}
 
-              {phoneClean && (
+              {waPhone && (
                 <Button
                   size="sm"
                   variant="outline"
@@ -291,7 +298,7 @@ async function MemberPageContent({
                   className="h-9 gap-1.5 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
                 >
                   <a
-                    href={`https://wa.me/55${phoneClean}`}
+                    href={`https://wa.me/${waPhone}`}
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -460,7 +467,7 @@ async function MemberPageContent({
                         >
                           {item.schedule.event.title}
                         </Link>
-                        <Badge variant="outline" className="text-[10px]">
+                        <Badge variant="outline" className="text-xs">
                           {item.department.name}
                         </Badge>
                       </div>
@@ -587,7 +594,7 @@ async function MemberPageContent({
                             {m.needsPrayer && (
                               <Badge
                                 variant="secondary"
-                                className="gap-1 text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                                className="gap-1 text-xs bg-amber-500/10 text-amber-700 dark:text-amber-300"
                               >
                                 <HeartHandshakeIcon className="size-3" />
                                 Oração
@@ -596,7 +603,7 @@ async function MemberPageContent({
                             {m.needsTalk && (
                               <Badge
                                 variant="secondary"
-                                className="gap-1 text-[10px] bg-blue-500/10 text-blue-700 dark:text-blue-300"
+                                className="gap-1 text-xs bg-blue-500/10 text-blue-700 dark:text-blue-300"
                               >
                                 <MessageSquareHeartIcon className="size-3" />
                                 Conversa

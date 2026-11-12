@@ -29,6 +29,9 @@ type LinkableMember = {
 export function LinkPersonDialog({
   person,
   availableMembers,
+  open: controlledOpen,
+  onOpenChange: setControlledOpen,
+  trigger,
 }: {
   person: {
     id: string;
@@ -36,8 +39,13 @@ export function LinkPersonDialog({
     email: string | null;
   };
   availableMembers: LinkableMember[];
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = setControlledOpen ?? setInternalOpen;
   const [memberId, setMemberId] = useState(
     availableMembers[0]?.id ?? "",
   );
@@ -60,21 +68,25 @@ export function LinkPersonDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={`Vincular ${person.name} a uma conta`}
-          title={
-            disabled
-              ? "Nenhuma conta disponível para vincular"
-              : "Vincular a uma conta"
-          }
-          disabled={disabled}
-        >
-          <LinkIcon />
-        </Button>
-      </DialogTrigger>
+      {trigger !== null ? (
+        <DialogTrigger asChild>
+          {trigger ?? (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={`Vincular ${person.name} a uma conta`}
+              title={
+                disabled
+                  ? "Nenhuma conta disponível para vincular"
+                  : "Vincular a uma conta"
+              }
+              disabled={disabled}
+            >
+              <LinkIcon />
+            </Button>
+          )}
+        </DialogTrigger>
+      ) : null}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-heading text-2xl tracking-tight">

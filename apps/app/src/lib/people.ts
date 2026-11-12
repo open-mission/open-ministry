@@ -337,6 +337,32 @@ export async function linkPersonToUser(
   return { ok: true, personId };
 }
 
+export async function unlinkPersonFromUser(
+  organizationId: string,
+  personId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const person = await getPerson(organizationId, personId);
+
+  if (!person) {
+    return { ok: false, error: "Pessoa não encontrada." };
+  }
+
+  if (!person.userId) {
+    return { ok: false, error: "Esta pessoa não possui conta vinculada." };
+  }
+
+  await db
+    .update(schema.person)
+    .set({
+      userId: null,
+    })
+    .where(eq(schema.person.id, personId));
+
+  await cacheInvalidateTags(`people:${organizationId}`, `org:${organizationId}`);
+
+  return { ok: true };
+}
+
 type UserInput = {
   id: string;
   name: string;
