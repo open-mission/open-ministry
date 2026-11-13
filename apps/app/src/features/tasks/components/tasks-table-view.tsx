@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import {
+  ArrowDownIcon,
   ArrowUpDownIcon,
+  ArrowUpIcon,
   CheckIcon,
   ExternalLinkIcon,
   PinIcon,
@@ -22,313 +24,547 @@ import {
 } from "@/components/ui/table";
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import {
-  updateTaskStatusAction,
-} from "../actions/tasks.actions";
+import { updateTaskStatusAction } from "../actions/tasks.actions";
+import type { TaskCapabilities } from "../lib/task-permissions";
 import {
   formatTaskDeadline,
   formatTaskWhen,
   getPriorityLabel,
+  getStatusLabel,
 } from "../lib/task-utils";
+import type { TaskItem, TaskStatus } from "../services/tasks-service";
 import { TaskActionsMenu } from "./task-actions-menu";
-import type { TaskItem } from "../services/tasks-service";
+import { TaskRow } from "./task-row";
 
 type TasksTableViewProps = {
   tasks: TaskItem[];
+  capabilitiesByTaskId?: Record<string, TaskCapabilities>;
   onView: (task: TaskItem) => void;
   onEdit: (task: TaskItem) => void;
   onOpenAudit: (task: TaskItem) => void;
-  onDelete?: (taskId: string) => void;
+  onDelete: (taskId: string) => void;
+  onTaskUpdated?: (updated: TaskItem) => void;
   canManage?: boolean;
 };
 
 type SortField = "title" | "date" | "deadline" | "status" | "priority";
+type SortDirection = "asc" | "desc";
+
+const PRIORITY_WEIGHT: Record<string, number> = {
+  high: 3,
+  medium: 2,
+  low: 1,
+  none: 0,
+};
+
+const STATUS_WEIGHT: Record<string, number> = {
+  todo: 1,
+  in_progress: 2,
+  completed: 3,
+  canceled: 4,
+};
+
+const collator = new Intl.Collator("pt-BR", {
+  numeric: true,
+  sensitivity: "base",
+});
 
 export function TasksTableView({
   tasks,
+  capabilitiesByTaskId = {},
   onView,
   onEdit,
   onOpenAudit,
   onDelete,
+  onTaskUpdated,
   canManage = true,
 }: TasksTableViewProps) {
-  const [sortField, setSortField] = useState<SortField>("deadline");
-  const [sortAsc, setSortAsc] = useState(true);
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [isPending, startTransition] = useTransition();
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortAsc(!sortAsc);
-    } else {
-      setSortField(field);
-      setSortAsc(true);
+  // Agrupa filhas individuais sob o pai quando o pai estiver na lista
+  const { topLevelTasks, childrenByParentId } = useMemo(() => {
+    const taskIds = new Set(tasks.map((t) => t.id));
+    const childrenMap = new Map<string, TaskItem[]>();
+    const topLevel: TaskItem[] = [];
+
+    for (const task of tasks) {
+      if (task.parentTaskId && taskIds.has(task.parentTaskId)) {
+        const list = childrenMap.get(task.parentTaskId) ?? [];
+        list.push(task);
+        childrenMap.set(task.parentTaskId, list);
+      } else {
+        topLevel.push(task);
+      }
     }
-  };
+    return { topLevelTasks: topLevel, childrenByParentId: childrenMap };
+  }, [tasks]);
 
   const sortedTasks = useMemo(() => {
-    return [...tasks].sort((a, b) => {
-      // Tarefas fixadas sempre no topo
-      if (a.isPinned !== b.isPinned) {
-        return a.isPinned ? -1 : 1;
-      }
+    if (!sortField) return topLevelTasks;
+    const copy = [...topLevelTasks];
+    const factor = sortDirection === "asc" ? 1 : -1;
 
+    copy.sort((a, b) => {
       if (sortField === "title") {
-        return sortAsc
-          ? a.title.localeCompare(b.title)
-          : b.title.localeCompare(a.title);
-      }
-      if (sortField === "status") {
-        return sortAsc
-          ? a.status.localeCompare(b.status)
-          : b.status.localeCompare(a.status);
+        return factor * collator.compare(a.title, b.title);
       }
       if (sortField === "date") {
-        const da = a.date ? new Date(a.date).getTime() : 0;
-        const db = b.date ? new Date(b.date).getTime() : 0;
-        return sortAsc ? da - db : db - da;
+        const da = a.date ? new Date(a.date).getTime() : Number.MAX_SAFE_INTEGER;
+        const db = b.date ? new Date(b.date).getTime() : Number.MAX_SAFE_INTEGER;
+        return factor * (da - db);
       }
       if (sortField === "deadline") {
-        const da = a.deadline ? new Date(a.deadline).getTime() : Infinity;
-        const db = b.deadline ? new Date(b.deadline).getTime() : Infinity;
-        return sortAsc ? da - db : db - da;
+        const da = a.deadline
+          ? new Date(a.deadline).getTime()
+          : Number.MAX_SAFE_INTEGER;
+        const db = b.deadline
+          ? new Date(b.deadline).getTime()
+          : Number.MAX_SAFE_INTEGER;
+        return factor * (da - db);
+      }
+      if (sortField === "priority") {
+        const pa = PRIORITY_WEIGHT[a.priority ?? "none"] ?? 0;
+        const pb = PRIORITY_WEIGHT[b.priority ?? "none"] ?? 0;
+        return factor * (pa - pb);
+      }
+      if (sortField === "status") {
+        const sa = STATUS_WEIGHT[a.status ?? "todo"] ?? 0;
+        const sb = STATUS_WEIGHT[b.status ?? "todo"] ?? 0;
+        return factor * (sa - sb);
       }
       return 0;
     });
-  }, [tasks, sortField, sortAsc]);
+    return copy;
+  }, [topLevelTasks, sortField, sortDirection]);
 
-  const handleToggleComplete = async (task: TaskItem) => {
-    const nextStatus = task.status === "completed" ? "todo" : "completed";
-    const res = await updateTaskStatusAction(task.id, nextStatus);
-    if (!res.ok) {
-      toast.error(res.error);
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
-      toast.success(
-        nextStatus === "completed" ? "Tarefa concluída!" : "Tarefa reaberta.",
-      );
+      setSortField(field);
+      setSortDirection(field === "priority" ? "desc" : "asc");
     }
   };
 
+  const renderSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return (
+        <ArrowUpDownIcon
+          aria-hidden="true"
+          className="ml-1 size-3.5 text-muted-foreground/60"
+        />
+      );
+    }
+    return sortDirection === "asc" ? (
+      <ArrowUpIcon aria-hidden="true" className="ml-1 size-3.5 text-primary" />
+    ) : (
+      <ArrowDownIcon
+        aria-hidden="true"
+        className="ml-1 size-3.5 text-primary"
+      />
+    );
+  };
+
+  const handleToggleComplete = (task: TaskItem) => {
+    const nextStatus: TaskStatus =
+      task.status === "completed" ? "todo" : "completed";
+    onTaskUpdated?.({
+      ...task,
+      status: nextStatus,
+      completedAt: nextStatus === "completed" ? new Date() : null,
+    });
+
+    startTransition(async () => {
+      const res = await updateTaskStatusAction(task.id, nextStatus);
+      if (res.ok) {
+        if (res.data.task) {
+          onTaskUpdated?.(res.data.task);
+        }
+        toast.success(
+          nextStatus === "completed" ? "Tarefa concluída!" : "Tarefa reaberta.",
+        );
+      } else {
+        onTaskUpdated?.(task);
+        toast.error(res.error);
+      }
+    });
+  };
+
   return (
-    <div className="rounded-xl border bg-card shadow-2xs overflow-hidden">
-      <Table>
-        <TableHeader className="bg-muted/40">
-          <TableRow>
-            <TableHead className="w-10 text-center">Status</TableHead>
-            <TableHead className="w-8"></TableHead>
-            <TableHead
-              className="cursor-pointer font-semibold text-xs"
-              onClick={() => handleSort("title")}
-            >
-              <div className="flex items-center gap-1">
-                <span>Título</span>
-                <ArrowUpDownIcon className="size-3 text-muted-foreground" />
-              </div>
-            </TableHead>
-            <TableHead
-              className="cursor-pointer font-semibold text-xs"
-              onClick={() => handleSort("date")}
-            >
-              <div className="flex items-center gap-1">
-                <span>Quando (Início)</span>
-                <ArrowUpDownIcon className="size-3 text-muted-foreground" />
-              </div>
-            </TableHead>
-            <TableHead
-              className="cursor-pointer font-semibold text-xs"
-              onClick={() => handleSort("deadline")}
-            >
-              <div className="flex items-center gap-1">
-                <span>Prazo Limite</span>
-                <ArrowUpDownIcon className="size-3 text-muted-foreground" />
-              </div>
-            </TableHead>
-            <TableHead className="font-semibold text-xs">Prioridade</TableHead>
-            <TableHead className="font-semibold text-xs">Responsável</TableHead>
-            <TableHead className="font-semibold text-xs">Departamento</TableHead>
-            <TableHead className="w-12 text-center">Link</TableHead>
-            <TableHead className="w-12"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody className="text-xs">
-          {sortedTasks.map((task) => {
-            const isCompleted = task.status === "completed";
-            const whenText = formatTaskWhen(task.date);
-            const deadlineInfo = formatTaskDeadline(task.deadline, isCompleted);
+    <div className="space-y-3">
+      {/* Mobile: Cartões empilhados legíveis */}
+      <div className="space-y-2.5 md:hidden">
+        {sortedTasks.map((task) => (
+          <TaskRow
+            key={task.id}
+            task={task}
+            childTasks={childrenByParentId.get(task.id)}
+            capabilities={capabilitiesByTaskId[task.id]}
+            childCapabilitiesMap={capabilitiesByTaskId}
+            onView={onView}
+            onEdit={onEdit}
+            onOpenAudit={onOpenAudit}
+            onDelete={onDelete}
+            onTaskUpdated={onTaskUpdated}
+            canManage={canManage}
+          />
+        ))}
+      </div>
 
-            return (
-              <TableRow
-                key={task.id}
-                onClick={() => onView(task)}
-                className={cn(
-                  "hover:bg-muted/30 transition-colors cursor-pointer",
-                  isCompleted && "opacity-70 bg-muted/20",
-                )}
+      {/* Desktop: Tabela semântica ordenável */}
+      <div
+        role="region"
+        aria-labelledby="tasks-table-caption"
+        tabIndex={0}
+        className="hidden overflow-x-auto rounded-xl border bg-card md:block"
+      >
+        <Table>
+          <caption id="tasks-table-caption" className="sr-only">
+            Lista completa de tarefas em tabela ordenável
+          </caption>
+          <TableHeader>
+            <TableRow className="bg-muted/30 hover:bg-muted/30">
+              <TableHead scope="col" className="w-11 text-center">
+                <span className="sr-only">Concluir</span>
+              </TableHead>
+              <TableHead scope="col" className="w-9 text-center">
+                <span className="sr-only">Destaque</span>
+              </TableHead>
+              <TableHead
+                scope="col"
+                aria-sort={
+                  sortField === "title"
+                    ? sortDirection === "asc"
+                      ? "ascending"
+                      : "descending"
+                    : undefined
+                }
               >
-                {/* Circular checkbox */}
-                <TableCell className="text-center p-2">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleToggleComplete(task);
-                    }}
-                    className={cn(
-                      "flex size-4 mx-auto items-center justify-center rounded-full border-2 transition-all",
-                      isCompleted
-                        ? "border-emerald-600 bg-emerald-600 text-white"
-                        : "border-muted-foreground/50 hover:border-emerald-600",
-                    )}
-                  >
-                    {isCompleted && <CheckIcon className="size-2.5 stroke-[3]" />}
-                  </button>
-                </TableCell>
+                <button
+                  type="button"
+                  onClick={() => toggleSort("title")}
+                  className="inline-flex min-h-[32px] items-center font-medium text-foreground hover:text-primary"
+                >
+                  Tarefa
+                  {renderSortIcon("title")}
+                </button>
+              </TableHead>
+              <TableHead
+                scope="col"
+                className="w-32"
+                aria-sort={
+                  sortField === "status"
+                    ? sortDirection === "asc"
+                      ? "ascending"
+                      : "descending"
+                    : undefined
+                }
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleSort("status")}
+                  className="inline-flex min-h-[32px] items-center font-medium text-foreground hover:text-primary"
+                >
+                  Situação
+                  {renderSortIcon("status")}
+                </button>
+              </TableHead>
+              <TableHead
+                scope="col"
+                className="w-28"
+                aria-sort={
+                  sortField === "priority"
+                    ? sortDirection === "asc"
+                      ? "ascending"
+                      : "descending"
+                    : undefined
+                }
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleSort("priority")}
+                  className="inline-flex min-h-[32px] items-center font-medium text-foreground hover:text-primary"
+                >
+                  Prioridade
+                  {renderSortIcon("priority")}
+                </button>
+              </TableHead>
+              <TableHead scope="col">Escopo</TableHead>
+              <TableHead scope="col">Responsável</TableHead>
+              <TableHead
+                scope="col"
+                aria-sort={
+                  sortField === "date"
+                    ? sortDirection === "asc"
+                      ? "ascending"
+                      : "descending"
+                    : undefined
+                }
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleSort("date")}
+                  className="inline-flex min-h-[32px] items-center font-medium text-foreground hover:text-primary"
+                >
+                  Planejada
+                  {renderSortIcon("date")}
+                </button>
+              </TableHead>
+              <TableHead
+                scope="col"
+                aria-sort={
+                  sortField === "deadline"
+                    ? sortDirection === "asc"
+                      ? "ascending"
+                      : "descending"
+                    : undefined
+                }
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleSort("deadline")}
+                  className="inline-flex min-h-[32px] items-center font-medium text-foreground hover:text-primary"
+                >
+                  Prazo
+                  {renderSortIcon("deadline")}
+                </button>
+              </TableHead>
+              <TableHead scope="col" className="w-16 text-right">
+                <span className="sr-only">Ações</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedTasks.map((task) => {
+              const isCompleted = task.status === "completed";
+              const whenLabel = formatTaskWhen(task.date);
+              const deadlineInfo = formatTaskDeadline(task.deadline, isCompleted);
+              const caps = capabilitiesByTaskId[task.id];
+              const canUpdateStatus = caps?.canUpdateStatus ?? canManage;
+              const childTasks = childrenByParentId.get(task.id) ?? [];
+              const doneChildren = childTasks.filter(
+                (c) => c.status === "completed",
+              ).length;
 
-                {/* Pin Icon */}
-                <TableCell className="p-1 text-center">
-                  {task.isPinned && (
-                    <PinIcon className="size-3 text-primary fill-primary inline" />
+              return (
+                <TableRow
+                  key={task.id}
+                  className={cn(
+                    "transition-colors",
+                    task.isPinned && "bg-primary/[0.02]",
+                    isCompleted && "opacity-75",
                   )}
-                </TableCell>
-
-                {/* Título & Tags */}
-                <TableCell className="py-2.5 font-medium min-w-[200px]">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span
-                        onClick={() => onView(task)}
-                        className={cn(
-                          "cursor-pointer hover:underline text-foreground",
-                          isCompleted && "line-through text-muted-foreground",
-                        )}
-                      >
-                        {task.title}
-                      </span>
-                      {task.isRecurring && (
-                        <span title="Recorrente">
-                          <RepeatIcon className="size-3 text-emerald-600 inline" />
-                        </span>
-                      )}
-                    </div>
-                    {Array.isArray(task.tags) && task.tags.length > 0 && (
-                      <div className="flex items-center gap-1 flex-wrap">
-                        {task.tags.map((t) => (
-                          <span
-                            key={t}
-                            className="rounded bg-muted px-1.5 py-0.2 text-[10px] text-muted-foreground"
-                          >
-                            #{t}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </TableCell>
-
-                {/* Quando */}
-                <TableCell className="whitespace-nowrap text-muted-foreground">
-                  {whenText ?? "—"}
-                </TableCell>
-
-                {/* Prazo */}
-                <TableCell className="whitespace-nowrap">
-                  {deadlineInfo ? (
-                    <span
+                >
+                  <TableCell className="text-center">
+                    <button
+                      type="button"
+                      disabled={isPending || !canUpdateStatus}
+                      onClick={() => handleToggleComplete(task)}
+                      aria-label={
+                        isCompleted
+                          ? `Reabrir tarefa ${task.title}`
+                          : `Concluir tarefa ${task.title}`
+                      }
                       className={cn(
-                        "rounded px-1.5 py-0.5 text-[11px] font-medium",
-                        deadlineInfo.isOverdue
-                          ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 font-semibold"
-                          : "text-muted-foreground",
+                        "mx-auto flex size-8 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                        !canUpdateStatus && "cursor-not-allowed opacity-40",
                       )}
                     >
-                      {deadlineInfo.label}
-                    </span>
-                  ) : (
-                    "—"
-                  )}
-                </TableCell>
+                      <span
+                        className={cn(
+                          "flex size-4.5 items-center justify-center rounded-full border-2 transition-colors",
+                          isCompleted
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-muted-foreground/40 bg-background hover:border-primary",
+                        )}
+                      >
+                        {isCompleted ? (
+                          <CheckIcon className="size-3 stroke-[3]" />
+                        ) : null}
+                      </span>
+                    </button>
+                  </TableCell>
 
-                {/* Prioridade */}
-                <TableCell className="whitespace-nowrap">
-                  {task.priority !== "none" ? (
+                  <TableCell className="text-center">
+                    {task.isPinned ? (
+                      <PinIcon
+                        aria-label="Tarefa fixada"
+                        className="mx-auto size-3.5 fill-primary/20 text-primary"
+                      />
+                    ) : null}
+                  </TableCell>
+
+                  <TableCell className="max-w-[300px]">
+                    <div className="flex flex-col gap-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => onView(task)}
+                          className={cn(
+                            "truncate text-left font-medium hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm",
+                            isCompleted &&
+                              "line-through text-muted-foreground",
+                          )}
+                        >
+                          {task.title}
+                        </button>
+                        {task.isRecurring ? (
+                          <RepeatIcon
+                            aria-label="Tarefa recorrente"
+                            className="size-3.5 shrink-0 text-primary/70"
+                          />
+                        ) : null}
+                      </div>
+                      {task.tags && task.tags.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {task.tags.slice(0, 3).map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="outline"
+                              className="h-5 px-1.5 text-xs font-normal text-muted-foreground"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  </TableCell>
+
+                  <TableCell>
                     <Badge
                       variant="outline"
                       className={cn(
-                        "text-[10px] uppercase",
-                        task.priority === "high" && "border-red-500 text-red-600",
-                        task.priority === "medium" && "border-amber-500 text-amber-600",
-                        task.priority === "low" && "border-blue-500 text-blue-600",
+                        "text-xs font-normal",
+                        task.status === "completed"
+                          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                          : task.status === "in_progress"
+                            ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                            : "text-muted-foreground",
                       )}
                     >
-                      {getPriorityLabel(task.priority)}
+                      {getStatusLabel(task.status)}
                     </Badge>
-                  ) : (
-                    "—"
-                  )}
-                </TableCell>
+                  </TableCell>
 
-                {/* Responsável */}
-                <TableCell className="whitespace-nowrap">
-                  {task.assignee ? (
-                    <div className="flex items-center gap-1.5">
-                      <Avatar className="size-5 border">
-                        {task.assignee.image ? (
-                          <AvatarImage src={task.assignee.image} alt={task.assignee.name ?? ""} />
-                        ) : null}
-                        <AvatarFallback className="text-[9px]">
-                          {task.assignee.name ? getInitials(task.assignee.name) : "?"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="truncate max-w-[120px]">
-                        {task.assignee.name ?? "Membro"}
+                  <TableCell>
+                    {task.priority && task.priority !== "none" ? (
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-xs font-normal",
+                          task.priority === "high"
+                            ? "border-destructive/30 text-destructive"
+                            : task.priority === "medium"
+                              ? "border-amber-500/30 text-amber-700 dark:text-amber-400"
+                              : "text-muted-foreground",
+                        )}
+                      >
+                        {getPriorityLabel(task.priority)}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+
+                  <TableCell>
+                    {task.department ? (
+                      <Badge
+                        variant="secondary"
+                        className="text-xs font-normal"
+                      >
+                        {task.department.name}
+                      </Badge>
+                    ) : task.scope === "organization" ? (
+                      <Badge
+                        variant="secondary"
+                        className="text-xs font-normal"
+                      >
+                        Toda a igreja
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        Pessoal
                       </span>
+                    )}
+                  </TableCell>
+
+                  <TableCell>
+                    {childTasks.length > 0 ? (
+                      <span className="text-xs font-medium text-primary">
+                        {doneChildren}/{childTasks.length} membros
+                      </span>
+                    ) : task.assignee ? (
+                      <div className="flex items-center gap-2">
+                        <Avatar className="size-6">
+                          <AvatarImage src={task.assignee.image ?? undefined} />
+                          <AvatarFallback className="text-xs">
+                            {getInitials(task.assignee.name ?? "M")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="max-w-[120px] truncate text-xs font-medium">
+                          {task.assignee.name}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+
+                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                    {whenLabel ?? "—"}
+                  </TableCell>
+
+                  <TableCell className="whitespace-nowrap">
+                    {deadlineInfo ? (
+                      <span
+                        className={cn(
+                          "text-xs font-medium",
+                          deadlineInfo.isOverdue
+                            ? "text-destructive"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        {deadlineInfo.label}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      {task.url ? (
+                        <a
+                          href={task.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`Abrir link de apoio de ${task.title}`}
+                          className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:text-primary"
+                        >
+                          <ExternalLinkIcon className="size-3.5" />
+                        </a>
+                      ) : null}
+                      <TaskActionsMenu
+                        task={task}
+                        capabilities={caps}
+                        onView={onView}
+                        onEdit={onEdit}
+                        onOpenAudit={onOpenAudit}
+                        onDelete={onDelete}
+                        onTaskUpdated={onTaskUpdated}
+                        canManage={canManage}
+                      />
                     </div>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-
-                {/* Departamento */}
-                <TableCell className="whitespace-nowrap">
-                  {task.department ? (
-                    <span className="font-medium text-primary">
-                      {task.department.name}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">Pessoal</span>
-                  )}
-                </TableCell>
-
-                {/* URL */}
-                <TableCell className="text-center p-2">
-                  {task.url ? (
-                    <a
-                      href={task.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-muted-foreground hover:text-foreground inline-flex"
-                    >
-                      <ExternalLinkIcon className="size-3.5" />
-                    </a>
-                  ) : null}
-                </TableCell>
-
-                {/* Ações (Desktop: Dropdown, Mobile: Drawer) */}
-                <TableCell className="text-right p-2">
-                  <TaskActionsMenu
-                    task={task}
-                    onView={onView}
-                    onEdit={onEdit}
-                    onOpenAudit={onOpenAudit}
-                    onDelete={onDelete}
-                    canManage={canManage}
-                    triggerClassName="size-7 text-muted-foreground hover:text-foreground"
-                  />
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

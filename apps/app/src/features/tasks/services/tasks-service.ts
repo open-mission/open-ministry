@@ -58,6 +58,7 @@ export type CreateTaskInput = {
   tags?: string[];
   isPinned?: boolean;
   priority?: TaskPriority;
+  status?: TaskStatus;
   url?: string | null;
   scope?: TaskScope;
   departmentId?: string | null;
@@ -102,8 +103,21 @@ export async function listTasks(options: {
       let visibilityCondition;
 
       if (isAdmin) {
-        // Admin tem visão de todas as tarefas da organização
-        visibilityCondition = eq(schema.task.organizationId, organizationId);
+        // Admin vê tarefas da igreja/departamentos e apenas suas próprias pessoais (privacidade por padrão)
+        visibilityCondition = and(
+          eq(schema.task.organizationId, organizationId),
+          or(
+            eq(schema.task.scope, "organization"),
+            eq(schema.task.scope, "department"),
+            and(
+              eq(schema.task.scope, "personal"),
+              or(
+                eq(schema.task.createdById, userId),
+                eq(schema.task.assigneeId, userId),
+              ),
+            ),
+          ),
+        );
       } else {
         // Membro/líder: vê pessoais, atribuídas a si, ou de departamentos em que atua
         const conditions = [
@@ -339,7 +353,7 @@ export async function createTask(
         deadline: deadlineValue,
         tags: data.tags ?? [],
         isPinned: data.isPinned ?? false,
-        status: "todo",
+        status: data.status ?? "todo",
         priority: data.priority ?? "none",
         url: data.url ?? null,
         scope: "department",
@@ -449,7 +463,7 @@ export async function createTask(
       deadline: deadlineValue,
       tags: data.tags ?? [],
       isPinned: data.isPinned ?? false,
-      status: "todo",
+      status: data.status ?? "todo",
       priority: data.priority ?? "none",
       url: data.url ?? null,
       scope,
@@ -610,7 +624,12 @@ export async function updateTask(
   const [updated] = await db
     .update(schema.task)
     .set(patch)
-    .where(eq(schema.task.id, taskId))
+    .where(
+      and(
+        eq(schema.task.id, taskId),
+        eq(schema.task.organizationId, organizationId),
+      ),
+    )
     .returning();
 
   // Se houve mudanças de campos, registra auditoria
@@ -708,7 +727,12 @@ export async function toggleTaskPin(
   await db
     .update(schema.task)
     .set({ isPinned: nextPinned })
-    .where(eq(schema.task.id, taskId));
+    .where(
+      and(
+        eq(schema.task.id, taskId),
+        eq(schema.task.organizationId, organizationId),
+      ),
+    );
 
   await db.insert(schema.taskAuditLog).values({
     id: randomUUID(),
@@ -785,4 +809,43 @@ export async function getTaskAuditHistory(
   });
 
   return logs;
+}
+
+export async function getTaskForAuth(organizationId: string, taskId: string) {
+  return db.query.task.findFirst({
+    where: and(
+      eq(schema.task.id, taskId),
+      eq(schema.task.organizationId, organizationId),
+    ),
+    columns: {
+      id: true,
+      scope: true,
+      createdById: true,
+      assigneeId: true,
+      departmentId: true,
+      delegationType: true,
+      title: true,
+    },
+  });
+}
+
+export async function getTasksForAuth(
+  organizationId: string,
+  taskIds: string[],
+) {
+  if (taskIds.length === 0) return [];
+  return db.query.task.findMany({
+    where: and(
+      inArray(schema.task.id, taskIds),
+      eq(schema.task.organizationId, organizationId),
+    ),
+    columns: {
+      id: true,
+      scope: true,
+      createdById: true,
+      assigneeId: true,
+      departmentId: true,
+      delegationType: true,
+    },
+  });
 }

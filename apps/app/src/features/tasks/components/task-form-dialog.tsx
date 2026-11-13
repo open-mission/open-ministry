@@ -1,26 +1,32 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { useMemo, useRef, useState } from "react";
 import {
-  CalendarDaysIcon,
-  CheckSquare2Icon,
+  BellRingIcon,
+  CalendarIcon,
+  ChevronDownIcon,
+  ChurchIcon,
   ClockIcon,
-  FlagIcon,
   HistoryIcon,
   LinkIcon,
+  Loader2Icon,
   PinIcon,
-  RepeatIcon,
+  PlusIcon,
+  SearchIcon,
   TagIcon,
+  UserIcon,
   UsersIcon,
   XIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -28,24 +34,32 @@ import {
   Drawer,
   DrawerContent,
   DrawerDescription,
+  DrawerFooter,
   DrawerHeader,
+  DrawerNestedRoot,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 import { createTaskAction, updateTaskAction } from "../actions/tasks.actions";
-import { TaskAuditHistoryDialog } from "./task-audit-history-dialog";
+import {
+  buildRecurrenceRule,
+  formatDateTimeLocalInput,
+  getQuickDeadlineInput,
+  parseRecurrenceRule,
+} from "../lib/task-helpers";
 import type {
   DelegationType,
   TaskItem,
   TaskPriority,
   TaskScope,
+  TaskStatus,
 } from "../services/tasks-service";
+import { TaskAuditHistoryDialog } from "./task-audit-history-dialog";
 
 type DepartmentOption = {
   id: string;
@@ -53,6 +67,7 @@ type DepartmentOption = {
 };
 
 type MemberOption = {
+  id?: string;
   userId: string;
   personId?: string;
   name: string;
@@ -61,780 +76,989 @@ type MemberOption = {
 
 type TaskFormDialogProps = {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onClose: () => void;
+  onSuccess?: (task?: TaskItem, createdCount?: number) => void;
   taskToEdit?: TaskItem | null;
   departments?: DepartmentOption[];
   members?: MemberOption[];
   currentUserId?: string;
   canDelegateDepartment?: boolean;
   canDelegateChurch?: boolean;
-  onTaskCreated?: (task: TaskItem, tempId?: string) => void;
-  onTaskFailed?: (tempId: string) => void;
-  onTaskUpdated?: (task: TaskItem) => void;
+  defaultScope?: TaskScope;
+  defaultDepartmentId?: string | null;
+  defaultStatus?: TaskStatus;
+  nested?: boolean;
 };
+
+type TargetType = "self" | "member" | "department" | "church";
+type DeadlinePreset = "none" | "today" | "tomorrow" | "sunday" | "custom";
 
 export function TaskFormDialog({
   open,
-  onOpenChange,
-  taskToEdit,
-  departments = [],
-  members = [],
-  currentUserId,
-  canDelegateDepartment = true,
-  canDelegateChurch = false,
-  onTaskCreated,
-  onTaskFailed,
-  onTaskUpdated,
-}: TaskFormDialogProps) {
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const isMobile = useIsMobile();
-
-  if (isMobile) {
-    return (
-      <>
-        <Drawer open={open} onOpenChange={onOpenChange}>
-          <DrawerContent className="p-0">
-            <DrawerHeader className="border-b px-5 pt-4 pb-3 !text-left text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
-              <div className="flex items-center justify-between pr-2">
-                <div className="flex items-center gap-2">
-                  <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <CheckSquare2Icon className="size-4" />
-                  </span>
-                  <DrawerTitle className="font-heading text-lg font-semibold tracking-tight">
-                    {taskToEdit ? "Editar Tarefa" : "Nova Tarefa"}
-                  </DrawerTitle>
-                </div>
-                {taskToEdit ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-                    onClick={() => setHistoryOpen(true)}
-                  >
-                    <HistoryIcon className="size-3.5" />
-                    Auditoria
-                  </Button>
-                ) : null}
-              </div>
-              <DrawerDescription className="text-xs text-muted-foreground text-left mt-0.5">
-                Organize seu dia, planeje datas de execução e defina prazos ministeriais.
-              </DrawerDescription>
-            </DrawerHeader>
-
-            <div className="max-h-[75vh] overflow-y-auto px-5 py-4 pb-8 [-webkit-overflow-scrolling:touch]">
-              {open && (
-                <TaskFormContent
-                  key={taskToEdit?.id ?? "new"}
-                  taskToEdit={taskToEdit}
-                  departments={departments}
-                  members={members}
-                  currentUserId={currentUserId}
-                  canDelegateDepartment={canDelegateDepartment}
-                  canDelegateChurch={canDelegateChurch}
-                  onClose={() => onOpenChange(false)}
-                  onOpenHistory={() => setHistoryOpen(true)}
-                  onTaskCreated={onTaskCreated}
-                  onTaskFailed={onTaskFailed}
-                  onTaskUpdated={onTaskUpdated}
-                  hideHeader
-                  isMobile
-                />
-              )}
-            </div>
-          </DrawerContent>
-        </Drawer>
-
-        <TaskAuditHistoryDialog
-          task={taskToEdit ?? null}
-          open={historyOpen}
-          onOpenChange={setHistoryOpen}
-        />
-      </>
-    );
-  }
-
-  return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md sm:max-w-xl max-h-[90vh] overflow-y-auto">
-          {open && (
-            <TaskFormContent
-              key={taskToEdit?.id ?? "new"}
-              taskToEdit={taskToEdit}
-              departments={departments}
-              members={members}
-              currentUserId={currentUserId}
-              canDelegateDepartment={canDelegateDepartment}
-              canDelegateChurch={canDelegateChurch}
-              onClose={() => onOpenChange(false)}
-              onOpenHistory={() => setHistoryOpen(true)}
-              onTaskCreated={onTaskCreated}
-              onTaskFailed={onTaskFailed}
-              onTaskUpdated={onTaskUpdated}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <TaskAuditHistoryDialog
-        task={taskToEdit ?? null}
-        open={historyOpen}
-        onOpenChange={setHistoryOpen}
-      />
-    </>
-  );
-}
-
-function TaskFormContent({
-  taskToEdit,
-  departments = [],
-  members = [],
-  currentUserId,
-  canDelegateDepartment = true,
-  canDelegateChurch = false,
   onClose,
-  onOpenHistory,
-  onTaskCreated,
-  onTaskFailed,
-  onTaskUpdated,
-  hideHeader = false,
-  isMobile = false,
-}: {
-  taskToEdit?: TaskItem | null;
-  departments: DepartmentOption[];
-  members: MemberOption[];
-  currentUserId?: string;
-  canDelegateDepartment: boolean;
-  canDelegateChurch: boolean;
-  onClose: () => void;
-  onOpenHistory: () => void;
-  onTaskCreated?: (task: TaskItem, tempId?: string) => void;
-  onTaskFailed?: (tempId: string) => void;
-  onTaskUpdated?: (task: TaskItem) => void;
-  hideHeader?: boolean;
-  isMobile?: boolean;
-}) {
+  onSuccess,
+  taskToEdit = null,
+  departments = [],
+  members = [],
+  currentUserId,
+  canDelegateDepartment = false,
+  canDelegateChurch = false,
+  defaultScope = "personal",
+  defaultDepartmentId = null,
+  defaultStatus = "todo",
+  nested = false,
+}: TaskFormDialogProps) {
+  const isMobile = useIsMobile();
   const isEditing = Boolean(taskToEdit);
-  const [isPending, startTransition] = useTransition();
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
-  // Initial values computed directly without effect
-  const [title, setTitle] = useState(() => taskToEdit?.title ?? "");
-  const [description, setDescription] = useState(
-    () => taskToEdit?.description ?? "",
-  );
-  const [date, setDate] = useState(() =>
-    taskToEdit?.date
-      ? new Date(taskToEdit.date).toISOString().slice(0, 16)
-      : "",
-  );
-  const [deadline, setDeadline] = useState(() =>
-    taskToEdit?.deadline
-      ? new Date(taskToEdit.deadline).toISOString().slice(0, 16)
-      : "",
-  );
-  const [tags, setTags] = useState<string[]>(() =>
-    Array.isArray(taskToEdit?.tags) ? taskToEdit.tags : [],
-  );
+  const [auditOpen, setAuditOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    title?: string;
+    assigneeId?: string;
+    departmentId?: string;
+    url?: string;
+  }>({});
+
+  // Campos principais
+  const [title, setTitle] = useState("");
+  const [targetType, setTargetType] = useState<TargetType>("self");
+  const [departmentId, setDepartmentId] = useState("");
+  const [assigneeId, setAssigneeId] = useState("");
+  const [memberSearch, setMemberSearch] = useState("");
+  const [delegationType, setDelegationType] = useState<DelegationType>("shared");
+
+  // Prazo rápido e data
+  const [deadlinePreset, setDeadlinePreset] = useState<DeadlinePreset>("none");
+  const [deadline, setDeadline] = useState("");
+  const [date, setDate] = useState("");
+
+  // Detalhes recolhíveis (Progressive Disclosure)
+  const [showMore, setShowMore] = useState(false);
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState<TaskPriority>("none");
+  const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
-  const [isPinned, setIsPinned] = useState(() => taskToEdit?.isPinned ?? false);
-  const [priority, setPriority] = useState<TaskPriority>(
-    () => (taskToEdit?.priority as TaskPriority) ?? "none",
-  );
-  const [url, setUrl] = useState(() => taskToEdit?.url ?? "");
-
-  const [targetType, setTargetType] = useState<
-    "self" | "member" | "department" | "church"
-  >(() => {
-    if (taskToEdit?.scope === "organization") return "church";
-    if (taskToEdit?.departmentId) return "department";
-    if (taskToEdit?.assigneeId && taskToEdit.assigneeId !== taskToEdit.createdById) {
-      return "member";
-    }
-    return "self";
-  });
-
-  const [departmentId, setDepartmentId] = useState(
-    () => taskToEdit?.departmentId ?? departments[0]?.id ?? "",
-  );
-  const [delegationType, setDelegationType] = useState<DelegationType>(
-    () => (taskToEdit?.delegationType as DelegationType) ?? "shared",
-  );
-  const [assigneeId, setAssigneeId] = useState(
-    () => taskToEdit?.assigneeId ?? "",
-  );
-  const [isRecurring, setIsRecurring] = useState(
-    () => taskToEdit?.isRecurring ?? false,
-  );
-  const [recurrenceDay, setRecurrenceDay] = useState("3"); // 3 = Quarta
+  const [url, setUrl] = useState("");
+  const [isPinned, setIsPinned] = useState(false);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrenceDay, setRecurrenceDay] = useState("3");
   const [recurrenceTime, setRecurrenceTime] = useState("09:00");
 
-  const handleAddTag = () => {
-    const trimmed = tagInput.trim().replace(/^#/, "");
-    if (trimmed && !tags.includes(trimmed)) {
-      setTags([...tags, trimmed]);
+  // Sincroniza o estado sempre que abrir ou trocar de tarefa (render-phase para evitar efeito cascata)
+  const formSyncKey = open
+    ? `open:${taskToEdit?.id ?? "new"}:${defaultScope}:${defaultDepartmentId ?? ""}`
+    : "closed";
+  const [prevFormSyncKey, setPrevFormSyncKey] = useState(formSyncKey);
+
+  if (formSyncKey !== prevFormSyncKey) {
+    setPrevFormSyncKey(formSyncKey);
+    if (open) {
+      setSubmitError(null);
+      setFieldErrors({});
+      setMemberSearch("");
       setTagInput("");
+
+      if (taskToEdit) {
+        setTitle(taskToEdit.title ?? "");
+        setDescription(taskToEdit.description ?? "");
+        setDate(formatDateTimeLocalInput(taskToEdit.date));
+        const formattedDeadline = formatDateTimeLocalInput(taskToEdit.deadline);
+        setDeadline(formattedDeadline);
+        setDeadlinePreset(formattedDeadline ? "custom" : "none");
+        setPriority((taskToEdit.priority as TaskPriority) ?? "none");
+        setTags(taskToEdit.tags ?? []);
+        setUrl(taskToEdit.url ?? "");
+        setIsPinned(Boolean(taskToEdit.isPinned));
+
+        const parsedRecurrence = parseRecurrenceRule(taskToEdit.recurrenceRule);
+        setIsRecurring(Boolean(taskToEdit.isRecurring));
+        setRecurrenceDay(parsedRecurrence.day);
+        setRecurrenceTime(parsedRecurrence.time);
+
+        if (taskToEdit.scope === "organization") {
+          setTargetType("church");
+        } else if (taskToEdit.scope === "department") {
+          setTargetType("department");
+        } else if (
+          taskToEdit.assigneeId &&
+          taskToEdit.assigneeId !== currentUserId
+        ) {
+          setTargetType("member");
+        } else {
+          setTargetType("self");
+        }
+
+        setDepartmentId(taskToEdit.departmentId ?? "");
+        setAssigneeId(taskToEdit.assigneeId ?? "");
+        setDelegationType(
+          (taskToEdit.delegationType as DelegationType) ?? "shared",
+        );
+
+        const hasExtraDetails = Boolean(
+          taskToEdit.description ||
+            taskToEdit.date ||
+            (taskToEdit.tags && taskToEdit.tags.length > 0) ||
+            taskToEdit.url ||
+            (taskToEdit.priority && taskToEdit.priority !== "none") ||
+            taskToEdit.isPinned ||
+            taskToEdit.isRecurring,
+        );
+        setShowMore(hasExtraDetails);
+      } else {
+        setTitle("");
+        setDescription("");
+        setDate("");
+        setDeadline("");
+        setDeadlinePreset("none");
+        setPriority("none");
+        setTags([]);
+        setUrl("");
+        setIsPinned(false);
+        setIsRecurring(false);
+        setRecurrenceDay("3");
+        setRecurrenceTime("09:00");
+
+        if (
+          defaultScope === "department" &&
+          canDelegateDepartment &&
+          departments.length > 0
+        ) {
+          setTargetType("department");
+          setDepartmentId(defaultDepartmentId ?? departments[0]?.id ?? "");
+        } else if (defaultScope === "organization" && canDelegateChurch) {
+          setTargetType("church");
+          setDepartmentId("");
+        } else {
+          setTargetType("self");
+          setDepartmentId(defaultDepartmentId ?? departments[0]?.id ?? "");
+        }
+        setAssigneeId("");
+        setDelegationType("shared");
+        setShowMore(false);
+      }
+    }
+  }
+
+  const filteredMembers = useMemo(() => {
+    const q = memberSearch.trim().toLowerCase();
+    if (!q) return members;
+    return members.filter(
+      (m) =>
+        m.name.toLowerCase().includes(q) ||
+        (m.email && m.email.toLowerCase().includes(q)),
+    );
+  }, [members, memberSearch]);
+
+  const handleSelectDeadlinePreset = (preset: DeadlinePreset) => {
+    setDeadlinePreset(preset);
+    if (preset === "none") {
+      setDeadline("");
+    } else if (preset === "today" || preset === "tomorrow" || preset === "sunday") {
+      setDeadline(getQuickDeadlineInput(preset));
     }
   };
 
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter((t) => t !== tagToRemove));
+  const handleAddTag = () => {
+    const clean = tagInput.trim();
+    if (!clean) return;
+    if (!tags.includes(clean)) {
+      setTags((prev) => [...prev, clean]);
+    }
+    setTagInput("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleRemoveTag = (t: string) => {
+    setTags((prev) => prev.filter((item) => item !== t));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError(null);
+
+    const nextErrors: typeof fieldErrors = {};
+
     if (!title.trim()) {
-      toast.error("O título da tarefa é obrigatório.");
+      nextErrors.title = "Informe um título para a tarefa.";
+    }
+    if (targetType === "member" && !assigneeId) {
+      nextErrors.assigneeId = "Selecione quem ficará responsável por esta tarefa.";
+    }
+    if (targetType === "department" && !departmentId) {
+      nextErrors.departmentId = "Selecione o departamento responsável.";
+    }
+    if (url.trim()) {
+      try {
+        new URL(url.trim());
+      } catch {
+        nextErrors.url = "Informe um endereço válido (começando com https://).";
+      }
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      if (nextErrors.title) {
+        titleInputRef.current?.focus();
+      }
       return;
     }
 
-    startTransition(async () => {
+    setFieldErrors({});
+    setSubmitting(true);
+
+    try {
       let resolvedScope: TaskScope = "personal";
-      let resolvedAssigneeId: string | null = null;
-      let resolvedPersonId: string | null = null;
       let resolvedDeptId: string | null = null;
+      let resolvedAssigneeId: string | null = currentUserId ?? null;
+      let resolvedAssigneePersonId: string | null = null;
       let resolvedDelegationType: DelegationType = "single";
 
       if (targetType === "church") {
         resolvedScope = "organization";
-      } else if (targetType === "department" && departmentId) {
+        resolvedAssigneeId = null;
+      } else if (targetType === "department") {
         resolvedScope = "department";
         resolvedDeptId = departmentId;
         resolvedDelegationType = delegationType;
-      } else if (targetType === "member" && assigneeId) {
+        resolvedAssigneeId = null;
+      } else if (targetType === "member") {
         resolvedScope = "personal";
         resolvedAssigneeId = assigneeId;
-        const member = members.find((m) => m.userId === assigneeId);
-        resolvedPersonId = member?.personId ?? null;
+        const memberMatch = members.find((m) => m.userId === assigneeId);
+        resolvedAssigneePersonId = memberMatch?.personId ?? null;
       }
 
       const recurrenceRule = isRecurring
-        ? `FREQ=WEEKLY;BYDAY=${recurrenceDay};BYTIME=${recurrenceTime}`
+        ? buildRecurrenceRule(recurrenceDay, recurrenceTime)
         : null;
 
       const payload = {
         title: title.trim(),
-        description: description.trim() || null,
+        description: description.trim() ? description.trim() : null,
         date: date ? new Date(date).toISOString() : null,
         deadline: deadline ? new Date(deadline).toISOString() : null,
         tags,
         isPinned,
         priority,
-        url: url.trim() || null,
+        url: url.trim() ? url.trim() : null,
         scope: resolvedScope,
         departmentId: resolvedDeptId,
         assigneeId: resolvedAssigneeId,
-        assigneePersonId: resolvedPersonId,
+        assigneePersonId: resolvedAssigneePersonId,
         delegationType: resolvedDelegationType,
         isRecurring,
         recurrenceRule,
       };
 
       if (isEditing && taskToEdit) {
-        // Atualização otimista imediata na interface
-        const updatedOptimistic: TaskItem = {
-          ...taskToEdit,
-          ...payload,
-          date: payload.date ? new Date(payload.date) : null,
-          deadline: payload.deadline ? new Date(payload.deadline) : null,
-          updatedAt: new Date(),
-        };
-        onTaskUpdated?.(updatedOptimistic);
-        onClose();
-
         const res = await updateTaskAction(taskToEdit.id, payload);
-        if (!res.ok) {
-          toast.error(res.error);
-          onTaskUpdated?.(taskToEdit); // rollback em caso de falha
+        if (res.ok) {
+          toast.success("Tarefa atualizada.");
+          onSuccess?.(res.data.task, 1);
+          onClose();
         } else {
-          toast.success("Tarefa atualizada com sucesso!");
-          if (res.data?.task) {
-            onTaskUpdated?.(res.data.task);
-          }
+          setSubmitError(res.error);
+          toast.error(res.error);
         }
       } else {
-        // Criação otimista instantânea (0ms de atraso)
-        const tempId = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-        const assignedMember = members.find((m) => m.userId === resolvedAssigneeId);
-        const assignedDept = departments.find((d) => d.id === resolvedDeptId);
-
-        const optimisticTask: TaskItem = {
-          id: tempId,
-          organizationId: "",
-          title: payload.title,
-          description: payload.description,
-          date: payload.date ? new Date(payload.date) : null,
-          deadline: payload.deadline ? new Date(payload.deadline) : null,
-          tags: payload.tags,
-          isPinned: payload.isPinned,
-          status: "todo",
-          priority: payload.priority,
-          url: payload.url,
-          scope: payload.scope,
-          departmentId: payload.departmentId,
-          createdById: currentUserId ?? "",
-          assigneeId: payload.assigneeId,
-          assigneePersonId: payload.assigneePersonId,
-          delegationType: payload.delegationType,
-          parentTaskId: null,
-          isRecurring: payload.isRecurring,
-          recurrenceRule: payload.recurrenceRule,
-          sortOrder: 0,
-          completedAt: null,
-          completedById: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          createdBy: {
-            id: currentUserId ?? "",
-            name: "Você",
-            email: null,
-            image: null,
-          },
-          assignee: assignedMember
-            ? {
-                id: assignedMember.userId,
-                name: assignedMember.name,
-                email: assignedMember.email ?? null,
-                image: null,
-              }
-            : payload.scope === "personal"
-              ? {
-                  id: currentUserId ?? "",
-                  name: "Você",
-                  email: null,
-                  image: null,
-                }
-              : null,
-          assigneePerson: null,
-          completedBy: null,
-          department: assignedDept ? { id: assignedDept.id, name: assignedDept.name } : null,
-        };
-
-        // Insere imediatamente na interface
-        onTaskCreated?.(optimisticTask, tempId);
-        onClose();
-
-        const res = await createTaskAction(payload);
-        if (!res.ok) {
-          toast.error(res.error);
-          onTaskFailed?.(tempId);
-        } else {
-          const count = res.data?.createdCount ?? 1;
+        const res = await createTaskAction({
+          ...payload,
+          status: defaultStatus,
+        });
+        if (res.ok) {
           toast.success(
-            count > 1
-              ? `${count} tarefas geradas para os membros da equipe!`
-              : "Tarefa criada com sucesso!",
+            res.data.createdCount > 1
+              ? `Tarefa delegada para ${res.data.createdCount - 1} membros do departamento.`
+              : "Tarefa criada.",
           );
-          if (res.data?.task) {
-            onTaskCreated?.(res.data.task, tempId);
-          }
+          onSuccess?.(res.data.task, res.data.createdCount);
+          onClose();
+        } else {
+          setSubmitError(res.error);
+          toast.error(res.error);
         }
       }
-    });
+    } catch {
+      const msg = "Não foi possível salvar a tarefa. Tente novamente.";
+      setSubmitError(msg);
+      toast.error(msg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {!hideHeader && (
-        <DialogHeader>
-          <div className="flex items-center justify-between pr-4">
-            <div className="flex items-center gap-2">
-              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <CheckSquare2Icon className="size-4" />
-              </span>
-              <DialogTitle>
-                {isEditing ? "Editar Tarefa" : "Nova Tarefa"}
-              </DialogTitle>
+  const canChooseMember = members.length > 0;
+  const canChooseDepartment = canDelegateDepartment && departments.length > 0;
+  const canChooseChurch = canDelegateChurch;
+  const showTargetSelector =
+    canChooseMember || canChooseDepartment || canChooseChurch;
+
+  const formBody = (
+    <form
+      id="task-editor-form"
+      onSubmit={handleSubmit}
+      className="space-y-4"
+      noValidate
+    >
+      {submitError ? (
+        <div
+          role="alert"
+          className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
+        >
+          {submitError}
+        </div>
+      ) : null}
+
+      {/* Título */}
+      <div className="space-y-1.5">
+        <Label htmlFor="task-title">
+          O que precisa ser feito? <span className="text-destructive">*</span>
+        </Label>
+        <Input
+          ref={titleInputRef}
+          id="task-title"
+          name="title"
+          value={title}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            if (fieldErrors.title) {
+              setFieldErrors((prev) => ({ ...prev, title: undefined }));
+            }
+          }}
+          placeholder="Ex: Revisar lista de músicas do culto de domingo"
+          aria-invalid={fieldErrors.title ? "true" : undefined}
+          aria-describedby={fieldErrors.title ? "task-title-error" : undefined}
+          className="min-h-[44px]"
+          required
+        />
+        {fieldErrors.title ? (
+          <p id="task-title-error" className="text-xs text-destructive">
+            {fieldErrors.title}
+          </p>
+        ) : null}
+      </div>
+
+      {/* Para quem (Público / Delegação) */}
+      {showTargetSelector ? (
+        <fieldset className="space-y-2.5 rounded-xl border bg-muted/20 p-3">
+          <legend className="px-1 text-xs font-semibold text-foreground">
+            Para quem é esta tarefa?
+          </legend>
+
+          <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap">
+            <Button
+              type="button"
+              variant={targetType === "self" ? "default" : "outline"}
+              size="sm"
+              className="min-h-[40px] justify-start gap-1.5 sm:min-h-[36px]"
+              onClick={() => {
+                setTargetType("self");
+                setFieldErrors((p) => ({
+                  ...p,
+                  assigneeId: undefined,
+                  departmentId: undefined,
+                }));
+              }}
+            >
+              <UserIcon className="size-3.5 shrink-0" />
+              Só para mim
+            </Button>
+
+            {canChooseMember ? (
+              <Button
+                type="button"
+                variant={targetType === "member" ? "default" : "outline"}
+                size="sm"
+                className="min-h-[40px] justify-start gap-1.5 sm:min-h-[36px]"
+                onClick={() => {
+                  setTargetType("member");
+                  setFieldErrors((p) => ({ ...p, departmentId: undefined }));
+                }}
+              >
+                <UserIcon className="size-3.5 shrink-0" />
+                Outra pessoa
+              </Button>
+            ) : null}
+
+            {canChooseDepartment ? (
+              <Button
+                type="button"
+                variant={targetType === "department" ? "default" : "outline"}
+                size="sm"
+                className="min-h-[40px] justify-start gap-1.5 sm:min-h-[36px]"
+                onClick={() => {
+                  setTargetType("department");
+                  if (!departmentId && departments[0]?.id) {
+                    setDepartmentId(departments[0].id);
+                  }
+                  setFieldErrors((p) => ({ ...p, assigneeId: undefined }));
+                }}
+              >
+                <UsersIcon className="size-3.5 shrink-0" />
+                Departamento
+              </Button>
+            ) : null}
+
+            {canChooseChurch ? (
+              <Button
+                type="button"
+                variant={targetType === "church" ? "default" : "outline"}
+                size="sm"
+                className="min-h-[40px] justify-start gap-1.5 sm:min-h-[36px]"
+                onClick={() => {
+                  setTargetType("church");
+                  setFieldErrors((p) => ({
+                    ...p,
+                    assigneeId: undefined,
+                    departmentId: undefined,
+                  }));
+                }}
+              >
+                <ChurchIcon className="size-3.5 shrink-0" />
+                Toda a igreja
+              </Button>
+            ) : null}
+          </div>
+
+          {targetType === "member" ? (
+            <div className="space-y-2 pt-1">
+              <Label htmlFor="task-assignee">Selecionar responsável</Label>
+              {members.length > 8 ? (
+                <div className="relative">
+                  <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    value={memberSearch}
+                    onChange={(e) => setMemberSearch(e.target.value)}
+                    placeholder="Buscar pessoa por nome..."
+                    aria-label="Filtrar pessoas por nome"
+                    className="min-h-[40px] pl-9"
+                  />
+                </div>
+              ) : null}
+              <NativeSelect
+                id="task-assignee"
+                value={assigneeId}
+                onChange={(e) => {
+                  setAssigneeId(e.target.value);
+                  setFieldErrors((prev) => ({ ...prev, assigneeId: undefined }));
+                }}
+                aria-invalid={fieldErrors.assigneeId ? "true" : undefined}
+                aria-describedby={
+                  fieldErrors.assigneeId ? "task-assignee-error" : undefined
+                }
+                className="min-h-[44px] w-full"
+              >
+                <option value="">Escolha um membro...</option>
+                {filteredMembers.map((m) => (
+                  <option key={m.userId} value={m.userId}>
+                    {m.name}
+                  </option>
+                ))}
+              </NativeSelect>
+              {fieldErrors.assigneeId ? (
+                <p id="task-assignee-error" className="text-xs text-destructive">
+                  {fieldErrors.assigneeId}
+                </p>
+              ) : null}
             </div>
+          ) : null}
+
+          {targetType === "department" ? (
+            <div className="space-y-3 pt-1">
+              <div className="space-y-1.5">
+                <Label htmlFor="task-department">Departamento</Label>
+                <NativeSelect
+                  id="task-department"
+                  value={departmentId}
+                  onChange={(e) => {
+                    setDepartmentId(e.target.value);
+                    setFieldErrors((prev) => ({
+                      ...prev,
+                      departmentId: undefined,
+                    }));
+                  }}
+                  aria-invalid={fieldErrors.departmentId ? "true" : undefined}
+                  className="min-h-[44px] w-full"
+                >
+                  <option value="">Escolha um departamento...</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </NativeSelect>
+                {fieldErrors.departmentId ? (
+                  <p className="text-xs text-destructive">
+                    {fieldErrors.departmentId}
+                  </p>
+                ) : null}
+              </div>
+
+              {!isEditing ? (
+                <div className="space-y-1.5">
+                  <span className="block text-xs font-medium text-foreground">
+                    Como a equipe vai realizar?
+                  </span>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <label
+                      className={cn(
+                        "flex min-h-[44px] cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 text-xs transition-colors",
+                        delegationType === "shared"
+                          ? "border-primary bg-primary/5"
+                          : "bg-background hover:bg-muted/40",
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="delegationType"
+                        checked={delegationType === "shared"}
+                        onChange={() => setDelegationType("shared")}
+                        className="mt-0.5 accent-primary"
+                      />
+                      <span>
+                        <strong className="block font-medium text-foreground">
+                          Em equipe
+                        </strong>
+                        <span className="text-muted-foreground">
+                          Qualquer membro do departamento pode concluir
+                        </span>
+                      </span>
+                    </label>
+
+                    <label
+                      className={cn(
+                        "flex min-h-[44px] cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 text-xs transition-colors",
+                        delegationType === "individual"
+                          ? "border-primary bg-primary/5"
+                          : "bg-background hover:bg-muted/40",
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="delegationType"
+                        checked={delegationType === "individual"}
+                        onChange={() => setDelegationType("individual")}
+                        className="mt-0.5 accent-primary"
+                      />
+                      <span>
+                        <strong className="block font-medium text-foreground">
+                          Individual por pessoa
+                        </strong>
+                        <span className="text-muted-foreground">
+                          Cria uma tarefa para cada integrante confirmar
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </fieldset>
+      ) : null}
+
+      {/* Prazo rápido */}
+      <div className="space-y-2">
+        <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+          <ClockIcon className="size-3.5 text-muted-foreground" />
+          Prazo de entrega
+        </span>
+        <div className="flex flex-wrap gap-1.5">
+          {(
+            [
+              { key: "none", label: "Sem prazo" },
+              { key: "today", label: "Hoje" },
+              { key: "tomorrow", label: "Amanhã" },
+              { key: "sunday", label: "Próx. domingo" },
+              { key: "custom", label: "Escolher data" },
+            ] as const
+          ).map((chip) => (
+            <Button
+              key={chip.key}
+              type="button"
+              size="sm"
+              variant={deadlinePreset === chip.key ? "default" : "outline"}
+              className="min-h-[38px] sm:min-h-[32px]"
+              onClick={() => handleSelectDeadlinePreset(chip.key)}
+            >
+              {chip.label}
+            </Button>
+          ))}
+        </div>
+
+        {(deadlinePreset !== "none" || deadline) && (
+          <div className="pt-1">
+            <Label htmlFor="task-deadline" className="text-xs text-muted-foreground">
+              Data e hora limite
+            </Label>
+            <Input
+              id="task-deadline"
+              type="datetime-local"
+              value={deadline}
+              onChange={(e) => {
+                setDeadline(e.target.value);
+                setDeadlinePreset(e.target.value ? "custom" : "none");
+              }}
+              className="mt-1 min-h-[44px]"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Divulgação progressiva: Mais detalhes */}
+      <div className="border-t pt-2">
+        <button
+          type="button"
+          aria-expanded={showMore}
+          aria-controls="task-more-details"
+          onClick={() => setShowMore((prev) => !prev)}
+          className="flex min-h-[44px] w-full items-center justify-between rounded-lg px-2 text-sm font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+        >
+          <span>Mais detalhes (observações, etiquetas, prioridade, repetição)</span>
+          <ChevronDownIcon
+            className={cn(
+              "size-4 transition-transform",
+              showMore && "rotate-180",
+            )}
+          />
+        </button>
+
+        {showMore ? (
+          <div id="task-more-details" className="space-y-4 pt-3">
+            {/* Observações */}
+            <div className="space-y-1.5">
+              <Label htmlFor="task-description">Observações e orientações</Label>
+              <Textarea
+                id="task-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Detalhes, checklist rápido ou instruções para a equipe..."
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {/* Data planejada */}
+              <div className="space-y-1.5">
+                <Label htmlFor="task-date" className="flex items-center gap-1.5">
+                  <CalendarIcon className="size-3.5 text-muted-foreground" />
+                  Quando pretende iniciar
+                </Label>
+                <Input
+                  id="task-date"
+                  type="datetime-local"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="min-h-[44px]"
+                />
+              </div>
+
+              {/* Prioridade */}
+              <div className="space-y-1.5">
+                <Label htmlFor="task-priority">Prioridade</Label>
+                <NativeSelect
+                  id="task-priority"
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value as TaskPriority)}
+                  className="min-h-[44px] w-full"
+                >
+                  <option value="none">Nenhuma</option>
+                  <option value="low">Baixa</option>
+                  <option value="medium">Média</option>
+                  <option value="high">Alta (urgente)</option>
+                </NativeSelect>
+              </div>
+            </div>
+
+            {/* Etiquetas */}
+            <div className="space-y-1.5">
+              <Label htmlFor="task-tag-input" className="flex items-center gap-1.5">
+                <TagIcon className="size-3.5 text-muted-foreground" />
+                Etiquetas
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  id="task-tag-input"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddTag();
+                    }
+                  }}
+                  placeholder="Ex: Culto, Compras, Som"
+                  className="min-h-[44px]"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAddTag}
+                  aria-label="Adicionar etiqueta"
+                  className="min-h-[44px] min-w-[44px] shrink-0"
+                >
+                  <PlusIcon className="size-4" />
+                </Button>
+              </div>
+              {tags.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {tags.map((t) => (
+                    <Badge key={t} variant="secondary" className="gap-1 pr-1 text-xs">
+                      <span>{t}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(t)}
+                        aria-label={`Remover etiqueta ${t}`}
+                        className="rounded-full p-0.5 hover:bg-background/80"
+                      >
+                        <XIcon className="size-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
+            {/* Link de apoio */}
+            <div className="space-y-1.5">
+              <Label htmlFor="task-url" className="flex items-center gap-1.5">
+                <LinkIcon className="size-3.5 text-muted-foreground" />
+                Link de apoio (documento, música ou reunião)
+              </Label>
+              <Input
+                id="task-url"
+                type="url"
+                value={url}
+                onChange={(e) => {
+                  setUrl(e.target.value);
+                  if (fieldErrors.url) {
+                    setFieldErrors((prev) => ({ ...prev, url: undefined }));
+                  }
+                }}
+                placeholder="https://..."
+                aria-invalid={fieldErrors.url ? "true" : undefined}
+                aria-describedby={fieldErrors.url ? "task-url-error" : undefined}
+                className="min-h-[44px]"
+              />
+              {fieldErrors.url ? (
+                <p id="task-url-error" className="text-xs text-destructive">
+                  {fieldErrors.url}
+                </p>
+              ) : null}
+            </div>
+
+            {/* Destaque & Repetição */}
+            <div className="space-y-3 rounded-xl border bg-muted/20 p-3">
+              <label className="flex min-h-[36px] cursor-pointer items-center gap-2.5 text-sm">
+                <input
+                  type="checkbox"
+                  checked={isPinned}
+                  onChange={(e) => setIsPinned(e.target.checked)}
+                  className="size-4 accent-primary"
+                />
+                <PinIcon className="size-4 text-primary" />
+                <span>Fixar tarefa no topo da lista</span>
+              </label>
+
+              <div className="space-y-2 border-t pt-2.5">
+                <label className="flex min-h-[36px] cursor-pointer items-center gap-2.5 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={isRecurring}
+                    onChange={(e) => setIsRecurring(e.target.checked)}
+                    className="size-4 accent-primary"
+                  />
+                  <BellRingIcon className="size-4 text-muted-foreground" />
+                  <span>Repetir e enviar lembrete semanal</span>
+                </label>
+
+                {isRecurring ? (
+                  <div className="grid grid-cols-1 gap-2 pl-6 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="task-recurrence-day" className="text-xs">
+                        Dia da semana
+                      </Label>
+                      <NativeSelect
+                        id="task-recurrence-day"
+                        value={recurrenceDay}
+                        onChange={(e) => setRecurrenceDay(e.target.value)}
+                        className="min-h-[40px] w-full"
+                      >
+                        <option value="0">Domingo</option>
+                        <option value="1">Segunda-feira</option>
+                        <option value="2">Terça-feira</option>
+                        <option value="3">Quarta-feira</option>
+                        <option value="4">Quinta-feira</option>
+                        <option value="5">Sexta-feira</option>
+                        <option value="6">Sábado</option>
+                      </NativeSelect>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="task-recurrence-time" className="text-xs">
+                        Horário do lembrete
+                      </Label>
+                      <Input
+                        id="task-recurrence-time"
+                        type="time"
+                        value={recurrenceTime}
+                        onChange={(e) => setRecurrenceTime(e.target.value)}
+                        className="min-h-[40px]"
+                      />
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </form>
+  );
+
+  if (isMobile) {
+    const Wrapper = nested ? DrawerNestedRoot : Drawer;
+    return (
+      <Wrapper open={open} onOpenChange={(v) => !v && onClose()}>
+        <DrawerContent className="flex max-h-[85vh] flex-col px-4 pb-6">
+          <DrawerHeader className="!text-left shrink-0 px-0">
+            <div className="flex items-center justify-between gap-2">
+              <DrawerTitle className="font-heading text-xl font-bold">
+                {isEditing ? "Editar tarefa" : "Nova tarefa"}
+              </DrawerTitle>
+              {isEditing && taskToEdit ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setAuditOpen(true)}
+                  className="min-h-[44px] gap-1.5 text-muted-foreground"
+                >
+                  <HistoryIcon className="size-4" />
+                  Histórico
+                </Button>
+              ) : null}
+            </div>
+            <DrawerDescription>
+              {isEditing
+                ? "Atualize os dados da tarefa abaixo."
+                : "Organize uma atividade pessoal ou delegue para sua equipe."}
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="flex-1 overflow-y-auto [-webkit-overflow-scrolling:touch] py-2 pr-1">
+            {formBody}
+          </div>
+
+          <DrawerFooter className="shrink-0 border-t bg-background px-0 pt-3">
+            <Button
+              type="submit"
+              form="task-editor-form"
+              disabled={submitting}
+              className="min-h-[44px] w-full"
+            >
+              {submitting ? (
+                <>
+                  <Loader2Icon className="mr-2 size-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : isEditing ? (
+                "Salvar alterações"
+              ) : (
+                "Criar tarefa"
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={submitting}
+              onClick={onClose}
+              className="min-h-[44px] w-full"
+            >
+              Cancelar
+            </Button>
+          </DrawerFooter>
+
+          {isEditing && taskToEdit ? (
+            <TaskAuditHistoryDialog
+              task={taskToEdit}
+              open={auditOpen}
+              onClose={() => setAuditOpen(false)}
+              members={members}
+              departments={departments}
+              nested
+            />
+          ) : null}
+        </DrawerContent>
+      </Wrapper>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center justify-between gap-2 pr-6">
+            <DialogTitle className="font-heading text-xl font-bold">
+              {isEditing ? "Editar tarefa" : "Nova tarefa"}
+            </DialogTitle>
             {isEditing && taskToEdit ? (
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-                onClick={onOpenHistory}
+                onClick={() => setAuditOpen(true)}
+                className="gap-1.5 text-muted-foreground"
               >
-                <HistoryIcon className="size-3.5" />
-                Auditoria
+                <HistoryIcon className="size-4" />
+                Histórico
               </Button>
             ) : null}
           </div>
           <DialogDescription>
-            Organize seu dia, planeje datas de execução e defina prazos ministeriais.
+            {isEditing
+              ? "Atualize os dados da tarefa."
+              : "Crie um lembrete pessoal ou delegue para sua equipe."}
           </DialogDescription>
         </DialogHeader>
-      )}
 
-      {/* Título */}
-      <div className="space-y-1.5">
-        <Label htmlFor="task-title">Título *</Label>
-        <Input
-          id="task-title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Ex: Estudar repertório de domingo ou Enviar sugestões"
-          required
-          autoFocus
-        />
-      </div>
+        {formBody}
 
-      {/* Descrição */}
-      <div className="space-y-1.5">
-        <Label htmlFor="task-desc">Descrição / Anotações</Label>
-        <Textarea
-          id="task-desc"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Detalhes adicionais, notas ou observações da tarefa..."
-          rows={3}
-        />
-      </div>
-
-      {/* Quando e Prazo Máximo (Things 3 style) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="task-date" className="flex items-center gap-1.5 text-xs font-medium">
-            <CalendarDaysIcon className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-            Quando trabalhar (Início / Data)
-          </Label>
-          <Input
-            id="task-date"
-            type="datetime-local"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="text-xs"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="task-deadline" className="flex items-center gap-1.5 text-xs font-medium">
-            <ClockIcon className="size-3.5 text-amber-600 dark:text-amber-400" />
-            Prazo limite (Deadline)
-          </Label>
-          <Input
-            id="task-deadline"
-            type="datetime-local"
-            value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
-            className="text-xs"
-          />
-        </div>
-      </div>
-
-      {/* Tags e URL */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label className="flex items-center gap-1.5 text-xs font-medium">
-            <TagIcon className="size-3.5 text-muted-foreground" />
-            Tags
-          </Label>
-          <div className="flex gap-1.5">
-            <Input
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleAddTag();
-                }
-              }}
-              placeholder="Adicionar tag..."
-              className="text-xs"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleAddTag}
-              className="text-xs px-2.5"
-            >
-              +
-            </Button>
-          </div>
-          {tags.length > 0 ? (
-            <div className="flex flex-wrap gap-1 mt-1.5">
-              {tags.map((t) => (
-                <span
-                  key={t}
-                  className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
-                >
-                  #{t}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveTag(t)}
-                    className="hover:text-foreground"
-                  >
-                    <XIcon className="size-2.5" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="task-url" className="flex items-center gap-1.5 text-xs font-medium">
-            <LinkIcon className="size-3.5 text-muted-foreground" />
-            Link de referência (URL)
-          </Label>
-          <Input
-            id="task-url"
-            type="url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://..."
-            className="text-xs"
-          />
-        </div>
-      </div>
-
-      {/* Prioridade e Fixar */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center border-t pt-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="task-priority" className="flex items-center gap-1.5 text-xs font-medium">
-            <FlagIcon className="size-3.5 text-muted-foreground" />
-            Prioridade
-          </Label>
-          <NativeSelect
-            id="task-priority"
-            value={priority}
-            onChange={(e) => setPriority(e.target.value as TaskPriority)}
-            className="text-xs h-9"
-          >
-            <option value="none">Normal (sem prioridade)</option>
-            <option value="low">Baixa</option>
-            <option value="medium">Média</option>
-            <option value="high">Alta</option>
-          </NativeSelect>
-        </div>
-
-        <div className="flex items-center justify-between rounded-lg border p-2.5 bg-muted/30">
-          <div className="space-y-0.5">
-            <Label htmlFor="task-pinned" className="text-xs font-medium cursor-pointer flex items-center gap-1.5">
-              <PinIcon className="size-3.5 text-primary" />
-              Fixar no topo
-            </Label>
-            <p className="text-[11px] text-muted-foreground">
-              Mantém a tarefa em destaque
-            </p>
-          </div>
-          <Switch
-            id="task-pinned"
-            checked={isPinned}
-            onCheckedChange={setIsPinned}
-          />
-        </div>
-      </div>
-
-      {/* Delegação & Atribuição */}
-      <div className="space-y-2 border-t pt-3">
-        <Label className="flex items-center gap-1.5 text-xs font-medium">
-          <UsersIcon className="size-3.5 text-primary" />
-          Destinatário / Delegação
-        </Label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+        <DialogFooter className="pt-2">
           <Button
             type="button"
-            variant={targetType === "self" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setTargetType("self")}
-            className="h-8 text-xs"
+            variant="outline"
+            disabled={submitting}
+            onClick={onClose}
           >
-            Para mim (Pessoal)
+            Cancelar
           </Button>
-          {canDelegateDepartment ? (
-            <Button
-              type="button"
-              variant={targetType === "department" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTargetType("department")}
-              className="h-8 text-xs"
-            >
-              Departamento
-            </Button>
-          ) : null}
-          <Button
-            type="button"
-            variant={targetType === "member" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setTargetType("member")}
-            className="h-8 text-xs"
-          >
-            Membro
+          <Button type="submit" form="task-editor-form" disabled={submitting}>
+            {submitting ? (
+              <>
+                <Loader2Icon className="mr-2 size-4 animate-spin" />
+                Salvando...
+              </>
+            ) : isEditing ? (
+              "Salvar alterações"
+            ) : (
+              "Criar tarefa"
+            )}
           </Button>
-          {canDelegateChurch ? (
-            <Button
-              type="button"
-              variant={targetType === "church" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTargetType("church")}
-              className="h-8 text-xs col-span-2 sm:col-span-1"
-            >
-              Toda a Igreja
-            </Button>
-          ) : null}
-        </div>
+        </DialogFooter>
 
-        {/* Se delegar para departamento */}
-        {targetType === "department" ? (
-          <div className="rounded-lg border bg-muted/20 p-3 space-y-2.5 mt-2">
-            <div className="space-y-1">
-              <Label htmlFor="task-dept" className="text-xs">Selecione o Departamento</Label>
-              <NativeSelect
-                id="task-dept"
-                value={departmentId}
-                onChange={(e) => setDepartmentId(e.target.value)}
-                className="text-xs h-9"
-              >
-                {departments.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </NativeSelect>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs font-medium">Modo de Conclusão da Equipe</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                <label className="flex items-center gap-2 rounded border bg-background p-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="delegationType"
-                    checked={delegationType === "shared"}
-                    onChange={() => setDelegationType("shared")}
-                    className="size-3.5 text-primary"
-                  />
-                  <div>
-                    <p className="font-medium text-[11px]">Compartilhada</p>
-                    <p className="text-[10px] text-muted-foreground leading-tight">
-                      Uma tarefa única para toda a equipe dar baixa.
-                    </p>
-                  </div>
-                </label>
-                <label className="flex items-center gap-2 rounded border bg-background p-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="delegationType"
-                    checked={delegationType === "individual"}
-                    onChange={() => setDelegationType("individual")}
-                    className="size-3.5 text-primary"
-                  />
-                  <div>
-                    <p className="font-medium text-[11px]">Individual</p>
-                    <p className="text-[10px] text-muted-foreground leading-tight">
-                      Gera uma cópia para cada membro marcar a sua.
-                    </p>
-                  </div>
-                </label>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {/* Se delegar para membro individual */}
-        {targetType === "member" ? (
-          <div className="rounded-lg border bg-muted/20 p-3 space-y-1 mt-2">
-            <Label htmlFor="task-member" className="text-xs">Selecione o Membro</Label>
-            <NativeSelect
-              id="task-member"
-              value={assigneeId}
-              onChange={(e) => setAssigneeId(e.target.value)}
-              className="text-xs h-9"
-            >
-              <option value="">Selecione um membro...</option>
-              {members.map((m) => (
-                <option key={m.userId} value={m.userId}>
-                  {m.name} {m.email ? `(${m.email})` : ""}
-                </option>
-              ))}
-            </NativeSelect>
-          </div>
-        ) : null}
-      </div>
-
-      {/* Recorrência e Notificação Push */}
-      <div className="border-t pt-3 space-y-2">
-        <div className="flex items-center justify-between rounded-lg border p-2.5 bg-muted/30">
-          <div className="space-y-0.5">
-            <Label htmlFor="task-recurring" className="text-xs font-medium cursor-pointer flex items-center gap-1.5">
-              <RepeatIcon className="size-3.5 text-primary" />
-              Tarefa Recorrente (Lembrete Semanal)
-            </Label>
-            <p className="text-[11px] text-muted-foreground">
-              Ex: estudar instrumento toda semana com push no celular
-            </p>
-          </div>
-          <Switch
-            id="task-recurring"
-            checked={isRecurring}
-            onCheckedChange={setIsRecurring}
+        {isEditing && taskToEdit ? (
+          <TaskAuditHistoryDialog
+            task={taskToEdit}
+            open={auditOpen}
+            onClose={() => setAuditOpen(false)}
+            members={members}
+            departments={departments}
           />
-        </div>
-
-        {isRecurring ? (
-          <div className="rounded-lg border bg-muted/20 p-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            <div className="space-y-1">
-              <Label htmlFor="recurrence-day" className="text-xs">Dia da Semana</Label>
-              <NativeSelect
-                id="recurrence-day"
-                value={recurrenceDay}
-                onChange={(e) => setRecurrenceDay(e.target.value)}
-                className="text-xs h-9"
-              >
-                <option value="0">Domingo</option>
-                <option value="1">Segunda-feira</option>
-                <option value="2">Terça-feira</option>
-                <option value="3">Quarta-feira</option>
-                <option value="4">Quinta-feira</option>
-                <option value="5">Sexta-feira</option>
-                <option value="6">Sábado</option>
-              </NativeSelect>
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="recurrence-time" className="text-xs">Horário do Push</Label>
-              <Input
-                id="recurrence-time"
-                type="time"
-                value={recurrenceTime}
-                onChange={(e) => setRecurrenceTime(e.target.value)}
-                className="text-xs h-9"
-              />
-            </div>
-          </div>
         ) : null}
-      </div>
-
-      <div
-        className={cn(
-          "border-t pt-3 flex items-center justify-end gap-2",
-          isMobile && "flex-col-reverse w-full gap-2.5",
-        )}
-      >
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={onClose}
-          disabled={isPending}
-          className={cn(isMobile && "w-full h-10 min-h-[44px]")}
-        >
-          Cancelar
-        </Button>
-        <Button
-          type="submit"
-          size="sm"
-          disabled={isPending}
-          className={cn(isMobile && "w-full h-10 min-h-[44px] font-semibold")}
-        >
-          {isPending
-            ? "Salvando..."
-            : isEditing
-              ? "Salvar Alterações"
-              : "Criar Tarefa"}
-        </Button>
-      </div>
-    </form>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -7,14 +7,21 @@ import { z } from "zod";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { getPersonMembershipsForUser } from "@/lib/agenda";
+import { dispatchNotification } from "@/lib/notification-service";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { can } from "@/lib/permissions/service";
 import { sentryLogger } from "@/lib/telemetry/sentry";
-import { dispatchNotification } from "@/lib/notification-service";
+import {
+  resolveTaskCapabilities,
+  type TaskPermissionContext,
+} from "../lib/task-permissions";
 import {
   createTask,
   deleteTask,
   getTaskAuditHistory,
+  getTaskForAuth,
+  getTasksForAuth,
   reorderTasks,
   toggleTaskPin,
   updateTask,
@@ -31,7 +38,14 @@ const createTaskSchema = z.object({
   tags: z.array(z.string().trim()).default([]),
   isPinned: z.boolean().default(false),
   priority: z.enum(["none", "low", "medium", "high"]).default("none"),
-  url: z.string().trim().url("URL inválida").or(z.literal("")).optional().nullable(),
+  status: z.enum(["todo", "in_progress", "completed", "canceled"]).optional(),
+  url: z
+    .string()
+    .trim()
+    .url("URL inválida")
+    .or(z.literal(""))
+    .optional()
+    .nullable(),
   scope: z.enum(["personal", "department", "organization"]).default("personal"),
   departmentId: z.string().trim().optional().nullable(),
   assigneeId: z.string().trim().optional().nullable(),
@@ -41,13 +55,37 @@ const createTaskSchema = z.object({
   recurrenceRule: z.string().optional().nullable(),
 });
 
-const updateTaskSchema = createTaskSchema.partial().extend({
-  status: z.enum(["todo", "in_progress", "completed", "canceled"]).optional(),
-});
+const updateTaskSchema = createTaskSchema.partial();
 
 export type ActionResponse<T = unknown> =
   | { ok: true; data: T }
   | { ok: false; error: string };
+
+async function loadTaskActorContext(
+  organizationId: string,
+  userId: string,
+  isAdmin: boolean,
+): Promise<TaskPermissionContext> {
+  const [memberships, canCreateOrganization] = await Promise.all([
+    getPersonMembershipsForUser(organizationId, userId),
+    can("tasks", "createOrganization"),
+  ]);
+
+  return {
+    userId,
+    isAdmin,
+    ledDepartmentIds: memberships
+      .filter((m) => m.isLeader)
+      .map((m) => m.departmentId),
+    memberDepartmentIds: memberships.map((m) => m.departmentId),
+    canCreateOrganization,
+  };
+}
+
+function buildTaskNotificationHref(scope: string, taskId: string): string {
+  const tab = scope === "personal" ? "personal" : "department";
+  return `/dashboard/tasks?tab=${tab}&taskId=${encodeURIComponent(taskId)}`;
+}
 
 /**
  * Cria uma nova tarefa pessoal ou delegada.
@@ -77,8 +115,14 @@ export async function createTaskAction(
 
     // Checagem de permissão conforme escopo
     if (data.scope === "department") {
+      if (!data.departmentId) {
+        return {
+          ok: false,
+          error: "Selecione um departamento para delegar esta tarefa.",
+        };
+      }
       const allowed = await can("tasks", "createDepartment", {
-        departmentId: data.departmentId ?? undefined,
+        departmentId: data.departmentId,
       });
       if (!allowed) {
         return {
@@ -122,7 +166,12 @@ export async function createTaskAction(
       },
     );
 
-    // Disparar notificações push e in-app para cada membro atribuído
+    const personalNotifHref =
+      createdCount > 1
+        ? "/dashboard/tasks?tab=personal"
+        : buildTaskNotificationHref("personal", primaryTask.id);
+
+    // Disparar notificações para cada membro atribuído
     const recipients = new Set<string>();
     for (const m of assignedMembers) {
       if (m.userId && m.userId !== userId && !recipients.has(m.userId)) {
@@ -132,7 +181,7 @@ export async function createTaskAction(
           type: "assignment",
           title: `Nova tarefa: ${data.title}`,
           body: `${session.user.name ?? "A liderança"} delegou uma tarefa para você.`,
-          href: "/tasks",
+          href: personalNotifHref,
           actorId: userId,
           userId: m.userId,
           personId: m.personId ?? undefined,
@@ -151,6 +200,7 @@ export async function createTaskAction(
       data.departmentId &&
       data.delegationType !== "individual"
     ) {
+      const deptHref = buildTaskNotificationHref("department", primaryTask.id);
       db.query.departmentMember
         .findMany({
           where: eq(schema.departmentMember.departmentId, data.departmentId),
@@ -166,7 +216,7 @@ export async function createTaskAction(
                 type: "assignment",
                 title: `Nova tarefa de equipe: ${data.title}`,
                 body: `${session.user.name ?? "A liderança"} criou uma tarefa compartilhada para o seu departamento.`,
-                href: "/tasks",
+                href: deptHref,
                 actorId: userId,
                 userId: uid,
                 personId: dm.person?.id,
@@ -180,6 +230,7 @@ export async function createTaskAction(
 
     revalidatePath("/tasks");
     revalidatePath("/dashboard/tasks");
+    revalidatePath("/");
     return { ok: true, data: { id: primaryTask.id, createdCount, task: primaryTask } };
   } catch (error) {
     Sentry.captureException(error);
@@ -188,8 +239,7 @@ export async function createTaskAction(
     });
     return {
       ok: false,
-      error:
-        error instanceof Error ? error.message : "Falha ao criar tarefa.",
+      error: error instanceof Error ? error.message : "Falha ao criar tarefa.",
     };
   }
 }
@@ -202,7 +252,7 @@ export async function updateTaskAction(
   rawInput: unknown,
 ): Promise<ActionResponse<{ id: string; task?: TaskItem }>> {
   try {
-    const { organization, session } = await requireOrganizationContext();
+    const { organization, session, isAdmin } = await requireOrganizationContext();
     const userId = session.user.id;
 
     sentryLogger.setScopeContext({
@@ -220,30 +270,88 @@ export async function updateTaskAction(
       };
     }
 
-    const allowed = await can("tasks", "update");
-    if (!allowed) {
+    const existing = await getTaskForAuth(organization.id, taskId);
+    if (!existing) {
+      return { ok: false, error: "Tarefa não encontrada." };
+    }
+
+    const data = parsed.data;
+    const definedKeys = Object.entries(data)
+      .filter(([, value]) => value !== undefined)
+      .map(([key]) => key);
+    const isStatusOnly =
+      definedKeys.length > 0 &&
+      definedKeys.every((key) => key === "status");
+
+    const [actorCtx, policyAllowed] = await Promise.all([
+      loadTaskActorContext(organization.id, userId, isAdmin),
+      can(
+        "tasks",
+        "update",
+        existing.departmentId ? { departmentId: existing.departmentId } : undefined,
+      ),
+    ]);
+
+    const capabilities = resolveTaskCapabilities(existing, actorCtx);
+    const hasTaskPrivilege = isStatusOnly
+      ? capabilities.canUpdateStatus
+      : capabilities.canEdit;
+
+    if (!policyAllowed || !hasTaskPrivilege) {
       return {
         ok: false,
         error: "Você não tem permissão para editar esta tarefa.",
       };
     }
 
-    const data = parsed.data;
+    if (
+      data.scope === "organization" &&
+      existing.scope !== "organization" &&
+      !isAdmin &&
+      !actorCtx.canCreateOrganization
+    ) {
+      return {
+        ok: false,
+        error: "Apenas administradores podem publicar tarefas para toda a igreja.",
+      };
+    }
+
+    if (data.scope === "department" && data.departmentId) {
+      const canTargetDept = await can("tasks", "createDepartment", {
+        departmentId: data.departmentId,
+      });
+      if (!canTargetDept && !isAdmin) {
+        return {
+          ok: false,
+          error: "Você não tem permissão para vincular esta tarefa ao departamento.",
+        };
+      }
+    }
+
     const updated = await updateTask(organization.id, userId, taskId, {
       ...data,
-      url: data.url !== undefined ? (data.url && data.url.length > 0 ? data.url : null) : undefined,
+      url:
+        data.url !== undefined
+          ? data.url && data.url.length > 0
+            ? data.url
+            : null
+          : undefined,
     });
 
     sentryLogger.info(`Tarefa '${updated.title}' atualizada com sucesso`);
 
     // Notificar novo responsável caso alterado e diferente do usuário atual
-    if (data.assigneeId && data.assigneeId !== userId) {
+    if (
+      data.assigneeId &&
+      data.assigneeId !== userId &&
+      data.assigneeId !== existing.assigneeId
+    ) {
       dispatchNotification({
         organizationId: organization.id,
         type: "assignment",
         title: `Nova atribuição: ${updated.title}`,
         body: `${session.user.name ?? "A liderança"} atribuiu uma tarefa para você.`,
-        href: "/tasks",
+        href: buildTaskNotificationHref(updated.scope, updated.id),
         actorId: userId,
         userId: data.assigneeId,
         personId: data.assigneePersonId ?? undefined,
@@ -257,6 +365,7 @@ export async function updateTaskAction(
 
     revalidatePath("/tasks");
     revalidatePath("/dashboard/tasks");
+    revalidatePath("/");
     return { ok: true, data: { id: updated.id, task: updated } };
   } catch (error) {
     Sentry.captureException(error);
@@ -266,8 +375,7 @@ export async function updateTaskAction(
     });
     return {
       ok: false,
-      error:
-        error instanceof Error ? error.message : "Falha ao atualizar tarefa.",
+      error: error instanceof Error ? error.message : "Falha ao atualizar tarefa.",
     };
   }
 }
@@ -278,9 +386,9 @@ export async function updateTaskAction(
 export async function updateTaskStatusAction(
   taskId: string,
   status: TaskStatus,
-): Promise<ActionResponse<{ id: string; status: TaskStatus }>> {
+): Promise<ActionResponse<{ id: string; status: TaskStatus; task?: TaskItem }>> {
   try {
-    const { organization, session } = await requireOrganizationContext();
+    const { organization, session, isAdmin } = await requireOrganizationContext();
     const userId = session.user.id;
 
     sentryLogger.setScopeContext({
@@ -290,8 +398,22 @@ export async function updateTaskStatusAction(
       taskId,
     });
 
-    const allowed = await can("tasks", "update");
-    if (!allowed) {
+    const existing = await getTaskForAuth(organization.id, taskId);
+    if (!existing) {
+      return { ok: false, error: "Tarefa não encontrada." };
+    }
+
+    const [actorCtx, policyAllowed] = await Promise.all([
+      loadTaskActorContext(organization.id, userId, isAdmin),
+      can(
+        "tasks",
+        "update",
+        existing.departmentId ? { departmentId: existing.departmentId } : undefined,
+      ),
+    ]);
+
+    const capabilities = resolveTaskCapabilities(existing, actorCtx);
+    if (!policyAllowed || !capabilities.canUpdateStatus) {
       return {
         ok: false,
         error: "Você não tem permissão para alterar o status desta tarefa.",
@@ -311,7 +433,11 @@ export async function updateTaskStatusAction(
 
     revalidatePath("/tasks");
     revalidatePath("/dashboard/tasks");
-    return { ok: true, data: { id: updated.id, status: updated.status as TaskStatus } };
+    revalidatePath("/");
+    return {
+      ok: true,
+      data: { id: updated.id, status: updated.status as TaskStatus, task: updated },
+    };
   } catch (error) {
     Sentry.captureException(error);
     sentryLogger.error(error instanceof Error ? error : String(error), {
@@ -333,7 +459,7 @@ export async function reorderTasksAction(
   orderedTaskIds: string[],
 ): Promise<ActionResponse<void>> {
   try {
-    const { organization, session } = await requireOrganizationContext();
+    const { organization, session, isAdmin } = await requireOrganizationContext();
     const userId = session.user.id;
 
     sentryLogger.setScopeContext({
@@ -342,7 +468,35 @@ export async function reorderTasksAction(
       userId,
     });
 
-    await reorderTasks(organization.id, userId, orderedTaskIds);
+    const uniqueIds = Array.from(new Set(orderedTaskIds.filter(Boolean)));
+    if (uniqueIds.length === 0) {
+      return { ok: true, data: undefined };
+    }
+
+    const [policyAllowed, actorCtx, subjects] = await Promise.all([
+      can("tasks", "update"),
+      loadTaskActorContext(organization.id, userId, isAdmin),
+      getTasksForAuth(organization.id, uniqueIds),
+    ]);
+
+    if (!policyAllowed || subjects.length !== uniqueIds.length) {
+      return {
+        ok: false,
+        error: "Você não tem permissão para reordenar estas tarefas.",
+      };
+    }
+
+    const allPermitted = subjects.every(
+      (task) => resolveTaskCapabilities(task, actorCtx).canReorder,
+    );
+    if (!allPermitted) {
+      return {
+        ok: false,
+        error: "Você não tem permissão para reordenar uma ou mais tarefas selecionadas.",
+      };
+    }
+
+    await reorderTasks(organization.id, userId, uniqueIds);
 
     revalidatePath("/tasks");
     revalidatePath("/dashboard/tasks");
@@ -354,8 +508,7 @@ export async function reorderTasksAction(
     });
     return {
       ok: false,
-      error:
-        error instanceof Error ? error.message : "Falha ao reordenar tarefas.",
+      error: error instanceof Error ? error.message : "Falha ao reordenar tarefas.",
     };
   }
 }
@@ -367,20 +520,42 @@ export async function toggleTaskPinAction(
   taskId: string,
 ): Promise<ActionResponse<{ isPinned: boolean }>> {
   try {
-    const { organization, session } = await requireOrganizationContext();
+    const { organization, session, isAdmin } = await requireOrganizationContext();
     const userId = session.user.id;
+
+    const existing = await getTaskForAuth(organization.id, taskId);
+    if (!existing) {
+      return { ok: false, error: "Tarefa não encontrada." };
+    }
+
+    const [actorCtx, policyAllowed] = await Promise.all([
+      loadTaskActorContext(organization.id, userId, isAdmin),
+      can(
+        "tasks",
+        "update",
+        existing.departmentId ? { departmentId: existing.departmentId } : undefined,
+      ),
+    ]);
+
+    const capabilities = resolveTaskCapabilities(existing, actorCtx);
+    if (!policyAllowed || !capabilities.canPin) {
+      return {
+        ok: false,
+        error: "Você não tem permissão para destacar esta tarefa.",
+      };
+    }
 
     const isPinned = await toggleTaskPin(organization.id, userId, taskId);
 
     revalidatePath("/tasks");
     revalidatePath("/dashboard/tasks");
+    revalidatePath("/");
     return { ok: true, data: { isPinned } };
   } catch (error) {
     Sentry.captureException(error);
     return {
       ok: false,
-      error:
-        error instanceof Error ? error.message : "Falha ao fixar tarefa.",
+      error: error instanceof Error ? error.message : "Falha ao fixar tarefa.",
     };
   }
 }
@@ -392,7 +567,7 @@ export async function deleteTaskAction(
   taskId: string,
 ): Promise<ActionResponse<void>> {
   try {
-    const { organization, session } = await requireOrganizationContext();
+    const { organization, session, isAdmin } = await requireOrganizationContext();
     const userId = session.user.id;
 
     sentryLogger.setScopeContext({
@@ -402,8 +577,22 @@ export async function deleteTaskAction(
       taskId,
     });
 
-    const allowed = await can("tasks", "delete");
-    if (!allowed) {
+    const existing = await getTaskForAuth(organization.id, taskId);
+    if (!existing) {
+      return { ok: false, error: "Tarefa não encontrada." };
+    }
+
+    const [actorCtx, policyAllowed] = await Promise.all([
+      loadTaskActorContext(organization.id, userId, isAdmin),
+      can(
+        "tasks",
+        "delete",
+        existing.departmentId ? { departmentId: existing.departmentId } : undefined,
+      ),
+    ]);
+
+    const capabilities = resolveTaskCapabilities(existing, actorCtx);
+    if (!policyAllowed || !capabilities.canDelete) {
       return {
         ok: false,
         error: "Você não tem permissão para remover esta tarefa.",
@@ -416,6 +605,7 @@ export async function deleteTaskAction(
 
     revalidatePath("/tasks");
     revalidatePath("/dashboard/tasks");
+    revalidatePath("/");
     return { ok: true, data: undefined };
   } catch (error) {
     Sentry.captureException(error);
@@ -425,8 +615,7 @@ export async function deleteTaskAction(
     });
     return {
       ok: false,
-      error:
-        error instanceof Error ? error.message : "Falha ao excluir tarefa.",
+      error: error instanceof Error ? error.message : "Falha ao excluir tarefa.",
     };
   }
 }
@@ -438,7 +627,30 @@ export async function getTaskAuditHistoryAction(
   taskId: string,
 ): Promise<ActionResponse<Awaited<ReturnType<typeof getTaskAuditHistory>>>> {
   try {
-    const { organization } = await requireOrganizationContext();
+    const { organization, session, isAdmin } = await requireOrganizationContext();
+    const userId = session.user.id;
+
+    const existing = await getTaskForAuth(organization.id, taskId);
+    if (!existing) {
+      return { ok: false, error: "Tarefa não encontrada." };
+    }
+
+    const [actorCtx, policyAllowed] = await Promise.all([
+      loadTaskActorContext(organization.id, userId, isAdmin),
+      can(
+        "tasks",
+        "read",
+        existing.departmentId ? { departmentId: existing.departmentId } : undefined,
+      ),
+    ]);
+
+    const capabilities = resolveTaskCapabilities(existing, actorCtx);
+    if (!policyAllowed || !capabilities.canView) {
+      return {
+        ok: false,
+        error: "Você não tem permissão para consultar o histórico desta tarefa.",
+      };
+    }
 
     const logs = await getTaskAuditHistory(organization.id, taskId);
     return { ok: true, data: logs };
@@ -446,8 +658,7 @@ export async function getTaskAuditHistoryAction(
     Sentry.captureException(error);
     return {
       ok: false,
-      error:
-        error instanceof Error ? error.message : "Falha ao carregar histórico.",
+      error: error instanceof Error ? error.message : "Falha ao carregar histórico.",
     };
   }
 }

@@ -120,7 +120,7 @@ async function DashboardContent() {
             userId: session.user.id,
             isAdmin: false,
             memberDepartmentIds: memberDeptIds,
-            filter: { status: "active", tab: "all" },
+            filter: { status: "active", tab: "personal" },
           }),
         ])
       : [[], [], null, []];
@@ -188,7 +188,7 @@ async function DashboardContent() {
         isAdmin,
         ledDepartmentIds,
         memberDepartmentIds,
-        filter: { status: "active", tab: "all" },
+        filter: { status: "active", tab: "personal" },
       }),
     ]);
 

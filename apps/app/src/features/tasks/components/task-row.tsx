@@ -4,78 +4,114 @@ import { useState, useTransition } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  CalendarDaysIcon,
+  BellRingIcon,
+  CalendarIcon,
   CheckIcon,
+  ChevronDownIcon,
   ClockIcon,
   ExternalLinkIcon,
+  GripVerticalIcon,
   PinIcon,
-  RepeatIcon,
   UsersIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getInitials } from "@/lib/format";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { updateTaskStatusAction } from "../actions/tasks.actions";
-import { formatTaskDeadline, formatTaskWhen } from "../lib/task-utils";
+import type { TaskCapabilities } from "../lib/task-permissions";
+import {
+  formatTaskDeadline,
+  formatTaskWhen,
+  getPriorityLabel,
+  getStatusLabel,
+} from "../lib/task-utils";
+import type { TaskItem, TaskStatus } from "../services/tasks-service";
 import { TaskActionsMenu } from "./task-actions-menu";
-import type { TaskItem } from "../services/tasks-service";
 
 type TaskRowProps = {
   task: TaskItem;
+  childTasks?: TaskItem[];
+  capabilities?: TaskCapabilities;
+  childCapabilitiesMap?: Record<string, TaskCapabilities>;
   onView: (task: TaskItem) => void;
   onEdit: (task: TaskItem) => void;
   onOpenAudit: (task: TaskItem) => void;
-  onDelete?: (taskId: string) => void;
+  onDelete: (taskId: string) => void;
+  onTaskUpdated?: (updated: TaskItem) => void;
+  isSortable?: boolean;
   canManage?: boolean;
 };
 
 export function TaskRow({
   task,
+  childTasks = [],
+  capabilities,
+  childCapabilitiesMap = {},
   onView,
   onEdit,
   onOpenAudit,
   onDelete,
+  onTaskUpdated,
+  isSortable = false,
   canManage = true,
 }: TaskRowProps) {
   const [isPending, startTransition] = useTransition();
-  const [optimisticCompleted, setOptimisticCompleted] = useState(
-    task.status === "completed",
-  );
+  const [expandedGroup, setExpandedGroup] = useState(false);
+
+  const canUpdateStatus = capabilities?.canUpdateStatus ?? canManage;
+  const canReorder = isSortable && (capabilities?.canReorder ?? canManage);
 
   const {
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: task.id });
+  } = useSortable({ id: task.id, disabled: !canReorder });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
 
-  const isCompleted = optimisticCompleted;
-  const whenText = formatTaskWhen(task.date);
+  const isCompleted = task.status === "completed";
+  const isCanceled = task.status === "canceled";
+  const whenLabel = formatTaskWhen(task.date);
   const deadlineInfo = formatTaskDeadline(task.deadline, isCompleted);
 
-  const handleToggleComplete = () => {
-    const nextCompleted = !isCompleted;
-    setOptimisticCompleted(nextCompleted);
+  const completedChildrenCount = childTasks.filter(
+    (c) => c.status === "completed",
+  ).length;
+  const hasGroupChildren = childTasks.length > 0;
+
+  const handleToggleComplete = (targetTask: TaskItem) => {
+    const nextStatus: TaskStatus =
+      targetTask.status === "completed" ? "todo" : "completed";
+    const optimistic: TaskItem = {
+      ...targetTask,
+      status: nextStatus,
+      completedAt: nextStatus === "completed" ? new Date() : null,
+    };
+    onTaskUpdated?.(optimistic);
 
     startTransition(async () => {
-      const nextStatus = nextCompleted ? "completed" : "todo";
-      const res = await updateTaskStatusAction(task.id, nextStatus);
-      if (!res.ok) {
-        setOptimisticCompleted(!nextCompleted);
-        toast.error(res.error);
-      } else {
+      const res = await updateTaskStatusAction(targetTask.id, nextStatus);
+      if (res.ok) {
+        if (res.data.task) {
+          onTaskUpdated?.(res.data.task);
+        }
         toast.success(
-          nextCompleted ? "Tarefa concluída! Parabéns!" : "Tarefa reaberta.",
+          nextStatus === "completed"
+            ? "Tarefa concluída!"
+            : "Tarefa marcada como a fazer.",
         );
+      } else {
+        onTaskUpdated?.(targetTask);
+        toast.error(res.error);
       }
     });
   };
@@ -84,155 +120,307 @@ export function TaskRow({
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      onClick={() => {
-        if (!isDragging) {
-          onView(task);
-        }
-      }}
       className={cn(
-        "group relative flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card p-3 shadow-2xs transition-all hover:border-border hover:shadow-xs cursor-pointer select-none touch-pan-y",
-        isDragging && "z-50 opacity-60 shadow-lg border-primary scale-[1.01]",
-        isCompleted && "bg-muted/30 opacity-75",
-        task.isPinned && "border-l-4 border-l-primary",
+        "group relative rounded-xl border bg-card transition-colors",
+        task.isPinned && "border-primary/25 bg-primary/[0.03]",
+        isDragging && "z-50 opacity-85 shadow-lg ring-2 ring-primary/20",
+        (isCompleted || isCanceled) && "bg-muted/30 opacity-80",
       )}
     >
-      <div className="flex items-center gap-3 min-w-0 flex-1">
-        {/* Circular Checkbox (Things 3 style) - Alinhado no canto */}
+      <div className="flex items-start gap-2.5 p-3 sm:items-center sm:px-3.5 sm:py-3">
+        {/* Handle dedicado para arrastar sem bloquear cliques ou teclado na linha */}
+        {canReorder ? (
+          <button
+            type="button"
+            ref={setActivatorNodeRef}
+            {...attributes}
+            {...listeners}
+            aria-label={`Reordenar tarefa ${task.title}`}
+            className="mt-0.5 flex size-9 shrink-0 cursor-grab items-center justify-center rounded-lg text-muted-foreground/60 touch-none hover:bg-muted hover:text-foreground active:cursor-grabbing sm:mt-0 sm:size-7"
+          >
+            <GripVerticalIcon className="size-4" />
+          </button>
+        ) : null}
+
+        {/* Checkbox com área de toque confortável */}
         <button
           type="button"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleToggleComplete();
-          }}
-          disabled={isPending}
-          aria-label={isCompleted ? "Reabrir tarefa" : "Concluir tarefa"}
-          className={cn(
-            "flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-all",
+          onClick={() => handleToggleComplete(task)}
+          disabled={isPending || !canUpdateStatus}
+          aria-label={
             isCompleted
-              ? "border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-500"
-              : "border-muted-foreground/50 hover:border-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20",
+              ? `Reabrir tarefa ${task.title}`
+              : `Concluir tarefa ${task.title}`
+          }
+          className={cn(
+            "-my-1 -ml-1 flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:m-0 sm:size-8",
+            !canUpdateStatus && "cursor-not-allowed opacity-40",
           )}
         >
-          {isCompleted && <CheckIcon className="size-3 stroke-[3]" />}
+          <span
+            className={cn(
+              "flex size-5 items-center justify-center rounded-full border-2 transition-colors",
+              isCompleted
+                ? "border-primary bg-primary text-primary-foreground"
+                : task.priority === "high"
+                  ? "border-destructive/60 bg-background hover:border-destructive"
+                  : task.priority === "medium"
+                    ? "border-amber-500/70 bg-background hover:border-amber-600"
+                    : "border-muted-foreground/40 bg-background hover:border-primary",
+            )}
+          >
+            {isCompleted ? <CheckIcon className="size-3.5 stroke-[3]" /> : null}
+          </span>
         </button>
 
-        {/* Informações Centrais */}
-        <div className="min-w-0 flex-1 space-y-1">
-          <div className="flex items-center gap-2 flex-wrap">
+        {/* Área clicável semântica de título + metadados */}
+        <button
+          type="button"
+          onClick={() => onView(task)}
+          className="flex min-w-0 flex-1 flex-col gap-1 rounded-md py-0.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <div className="flex flex-wrap items-center gap-1.5">
+            {task.isPinned ? (
+              <PinIcon
+                aria-hidden="true"
+                className="size-3.5 shrink-0 fill-primary/20 text-primary"
+              />
+            ) : null}
+
             <span
               className={cn(
-                "text-sm font-medium text-foreground transition-colors group-hover:text-primary truncate",
+                "text-sm font-medium leading-snug text-foreground",
                 isCompleted && "line-through text-muted-foreground",
+                isCanceled && "text-muted-foreground",
               )}
             >
               {task.title}
             </span>
 
-            {task.isPinned && (
-              <span title="Tarefa fixada">
-                <PinIcon className="size-3 text-primary fill-primary" />
-              </span>
-            )}
+            {task.status === "in_progress" ? (
+              <Badge
+                variant="outline"
+                className="h-5 border-amber-500/30 bg-amber-500/10 px-1.5 text-xs font-normal text-amber-700 dark:text-amber-400"
+              >
+                Em Andamento
+              </Badge>
+            ) : null}
 
-            {task.isRecurring && (
-              <span title="Tarefa recorrente">
-                <RepeatIcon className="size-3 text-emerald-600 dark:text-emerald-400" />
-              </span>
-            )}
-          </div>
+            {isCanceled ? (
+              <Badge
+                variant="outline"
+                className="h-5 px-1.5 text-xs font-normal text-muted-foreground"
+              >
+                Cancelada
+              </Badge>
+            ) : null}
 
-          {/* Badges e Metadados */}
-          <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
-            {/* Data: Quando */}
-            {whenText && (
-              <span className="flex items-center gap-1 rounded bg-muted/60 px-1.5 py-0.5 text-[11px] font-medium text-foreground/80">
-                <CalendarDaysIcon className="size-3 text-emerald-600 dark:text-emerald-400" />
-                {whenText}
-              </span>
-            )}
-
-            {/* Deadline */}
-            {deadlineInfo && (
-              <span
+            {task.priority && task.priority !== "none" ? (
+              <Badge
+                variant="outline"
                 className={cn(
-                  "flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium",
-                  deadlineInfo.isOverdue
-                    ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 font-semibold"
-                    : "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+                  "h-5 px-1.5 text-xs font-normal",
+                  task.priority === "high"
+                    ? "border-destructive/30 bg-destructive/10 text-destructive"
+                    : task.priority === "medium"
+                      ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                      : "text-muted-foreground",
                 )}
               >
-                <ClockIcon className="size-3" />
-                {deadlineInfo.isOverdue ? `Atrasado: ${deadlineInfo.label}` : `Prazo: ${deadlineInfo.label}`}
-              </span>
-            )}
+                {getPriorityLabel(task.priority)}
+              </Badge>
+            ) : null}
 
-            {/* Departamento */}
-            {task.department && (
-              <span className="flex items-center gap-1 rounded bg-muted/60 px-1.5 py-0.5 text-[11px]">
-                <UsersIcon className="size-3 text-primary" />
-                {task.department.name}
-              </span>
-            )}
-
-            {/* Tags */}
-            {Array.isArray(task.tags) && task.tags.length > 0 && (
-              <div className="flex items-center gap-1">
-                {task.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
-                  >
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            )}
+            {task.isRecurring ? (
+              <BellRingIcon
+                aria-label="Tarefa com lembrete semanal"
+                className="size-3.5 text-primary/80"
+              />
+            ) : null}
           </div>
+
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            {whenLabel ? (
+              <span className="inline-flex items-center gap-1 font-medium text-primary/90">
+                <CalendarIcon className="size-3.5" />
+                {whenLabel}
+              </span>
+            ) : null}
+
+            {deadlineInfo ? (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 font-medium",
+                  deadlineInfo.isOverdue && "text-destructive",
+                )}
+              >
+                <ClockIcon className="size-3.5" />
+                {deadlineInfo.label}
+              </span>
+            ) : null}
+
+            {task.scope === "organization" ? (
+              <Badge
+                variant="secondary"
+                className="h-5 px-1.5 text-xs font-normal"
+              >
+                Toda a igreja
+              </Badge>
+            ) : null}
+
+            {task.department ? (
+              <Badge
+                variant="secondary"
+                className="h-5 px-1.5 text-xs font-normal"
+              >
+                {task.department.name}
+              </Badge>
+            ) : null}
+
+            {task.assignee ? (
+              <span className="truncate">
+                Responsável:{" "}
+                <strong className="font-medium text-foreground">
+                  {task.assignee.name ?? "Membro"}
+                </strong>
+              </span>
+            ) : null}
+
+            {hasGroupChildren ? (
+              <span className="inline-flex items-center gap-1 font-medium text-primary">
+                <UsersIcon className="size-3.5" />
+                {completedChildrenCount} de {childTasks.length} concluíram
+              </span>
+            ) : null}
+
+            {task.tags && task.tags.length > 0 ? (
+              <span className="hidden items-center gap-1 sm:inline-flex">
+                {task.tags.slice(0, 2).map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className="h-5 border-border/70 px-1.5 text-xs font-normal text-muted-foreground"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+                {task.tags.length > 2 ? (
+                  <span className="text-xs">+{task.tags.length - 2}</span>
+                ) : null}
+              </span>
+            ) : null}
+          </div>
+        </button>
+
+        {/* Controles laterais irmãos (nunca aninhados no botão principal) */}
+        <div className="flex shrink-0 items-center gap-1">
+          {hasGroupChildren ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-expanded={expandedGroup}
+              onClick={() => setExpandedGroup((v) => !v)}
+              className="min-h-[36px] gap-1 px-2 text-xs text-primary"
+            >
+              <span className="hidden sm:inline">Equipe</span>
+              <ChevronDownIcon
+                className={cn(
+                  "size-4 transition-transform",
+                  expandedGroup && "rotate-180",
+                )}
+              />
+            </Button>
+          ) : null}
+
+          {task.url ? (
+            <a
+              href={task.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Abrir link de apoio de ${task.title}`}
+              className="flex size-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-primary sm:size-8"
+            >
+              <ExternalLinkIcon className="size-4" />
+            </a>
+          ) : null}
+
+          <TaskActionsMenu
+            task={task}
+            capabilities={capabilities}
+            onView={onView}
+            onEdit={onEdit}
+            onOpenAudit={onOpenAudit}
+            onDelete={onDelete}
+            onTaskUpdated={onTaskUpdated}
+            canManage={canManage}
+          />
         </div>
       </div>
 
-      {/* Lado Direito: Assignee, Link e Ações */}
-      <div className="flex items-center gap-2 shrink-0">
-        {/* Link Externo */}
-        {task.url && (
-          <a
-            href={task.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-            title="Abrir link de referência"
-            className="flex size-7 items-center justify-center rounded-md border border-border/60 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <ExternalLinkIcon className="size-3.5" />
-          </a>
-        )}
+      {/* Lista expandida de membros para delegação individual */}
+      {hasGroupChildren && expandedGroup ? (
+        <div className="border-t bg-muted/20 px-4 py-2.5 space-y-1.5 rounded-b-xl">
+          <p className="text-xs font-medium text-muted-foreground">
+            Andamento individual da equipe ({completedChildrenCount}/{childTasks.length})
+          </p>
+          <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+            {childTasks.map((child) => {
+              const childDone = child.status === "completed";
+              const childCap = childCapabilitiesMap[child.id];
+              const canToggleChild =
+                childCap?.canUpdateStatus ?? canUpdateStatus;
+              const memberLabel =
+                child.assignee?.name ??
+                child.assigneePerson?.name ??
+                "Membro sem vínculo";
 
-        {/* Responsável Avatar */}
-        {task.assignee ? (
-          <Avatar className="size-6 border shadow-2xs" title={`Responsável: ${task.assignee.name ?? "Membro"}`}>
-            {task.assignee.image ? (
-              <AvatarImage src={task.assignee.image} alt={task.assignee.name ?? "Assignee"} />
-            ) : null}
-            <AvatarFallback className="text-[10px] font-medium">
-              {task.assignee.name ? getInitials(task.assignee.name) : "?"}
-            </AvatarFallback>
-          </Avatar>
-        ) : null}
-
-        {/* Menu de Ações (Desktop: Dropdown, Mobile: Drawer) */}
-        <TaskActionsMenu
-          task={task}
-          onView={onView}
-          onEdit={onEdit}
-          onOpenAudit={onOpenAudit}
-          onDelete={onDelete}
-          canManage={canManage}
-        />
-      </div>
+              return (
+                <div
+                  key={child.id}
+                  className="flex items-center justify-between gap-2 rounded-lg border bg-background px-2.5 py-1.5 text-xs"
+                >
+                  <button
+                    type="button"
+                    disabled={!canToggleChild || isPending}
+                    onClick={() => handleToggleComplete(child)}
+                    aria-label={
+                      childDone
+                        ? `Reabrir tarefa de ${memberLabel}`
+                        : `Concluir tarefa de ${memberLabel}`
+                    }
+                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                  >
+                    <span
+                      className={cn(
+                        "flex size-4 shrink-0 items-center justify-center rounded-full border",
+                        childDone
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-muted-foreground/40",
+                      )}
+                    >
+                      {childDone ? (
+                        <CheckIcon className="size-2.5 stroke-[3]" />
+                      ) : null}
+                    </span>
+                    <span
+                      className={cn(
+                        "truncate font-medium",
+                        childDone && "line-through text-muted-foreground",
+                      )}
+                    >
+                      {memberLabel}
+                    </span>
+                  </button>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {getStatusLabel(child.status)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
