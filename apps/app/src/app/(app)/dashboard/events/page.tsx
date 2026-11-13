@@ -79,6 +79,7 @@ async function EventsContent({
   const departmentOptions = departments.map((department) => ({
     id: department.id,
     name: department.name,
+    functions: department.functions.map((fn) => ({ id: fn.id, name: fn.name })),
   }));
   const defaultDate = toInputDate(new Date());
 

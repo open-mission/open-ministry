@@ -239,6 +239,13 @@
       "when": 1794466439076,
       "tag": "0033_blushing_smasher",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794545423346,
+      "tag": "0034_lazy_mentor",
+      "breakpoints": true
     }
   ]
 }

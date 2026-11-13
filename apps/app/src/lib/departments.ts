@@ -33,18 +33,30 @@ export async function listDepartments(organizationId: string) {
   );
 }
 
+export type DepartmentOption = {
+  id: string;
+  name: string;
+  functions?: { id: string; name: string }[];
+};
+
 /**
- * Lean department list for menus, selects and calendar filters. Avoids loading
- * every member, assignment and module when only id/name are needed.
+ * Lean department list for menus, selects, event creation and calendar filters.
+ * Includes functions so event dialogues can configure which roles are needed.
  */
 export async function listDepartmentOptions(organizationId: string) {
   return remember(
-    `org:${organizationId}:department-options`,
+    `org:${organizationId}:department-options-v2`,
     300,
     async () => {
       return db.query.department.findMany({
         where: eq(schema.department.organizationId, organizationId),
         columns: { id: true, name: true },
+        with: {
+          functions: {
+            columns: { id: true, name: true },
+            orderBy: (functions, { asc }) => [asc(functions.createdAt)],
+          },
+        },
         orderBy: (departments, { asc }) => [asc(departments.name)],
       });
     },

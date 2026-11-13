@@ -24,15 +24,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-type DepartmentOption = {
-  id: string;
-  name: string;
-};
+import type { DepartmentOption } from "@/lib/departments";
 
 export function EventActionsMenu({
   event,
   departments,
   selectedDepartmentIds,
+  selectedFunctionIds = [],
   departmentAssignmentCounts = {},
   seriesOccurrences = 0,
   defaultDate,
@@ -51,6 +49,7 @@ export function EventActionsMenu({
   };
   departments: DepartmentOption[];
   selectedDepartmentIds: string[];
+  selectedFunctionIds?: string[];
   departmentAssignmentCounts?: Record<string, number>;
   seriesOccurrences?: number;
   defaultDate: string;
@@ -174,6 +173,7 @@ export function EventActionsMenu({
           event={event}
           departments={departments}
           selectedDepartmentIds={selectedDepartmentIds}
+          selectedFunctionIds={selectedFunctionIds}
           departmentAssignmentCounts={departmentAssignmentCounts}
           defaultDate={defaultDate}
           defaultTime={defaultTime}
