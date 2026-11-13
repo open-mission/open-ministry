@@ -31,15 +31,49 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.1.1";
+export const CURRENT_APP_VERSION = "1.1.4";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.1.4",
+    title: "Personalização de Funções por Evento e Escalas Sob Medida",
+    subtitle:
+      "Defina exatamente quais funções de cada departamento atuam em cada culto ou evento, com suporte a séries recorrentes e ajustes independentes.",
+    releaseDate: "13 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Módulo de Cultos, Eventos & Escalas",
+        badge: "Novidade",
+        features: [
+          {
+            title: "Funções Personalizadas por Evento",
+            description:
+              "Agora você pode escolher exatamente quais funções de cada departamento serão necessárias para cada culto. Por exemplo, no ministério de Mídia, é possível ativar apenas Projeção e Transmissão ao vivo em um culto, sem exigir funções não utilizadas.",
+            iconName: "CalendarDaysIcon",
+            badge: "Novo",
+          },
+          {
+            title: "Séries Recorrentes Flexíveis",
+            description:
+              "Ao criar cultos recorrentes, as funções escolhidas são aplicadas a todas as ocorrências. Se um culto específico precisar de uma formação diferente, você pode editar apenas aquele encontro sem afetar os outros.",
+            iconName: "UsersIcon",
+          },
+          {
+            title: "Escalas e Cobertura Inteligentes",
+            description:
+              "O editor de escalas agora exibe apenas as funções ativas do evento. Os indicadores de cobertura calculam o preenchimento sem cobrar vagas desnecessárias, e funções desmarcadas são limpas com segurança.",
+            iconName: "CheckSquare2Icon",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.1.1",
     title: "Aprimoramentos de Usabilidade Mobile e Escalas",
     subtitle: "Melhorias de navegação em dispositivos móveis no módulo de Tarefas, menus em gaveta e ajustes visuais nas Escalas.",
     releaseDate: "12 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Módulo de Tarefas & Demandas",
