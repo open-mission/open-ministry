@@ -118,6 +118,29 @@ async function EventContent({
     },
     {},
   );
+
+  const eventFunctionIdsByDept = (event.functions ?? []).reduce<
+    Record<string, Set<string>>
+  >((acc, item) => {
+    if (!acc[item.departmentId]) {
+      acc[item.departmentId] = new Set();
+    }
+    acc[item.departmentId].add(item.functionId);
+    return acc;
+  }, {});
+
+  const eventActingDepartments = actingDepartments.map((dept) => {
+    const configuredFunctionIds = eventFunctionIdsByDept[dept.id];
+    if (configuredFunctionIds && configuredFunctionIds.size > 0) {
+      return {
+        ...dept,
+        functions: dept.functions.filter((fn) =>
+          configuredFunctionIds.has(fn.id),
+        ),
+      };
+    }
+    return dept;
+  });
   const parts = eventDateParts(event.startsAt);
   const defaultDuration = Math.round(
     (event.endsAt.getTime() - event.startsAt.getTime()) / 60_000,
@@ -181,6 +204,9 @@ async function EventContent({
                     }}
                     departments={departmentOptions}
                     selectedDepartmentIds={actingDepartmentIds}
+                    selectedFunctionIds={(event.functions ?? []).map(
+                      (fn) => fn.functionId,
+                    )}
                     departmentAssignmentCounts={departmentAssignmentCounts}
                     seriesOccurrences={seriesOccurrences}
                     defaultDate={toInputDate(event.startsAt)}
@@ -240,7 +266,7 @@ async function EventContent({
         defaultTab={defaultTab}
         planItemsCount={event.planItems?.length ?? 0}
         eventId={event.id}
-        departments={actingDepartments}
+        departments={eventActingDepartments}
         assignments={assignments}
         currentUserId={session.user.id}
         isAdmin={isAdmin}

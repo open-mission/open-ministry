@@ -257,6 +257,56 @@ async function revalidateEvents(eventId?: string, organizationId?: string) {
   }
 }
 
+function functionsFromForm(formData: FormData) {
+  const raw = formData.getAll("functions");
+  const result: string[] = [];
+
+  for (const item of raw) {
+    if (typeof item === "string" && item.trim().length > 0) {
+      result.push(item.trim());
+    }
+  }
+
+  return Array.from(new Set(result));
+}
+
+async function validateDepartmentFunctions(
+  _organizationId: string,
+  departmentIds: string[],
+  functionIds: string[],
+  hasFunctionsInForm: boolean,
+) {
+  if (departmentIds.length === 0) {
+    return [];
+  }
+
+  const rows = await db.query.departmentFunction.findMany({
+    where: inArray(schema.departmentFunction.departmentId, departmentIds),
+    columns: { id: true, departmentId: true },
+  });
+
+  if (rows.length === 0) {
+    return [];
+  }
+
+  // If the form didn't include function controls (e.g. legacy/automated scripts),
+  // default to all functions of the active departments:
+  if (!hasFunctionsInForm) {
+    return rows.map((row) => ({
+      departmentId: row.departmentId,
+      functionId: row.id,
+    }));
+  }
+
+  const submittedSet = new Set(functionIds);
+  return rows
+    .filter((row) => submittedSet.has(row.id))
+    .map((row) => ({
+      departmentId: row.departmentId,
+      functionId: row.id,
+    }));
+}
+
 async function replaceEventDepartments(
   eventIds: string[],
   departmentIds: string[],
@@ -279,6 +329,34 @@ async function replaceEventDepartments(
         id: randomUUID(),
         eventId,
         departmentId,
+      })),
+    ),
+  );
+}
+
+async function replaceEventDepartmentFunctions(
+  eventIds: string[],
+  entries: { departmentId: string; functionId: string }[],
+) {
+  if (eventIds.length === 0) {
+    return;
+  }
+
+  await db
+    .delete(schema.eventDepartmentFunction)
+    .where(inArray(schema.eventDepartmentFunction.eventId, eventIds));
+
+  if (entries.length === 0) {
+    return;
+  }
+
+  await db.insert(schema.eventDepartmentFunction).values(
+    eventIds.flatMap((eventId) =>
+      entries.map((entry) => ({
+        id: randomUUID(),
+        eventId,
+        departmentId: entry.departmentId,
+        functionId: entry.functionId,
       })),
     ),
   );
@@ -324,6 +402,45 @@ async function removeAssignmentsForRemovedDepartments(
     );
 }
 
+/**
+ * When a specific function is excluded from an event, remove its assignments
+ * so volunteers aren't left scheduled for duties that won't happen.
+ */
+async function removeAssignmentsForRemovedFunctions(
+  eventIds: string[],
+  keptFunctionIds: string[],
+) {
+  if (eventIds.length === 0) {
+    return;
+  }
+
+  const schedules = await db.query.schedule.findMany({
+    where: inArray(schema.schedule.eventId, eventIds),
+    columns: { id: true },
+  });
+
+  if (schedules.length === 0) {
+    return;
+  }
+
+  await db
+    .delete(schema.scheduleAssignment)
+    .where(
+      and(
+        inArray(
+          schema.scheduleAssignment.scheduleId,
+          schedules.map((schedule) => schedule.id),
+        ),
+        keptFunctionIds.length > 0
+          ? notInArray(
+              schema.scheduleAssignment.functionId,
+              keptFunctionIds,
+            )
+          : undefined,
+      ),
+    );
+}
+
 export async function createEventAction(
   _state: EventFormState,
   formData: FormData,
@@ -356,6 +473,9 @@ export async function createEventAction(
 
   const organizationId = context.organization.id;
 
+  const submittedFunctions = functionsFromForm(formData);
+  const hasFunctionsInForm = formData.has("functions");
+
   const validDepartmentIds = await validateDepartments(
     organizationId,
     parsed.data.departments,
@@ -367,6 +487,41 @@ export async function createEventAction(
         departments: ["Um dos departamentos selecionados não foi encontrado."],
       },
     };
+  }
+
+  const validDepartmentFunctionEntries = await validateDepartmentFunctions(
+    organizationId,
+    validDepartmentIds,
+    submittedFunctions,
+    hasFunctionsInForm,
+  );
+
+  if (hasFunctionsInForm && validDepartmentIds.length > 0) {
+    const allDeptFunctions = await db.query.departmentFunction.findMany({
+      where: inArray(schema.departmentFunction.departmentId, validDepartmentIds),
+      columns: { id: true, departmentId: true },
+    });
+    const deptsWithFunctions = new Set(
+      allDeptFunctions.map((fn) => fn.departmentId),
+    );
+    const deptsWithSelectedFunctions = new Set(
+      validDepartmentFunctionEntries.map((entry) => entry.departmentId),
+    );
+
+    for (const deptId of validDepartmentIds) {
+      if (
+        deptsWithFunctions.has(deptId) &&
+        !deptsWithSelectedFunctions.has(deptId)
+      ) {
+        return {
+          fieldErrors: {
+            departments: [
+              "Selecione ao menos uma função para cada departamento ativo ou desmarque o departamento.",
+            ],
+          },
+        };
+      }
+    }
   }
 
   if (validDepartmentIds.length === 0) {
@@ -472,6 +627,19 @@ export async function createEventAction(
           })),
         ),
       );
+
+      if (validDepartmentFunctionEntries.length > 0) {
+        await db.insert(schema.eventDepartmentFunction).values(
+          eventIds.flatMap((eventId) =>
+            validDepartmentFunctionEntries.map((entry) => ({
+              id: randomUUID(),
+              eventId,
+              departmentId: entry.departmentId,
+              functionId: entry.functionId,
+            })),
+          ),
+        );
+      }
     }
   } catch (error) {
     console.error("Erro ao criar evento", error);
@@ -525,6 +693,9 @@ export async function updateEventAction(
     return { error: "Você não tem permissão para editar este evento." };
   }
 
+  const submittedFunctions = functionsFromForm(formData);
+  const hasFunctionsInForm = formData.has("functions");
+
   const validDepartmentIds = await validateDepartments(
     organizationId,
     parsed.data.departments,
@@ -536,6 +707,41 @@ export async function updateEventAction(
         departments: ["Um dos departamentos selecionados não foi encontrado."],
       },
     };
+  }
+
+  const validDepartmentFunctionEntries = await validateDepartmentFunctions(
+    organizationId,
+    validDepartmentIds,
+    submittedFunctions,
+    hasFunctionsInForm,
+  );
+
+  if (hasFunctionsInForm && validDepartmentIds.length > 0) {
+    const allDeptFunctions = await db.query.departmentFunction.findMany({
+      where: inArray(schema.departmentFunction.departmentId, validDepartmentIds),
+      columns: { id: true, departmentId: true },
+    });
+    const deptsWithFunctions = new Set(
+      allDeptFunctions.map((fn) => fn.departmentId),
+    );
+    const deptsWithSelectedFunctions = new Set(
+      validDepartmentFunctionEntries.map((entry) => entry.departmentId),
+    );
+
+    for (const deptId of validDepartmentIds) {
+      if (
+        deptsWithFunctions.has(deptId) &&
+        !deptsWithSelectedFunctions.has(deptId)
+      ) {
+        return {
+          fieldErrors: {
+            departments: [
+              "Selecione ao menos uma função para cada departamento ativo ou desmarque o departamento.",
+            ],
+          },
+        };
+      }
+    }
   }
 
   for (const departmentId of validDepartmentIds) {
@@ -591,9 +797,17 @@ export async function updateEventAction(
       );
 
       await replaceEventDepartments(seriesIds, validDepartmentIds);
+      await replaceEventDepartmentFunctions(
+        seriesIds,
+        validDepartmentFunctionEntries,
+      );
       await removeAssignmentsForRemovedDepartments(
         seriesIds,
         validDepartmentIds,
+      );
+      await removeAssignmentsForRemovedFunctions(
+        seriesIds,
+        validDepartmentFunctionEntries.map((e) => e.functionId),
       );
     } else {
       await db
@@ -607,9 +821,17 @@ export async function updateEventAction(
         .where(eq(schema.event.id, event.id));
 
       await replaceEventDepartments([event.id], validDepartmentIds);
+      await replaceEventDepartmentFunctions(
+        [event.id],
+        validDepartmentFunctionEntries,
+      );
       await removeAssignmentsForRemovedDepartments(
         [event.id],
         validDepartmentIds,
+      );
+      await removeAssignmentsForRemovedFunctions(
+        [event.id],
+        validDepartmentFunctionEntries.map((e) => e.functionId),
       );
     }
   } catch (error) {
@@ -782,6 +1004,21 @@ export async function saveScheduleAssignmentAction(
 
   if (!targetFunction) {
     return { error: "Função não encontrada neste departamento." };
+  }
+
+  const configuredFunctions = await db.query.eventDepartmentFunction.findMany({
+    where: and(
+      eq(schema.eventDepartmentFunction.eventId, parsed.data.eventId),
+      eq(schema.eventDepartmentFunction.departmentId, parsed.data.departmentId),
+    ),
+    columns: { functionId: true },
+  });
+
+  if (
+    configuredFunctions.length > 0 &&
+    !configuredFunctions.some((cf) => cf.functionId === parsed.data.functionId)
+  ) {
+    return { error: "Esta função não está ativa para este evento." };
   }
 
   const belongsToDepartment = await db.query.departmentMember.findFirst({
@@ -1029,10 +1266,24 @@ export async function copyLastScaleAction(
   const functionIds = new Set(
     functions.map((departmentFunction) => departmentFunction.id),
   );
+
+  const configuredFunctions = await db.query.eventDepartmentFunction.findMany({
+    where: and(
+      eq(schema.eventDepartmentFunction.eventId, access.event.id),
+      eq(schema.eventDepartmentFunction.departmentId, departmentId),
+    ),
+    columns: { functionId: true },
+  });
+
+  const activeFunctionIds =
+    configuredFunctions.length > 0
+      ? new Set(configuredFunctions.map((cf) => cf.functionId))
+      : functionIds;
+
   const copyable = previousAssignments.filter(
     (assignment) =>
       memberIds.has(assignment.personId) &&
-      functionIds.has(assignment.functionId),
+      activeFunctionIds.has(assignment.functionId),
   );
 
   if (copyable.length === 0) {

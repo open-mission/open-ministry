@@ -6,6 +6,17 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.1.4] - 2026-11-13
+
+### Adicionado
+- **Funções Personalizadas por Evento no Módulo de Cultos & Eventos**:
+  - **Seleção Individual de Funções por Departamento**: Ao vincular um departamento a um culto ou evento, agora é possível configurar exatamente quais funções daquele departamento serão necessárias, evitando exigir funções não utilizadas em encontros específicos.
+  - **Séries Recorrentes e Sobrescrita Específica**: Ao criar eventos recorrentes, a configuração de funções é replicada para todas as ocorrências da série, permitindo editar ocorrências individuais posteriormente sem afetar os demais encontros.
+  - **Escalas e Cobertura Inteligentes**: O painel de escalas, o diálogo de escalação e a métrica de cobertura ministerial consideram apenas as funções ativas do evento, removendo automaticamente voluntários de funções excluídas para manter os registros limpos.
+  - **Melhoria no Script de Migração do Banco de Dados**: Resolução automática dos arquivos `.env` em monorepos para execução direta de migrações.
+
+---
+
 ## [1.0.3] - 2026-11-12
 
 ### Adicionado

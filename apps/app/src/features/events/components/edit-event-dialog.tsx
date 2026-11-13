@@ -46,15 +46,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { computeDurationMinutes, computeEndTime } from "@/lib/plan-utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-type DepartmentOption = {
-  id: string;
-  name: string;
-};
+import type { DepartmentOption } from "@/lib/departments";
 
 export function EditEventDialog({
   event,
   departments,
   selectedDepartmentIds,
+  selectedFunctionIds = [],
   departmentAssignmentCounts = {},
   defaultDate,
   defaultTime,
@@ -73,6 +71,7 @@ export function EditEventDialog({
   };
   departments: DepartmentOption[];
   selectedDepartmentIds: string[];
+  selectedFunctionIds?: string[];
   departmentAssignmentCounts?: Record<string, number>;
   defaultDate: string;
   defaultTime: string;
@@ -116,6 +115,7 @@ export function EditEventDialog({
               event={event}
               departments={departments}
               selectedDepartmentIds={selectedDepartmentIds}
+              selectedFunctionIds={selectedFunctionIds}
               departmentAssignmentCounts={departmentAssignmentCounts}
               defaultDate={defaultDate}
               defaultTime={defaultTime}
@@ -155,6 +155,7 @@ export function EditEventDialog({
           event={event}
           departments={departments}
           selectedDepartmentIds={selectedDepartmentIds}
+          selectedFunctionIds={selectedFunctionIds}
           departmentAssignmentCounts={departmentAssignmentCounts}
           defaultDate={defaultDate}
           defaultTime={defaultTime}
@@ -170,6 +171,7 @@ function EditEventForm({
   event,
   departments,
   selectedDepartmentIds,
+  selectedFunctionIds = [],
   departmentAssignmentCounts,
   defaultDate,
   defaultTime,
@@ -186,6 +188,7 @@ function EditEventForm({
   };
   departments: DepartmentOption[];
   selectedDepartmentIds: string[];
+  selectedFunctionIds?: string[];
   departmentAssignmentCounts: Record<string, number>;
   defaultDate: string;
   defaultTime: string;
@@ -200,6 +203,24 @@ function EditEventForm({
   const [scope, setScope] = useState("single");
   const [selectedDepartments, setSelectedDepartments] =
     useState<string[]>(selectedDepartmentIds);
+  const [selectedFunctions, setSelectedFunctions] = useState<
+    Record<string, string[]>
+  >(() => {
+    const initial: Record<string, string[]> = {};
+    for (const dept of departments) {
+      if (selectedDepartmentIds.includes(dept.id)) {
+        const deptFunctionIds = dept.functions?.map((f) => f.id) ?? [];
+        const activeForDept = deptFunctionIds.filter((id) =>
+          selectedFunctionIds.includes(id),
+        );
+        initial[dept.id] =
+          activeForDept.length > 0 || deptFunctionIds.length === 0
+            ? activeForDept
+            : deptFunctionIds;
+      }
+    }
+    return initial;
+  });
   const [startTime, setStartTime] = useState(defaultTime);
   const [endTime, setEndTime] = useState(() =>
     computeEndTime(defaultTime, defaultDuration),
@@ -220,6 +241,49 @@ function EditEventForm({
   const handleStartTimeChange = (newStartTime: string) => {
     setStartTime(newStartTime);
     setEndTime(computeEndTime(newStartTime, durationMinutes || 90));
+  };
+
+  const handleDepartmentToggle = (departmentId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedDepartments((prev) => [...prev, departmentId]);
+      const dept = departments.find((d) => d.id === departmentId);
+      setSelectedFunctions((prev) => ({
+        ...prev,
+        [departmentId]: dept?.functions?.map((f) => f.id) ?? [],
+      }));
+    } else {
+      setSelectedDepartments((prev) => prev.filter((id) => id !== departmentId));
+      setSelectedFunctions((prev) => {
+        const next = { ...prev };
+        delete next[departmentId];
+        return next;
+      });
+    }
+  };
+
+  const handleFunctionToggle = (departmentId: string, functionId: string) => {
+    setSelectedFunctions((prev) => {
+      const current = prev[departmentId] ?? [];
+      const next = current.includes(functionId)
+        ? current.filter((id) => id !== functionId)
+        : [...current, functionId];
+      return { ...prev, [departmentId]: next };
+    });
+  };
+
+  const handleSelectAllFunctions = (departmentId: string) => {
+    const dept = departments.find((d) => d.id === departmentId);
+    setSelectedFunctions((prev) => ({
+      ...prev,
+      [departmentId]: dept?.functions?.map((f) => f.id) ?? [],
+    }));
+  };
+
+  const handleDeselectAllFunctions = (departmentId: string) => {
+    setSelectedFunctions((prev) => ({
+      ...prev,
+      [departmentId]: [],
+    }));
   };
 
   useEffect(() => {
@@ -380,30 +444,40 @@ function EditEventForm({
         </Field>
 
         <FieldSet>
-          <FieldLegend variant="label">Departamentos atuando</FieldLegend>
+          <FieldLegend variant="label">Departamentos e funções atuando</FieldLegend>
           {departments.length === 0 ? (
             <p className="text-xs leading-relaxed text-muted-foreground">
               Nenhum departamento cadastrado ainda.
             </p>
           ) : (
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="flex flex-col gap-2.5">
               {departments.map((department) => (
                 <DepartmentCheckboxRow
                   key={department.id}
-                  value={department.id}
-                  label={department.name}
+                  department={department}
                   checked={selectedDepartments.includes(department.id)}
                   onCheckedChange={(checked) =>
-                    setSelectedDepartments((current) =>
-                      checked
-                        ? [...current, department.id]
-                        : current.filter((id) => id !== department.id),
-                    )
+                    handleDepartmentToggle(department.id, checked)
+                  }
+                  selectedFunctionIds={selectedFunctions[department.id] ?? []}
+                  onFunctionToggle={(fnId) =>
+                    handleFunctionToggle(department.id, fnId)
+                  }
+                  onSelectAllFunctions={() =>
+                    handleSelectAllFunctions(department.id)
+                  }
+                  onDeselectAllFunctions={() =>
+                    handleDeselectAllFunctions(department.id)
                   }
                 />
               ))}
             </div>
           )}
+          <FieldError
+            errors={state?.fieldErrors?.departments?.map((message) => ({
+              message,
+            }))}
+          />
         </FieldSet>
 
         {removedWithAssignments.length > 0 ? (

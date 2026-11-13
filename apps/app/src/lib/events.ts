@@ -27,6 +27,7 @@ export async function listUpcomingEvents(organizationId: string, limit = 12) {
               },
             },
           },
+          functions: true,
           schedule: {
             with: {
               assignments: {
@@ -61,6 +62,7 @@ export async function listEvents(organizationId: string) {
               },
             },
           },
+          functions: true,
           schedule: {
             with: {
               assignments: {
@@ -176,6 +178,7 @@ export async function getEvent(
               },
             },
           },
+          functions: true,
           schedule: {
             with: {
               assignments: {
@@ -206,15 +209,28 @@ export type EventRecord = NonNullable<Awaited<ReturnType<typeof getEvent>>>;
 export type EventListItem = Awaited<ReturnType<typeof listEvents>>[number];
 
 export function scheduleProgress(event: {
-  departments: { department: { functions: { id: string }[] } }[];
+  departments: {
+    departmentId?: string;
+    department: { id?: string; functions: { id: string }[] };
+  }[];
+  functions?: { functionId: string; departmentId: string }[] | null;
   schedule?: {
     assignments: { functionId: string }[];
   } | null;
 }) {
-  const totalFunctions = event.departments.reduce(
-    (total, item) => total + item.department.functions.length,
-    0,
-  );
+  let totalFunctions = 0;
+  for (const item of event.departments) {
+    const deptId = item.departmentId ?? item.department.id;
+    const configuredFunctions = event.functions?.filter(
+      (f) => !deptId || f.departmentId === deptId,
+    );
+    if (configuredFunctions && configuredFunctions.length > 0) {
+      totalFunctions += configuredFunctions.length;
+    } else {
+      totalFunctions += item.department.functions.length;
+    }
+  }
+
   const assignments = event.schedule?.assignments ?? [];
   const filledFunctions = new Set(
     assignments.map((assignment) => assignment.functionId),
@@ -256,6 +272,7 @@ type CoverageEvent = {
     departmentId: string;
     department: { functions: { id: string; name: string }[] };
   }[];
+  functions?: { functionId: string; departmentId: string }[] | null;
   schedule?: {
     assignments: { functionId: string; departmentId: string }[];
   } | null;
@@ -394,10 +411,21 @@ export function buildDepartmentCoverage(
       let nextGap: DepartmentCoverage["nextGap"] = null;
 
       for (const event of actingEvents) {
-        const departmentFunctions =
+        const configuredFunctions = event.functions?.filter(
+          (f) => f.departmentId === department.id,
+        );
+        const allDeptFunctions =
           event.departments.find(
             (item) => item.departmentId === department.id,
           )?.department.functions ?? [];
+
+        const departmentFunctions =
+          configuredFunctions && configuredFunctions.length > 0
+            ? allDeptFunctions.filter((df) =>
+                configuredFunctions.some((cf) => cf.functionId === df.id),
+              )
+            : allDeptFunctions;
+
         const assignedFunctionIds = new Set(
           (event.schedule?.assignments ?? [])
             .filter((assignment) => assignment.departmentId === department.id)
