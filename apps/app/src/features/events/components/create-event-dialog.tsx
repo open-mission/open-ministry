@@ -62,10 +62,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-type DepartmentOption = {
-  id: string;
-  name: string;
-};
+import type { DepartmentOption } from "@/lib/departments";
 
 export function CreateEventDialog({
   departments,
@@ -163,6 +160,10 @@ function CreateEventForm({
     createEventAction,
     undefined,
   );
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
+  const [selectedFunctions, setSelectedFunctions] = useState<
+    Record<string, string[]>
+  >({});
   const [selectedDate, setSelectedDate] = useState(defaultDate);
   const [recurrence, setRecurrence] = useState<RecurrenceOption>("none");
   const [startTime, setStartTime] = useState("19:00");
@@ -182,6 +183,49 @@ function CreateEventForm({
   const handleDateChange = (newDate: string) => {
     setSelectedDate(newDate);
     setCustomNthPosition(null);
+  };
+
+  const handleDepartmentToggle = (departmentId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedDepartments((prev) => [...prev, departmentId]);
+      const dept = departments.find((d) => d.id === departmentId);
+      setSelectedFunctions((prev) => ({
+        ...prev,
+        [departmentId]: dept?.functions?.map((f) => f.id) ?? [],
+      }));
+    } else {
+      setSelectedDepartments((prev) => prev.filter((id) => id !== departmentId));
+      setSelectedFunctions((prev) => {
+        const next = { ...prev };
+        delete next[departmentId];
+        return next;
+      });
+    }
+  };
+
+  const handleFunctionToggle = (departmentId: string, functionId: string) => {
+    setSelectedFunctions((prev) => {
+      const current = prev[departmentId] ?? [];
+      const next = current.includes(functionId)
+        ? current.filter((id) => id !== functionId)
+        : [...current, functionId];
+      return { ...prev, [departmentId]: next };
+    });
+  };
+
+  const handleSelectAllFunctions = (departmentId: string) => {
+    const dept = departments.find((d) => d.id === departmentId);
+    setSelectedFunctions((prev) => ({
+      ...prev,
+      [departmentId]: dept?.functions?.map((f) => f.id) ?? [],
+    }));
+  };
+
+  const handleDeselectAllFunctions = (departmentId: string) => {
+    setSelectedFunctions((prev) => ({
+      ...prev,
+      [departmentId]: [],
+    }));
   };
 
   const defaultEndDate = useMemo(() => {
@@ -576,19 +620,32 @@ function CreateEventForm({
         </Field>
 
         <FieldSet>
-          <FieldLegend variant="label">Departamentos atuando</FieldLegend>
+          <FieldLegend variant="label">Departamentos e funções atuando</FieldLegend>
           {departments.length === 0 ? (
             <p className="text-xs leading-relaxed text-muted-foreground">
               Nenhum departamento cadastrado ainda. Você pode criar o evento e
               adicionar os departamentos depois.
             </p>
           ) : (
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="flex flex-col gap-2.5">
               {departments.map((department) => (
                 <DepartmentCheckboxRow
                   key={department.id}
-                  value={department.id}
-                  label={department.name}
+                  department={department}
+                  checked={selectedDepartments.includes(department.id)}
+                  onCheckedChange={(checked) =>
+                    handleDepartmentToggle(department.id, checked)
+                  }
+                  selectedFunctionIds={selectedFunctions[department.id] ?? []}
+                  onFunctionToggle={(fnId) =>
+                    handleFunctionToggle(department.id, fnId)
+                  }
+                  onSelectAllFunctions={() =>
+                    handleSelectAllFunctions(department.id)
+                  }
+                  onDeselectAllFunctions={() =>
+                    handleDeselectAllFunctions(department.id)
+                  }
                 />
               ))}
             </div>

@@ -76,6 +76,32 @@ export const eventDepartment = pgTable(
   ],
 );
 
+export const eventDepartmentFunction = pgTable(
+  "event_department_function",
+  {
+    id: text("id").primaryKey(),
+    eventId: text("event_id")
+      .notNull()
+      .references(() => event.id, { onDelete: "cascade" }),
+    departmentId: text("department_id")
+      .notNull()
+      .references(() => department.id, { onDelete: "cascade" }),
+    functionId: text("function_id")
+      .notNull()
+      .references(() => departmentFunction.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("event_department_function_eventId_idx").on(table.eventId),
+    index("event_department_function_departmentId_idx").on(table.departmentId),
+    index("event_department_function_functionId_idx").on(table.functionId),
+    uniqueIndex("event_department_function_eventId_functionId_uidx").on(
+      table.eventId,
+      table.functionId,
+    ),
+  ],
+);
+
 export const schedule = pgTable(
   "schedule",
   {
@@ -126,6 +152,7 @@ export const eventRelations = relations(event, ({ one, many }) => ({
     references: [organization.id],
   }),
   departments: many(eventDepartment),
+  functions: many(eventDepartmentFunction),
   schedule: one(schedule),
   planItems: many(eventPlanItem),
 }));
@@ -140,6 +167,24 @@ export const eventDepartmentRelations = relations(
     department: one(department, {
       fields: [eventDepartment.departmentId],
       references: [department.id],
+    }),
+  }),
+);
+
+export const eventDepartmentFunctionRelations = relations(
+  eventDepartmentFunction,
+  ({ one }) => ({
+    event: one(event, {
+      fields: [eventDepartmentFunction.eventId],
+      references: [event.id],
+    }),
+    department: one(department, {
+      fields: [eventDepartmentFunction.departmentId],
+      references: [department.id],
+    }),
+    function: one(departmentFunction, {
+      fields: [eventDepartmentFunction.functionId],
+      references: [departmentFunction.id],
     }),
   }),
 );
