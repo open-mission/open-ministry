@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState, useTransition } from "react";
 import {
-  closestCenter,
   DndContext,
+  closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -17,51 +17,56 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import {
-  CalendarDaysIcon,
   CheckCircle2Icon,
   ChevronDownIcon,
-  ChevronRightIcon,
-  ClockIcon,
-  ListTodoIcon,
   PinIcon,
+  XCircleIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { reorderTasksAction } from "../actions/tasks.actions";
-import { TaskRow } from "./task-row";
+import type { TaskCapabilities } from "../lib/task-permissions";
 import type { TaskItem } from "../services/tasks-service";
+import { TaskRow } from "./task-row";
 
 type TasksListViewProps = {
   tasks: TaskItem[];
+  capabilitiesByTaskId?: Record<string, TaskCapabilities>;
   onView: (task: TaskItem) => void;
   onEdit: (task: TaskItem) => void;
   onOpenAudit: (task: TaskItem) => void;
-  onDelete?: (taskId: string) => void;
+  onDelete: (taskId: string) => void;
+  onTaskUpdated?: (updated: TaskItem) => void;
   canManage?: boolean;
 };
 
 export function TasksListView({
-  tasks,
+  tasks: initialTasks,
+  capabilitiesByTaskId = {},
   onView,
   onEdit,
   onOpenAudit,
   onDelete,
+  onTaskUpdated,
   canManage = true,
 }: TasksListViewProps) {
-  const [completedOpen, setCompletedOpen] = useState(false);
-  const [prevTasks, setPrevTasks] = useState(tasks);
-  const [items, setItems] = useState<TaskItem[]>(tasks);
+  const dndContextId = useId();
+  const [tasks, setTasks] = useState<TaskItem[]>(initialTasks);
+  const [showCompleted, setShowCompleted] = useState(false);
+  const [showCanceled, setShowCanceled] = useState(false);
+  const [, startTransition] = useTransition();
 
-  if (tasks !== prevTasks) {
-    setPrevTasks(tasks);
-    setItems(tasks);
+  const [prevInitialTasks, setPrevInitialTasks] = useState(initialTasks);
+  if (initialTasks !== prevInitialTasks) {
+    setPrevInitialTasks(initialTasks);
+    setTasks(initialTasks);
   }
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        delay: 250,
-        tolerance: 5,
+        distance: 5,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -69,219 +74,253 @@ export function TasksListView({
     }),
   );
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  // Agrupa tarefas filhas sob o respectivo pai de delegação individual (quando o pai está visível)
+  const { topLevelTasks, childrenByParentId } = useMemo(() => {
+    const taskIds = new Set(tasks.map((t) => t.id));
+    const childrenMap = new Map<string, TaskItem[]>();
+    const topLevel: TaskItem[] = [];
+
+    for (const task of tasks) {
+      if (task.parentTaskId && taskIds.has(task.parentTaskId)) {
+        const list = childrenMap.get(task.parentTaskId) ?? [];
+        list.push(task);
+        childrenMap.set(task.parentTaskId, list);
+      } else {
+        topLevel.push(task);
+      }
+    }
+
+    return { topLevelTasks: topLevel, childrenByParentId: childrenMap };
+  }, [tasks]);
+
+  const { pinnedTasks, activeTasks, completedTasks, canceledTasks } =
+    useMemo(() => {
+      const pinned: TaskItem[] = [];
+      const active: TaskItem[] = [];
+      const completed: TaskItem[] = [];
+      const canceled: TaskItem[] = [];
+
+      for (const task of topLevelTasks) {
+        if (task.status === "completed") {
+          completed.push(task);
+        } else if (task.status === "canceled") {
+          canceled.push(task);
+        } else if (task.isPinned) {
+          pinned.push(task);
+        } else {
+          active.push(task);
+        }
+      }
+
+      return {
+        pinnedTasks: pinned,
+        activeTasks: active,
+        completedTasks: completed,
+        canceledTasks: canceled,
+      };
+    }, [topLevelTasks]);
+
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndex = items.findIndex((t) => t.id === active.id);
-    const newIndex = items.findIndex((t) => t.id === over.id);
+    const oldIndex = activeTasks.findIndex((item) => item.id === active.id);
+    const newIndex = activeTasks.findIndex((item) => item.id === over.id);
+
     if (oldIndex === -1 || newIndex === -1) return;
 
-    const reordered = arrayMove(items, oldIndex, newIndex);
-    setItems(reordered);
+    const previousSnapshot = tasks;
+    const reorderedActive = arrayMove(activeTasks, oldIndex, newIndex);
+    const newOrderedIds = reorderedActive.map((t) => t.id);
 
-    // Salva reordenação
-    const taskIds = reordered.map((t) => t.id);
-    await reorderTasksAction(taskIds);
+    const updated = tasks.map((t) => {
+      const foundIdx = newOrderedIds.indexOf(t.id);
+      if (foundIdx !== -1) {
+        return { ...t, sortOrder: foundIdx };
+      }
+      return t;
+    });
+
+    updated.sort((a, b) => a.sortOrder - b.sortOrder);
+    setTasks(updated);
+
+    startTransition(async () => {
+      const res = await reorderTasksAction(newOrderedIds);
+      if (!res.ok) {
+        setTasks(previousSnapshot);
+        toast.error(res.error);
+      }
+    });
   };
 
-  // Seções Things 3
-  const pinnedTasks = useMemo(
-    () => items.filter((t) => t.isPinned && t.status !== "completed"),
-    [items],
-  );
-
-  const scheduledTasks = useMemo(
-    () =>
-      items.filter(
-        (t) => !t.isPinned && t.date && t.status !== "completed",
-      ),
-    [items],
-  );
-
-  const deadlineTasks = useMemo(
-    () =>
-      items.filter(
-        (t) =>
-          !t.isPinned &&
-          !t.date &&
-          t.deadline &&
-          t.status !== "completed",
-      ),
-    [items],
-  );
-
-  const generalTasks = useMemo(
-    () =>
-      items.filter(
-        (t) =>
-          !t.isPinned &&
-          !t.date &&
-          !t.deadline &&
-          t.status !== "completed",
-      ),
-    [items],
-  );
-
-  const completedTasks = useMemo(
-    () => items.filter((t) => t.status === "completed"),
-    [items],
-  );
-
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
-      <SortableContext
-        items={items.map((t) => t.id)}
-        strategy={verticalListSortingStrategy}
-      >
-        <div className="space-y-6">
-          {/* Seção: Fixadas */}
-          {pinnedTasks.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
-                <PinIcon className="size-3.5 fill-primary" />
-                <span>Fixadas no Topo</span>
-                <Badge variant="secondary" className="size-5 rounded-full p-0 flex items-center justify-center text-[10px]">
-                  {pinnedTasks.length}
-                </Badge>
-              </div>
+    <div className="space-y-6">
+      {/* 1. Fixadas / Destaque */}
+      {pinnedTasks.length > 0 ? (
+        <section className="space-y-2.5">
+          <div className="flex items-center gap-2 px-1">
+            <PinIcon className="size-3.5 text-primary" />
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-primary">
+              Fixadas no topo ({pinnedTasks.length})
+            </h2>
+          </div>
+          <div className="space-y-2">
+            {pinnedTasks.map((task) => (
+              <TaskRow
+                key={task.id}
+                task={task}
+                childTasks={childrenByParentId.get(task.id)}
+                capabilities={capabilitiesByTaskId[task.id]}
+                childCapabilitiesMap={capabilitiesByTaskId}
+                onView={onView}
+                onEdit={onEdit}
+                onOpenAudit={onOpenAudit}
+                onDelete={onDelete}
+                onTaskUpdated={onTaskUpdated}
+                canManage={canManage}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* 2. A Fazer / Em Andamento */}
+      <section className="space-y-2.5">
+        {pinnedTasks.length > 0 && activeTasks.length > 0 ? (
+          <div className="flex items-center gap-2 px-1">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Pendentes e em andamento ({activeTasks.length})
+            </h2>
+          </div>
+        ) : null}
+
+        {activeTasks.length > 0 ? (
+          <DndContext
+            id={dndContextId}
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={activeTasks.map((t) => t.id)}
+              strategy={verticalListSortingStrategy}
+            >
               <div className="space-y-2">
-                {pinnedTasks.map((task) => (
+                {activeTasks.map((task) => (
                   <TaskRow
                     key={task.id}
                     task={task}
+                    childTasks={childrenByParentId.get(task.id)}
+                    capabilities={capabilitiesByTaskId[task.id]}
+                    childCapabilitiesMap={capabilitiesByTaskId}
                     onView={onView}
                     onEdit={onEdit}
                     onOpenAudit={onOpenAudit}
                     onDelete={onDelete}
+                    onTaskUpdated={onTaskUpdated}
+                    isSortable={true}
                     canManage={canManage}
                   />
                 ))}
               </div>
-            </div>
-          )}
+            </SortableContext>
+          </DndContext>
+        ) : pinnedTasks.length === 0 &&
+          completedTasks.length === 0 &&
+          canceledTasks.length === 0 ? null : pinnedTasks.length === 0 &&
+          activeTasks.length === 0 &&
+          (completedTasks.length > 0 || canceledTasks.length > 0) ? (
+          <div className="rounded-xl border border-dashed bg-muted/20 p-6 text-center text-sm text-muted-foreground">
+            Nenhuma tarefa pendente nesta visão.
+          </div>
+        ) : null}
+      </section>
 
-          {/* Seção: Hoje / Agendadas (Quando trabalhar) */}
-          {scheduledTasks.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                <CalendarDaysIcon className="size-3.5" />
-                <span>Hoje & Agendadas</span>
-                <Badge variant="secondary" className="size-5 rounded-full p-0 flex items-center justify-center text-[10px]">
-                  {scheduledTasks.length}
-                </Badge>
-              </div>
-              <div className="space-y-2">
-                {scheduledTasks.map((task) => (
-                  <TaskRow
-                    key={task.id}
-                    task={task}
-                    onView={onView}
-                    onEdit={onEdit}
-                    onOpenAudit={onOpenAudit}
-                    onDelete={onDelete}
-                    canManage={canManage}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Seção: Prazos / Deadlines */}
-          {deadlineTasks.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-                <ClockIcon className="size-3.5" />
-                <span>Prazos Limites</span>
-                <Badge variant="secondary" className="size-5 rounded-full p-0 flex items-center justify-center text-[10px]">
-                  {deadlineTasks.length}
-                </Badge>
-              </div>
-              <div className="space-y-2">
-                {deadlineTasks.map((task) => (
-                  <TaskRow
-                    key={task.id}
-                    task={task}
-                    onView={onView}
-                    onEdit={onEdit}
-                    onOpenAudit={onOpenAudit}
-                    onDelete={onDelete}
-                    canManage={canManage}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Seção: A Fazer (Gerais) */}
-          {generalTasks.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <ListTodoIcon className="size-3.5" />
-                <span>A Fazer</span>
-                <Badge variant="secondary" className="size-5 rounded-full p-0 flex items-center justify-center text-[10px]">
-                  {generalTasks.length}
-                </Badge>
-              </div>
-              <div className="space-y-2">
-                {generalTasks.map((task) => (
-                  <TaskRow
-                    key={task.id}
-                    task={task}
-                    onView={onView}
-                    onEdit={onEdit}
-                    onOpenAudit={onOpenAudit}
-                    onDelete={onDelete}
-                    canManage={canManage}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Seção: Concluídas (Recolhível) */}
-          {completedTasks.length > 0 && (
-            <div className="space-y-2 pt-2 border-t">
-              <button
-                type="button"
-                onClick={() => setCompletedOpen(!completedOpen)}
-                className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {completedOpen ? (
-                  <ChevronDownIcon className="size-3.5" />
-                ) : (
-                  <ChevronRightIcon className="size-3.5" />
-                )}
-                <CheckCircle2Icon className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Concluídas</span>
-                <Badge variant="outline" className="text-[10px] ml-1">
-                  {completedTasks.length}
-                </Badge>
-              </button>
-
-              {completedOpen && (
-                <div className="space-y-2 pt-1">
-                  {completedTasks.map((task) => (
-                    <TaskRow
-                      key={task.id}
-                      task={task}
-                      onView={onView}
-                      onEdit={onEdit}
-                      onOpenAudit={onOpenAudit}
-                      onDelete={onDelete}
-                      canManage={canManage}
-                    />
-                  ))}
-                </div>
+      {/* 3. Concluídas (Recolhível) */}
+      {completedTasks.length > 0 ? (
+        <section className="border-t pt-4">
+          <button
+            type="button"
+            aria-expanded={showCompleted}
+            onClick={() => setShowCompleted((v) => !v)}
+            className="flex min-h-[44px] w-full items-center justify-between rounded-lg px-2 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <CheckCircle2Icon className="size-4 text-emerald-600" />
+              Concluídas ({completedTasks.length})
+            </span>
+            <ChevronDownIcon
+              className={cn(
+                "size-4 transition-transform",
+                showCompleted && "rotate-180",
               )}
+            />
+          </button>
+
+          {showCompleted ? (
+            <div className="mt-2.5 space-y-2">
+              {completedTasks.map((task) => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  childTasks={childrenByParentId.get(task.id)}
+                  capabilities={capabilitiesByTaskId[task.id]}
+                  childCapabilitiesMap={capabilitiesByTaskId}
+                  onView={onView}
+                  onEdit={onEdit}
+                  onOpenAudit={onOpenAudit}
+                  onDelete={onDelete}
+                  onTaskUpdated={onTaskUpdated}
+                  canManage={canManage}
+                />
+              ))}
             </div>
-          )}
-        </div>
-      </SortableContext>
-    </DndContext>
+          ) : null}
+        </section>
+      ) : null}
+
+      {/* 4. Canceladas (Recolhível) */}
+      {canceledTasks.length > 0 ? (
+        <section className="border-t pt-4">
+          <button
+            type="button"
+            aria-expanded={showCanceled}
+            onClick={() => setShowCanceled((v) => !v)}
+            className="flex min-h-[44px] w-full items-center justify-between rounded-lg px-2 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <XCircleIcon className="size-4 text-muted-foreground" />
+              Canceladas ({canceledTasks.length})
+            </span>
+            <ChevronDownIcon
+              className={cn(
+                "size-4 transition-transform",
+                showCanceled && "rotate-180",
+              )}
+            />
+          </button>
+
+          {showCanceled ? (
+            <div className="mt-2.5 space-y-2">
+              {canceledTasks.map((task) => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  childTasks={childrenByParentId.get(task.id)}
+                  capabilities={capabilitiesByTaskId[task.id]}
+                  childCapabilitiesMap={capabilitiesByTaskId}
+                  onView={onView}
+                  onEdit={onEdit}
+                  onOpenAudit={onOpenAudit}
+                  onDelete={onDelete}
+                  onTaskUpdated={onTaskUpdated}
+                  canManage={canManage}
+                />
+              ))}
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+    </div>
   );
 }

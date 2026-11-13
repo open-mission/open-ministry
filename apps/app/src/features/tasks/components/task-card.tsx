@@ -1,55 +1,56 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  CalendarDaysIcon,
+  BellRingIcon,
+  CalendarIcon,
   CheckIcon,
   ClockIcon,
   ExternalLinkIcon,
   GripVerticalIcon,
   PinIcon,
-  RepeatIcon,
-  UsersIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getInitials } from "@/lib/format";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import {
-  updateTaskStatusAction,
-} from "../actions/tasks.actions";
+import { updateTaskStatusAction } from "../actions/tasks.actions";
+import type { TaskCapabilities } from "../lib/task-permissions";
 import {
   formatTaskDeadline,
   formatTaskWhen,
   getPriorityLabel,
 } from "../lib/task-utils";
+import type { TaskItem, TaskStatus } from "../services/tasks-service";
 import { TaskActionsMenu } from "./task-actions-menu";
-import type { TaskItem, TaskPriority } from "../services/tasks-service";
 
 type TaskCardProps = {
   task: TaskItem;
+  capabilities?: TaskCapabilities;
   onView: (task: TaskItem) => void;
   onEdit: (task: TaskItem) => void;
   onOpenAudit: (task: TaskItem) => void;
-  onDelete?: (taskId: string) => void;
+  onDelete: (taskId: string) => void;
+  onTaskUpdated?: (updated: TaskItem) => void;
   canManage?: boolean;
 };
 
 export function TaskCard({
   task,
+  capabilities,
   onView,
   onEdit,
   onOpenAudit,
   onDelete,
+  onTaskUpdated,
   canManage = true,
 }: TaskCardProps) {
   const [isPending, startTransition] = useTransition();
-  const [optimisticCompleted, setOptimisticCompleted] = useState(
-    task.status === "completed",
-  );
+
+  const canUpdateStatus = capabilities?.canUpdateStatus ?? canManage;
+  const canReorder = capabilities?.canReorder ?? canManage;
 
   const {
     attributes,
@@ -59,26 +60,37 @@ export function TaskCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: task.id });
+  } = useSortable({ id: task.id, disabled: !canReorder });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
 
-  const isCompleted = optimisticCompleted;
-  const whenText = formatTaskWhen(task.date);
+  const isCompleted = task.status === "completed";
+  const isCanceled = task.status === "canceled";
+  const whenLabel = formatTaskWhen(task.date);
   const deadlineInfo = formatTaskDeadline(task.deadline, isCompleted);
 
-  const handleToggleComplete = () => {
-    const nextCompleted = !isCompleted;
-    setOptimisticCompleted(nextCompleted);
+  const handleToggle = () => {
+    const nextStatus: TaskStatus = isCompleted ? "todo" : "completed";
+    onTaskUpdated?.({
+      ...task,
+      status: nextStatus,
+      completedAt: nextStatus === "completed" ? new Date() : null,
+    });
 
     startTransition(async () => {
-      const nextStatus = nextCompleted ? "completed" : "todo";
       const res = await updateTaskStatusAction(task.id, nextStatus);
-      if (!res.ok) {
-        setOptimisticCompleted(!nextCompleted);
+      if (res.ok) {
+        if (res.data.task) {
+          onTaskUpdated?.(res.data.task);
+        }
+        toast.success(
+          nextStatus === "completed" ? "Tarefa concluída!" : "Tarefa reaberta.",
+        );
+      } else {
+        onTaskUpdated?.(task);
         toast.error(res.error);
       }
     });
@@ -88,169 +100,197 @@ export function TaskCard({
     <div
       ref={setNodeRef}
       style={style}
-      onClick={() => onView(task)}
       className={cn(
-        "group relative flex flex-col justify-between gap-2.5 rounded-xl border border-border/70 bg-card p-3 shadow-2xs transition-all hover:border-border hover:shadow-xs cursor-pointer",
-        isDragging && "z-50 opacity-50 shadow-xl border-primary",
-        isCompleted && "bg-muted/30 opacity-70",
-        task.isPinned && "border-t-2 border-t-primary",
+        "group relative flex flex-col gap-2.5 rounded-xl border bg-card p-3.5 shadow-2xs transition-colors hover:border-border/80",
+        task.isPinned && "border-primary/30 bg-primary/[0.03]",
+        isDragging && "z-50 opacity-85 shadow-lg ring-2 ring-primary/20",
+        (isCompleted || isCanceled) && "bg-muted/35 opacity-80",
       )}
     >
-      {/* Top Header: Drag handle, Checkbox, Title & Menu */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-start gap-2 flex-1 min-w-0">
+      {/* Topo: Handle + Checkbox + Título + Menu */}
+      <div className="flex items-start gap-2">
+        {canReorder ? (
           <button
+            type="button"
             ref={setActivatorNodeRef}
             {...attributes}
             {...listeners}
-            type="button"
-            aria-label="Arrastar card"
-            onClick={(e) => e.stopPropagation()}
-            className="cursor-grab touch-none p-0.5 text-muted-foreground/40 hover:text-foreground mt-0.5"
+            aria-label={`Mover cartão ${task.title}`}
+            className="mt-0.5 flex size-7 shrink-0 cursor-grab items-center justify-center rounded-md text-muted-foreground/60 touch-none hover:bg-muted hover:text-foreground active:cursor-grabbing"
           >
             <GripVerticalIcon className="size-3.5" />
           </button>
+        ) : null}
 
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleToggleComplete();
-            }}
-            disabled={isPending}
+        <button
+          type="button"
+          onClick={handleToggle}
+          disabled={isPending || !canUpdateStatus}
+          aria-label={
+            isCompleted
+              ? `Reabrir tarefa ${task.title}`
+              : `Concluir tarefa ${task.title}`
+          }
+          className={cn(
+            "-my-1 -ml-1 flex size-9 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:m-0 sm:size-6",
+            !canUpdateStatus && "cursor-not-allowed opacity-40",
+          )}
+        >
+          <span
             className={cn(
-              "flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-all mt-0.5",
+              "flex size-4 items-center justify-center rounded-full border-2 transition-colors",
               isCompleted
-                ? "border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-500"
-                : "border-muted-foreground/50 hover:border-emerald-600",
+                ? "border-primary bg-primary text-primary-foreground"
+                : task.priority === "high"
+                  ? "border-destructive/70 bg-background hover:border-destructive"
+                  : "border-muted-foreground/40 bg-background hover:border-primary",
             )}
           >
-            {isCompleted && <CheckIcon className="size-2.5 stroke-[3]" />}
-          </button>
+            {isCompleted ? <CheckIcon className="size-2.5 stroke-[3]" /> : null}
+          </span>
+        </button>
 
-          <div className="min-w-0 flex-1">
-            <h4
-              className={cn(
-                "text-xs font-semibold text-foreground transition-colors group-hover:text-primary line-clamp-2",
-                isCompleted && "line-through text-muted-foreground",
-              )}
-            >
-              {task.title}
-            </h4>
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={() => onView(task)}
+          className="min-w-0 flex-1 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <span
+            className={cn(
+              "block text-sm font-medium leading-snug line-clamp-2",
+              isCompleted && "line-through text-muted-foreground",
+              isCanceled && "text-muted-foreground",
+            )}
+          >
+            {task.title}
+          </span>
+        </button>
 
-        <div className="flex items-center gap-1 shrink-0">
-          {task.isPinned && (
-            <PinIcon className="size-3 text-primary fill-primary" />
-          )}
-
-          {task.isRecurring && (
-            <RepeatIcon className="size-3 text-emerald-600 dark:text-emerald-400" />
-          )}
-
+        <div className="-mt-1 -mr-1 shrink-0">
           <TaskActionsMenu
             task={task}
+            capabilities={capabilities}
             onView={onView}
             onEdit={onEdit}
             onOpenAudit={onOpenAudit}
             onDelete={onDelete}
+            onTaskUpdated={onTaskUpdated}
             canManage={canManage}
-            triggerClassName="size-6 text-muted-foreground hover:text-foreground"
           />
         </div>
       </div>
 
-      {/* Descrição curta */}
-      {task.description && (
-        <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+      {/* Descrição resumida */}
+      {task.description ? (
+        <p className="text-xs text-muted-foreground line-clamp-2">
           {task.description}
         </p>
-      )}
+      ) : null}
 
-      {/* Metadados / Datas / Badges */}
-      <div className="space-y-1.5 pt-1 border-t border-border/40">
-        <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
-          {whenText && (
-            <span className="flex items-center gap-1 rounded bg-muted/60 px-1.5 py-0.5 text-foreground/80 font-medium">
-              <CalendarDaysIcon className="size-2.5 text-emerald-600 dark:text-emerald-400" />
-              {whenText}
-            </span>
-          )}
+      {/* Datas, prioridade e fixado */}
+      <div className="flex flex-wrap items-center gap-1.5 text-xs">
+        {task.isPinned ? (
+          <Badge
+            variant="outline"
+            className="h-5 gap-1 border-primary/30 px-1.5 text-xs text-primary"
+          >
+            <PinIcon className="size-3" />
+            Fixada
+          </Badge>
+        ) : null}
 
-          {deadlineInfo && (
-            <span
-              className={cn(
-                "flex items-center gap-1 rounded px-1.5 py-0.5 font-medium",
-                deadlineInfo.isOverdue
-                  ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 font-semibold"
-                  : "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
-              )}
+        {whenLabel ? (
+          <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 font-medium text-primary">
+            <CalendarIcon className="size-3" />
+            {whenLabel}
+          </span>
+        ) : null}
+
+        {deadlineInfo ? (
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-medium",
+              deadlineInfo.isOverdue
+                ? "bg-destructive/10 text-destructive"
+                : "bg-muted text-muted-foreground",
+            )}
+          >
+            <ClockIcon className="size-3" />
+            {deadlineInfo.label}
+          </span>
+        ) : null}
+
+        {task.priority && task.priority !== "none" ? (
+          <Badge
+            variant="outline"
+            className={cn(
+              "h-5 px-1.5 text-xs font-normal",
+              task.priority === "high"
+                ? "border-destructive/30 text-destructive"
+                : task.priority === "medium"
+                  ? "border-amber-500/30 text-amber-700 dark:text-amber-400"
+                  : "text-muted-foreground",
+            )}
+          >
+            {getPriorityLabel(task.priority)}
+          </Badge>
+        ) : null}
+
+        {task.isRecurring ? (
+          <BellRingIcon
+            aria-label="Tarefa recorrente"
+            className="ml-auto size-3.5 text-primary/70"
+          />
+        ) : null}
+      </div>
+
+      {/* Rodapé: Escopo, Tags, Responsável e Link */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-2">
+        <div className="flex flex-wrap items-center gap-1">
+          {task.scope === "organization" ? (
+            <Badge variant="secondary" className="h-5 px-1.5 text-xs font-normal">
+              Toda a igreja
+            </Badge>
+          ) : null}
+
+          {task.department ? (
+            <Badge variant="secondary" className="h-5 px-1.5 text-xs font-normal">
+              {task.department.name}
+            </Badge>
+          ) : null}
+
+          {task.tags?.slice(0, 2).map((t) => (
+            <Badge
+              key={t}
+              variant="outline"
+              className="h-5 border-border/70 px-1.5 text-xs font-normal text-muted-foreground"
             >
-              <ClockIcon className="size-2.5" />
-              {deadlineInfo.isOverdue ? `Atrasado: ${deadlineInfo.label}` : deadlineInfo.label}
-            </span>
-          )}
-
-          {task.priority !== "none" && (
-            <span
-              className={cn(
-                "rounded px-1.5 py-0.5 font-medium",
-                task.priority === "high"
-                  ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300"
-                  : task.priority === "medium"
-                    ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
-                    : "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300",
-              )}
-            >
-              {getPriorityLabel(task.priority as TaskPriority)}
-            </span>
-          )}
+              {t}
+            </Badge>
+          ))}
         </div>
 
-        {/* Rodapé do card: Tags, Dept, Assignee e Link */}
-        <div className="flex items-center justify-between gap-1 pt-1 text-[11px] text-muted-foreground">
-          <div className="flex items-center gap-1 flex-wrap min-w-0">
-            {task.department && (
-              <span className="flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[10px] text-primary font-medium truncate">
-                <UsersIcon className="size-2.5" />
-                {task.department.name}
-              </span>
-            )}
+        <div className="flex items-center gap-1.5">
+          {task.url ? (
+            <a
+              href={task.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Abrir link de apoio de ${task.title}`}
+              className="flex size-7 items-center justify-center rounded text-muted-foreground hover:text-primary"
+            >
+              <ExternalLinkIcon className="size-3.5" />
+            </a>
+          ) : null}
 
-            {Array.isArray(task.tags) && task.tags.length > 0 && (
-              <span className="rounded bg-muted px-1 py-0.5 text-[10px] text-muted-foreground">
-                #{task.tags[0]}
-                {task.tags.length > 1 ? ` +${task.tags.length - 1}` : ""}
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            {task.url && (
-              <a
-                href={task.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                title="Abrir link"
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <ExternalLinkIcon className="size-3" />
-              </a>
-            )}
-
-            {task.assignee ? (
-              <Avatar className="size-5 border shadow-2xs" title={task.assignee.name ?? "Responsável"}>
-                {task.assignee.image ? (
-                  <AvatarImage src={task.assignee.image} alt={task.assignee.name ?? "Assignee"} />
-                ) : null}
-                <AvatarFallback className="text-[9px]">
-                  {task.assignee.name ? getInitials(task.assignee.name) : "?"}
-                </AvatarFallback>
-              </Avatar>
-            ) : null}
-          </div>
+          {task.assignee ? (
+            <div
+              title={task.assignee.name ?? "Responsável"}
+              className="flex size-6 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary ring-1 ring-border"
+            >
+              {task.assignee.name?.[0]?.toUpperCase() ?? "M"}
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

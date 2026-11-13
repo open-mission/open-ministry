@@ -1,96 +1,86 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState, useTransition } from "react";
 import {
-  closestCorners,
   DndContext,
   DragOverlay,
   KeyboardSensor,
   PointerSensor,
+  closestCorners,
   useDroppable,
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import {
-  CheckCircle2Icon,
-  CircleDotIcon,
-  ListTodoIcon,
-  PlusIcon,
-} from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  reorderTasksAction,
-  updateTaskStatusAction,
-} from "../actions/tasks.actions";
-import { TaskCard } from "./task-card";
+import { updateTaskStatusAction } from "../actions/tasks.actions";
+import type { TaskCapabilities } from "../lib/task-permissions";
+import { getStatusLabel } from "../lib/task-utils";
 import type { TaskItem, TaskStatus } from "../services/tasks-service";
+import { TaskCard } from "./task-card";
 
 type TasksKanbanViewProps = {
   tasks: TaskItem[];
+  capabilitiesByTaskId?: Record<string, TaskCapabilities>;
   onView: (task: TaskItem) => void;
   onEdit: (task: TaskItem) => void;
   onOpenAudit: (task: TaskItem) => void;
-  onNewTask: (defaultStatus?: TaskStatus) => void;
-  onDelete?: (taskId: string) => void;
+  onDelete: (taskId: string) => void;
+  onTaskUpdated?: (updated: TaskItem) => void;
+  onNewTask?: (status?: TaskStatus) => void;
   canManage?: boolean;
 };
 
-type KanbanColumn = {
+type ColumnConfig = {
   id: TaskStatus;
   title: string;
-  icon: typeof ListTodoIcon;
-  colorClass: string;
+  dotClass: string;
 };
 
-const COLUMNS: KanbanColumn[] = [
-  {
-    id: "todo",
-    title: "A Fazer",
-    icon: ListTodoIcon,
-    colorClass: "text-amber-600 dark:text-amber-400 bg-amber-500/10",
-  },
-  {
-    id: "in_progress",
-    title: "Em Andamento",
-    icon: CircleDotIcon,
-    colorClass: "text-blue-600 dark:text-blue-400 bg-blue-500/10",
-  },
-  {
-    id: "completed",
-    title: "Concluídas",
-    icon: CheckCircle2Icon,
-    colorClass: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
-  },
+const CORE_COLUMNS: ColumnConfig[] = [
+  { id: "todo", title: "A Fazer", dotClass: "bg-slate-400" },
+  { id: "in_progress", title: "Em Andamento", dotClass: "bg-amber-500" },
+  { id: "completed", title: "Concluídas", dotClass: "bg-emerald-500" },
 ];
 
+const CANCELED_COLUMN: ColumnConfig = {
+  id: "canceled",
+  title: "Canceladas",
+  dotClass: "bg-muted-foreground/50",
+};
+
 export function TasksKanbanView({
-  tasks,
+  tasks: initialTasks,
+  capabilitiesByTaskId = {},
   onView,
   onEdit,
   onOpenAudit,
-  onNewTask,
   onDelete,
+  onTaskUpdated,
+  onNewTask,
   canManage = true,
 }: TasksKanbanViewProps) {
-  const [prevTasks, setPrevTasks] = useState(tasks);
-  const [items, setItems] = useState<TaskItem[]>(tasks);
-  const [activeTask, setActiveTask] = useState<TaskItem | null>(null);
+  const dndContextId = useId();
+  const [tasks, setTasks] = useState<TaskItem[]>(initialTasks);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
 
-  if (tasks !== prevTasks) {
-    setPrevTasks(tasks);
-    setItems(tasks);
+  const [prevInitialTasks, setPrevInitialTasks] = useState(initialTasks);
+  if (initialTasks !== prevInitialTasks) {
+    setPrevInitialTasks(initialTasks);
+    setTasks(initialTasks);
   }
 
   const sensors = useSensors(
@@ -104,110 +94,175 @@ export function TasksKanbanView({
     }),
   );
 
-  const columnTasks = useMemo<Record<string, TaskItem[]>>(() => {
-    return {
-      todo: items.filter((t) => t.status === "todo"),
-      in_progress: items.filter((t) => t.status === "in_progress"),
-      completed: items.filter((t) => t.status === "completed"),
-      canceled: items.filter((t) => t.status === "canceled"),
+  // Esconde tarefas-filhas individuais quando o pai já está presente para evitar duplicação no quadro
+  const boardTasks = useMemo(() => {
+    const taskIds = new Set(tasks.map((t) => t.id));
+    return tasks.filter(
+      (t) => !(t.parentTaskId && taskIds.has(t.parentTaskId)),
+    );
+  }, [tasks]);
+
+  const tasksByColumn = useMemo(() => {
+    const groups: Record<TaskStatus, TaskItem[]> = {
+      todo: [],
+      in_progress: [],
+      completed: [],
+      canceled: [],
     };
-  }, [items]);
+    for (const t of boardTasks) {
+      const col = (t.status as TaskStatus) in groups ? (t.status as TaskStatus) : "todo";
+      groups[col].push(t);
+    }
+    return groups;
+  }, [boardTasks]);
+
+  const columns = useMemo(() => {
+    return tasksByColumn.canceled.length > 0
+      ? [...CORE_COLUMNS, CANCELED_COLUMN]
+      : CORE_COLUMNS;
+  }, [tasksByColumn.canceled.length]);
+
+  const activeTask = useMemo(
+    () => (activeId ? boardTasks.find((t) => t.id === activeId) ?? null : null),
+    [activeId, boardTasks],
+  );
 
   const handleDragStart = (event: DragStartEvent) => {
-    const task = items.find((t) => t.id === event.active.id);
-    if (task) {
-      setActiveTask(task);
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeTaskId = active.id as string;
+    const overId = over.id as string;
+
+    const moving = tasks.find((t) => t.id === activeTaskId);
+    if (!moving) return;
+
+    const canMove = capabilitiesByTaskId[activeTaskId]?.canUpdateStatus ?? canManage;
+    if (!canMove) return;
+
+    let targetStatus: TaskStatus | undefined;
+    if (columns.some((c) => c.id === overId)) {
+      targetStatus = overId as TaskStatus;
+    } else {
+      const overTask = tasks.find((t) => t.id === overId);
+      if (overTask) {
+        targetStatus = overTask.status as TaskStatus;
+      }
+    }
+
+    if (targetStatus && targetStatus !== moving.status) {
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === activeTaskId ? { ...t, status: targetStatus! } : t,
+        ),
+      );
     }
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    setActiveTask(null);
+    setActiveId(null);
 
-    if (!over) return;
+    if (!over) {
+      setTasks(initialTasks);
+      return;
+    }
 
-    const activeId = String(active.id);
-    const overId = String(over.id);
+    const activeTaskId = active.id as string;
+    const overId = over.id as string;
 
-    const activeItem = items.find((t) => t.id === activeId);
-    if (!activeItem) return;
+    const original = initialTasks.find((t) => t.id === activeTaskId);
+    if (!original) return;
 
-    // Se soltou sobre uma coluna
-    let targetStatus: TaskStatus | null = null;
-    if (COLUMNS.some((c) => c.id === overId)) {
+    const canMove = capabilitiesByTaskId[activeTaskId]?.canUpdateStatus ?? canManage;
+    if (!canMove) {
+      setTasks(initialTasks);
+      toast.error("Você não tem permissão para mover esta tarefa.");
+      return;
+    }
+
+    let targetStatus: TaskStatus | undefined;
+    if (columns.some((c) => c.id === overId)) {
       targetStatus = overId as TaskStatus;
     } else {
-      // Soltou sobre outro card
-      const overItem = items.find((t) => t.id === overId);
-      if (overItem) {
-        targetStatus = overItem.status as TaskStatus;
+      const overTask = tasks.find((t) => t.id === overId);
+      if (overTask) {
+        targetStatus = overTask.status as TaskStatus;
       }
     }
 
-    if (!targetStatus) return;
+    if (!targetStatus || targetStatus === original.status) return;
 
-    // Se mudou de coluna / status
-    if (activeItem.status !== targetStatus) {
-      setItems((prev) =>
-        prev.map((t) => (t.id === activeId ? { ...t, status: targetStatus! } : t)),
-      );
+    const optimistic: TaskItem = {
+      ...original,
+      status: targetStatus,
+      completedAt: targetStatus === "completed" ? new Date() : null,
+    };
+    onTaskUpdated?.(optimistic);
 
-      const res = await updateTaskStatusAction(activeId, targetStatus);
-      if (!res.ok) {
-        toast.error(res.error);
-        // reverte
-        setItems(tasks);
+    startTransition(async () => {
+      const res = await updateTaskStatusAction(activeTaskId, targetStatus!);
+      if (res.ok) {
+        if (res.data.task) {
+          onTaskUpdated?.(res.data.task);
+        }
+        toast.success(`Movida para "${getStatusLabel(targetStatus!)}"`);
       } else {
-        toast.success(`Status alterado para "${targetStatus}"`);
+        setTasks(initialTasks);
+        onTaskUpdated?.(original);
+        toast.error(res.error);
       }
-    } else if (activeId !== overId) {
-      // Reordenação na mesma coluna
-      const oldIndex = items.findIndex((t) => t.id === activeId);
-      const newIndex = items.findIndex((t) => t.id === overId);
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const reordered = arrayMove(items, oldIndex, newIndex);
-        setItems(reordered);
-        await reorderTasksAction(reordered.map((t) => t.id));
-      }
-    }
+    });
   };
 
   return (
     <DndContext
+      id={dndContextId}
       sensors={sensors}
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex md:grid md:grid-cols-3 gap-4 items-start overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth -mx-4 px-4 sm:mx-0 sm:px-0">
-        {COLUMNS.map((col) => {
-          const colItems = columnTasks[col.id] || [];
-
-          return (
-            <KanbanColumnContainer
-              key={col.id}
-              column={col}
-              tasks={colItems}
-              onView={onView}
-              onEdit={onEdit}
-              onOpenAudit={onOpenAudit}
-              onNewTask={onNewTask}
-              onDelete={onDelete}
-              canManage={canManage}
-            />
-          );
-        })}
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-4",
+          columns.length === 4 ? "md:grid-cols-2 lg:grid-cols-4" : "md:grid-cols-3",
+        )}
+      >
+        {columns.map((col) => (
+          <KanbanColumn
+            key={col.id}
+            column={col}
+            tasks={tasksByColumn[col.id]}
+            capabilitiesByTaskId={capabilitiesByTaskId}
+            onView={onView}
+            onEdit={onEdit}
+            onOpenAudit={onOpenAudit}
+            onDelete={onDelete}
+            onTaskUpdated={onTaskUpdated}
+            onNewTask={onNewTask ? () => onNewTask(col.id) : undefined}
+            canManage={canManage}
+          />
+        ))}
       </div>
 
       <DragOverlay>
         {activeTask ? (
-          <div className="rotate-2 scale-105 shadow-2xl">
+          <div className="rotate-1 scale-102 opacity-90">
             <TaskCard
               task={activeTask}
-              onView={() => {}}
-              onEdit={() => {}}
-              onOpenAudit={() => {}}
-              canManage={false}
+              capabilities={capabilitiesByTaskId[activeTask.id]}
+              onView={onView}
+              onEdit={onEdit}
+              onOpenAudit={onOpenAudit}
+              onDelete={onDelete}
+              onTaskUpdated={onTaskUpdated}
+              canManage={canManage}
             />
           </div>
         ) : null}
@@ -216,103 +271,103 @@ export function TasksKanbanView({
   );
 }
 
-function KanbanColumnContainer({
+function KanbanColumn({
   column,
   tasks,
+  capabilitiesByTaskId,
   onView,
   onEdit,
   onOpenAudit,
-  onNewTask,
   onDelete,
+  onTaskUpdated,
+  onNewTask,
   canManage,
 }: {
-  column: KanbanColumn;
+  column: ColumnConfig;
   tasks: TaskItem[];
+  capabilitiesByTaskId: Record<string, TaskCapabilities>;
   onView: (task: TaskItem) => void;
   onEdit: (task: TaskItem) => void;
   onOpenAudit: (task: TaskItem) => void;
-  onNewTask: (defaultStatus?: TaskStatus) => void;
-  onDelete?: (taskId: string) => void;
-  canManage?: boolean;
+  onDelete: (taskId: string) => void;
+  onTaskUpdated?: (updated: TaskItem) => void;
+  onNewTask?: () => void;
+  canManage: boolean;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
   });
 
-  const Icon = column.icon;
-
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        "flex flex-col rounded-2xl border border-border/70 bg-muted/20 p-3 min-h-[420px] transition-colors",
-        "w-[85vw] max-w-[340px] shrink-0 snap-center md:w-auto md:max-w-none md:shrink",
-        isOver && "border-primary bg-primary/5 ring-1 ring-primary",
+        "flex flex-col rounded-xl border bg-muted/25 p-3 transition-colors min-h-[300px]",
+        isOver && "bg-primary/5 ring-2 ring-primary/30",
       )}
     >
-      {/* Column Header */}
-      <div className="flex items-center justify-between gap-2 pb-3 mb-2 border-b border-border/50">
+      {/* Cabeçalho da coluna */}
+      <div className="mb-3 flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              "flex size-6 items-center justify-center rounded-md",
-              column.colorClass,
-            )}
-          >
-            <Icon className="size-3.5" />
-          </span>
-          <h3 className="font-semibold text-xs tracking-tight text-foreground">
+          <span className={cn("size-2.5 rounded-full", column.dotClass)} />
+          <h3 className="font-heading text-sm font-semibold text-foreground">
             {column.title}
           </h3>
-          <Badge
-            variant="secondary"
-            className="size-5 rounded-full p-0 flex items-center justify-center text-[10px] font-semibold"
-          >
+          <Badge variant="secondary" className="h-5 px-1.5 text-xs font-medium">
             {tasks.length}
           </Badge>
         </div>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-6 text-muted-foreground hover:text-foreground"
-          onClick={() => onNewTask(column.id)}
-          title={`Adicionar tarefa em ${column.title}`}
-        >
-          <PlusIcon className="size-3.5" />
-        </Button>
+        {onNewTask ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onNewTask}
+            aria-label={`Adicionar tarefa em ${column.title}`}
+            className="size-10 text-muted-foreground hover:text-foreground sm:size-7"
+          >
+            <PlusIcon className="size-4" />
+          </Button>
+        ) : null}
       </div>
 
-      {/* Cards List with SortableContext */}
+      {/* Cartões */}
       <SortableContext
         items={tasks.map((t) => t.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="flex-1 space-y-2.5">
+        <div className="flex flex-1 flex-col gap-2.5">
           {tasks.map((task) => (
             <TaskCard
               key={task.id}
               task={task}
+              capabilities={capabilitiesByTaskId[task.id]}
               onView={onView}
               onEdit={onEdit}
               onOpenAudit={onOpenAudit}
               onDelete={onDelete}
+              onTaskUpdated={onTaskUpdated}
               canManage={canManage}
             />
           ))}
 
-          {tasks.length === 0 && (
-            <div className="flex h-32 flex-col items-center justify-center rounded-xl border border-dashed border-border/60 p-4 text-center text-xs text-muted-foreground/70">
-              <p>Nenhuma tarefa aqui</p>
-              <button
-                type="button"
-                onClick={() => onNewTask(column.id)}
-                className="mt-1 text-primary hover:underline text-[11px]"
-              >
-                + Adicionar
-              </button>
+          {tasks.length === 0 ? (
+            <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
+              <span>Nenhuma tarefa aqui</span>
+              {onNewTask && column.id !== "canceled" ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={onNewTask}
+                  className="mt-2 h-8 text-xs text-primary"
+                >
+                  + Adicionar
+                </Button>
+              ) : null}
             </div>
-          )}
+          ) : null}
         </div>
       </SortableContext>
     </div>
