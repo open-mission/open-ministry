@@ -6,6 +6,22 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.1.5] - 2026-11-13
+
+### Corrigido e Melhorado
+- **Segurança, Privacidade e Permissões no Módulo de Tarefas**:
+  - Isolamento estrito de tarefas pessoais (incluindo widget da tela inicial) e validação por tarefa e escopo (pessoal, departamental e organizacional) nas ações e listagens.
+  - Subtarefas individuais distribuídas à equipe agora ficam ocultas de outros membros comuns e agrupadas com resumo de progresso para o líder/criador.
+- **Usabilidade, Acessibilidade e Datas nas Tarefas**:
+  - Criação rápida inline, atalhos de prazo (*Hoje*, *Amanhã*, *Próximo domingo*), busca de membros inline, correção do deslocamento de fuso horário ao editar prazos e suporte completo a recorrências com horário e dias da semana.
+  - Diálogos responsivos (modal no desktop e gaveta inferior no celular com alvos táteis ampliados e confirmação segura de exclusão), tabela acessível com visualização em cartões no celular, histórico de auditoria legível e alça dedicada para reordenação.
+  - Lembretes programados agora consideram tarefas em andamento, horário exato em `America/Sao_Paulo` e links diretos para abrir a tarefa a partir da notificação.
+- **Estabilidade do Cliente e Navegação**:
+  - Filtro preventivo no cliente e no Sentry para ignorar erros gerados exclusivamente por extensões do navegador (como `webkit-masked-url://hidden/`), preservando todos os erros reais da aplicação.
+  - Títulos em português nos caminhos de navegação (breadcrumbs) para Tarefas, Avisos, Calendário e Processos em segundo plano.
+
+---
+
 ## [1.1.4] - 2026-11-13
 
 ### Adicionado
