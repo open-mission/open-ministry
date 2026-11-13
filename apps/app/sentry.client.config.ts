@@ -1,5 +1,15 @@
 import * as Sentry from "@sentry/nextjs";
 
+import {
+  BROWSER_EXTENSION_URL_PATTERNS,
+  installBrowserExtensionErrorGuard,
+  isSentryBrowserExtensionEvent,
+} from "./src/lib/browser-extension-error";
+
+// Register capture-phase extension error guards before Sentry and Next.js attach
+// their global error / unhandledrejection handlers.
+installBrowserExtensionErrorGuard();
+
 const SENSITIVE_KEYS_REGEX =
   /pass(word|phrase)?|secret|token|api[_-]?key|auth(orization)?|credit[_-]?card|cvv|cookie|session/i;
 
@@ -10,6 +20,14 @@ Sentry.init({
   tracesSampleRate: process.env.NODE_ENV === "production" ? 0.2 : 1.0,
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0,
+  denyUrls: BROWSER_EXTENSION_URL_PATTERNS,
+
+  beforeSend(event, hint) {
+    if (isSentryBrowserExtensionEvent(event, hint?.originalException)) {
+      return null;
+    }
+    return event;
+  },
 
   // Sanitize and filter logs before dispatching
   beforeSendLog: (log) => {
