@@ -31,16 +31,74 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.1.4";
+export const CURRENT_APP_VERSION = "1.1.5";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.1.5",
+    title: "Tarefas Mais Seguras, Rápidas e Adaptadas para Todo Dispositivo",
+    subtitle:
+      "Reforço de privacidade nas tarefas pessoais, criação rápida com prazos práticos, lembretes no horário exato e navegação mais estável.",
+    releaseDate: "13 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Módulo de Tarefas & Demandas",
+        badge: "Aprimoramento",
+        features: [
+          {
+            title: "Privacidade e Permissões Mais Seguras",
+            description:
+              "Tarefas pessoais agora permanecem estritamente privadas entre quem criou e quem recebeu a tarefa, sem aparecer para terceiros. Atividades de departamentos e da igreja também respeitam o papel de líderes e membros.",
+            iconName: "ShieldCheckIcon",
+            badge: "Segurança",
+          },
+          {
+            title: "Criação Rápida, Datas e Prazos Precisos",
+            description:
+              "Adicione tarefas em segundos com a nova barra rápida, escolha prazos com um toque (Hoje, Amanhã ou Próximo domingo), veja repetições em português claro e tenha horários sempre fiéis ao seu fuso horário.",
+            iconName: "CheckSquare2Icon",
+          },
+          {
+            title: "Visualizações Mais Claras e Responsivas",
+            description:
+              "Lista, quadro de status e tabela agora trazem progresso resumido das entregas individuais da equipe, cartões dedicados no celular, alteração direta de status nos detalhes e confirmação segura antes de excluir.",
+            iconName: "KanbanIcon",
+          },
+          {
+            title: "Lembretes Pontuais e Atalhos Diretos",
+            description:
+              "Os lembretes respeitam o horário configurado nas recorrências e levam diretamente para a tarefa ao abrir a notificação, além de exibir o histórico de alterações com nomes legíveis de pessoas e departamentos.",
+            iconName: "BellIcon",
+          },
+        ],
+      },
+      {
+        moduleName: "Estabilidade & Navegação",
+        badge: "Plataforma",
+        features: [
+          {
+            title: "Navegação Protegida contra Extensões",
+            description:
+              "Falhas isoladas causadas por extensões externas do navegador (como gerenciadores de senhas) deixam de interromper a tela enquanto você usa o sistema.",
+            iconName: "SparklesIcon",
+          },
+          {
+            title: "Caminhos de Navegação Completos",
+            description:
+              "Os indicadores de localização no topo da tela agora exibem nomes claros em português para Tarefas, Avisos, Calendário e Processos em segundo plano.",
+            iconName: "LayoutDashboardIcon",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.1.4",
     title: "Personalização de Funções por Evento e Escalas Sob Medida",
     subtitle:
       "Defina exatamente quais funções de cada departamento atuam em cada culto ou evento, com suporte a séries recorrentes e ajustes independentes.",
     releaseDate: "13 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Módulo de Cultos, Eventos & Escalas",

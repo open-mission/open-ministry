@@ -1,173 +1,252 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
-  CheckCircle2Icon,
-  CheckSquare2Icon,
-  ClockIcon,
-  ColumnsIcon,
+  CheckSquareIcon,
+  FilterIcon,
+  KanbanIcon,
   ListIcon,
+  Loader2Icon,
   PlusIcon,
   SearchIcon,
   TableIcon,
-  XIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { PageInfo } from "@/components/app/page-info";
-import { StatStrip, type StatItem } from "@/components/app/stat-strip";
 import { Button } from "@/components/ui/button";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
+import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { createTaskAction } from "../actions/tasks.actions";
+import {
+  resolveTaskCapabilities,
+  type TaskCapabilities,
+  type TaskPermissionContext,
+} from "../lib/task-permissions";
+import type { TaskItem, TaskScope, TaskStatus } from "../services/tasks-service";
 import { TaskAuditHistoryDialog } from "./task-audit-history-dialog";
 import { TaskDetailDialog } from "./task-detail-dialog";
 import { TaskFormDialog } from "./task-form-dialog";
 import { TasksKanbanView } from "./tasks-kanban-view";
 import { TasksListView } from "./tasks-list-view";
 import { TasksTableView } from "./tasks-table-view";
-import type { TaskItem, TaskStatus } from "../services/tasks-service";
+
+type DepartmentOption = {
+  id: string;
+  name: string;
+};
+
+type MemberOption = {
+  id?: string;
+  userId: string;
+  personId?: string;
+  name: string;
+  email?: string | null;
+};
 
 type ViewMode = "list" | "table" | "kanban";
+type TasksTab = "personal" | "delegated" | "department" | "all";
+type StatusFilter = "active" | "completed" | "canceled" | "all";
 
 type TasksViewProps = {
   initialTasks: TaskItem[];
-  departments: { id: string; name: string }[];
-  members: { userId: string; personId?: string; name: string; email?: string | null }[];
+  departments?: DepartmentOption[];
+  members?: MemberOption[];
   currentUserId: string;
   isAdmin?: boolean;
+  ledDepartmentIds?: string[];
+  memberDepartmentIds?: string[];
   canDelegateDepartment?: boolean;
   canDelegateChurch?: boolean;
+  initialTab?: TasksTab;
+  initialTaskId?: string;
 };
+
+function matchesTaskTab(task: TaskItem, tab: TasksTab, userId: string): boolean {
+  if (tab === "personal") {
+    return (
+      (task.createdById === userId && task.scope === "personal") ||
+      task.assigneeId === userId
+    );
+  }
+  if (tab === "delegated") {
+    return (
+      task.createdById === userId &&
+      ((task.assigneeId !== null && task.assigneeId !== userId) ||
+        task.departmentId !== null ||
+        task.scope === "organization")
+    );
+  }
+  if (tab === "department") {
+    return task.departmentId !== null || task.scope === "organization";
+  }
+  return true;
+}
 
 export function TasksView({
   initialTasks,
-  departments,
-  members,
+  departments = [],
+  members = [],
   currentUserId,
   isAdmin = false,
-  canDelegateDepartment = true,
+  ledDepartmentIds = [],
+  memberDepartmentIds = [],
+  canDelegateDepartment = false,
   canDelegateChurch = false,
+  initialTab,
+  initialTaskId,
 }: TasksViewProps) {
-  const [prevInitialTasks, setPrevInitialTasks] = useState(initialTasks);
+  const router = useRouter();
   const [tasks, setTasks] = useState<TaskItem[]>(initialTasks);
+  const [quickTitle, setQuickTitle] = useState("");
+  const [isQuickPending, startQuickTransition] = useTransition();
 
+  const [prevInitialTasks, setPrevInitialTasks] = useState(initialTasks);
   if (initialTasks !== prevInitialTasks) {
     setPrevInitialTasks(initialTasks);
     setTasks(initialTasks);
   }
 
+  const resolvedInitialTab: TasksTab = useMemo(() => {
+    if (
+      initialTab === "all" &&
+      (isAdmin || canDelegateChurch)
+    ) {
+      return "all";
+    }
+    if (initialTab === "department" && departments.length > 0) {
+      return "department";
+    }
+    if (initialTab === "delegated" || initialTab === "personal") {
+      return initialTab;
+    }
+    return "personal";
+  }, [initialTab, isAdmin, canDelegateChurch, departments.length]);
+
+  const [activeTab, setActiveTab] = useState<TasksTab>(resolvedInitialTab);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
+  const [selectedDeptId, setSelectedDeptId] = useState<string>("all");
+
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem("openministry_tasks_view");
-        if (saved === "list" || saved === "table" || saved === "kanban") {
-          return saved;
-        }
-      } catch {
-        // Ignore storage errors
+      const saved = window.localStorage.getItem("tasks_view_mode") as ViewMode | null;
+      if (saved === "list" || saved === "table" || saved === "kanban") {
+        return saved;
       }
     }
     return "list";
   });
-  const [activeTab, setActiveTab] = useState<"personal" | "delegated" | "department" | "all">("personal");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "completed">("all");
-  const [selectedDeptId, setSelectedDeptId] = useState<string>("all");
 
   // Modais
   const [formOpen, setFormOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<TaskItem | null>(null);
-  const [taskForDetail, setTaskForDetail] = useState<TaskItem | null>(null);
+  const [defaultCreateStatus, setDefaultCreateStatus] = useState<TaskStatus>("todo");
+  const initialDeepLinkedTask = initialTaskId
+    ? initialTasks.find((t) => t.id === initialTaskId) ?? null
+    : null;
+  const [detailOpen, setDetailOpen] = useState(Boolean(initialDeepLinkedTask));
+  const [selectedTaskForDetail, setSelectedTaskForDetail] =
+    useState<TaskItem | null>(initialDeepLinkedTask);
   const [auditOpen, setAuditOpen] = useState(false);
   const [taskForAudit, setTaskForAudit] = useState<TaskItem | null>(null);
 
-  const handleTaskCreated = (newTask: TaskItem, tempId?: string) => {
-    setTasks((current) => {
-      if (tempId) {
-        const index = current.findIndex((t) => t.id === tempId);
-        if (index !== -1) {
-          const next = [...current];
-          next[index] = newTask;
-          return next;
-        }
-      }
-      if (current.some((t) => t.id === newTask.id)) {
-        return current.map((t) => (t.id === newTask.id ? newTask : t));
-      }
-      return [newTask, ...current];
-    });
-  };
+  const [prevInitialTaskId, setPrevInitialTaskId] = useState(initialTaskId);
+  if (initialTaskId !== prevInitialTaskId) {
+    setPrevInitialTaskId(initialTaskId);
+    const match = initialTaskId
+      ? initialTasks.find((t) => t.id === initialTaskId) ?? null
+      : null;
+    if (match) {
+      setSelectedTaskForDetail(match);
+      setDetailOpen(true);
+    }
+  }
 
-  const handleTaskFailed = (tempId: string) => {
-    setTasks((current) => current.filter((t) => t.id !== tempId));
-  };
+  const actorContext = useMemo<TaskPermissionContext>(
+    () => ({
+      userId: currentUserId,
+      isAdmin,
+      ledDepartmentIds,
+      memberDepartmentIds,
+      canCreateOrganization: canDelegateChurch,
+    }),
+    [
+      currentUserId,
+      isAdmin,
+      ledDepartmentIds,
+      memberDepartmentIds,
+      canDelegateChurch,
+    ],
+  );
 
-  const handleTaskUpdated = (updatedTask: TaskItem) => {
-    setTasks((current) =>
-      current.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
-    );
-  };
-
-  const handleTaskDeleted = (taskId: string) => {
-    setTasks((current) => current.filter((t) => t.id !== taskId));
-  };
+  const capabilitiesByTaskId = useMemo<Record<string, TaskCapabilities>>(() => {
+    const map: Record<string, TaskCapabilities> = {};
+    for (const task of tasks) {
+      map[task.id] = resolveTaskCapabilities(task, actorContext);
+    }
+    return map;
+  }, [tasks, actorContext]);
 
   const handleChangeViewMode = (mode: ViewMode) => {
     setViewMode(mode);
-    try {
-      localStorage.setItem("openministry_tasks_view", mode);
-    } catch {
-      // Ignore storage errors
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("tasks_view_mode", mode);
     }
   };
 
-  // Filtragem em memória
+  // Contadores de tarefas ativas por aba (excluindo filhas quando pai está presente)
+  const tabActiveCounts = useMemo(() => {
+    const ids = new Set(tasks.map((t) => t.id));
+    const isTopLevelActive = (t: TaskItem) =>
+      !(t.parentTaskId && ids.has(t.parentTaskId)) &&
+      (t.status === "todo" || t.status === "in_progress");
+
+    return {
+      personal: tasks.filter(
+        (t) => isTopLevelActive(t) && matchesTaskTab(t, "personal", currentUserId),
+      ).length,
+      delegated: tasks.filter(
+        (t) => isTopLevelActive(t) && matchesTaskTab(t, "delegated", currentUserId),
+      ).length,
+      department: tasks.filter(
+        (t) => isTopLevelActive(t) && matchesTaskTab(t, "department", currentUserId),
+      ).length,
+      all: tasks.filter((t) => isTopLevelActive(t)).length,
+    };
+  }, [tasks, currentUserId]);
+
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
-      // 1. Filtro por Aba
-      if (activeTab === "personal") {
-        const isMine =
-          (task.createdById === currentUserId && task.scope === "personal") ||
-          task.assigneeId === currentUserId;
-        if (!isMine) return false;
-      } else if (activeTab === "delegated") {
-        const isDelegated =
-          task.createdById === currentUserId &&
-          ((task.assigneeId && task.assigneeId !== currentUserId) ||
-            task.departmentId !== null ||
-            task.scope === "organization");
-        if (!isDelegated) return false;
-      } else if (activeTab === "department") {
-        if (!task.departmentId) return false;
-      }
-
-      // 2. Filtro por Status
-      if (statusFilter === "active" && task.status === "completed") {
-        return false;
-      }
-      if (statusFilter === "completed" && task.status !== "completed") {
+      if (!matchesTaskTab(task, activeTab, currentUserId)) {
         return false;
       }
 
-      // 3. Filtro por Departamento
+      if (statusFilter === "active") {
+        if (task.status === "completed" || task.status === "canceled") {
+          return false;
+        }
+      } else if (statusFilter === "completed") {
+        if (task.status !== "completed") return false;
+      } else if (statusFilter === "canceled") {
+        if (task.status !== "canceled") return false;
+      }
+
       if (selectedDeptId !== "all" && task.departmentId !== selectedDeptId) {
         return false;
       }
 
-      // 4. Filtro por Busca de texto
       if (searchQuery.trim().length > 0) {
         const q = searchQuery.toLowerCase().trim();
-        const matchesTitle = task.title.toLowerCase().includes(q);
-        const matchesDesc = (task.description ?? "").toLowerCase().includes(q);
-        const matchesTag = Array.isArray(task.tags)
-          ? task.tags.some((t) => t.toLowerCase().includes(q))
-          : false;
-
-        if (!matchesTitle && !matchesDesc && !matchesTag) {
+        const titleMatch = task.title.toLowerCase().includes(q);
+        const descMatch = task.description?.toLowerCase().includes(q) ?? false;
+        const assigneeMatch =
+          task.assignee?.name?.toLowerCase().includes(q) ?? false;
+        const tagsMatch =
+          task.tags?.some((t) => t.toLowerCase().includes(q)) ?? false;
+        if (!titleMatch && !descMatch && !assigneeMatch && !tagsMatch) {
           return false;
         }
       }
@@ -176,41 +255,32 @@ export function TasksView({
     });
   }, [tasks, activeTab, statusFilter, selectedDeptId, searchQuery, currentUserId]);
 
-  // Estatísticas do StatStrip
-  const stats: StatItem[] = useMemo(() => {
-    const total = tasks.length;
-    const pending = tasks.filter((t) => t.status !== "completed").length;
-    const completed = tasks.filter((t) => t.status === "completed").length;
+  const hasActiveFilters =
+    searchQuery.trim().length > 0 ||
+    statusFilter !== "active" ||
+    selectedDeptId !== "all";
 
-    return [
-      {
-        icon: CheckSquare2Icon,
-        label: "Total de tarefas",
-        value: total,
-        hint: "Sob seu acompanhamento",
-      },
-      {
-        icon: ClockIcon,
-        label: "Pendentes",
-        value: pending,
-        hint: "A fazer ou em andamento",
-      },
-      {
-        icon: CheckCircle2Icon,
-        label: "Concluídas",
-        value: completed,
-        hint: "Finalizadas com sucesso",
-      },
-    ];
-  }, [tasks]);
-
-  const handleEdit = (task: TaskItem) => {
-    setTaskToEdit(task);
-    setFormOpen(true);
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("active");
+    setSelectedDeptId("all");
   };
 
-  const handleView = (task: TaskItem) => {
-    setTaskForDetail(task);
+  const handleTaskUpdated = (updated: TaskItem) => {
+    setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+    if (selectedTaskForDetail?.id === updated.id) {
+      setSelectedTaskForDetail(updated);
+    }
+  };
+
+  const handleTaskDeleted = (taskId: string) => {
+    setTasks((prev) =>
+      prev.filter((t) => t.id !== taskId && t.parentTaskId !== taskId),
+    );
+    if (selectedTaskForDetail?.id === taskId) {
+      setDetailOpen(false);
+      setSelectedTaskForDetail(null);
+    }
   };
 
   const handleOpenAudit = (task: TaskItem) => {
@@ -218,14 +288,67 @@ export function TasksView({
     setAuditOpen(true);
   };
 
-  const handleNewTask = (_defaultStatus?: TaskStatus) => {
-    setTaskToEdit(null);
+  const handleView = (task: TaskItem) => {
+    setSelectedTaskForDetail(task);
+    setDetailOpen(true);
+  };
+
+  const handleEdit = (task: TaskItem) => {
+    setTaskToEdit(task);
+    setDefaultCreateStatus((task.status as TaskStatus) ?? "todo");
     setFormOpen(true);
   };
 
+  const handleNewTask = (status: TaskStatus = "todo") => {
+    setTaskToEdit(null);
+    setDefaultCreateStatus(status);
+    setFormOpen(true);
+  };
+
+  const handleQuickAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = quickTitle.trim();
+    if (!clean || isQuickPending) return;
+
+    const createAsDepartment =
+      activeTab === "department" &&
+      selectedDeptId !== "all" &&
+      canDelegateDepartment;
+
+    const scope: TaskScope = createAsDepartment ? "department" : "personal";
+
+    startQuickTransition(async () => {
+      const res = await createTaskAction({
+        title: clean,
+        scope,
+        departmentId: createAsDepartment ? selectedDeptId : null,
+        assigneeId: createAsDepartment ? null : currentUserId,
+        delegationType: createAsDepartment ? "shared" : "single",
+        status: "todo",
+      });
+
+      if (res.ok) {
+        setQuickTitle("");
+        if (res.data.task) {
+          setTasks((prev) => [res.data.task!, ...prev]);
+        } else {
+          router.refresh();
+        }
+        toast.success("Tarefa adicionada.");
+      } else {
+        toast.error(res.error);
+      }
+    });
+  };
+
+  const defaultFormScope: TaskScope =
+    activeTab === "department" && canDelegateDepartment && departments.length > 0
+      ? "department"
+      : "personal";
+
   return (
-    <div className="space-y-6">
-      {/* Header do Módulo */}
+    <div className="space-y-5">
+      {/* Cabeçalho */}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
@@ -237,260 +360,323 @@ export function TasksView({
               description={
                 <>
                   <p>
-                    Gerencie tarefas pessoais para organizar seus afazeres, estudos de
-                    instrumento e compromissos ministeriais.
+                    Organize suas tarefas pessoais, estudos e preparações para
+                    os cultos em um só lugar.
                   </p>
                   <p className="mt-2">
-                    Líderes e administradores podem delegar tarefas para membros ou para toda
-                    a equipe de um departamento, com notificações push automáticas e histórico auditável.
+                    Líderes e administradores podem delegar atividades para um
+                    membro específico ou para todo um departamento, com lembretes
+                    automáticos e histórico de alterações.
                   </p>
                 </>
               }
             />
           </div>
-          <p className="text-xs text-muted-foreground sm:text-sm">
-            Organize seus afazeres pessoais, rotinas de estudo e delegue demandas ministeriais para equipes e departamentos.
+          <p className="text-sm text-muted-foreground">
+            {tabActiveCounts[activeTab]}{" "}
+            {tabActiveCounts[activeTab] === 1
+              ? "tarefa ativa nesta visão"
+              : "tarefas ativas nesta visão"}
           </p>
         </div>
 
         <Button
-          onClick={() => handleNewTask()}
-          size="sm"
-          className="gap-1.5 shadow-xs self-start sm:self-auto"
+          type="button"
+          onClick={() => handleNewTask("todo")}
+          className="min-h-[44px] gap-1.5 self-start shadow-xs sm:min-h-[38px] sm:self-auto"
         >
           <PlusIcon className="size-4" />
-          Nova Tarefa
+          Nova tarefa
         </Button>
       </header>
 
-      {/* Métricas Rápidas */}
-      <StatStrip items={stats} />
+      {/* Captura rápida inline */}
+      <form
+        onSubmit={handleQuickAdd}
+        className="flex flex-col gap-2 sm:flex-row sm:items-center"
+      >
+        <div className="relative flex-1">
+          <PlusIcon className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="text"
+            value={quickTitle}
+            onChange={(e) => setQuickTitle(e.target.value)}
+            placeholder={
+              activeTab === "department" &&
+              selectedDeptId !== "all" &&
+              canDelegateDepartment
+                ? "Adicionar tarefa rápida neste departamento..."
+                : "Adicionar tarefa rápida para mim..."
+            }
+            aria-label="Título da tarefa rápida"
+            className="min-h-[44px] bg-card pl-10"
+          />
+        </div>
+        <Button
+          type="submit"
+          variant="secondary"
+          disabled={!quickTitle.trim() || isQuickPending}
+          className="min-h-[44px] shrink-0 sm:px-5"
+        >
+          {isQuickPending ? (
+            <>
+              <Loader2Icon className="mr-2 size-4 animate-spin" />
+              Adicionando...
+            </>
+          ) : (
+            "Adicionar rápido"
+          )}
+        </Button>
+      </form>
 
-      {/* Abas e Barra de Ferramentas */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          {/* Abas de Contexto */}
+      {/* Abas e Controles */}
+      <div className="space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Tabs
             value={activeTab}
-            onValueChange={(val) => setActiveTab(val as "personal" | "delegated" | "department" | "all")}
+            onValueChange={(val) => setActiveTab(val as TasksTab)}
             className="w-full sm:w-auto"
           >
-            <TabsList className="grid grid-cols-4 sm:flex w-full">
-              <TabsTrigger value="personal" className="text-xs px-3">
-                Minhas Tarefas
+            <TabsList className="flex w-full justify-start overflow-x-auto sm:w-auto">
+              <TabsTrigger value="personal" className="shrink-0 px-3 text-xs">
+                Minhas ({tabActiveCounts.personal})
               </TabsTrigger>
-              <TabsTrigger value="delegated" className="text-xs px-3">
-                Delegadas
+              <TabsTrigger value="delegated" className="shrink-0 px-3 text-xs">
+                Delegadas ({tabActiveCounts.delegated})
               </TabsTrigger>
-              {departments.length > 0 && (
-                <TabsTrigger value="department" className="text-xs px-3">
-                  Departamento
+              {departments.length > 0 ? (
+                <TabsTrigger
+                  value="department"
+                  className="shrink-0 px-3 text-xs"
+                >
+                  Departamento ({tabActiveCounts.department})
                 </TabsTrigger>
-              )}
-              {(isAdmin || canDelegateChurch) && (
-                <TabsTrigger value="all" className="text-xs px-3">
-                  Todas
+              ) : null}
+              {isAdmin || canDelegateChurch ? (
+                <TabsTrigger value="all" className="shrink-0 px-3 text-xs">
+                  Todas ({tabActiveCounts.all})
                 </TabsTrigger>
-              )}
+              ) : null}
             </TabsList>
           </Tabs>
 
-          {/* Seletor de Modo de Visualização (List, Table, Kanban) */}
-          <div className="flex items-center gap-1 rounded-xl border bg-muted/30 p-1 self-end sm:self-auto shrink-0">
+          {/* Alternador de visualização */}
+          <div
+            role="group"
+            aria-label="Modo de visualização"
+            className="flex shrink-0 items-center gap-1 self-end rounded-xl border bg-muted/30 p-1 sm:self-auto"
+          >
             <Button
               type="button"
               variant={viewMode === "list" ? "default" : "ghost"}
               size="sm"
+              aria-pressed={viewMode === "list"}
               onClick={() => handleChangeViewMode("list")}
-              className="h-7 px-2.5 text-xs gap-1.5"
-              title="Visualização em Lista (Things 3 style)"
+              className="min-h-[38px] gap-1.5 px-3 text-xs sm:min-h-[32px]"
             >
               <ListIcon className="size-3.5" />
-              <span className="hidden sm:inline">Lista</span>
+              <span>Lista</span>
             </Button>
             <Button
               type="button"
               variant={viewMode === "kanban" ? "default" : "ghost"}
               size="sm"
+              aria-pressed={viewMode === "kanban"}
               onClick={() => handleChangeViewMode("kanban")}
-              className="h-7 px-2.5 text-xs gap-1.5"
-              title="Visualização em Quadro Kanban"
+              className="min-h-[38px] gap-1.5 px-3 text-xs sm:min-h-[32px]"
             >
-              <ColumnsIcon className="size-3.5" />
-              <span className="hidden sm:inline">Kanban</span>
+              <KanbanIcon className="size-3.5" />
+              <span>Quadro</span>
             </Button>
             <Button
               type="button"
               variant={viewMode === "table" ? "default" : "ghost"}
               size="sm"
+              aria-pressed={viewMode === "table"}
               onClick={() => handleChangeViewMode("table")}
-              className="h-7 px-2.5 text-xs gap-1.5"
-              title="Visualização em Tabela Detalhada"
+              className="min-h-[38px] gap-1.5 px-3 text-xs sm:min-h-[32px]"
             >
               <TableIcon className="size-3.5" />
-              <span className="hidden sm:inline">Tabela</span>
+              <span>Tabela</span>
             </Button>
           </div>
         </div>
 
-        {/* Linha de Busca e Filtros Secundários */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-          <div className="flex-1 min-w-[220px]">
-            <InputGroup>
-              <InputGroupAddon>
-                <SearchIcon className="size-4 text-muted-foreground" />
-              </InputGroupAddon>
-              <InputGroupInput
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar tarefas por título, notas ou #tags..."
-                className="text-xs"
-              />
-              {searchQuery && (
-                <InputGroupAddon>
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery("")}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <XIcon className="size-3.5" />
-                  </button>
-                </InputGroupAddon>
-              )}
-            </InputGroup>
+        {/* Filtros e Busca */}
+        <search className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar por título, observação, pessoa ou etiqueta..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Buscar tarefas"
+              className="min-h-[44px] bg-card pl-9 sm:min-h-[38px]"
+            />
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Filtro de Status */}
+          <div className="flex flex-wrap items-center gap-2">
             <NativeSelect
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "completed")}
-              className="text-xs h-9 w-[130px]"
+              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+              aria-label="Filtrar por situação"
+              className="min-h-[44px] w-full bg-card text-xs sm:min-h-[38px] sm:w-auto"
             >
-              <option value="all">Status: Todos</option>
-              <option value="active">Apenas Ativas</option>
-              <option value="completed">Concluídas</option>
+              <option value="active">Situação: Ativas</option>
+              <option value="completed">Situação: Concluídas</option>
+              <option value="canceled">Situação: Canceladas</option>
+              <option value="all">Situação: Todas</option>
             </NativeSelect>
 
-            {/* Filtro de Departamento */}
-            {departments.length > 0 && activeTab !== "personal" && (
-              <NativeSelect
-                value={selectedDeptId}
-                onChange={(e) => setSelectedDeptId(e.target.value)}
-                className="text-xs h-9 w-[150px]"
-              >
-                <option value="all">Depto: Todos</option>
-                {departments.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </NativeSelect>
-            )}
+            {departments.length > 0 &&
+            (activeTab === "department" || activeTab === "all") ? (
+              <div className="flex w-full items-center gap-1.5 sm:w-auto">
+                <FilterIcon className="hidden size-3.5 shrink-0 text-muted-foreground sm:block" />
+                <NativeSelect
+                  value={selectedDeptId}
+                  onChange={(e) => setSelectedDeptId(e.target.value)}
+                  aria-label="Filtrar por departamento"
+                  className="min-h-[44px] w-full bg-card text-xs sm:min-h-[38px] sm:w-auto"
+                >
+                  <option value="all">Todos departamentos</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </div>
+            ) : null}
           </div>
-        </div>
+        </search>
       </div>
 
-      {/* Renderização da Visualização Escolhida */}
+      {/* Área de Conteúdo */}
       {filteredTasks.length === 0 ? (
-        <div className="flex min-h-[300px] flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 p-8 text-center bg-muted/10">
-          <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-3">
-            <CheckSquare2Icon className="size-6" />
-          </span>
-          <h3 className="font-heading text-lg font-semibold tracking-tight text-foreground">
-            {searchQuery
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed bg-muted/15 py-14 px-6 text-center">
+          <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <CheckSquareIcon className="size-6" />
+          </div>
+          <h2 className="mt-4 font-heading text-lg font-semibold">
+            {hasActiveFilters
               ? "Nenhuma tarefa encontrada"
-              : activeTab === "delegated"
-                ? "Nenhuma tarefa delegada"
-                : "Tudo limpo por aqui!"}
-          </h3>
-          <p className="mt-1 max-w-sm text-xs text-muted-foreground">
-            {searchQuery
-              ? "Tente buscar com outros termos ou limpe o filtro para ver todas as tarefas."
-              : "Aproveite para criar uma nova tarefa pessoal ou delegar afazeres para sua equipe."}
+              : "Tudo em dia por aqui"}
+          </h2>
+          <p className="mt-1 max-w-md text-sm text-muted-foreground">
+            {hasActiveFilters
+              ? "Nenhuma tarefa corresponde à busca ou aos filtros selecionados."
+              : "Crie sua primeira tarefa ou delegue uma atividade para organizar sua equipe."}
           </p>
-          <Button
-            onClick={() => handleNewTask()}
-            size="sm"
-            variant="outline"
-            className="mt-4 gap-1.5 text-xs"
-          >
-            <PlusIcon className="size-3.5" />
-            Criar Primeira Tarefa
-          </Button>
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            {hasActiveFilters ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClearFilters}
+                className="min-h-[44px] sm:min-h-[36px]"
+              >
+                Limpar filtros
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              onClick={() => handleNewTask("todo")}
+              className="min-h-[44px] gap-1.5 sm:min-h-[36px]"
+            >
+              <PlusIcon className="size-4" />
+              Criar tarefa
+            </Button>
+          </div>
         </div>
       ) : viewMode === "list" ? (
         <TasksListView
           tasks={filteredTasks}
+          capabilitiesByTaskId={capabilitiesByTaskId}
           onView={handleView}
           onEdit={handleEdit}
           onOpenAudit={handleOpenAudit}
           onDelete={handleTaskDeleted}
-          canManage={true}
+          onTaskUpdated={handleTaskUpdated}
         />
       ) : viewMode === "kanban" ? (
         <TasksKanbanView
           tasks={filteredTasks}
+          capabilitiesByTaskId={capabilitiesByTaskId}
           onView={handleView}
           onEdit={handleEdit}
           onOpenAudit={handleOpenAudit}
-          onNewTask={handleNewTask}
           onDelete={handleTaskDeleted}
-          canManage={true}
+          onTaskUpdated={handleTaskUpdated}
+          onNewTask={(status) => handleNewTask(status ?? "todo")}
         />
       ) : (
         <TasksTableView
           tasks={filteredTasks}
+          capabilitiesByTaskId={capabilitiesByTaskId}
           onView={handleView}
           onEdit={handleEdit}
           onOpenAudit={handleOpenAudit}
           onDelete={handleTaskDeleted}
-          canManage={true}
+          onTaskUpdated={handleTaskUpdated}
         />
       )}
 
-      {/* Modal de Detalhes da Tarefa (Modo Visualização) */}
-      <TaskDetailDialog
-        task={taskForDetail}
-        open={Boolean(taskForDetail)}
-        onOpenChange={(open) => {
-          if (!open) setTaskForDetail(null);
-        }}
-        onEdit={(task) => {
-          setTaskForDetail(null);
-          handleEdit(task);
-        }}
-        onOpenAudit={(task) => {
-          handleOpenAudit(task);
-        }}
-        onDelete={handleTaskDeleted}
-        onTaskUpdated={(updatedTask) => {
-          handleTaskUpdated(updatedTask);
-          setTaskForDetail(updatedTask);
-        }}
-        canManage={true}
-      />
-
-      {/* Modal de Formulário (Criação/Edição) */}
+      {/* Formulário Criação / Edição */}
       <TaskFormDialog
         open={formOpen}
-        onOpenChange={setFormOpen}
+        onClose={() => {
+          setFormOpen(false);
+          setTaskToEdit(null);
+        }}
+        onSuccess={(savedTask, count) => {
+          if (savedTask) {
+            setTasks((prev) => {
+              const exists = prev.some((t) => t.id === savedTask.id);
+              return exists
+                ? prev.map((t) => (t.id === savedTask.id ? savedTask : t))
+                : [savedTask, ...prev];
+            });
+          }
+          if ((count ?? 1) > 1 || !savedTask) {
+            router.refresh();
+          }
+        }}
         taskToEdit={taskToEdit}
         departments={departments}
         members={members}
         currentUserId={currentUserId}
         canDelegateDepartment={canDelegateDepartment}
         canDelegateChurch={canDelegateChurch}
-        onTaskCreated={handleTaskCreated}
-        onTaskFailed={handleTaskFailed}
-        onTaskUpdated={handleTaskUpdated}
+        defaultScope={defaultFormScope}
+        defaultDepartmentId={selectedDeptId !== "all" ? selectedDeptId : null}
+        defaultStatus={defaultCreateStatus}
       />
 
-      {/* Modal de Histórico de Auditoria */}
+      {/* Modal de Detalhes */}
+      <TaskDetailDialog
+        task={selectedTaskForDetail}
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        onEdit={handleEdit}
+        onDeleted={handleTaskDeleted}
+        onTaskUpdated={handleTaskUpdated}
+        capabilities={
+          selectedTaskForDetail
+            ? capabilitiesByTaskId[selectedTaskForDetail.id]
+            : undefined
+        }
+        members={members}
+        departments={departments}
+      />
+
+      {/* Modal de Auditoria */}
       <TaskAuditHistoryDialog
         task={taskForAudit}
         open={auditOpen}
-        onOpenChange={setAuditOpen}
+        onClose={() => setAuditOpen(false)}
+        members={members}
+        departments={departments}
       />
     </div>
   );

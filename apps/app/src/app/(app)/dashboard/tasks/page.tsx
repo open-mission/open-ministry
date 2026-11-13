@@ -16,19 +16,39 @@ export const metadata: Metadata = {
   description: "Gerencie tarefas pessoais, afazeres da equipe e demandas ministeriais.",
 };
 
-export default function TasksPage() {
+export default function TasksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string; taskId?: string }>;
+}) {
   return (
     <Suspense fallback={<TasksSkeleton />}>
-      <TasksContent />
+      <TasksContent searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function TasksContent() {
+async function TasksContent({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string; taskId?: string }>;
+}) {
   await connection();
 
-  const { organization, session } = await requireOrganizationContext();
+  const [{ organization, session, isAdmin }, sp] = await Promise.all([
+    requireOrganizationContext(),
+    searchParams,
+  ]);
   const userId = session.user.id;
+
+  const initialTab =
+    sp.tab === "personal" ||
+    sp.tab === "delegated" ||
+    sp.tab === "department" ||
+    sp.tab === "all"
+      ? sp.tab
+      : undefined;
+  const initialTaskId = typeof sp.taskId === "string" ? sp.taskId : undefined;
 
   const [hasAccess, canDelegateDepartment, canDelegateChurch] =
     await Promise.all([
@@ -69,7 +89,7 @@ async function TasksContent() {
     listTasks({
       organizationId: organization.id,
       userId,
-      isAdmin: canDelegateChurch,
+      isAdmin,
       ledDepartmentIds,
       memberDepartmentIds,
     }),
@@ -85,7 +105,8 @@ async function TasksContent() {
         name: true,
         email: true,
       },
-      limit: 100,
+      orderBy: (person, { asc }) => [asc(person.name)],
+      limit: 500,
     }),
   ]);
 
@@ -110,9 +131,13 @@ async function TasksContent() {
         departments={departments}
         members={members}
         currentUserId={userId}
-        isAdmin={canDelegateChurch}
+        isAdmin={isAdmin}
+        ledDepartmentIds={ledDepartmentIds}
+        memberDepartmentIds={memberDepartmentIds}
         canDelegateDepartment={canDelegateDepartment}
         canDelegateChurch={canDelegateChurch}
+        initialTab={initialTab}
+        initialTaskId={initialTaskId}
       />
     </div>
   );
@@ -120,23 +145,20 @@ async function TasksContent() {
 
 function TasksSkeleton() {
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 min-w-0">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 min-w-0">
+      <div className="flex items-center justify-between gap-4">
         <div className="space-y-2">
-          <Skeleton className="h-8 w-44 rounded-lg" />
+          <Skeleton className="h-8 w-40 rounded-lg" />
           <Skeleton className="h-4 w-72 rounded-lg" />
         </div>
-        <Skeleton className="h-9 w-32 rounded-lg" />
+        <Skeleton className="h-10 w-36 rounded-lg" />
       </div>
-      <div className="grid grid-cols-3 gap-4">
-        <Skeleton className="h-20 rounded-xl" />
-        <Skeleton className="h-20 rounded-xl" />
-        <Skeleton className="h-20 rounded-xl" />
-      </div>
-      <div className="space-y-3 pt-4">
-        <Skeleton className="h-14 w-full rounded-xl" />
-        <Skeleton className="h-14 w-full rounded-xl" />
-        <Skeleton className="h-14 w-full rounded-xl" />
+      <Skeleton className="h-11 w-full rounded-xl" />
+      <div className="space-y-2.5 pt-2">
+        <Skeleton className="h-16 w-full rounded-xl" />
+        <Skeleton className="h-16 w-full rounded-xl" />
+        <Skeleton className="h-16 w-full rounded-xl" />
+        <Skeleton className="h-16 w-full rounded-xl" />
       </div>
     </div>
   );

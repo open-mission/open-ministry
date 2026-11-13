@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 
 const routeLabels: Record<string, string> = {
   dashboard: "Início",
+  tasks: "Tarefas",
   events: "Cultos e eventos",
   schedules: "Escalas",
   availability: "Disponibilidade",
@@ -28,6 +29,9 @@ const routeLabels: Record<string, string> = {
   profile: "Meu perfil",
   notifications: "Notificações",
   songs: "Músicas",
+  announcements: "Avisos",
+  calendar: "Calendário",
+  jobs: "Processos em segundo plano",
 };
 
 export function DashboardBreadcrumbFallback() {
