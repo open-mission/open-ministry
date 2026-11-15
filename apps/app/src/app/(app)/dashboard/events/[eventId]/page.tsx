@@ -166,7 +166,7 @@ async function EventContent({
               <span className="font-heading text-xl leading-none sm:text-3xl">
                 {parts.day}
               </span>
-              <span className="mt-0.5 text-[0.55rem] font-medium tracking-[0.14em] text-primary-foreground/70 sm:mt-1 sm:text-[0.65rem]">
+              <span className="mt-0.5 text-[11px] font-medium tracking-[0.14em] text-primary-foreground/70 sm:mt-1">
                 {parts.monthShort}
               </span>
             </div>

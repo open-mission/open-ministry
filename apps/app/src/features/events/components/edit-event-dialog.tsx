@@ -10,7 +10,6 @@ import {
 } from "@/app/actions/events";
 import { FormAlert } from "@/components/auth/form-alert";
 import { SubmitButton } from "@/components/auth/submit-button";
-import { DepartmentCheckboxRow } from "@/components/events/department-checkbox-row";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -43,6 +42,7 @@ import {
   NativeSelectOption,
 } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import { DepartmentCheckboxRow } from "@/features/events/components/department-checkbox-row";
 import { computeDurationMinutes, computeEndTime } from "@/lib/plan-utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 

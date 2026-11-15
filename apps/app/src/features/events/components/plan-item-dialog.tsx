@@ -493,7 +493,7 @@ function PlanItemFields({
                         <div className="flex items-center gap-2">
                           <Avatar className="size-5">
                             <AvatarImage src={p.avatarUrl ?? undefined} />
-                            <AvatarFallback className="text-[10px]">
+                            <AvatarFallback className="text-[11px]">
                               {getInitials(p.name)}
                             </AvatarFallback>
                           </Avatar>

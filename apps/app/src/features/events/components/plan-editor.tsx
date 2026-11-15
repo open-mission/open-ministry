@@ -49,22 +49,10 @@ import {
   reorderPlanItemsAction,
 } from "@/app/actions/events";
 import { enqueueEventPlanPdfJobAction } from "@/app/actions/jobs";
-import { SharePlanDialog } from "@/components/events/share-plan-dialog";
-import {
-  PlanItemDialog,
-  type SongOption,
-} from "@/components/events/plan-item-dialog";
 import {
   SongQuickDrawer,
   type QuickDrawerSong,
 } from "@/components/songs/song-quick-drawer";
-import {
-  ClearPlanDialog,
-  exportPlanAsJson,
-  ImportPlanDialog,
-  ManagePlanTemplatesDialog,
-  SavePlanDialog,
-} from "@/components/events/plan-template-dialogs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -89,6 +77,7 @@ import {
   DrawerDescription,
   DrawerFooter,
   DrawerHeader,
+  DrawerNestedRoot,
   DrawerTitle,
 } from "@/components/ui/drawer";
 import {
@@ -99,11 +88,24 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  ClearPlanDialog,
+  exportPlanAsJson,
+  ImportPlanDialog,
+  ManagePlanTemplatesDialog,
+  SavePlanDialog,
+} from "@/features/events/components/plan-template-dialogs";
+import {
+  PlanItemDialog,
+  type SongOption,
+} from "@/features/events/components/plan-item-dialog";
+import { SharePlanDialog } from "@/features/events/components/share-plan-dialog";
+import {
   computePlanItemTimes,
   type ComputedPlanItem,
 } from "@/lib/plan-utils";
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type PersonOption = {
   id: string;
@@ -154,6 +156,7 @@ export function PlanEditor({
   canManage,
 }: PlanEditorProps) {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [isPending, startTransition] = useTransition();
   const [items, setItems] = useState<RawPlanItem[]>(planItems);
   const [prevPlanItems, setPrevPlanItems] = useState(planItems);
@@ -655,7 +658,7 @@ export function PlanEditor({
                     Editar Cronograma
                   </DrawerTitle>
                   {hasUnsavedReorder ? (
-                    <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                    <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-400 border border-amber-500/20">
                       Alterações pendentes
                     </span>
                   ) : null}
@@ -853,29 +856,73 @@ export function PlanEditor({
       ) : null}
 
       {/* Discard confirmation dialog */}
-      <AlertDialog open={showDiscardAlert} onOpenChange={setShowDiscardAlert}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Descartar alterações?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Você possui alterações na ordem dos momentos do cronograma que ainda não foram salvas.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 sm:gap-0">
-            <AlertDialogCancel>Continuar editando</AlertDialogCancel>
-            <Button
-              variant="outline"
-              onClick={handleDiscardChanges}
-              className="text-destructive hover:bg-destructive/10"
-            >
-              Descartar alterações
-            </Button>
-            <AlertDialogAction onClick={handleSaveDrawer} disabled={isPending}>
-              Salvar agora
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {isMobile ? (
+        <Drawer open={showDiscardAlert} onOpenChange={setShowDiscardAlert}>
+          <DrawerContent className="max-h-[85vh] p-0" role="alertdialog">
+            <DrawerHeader className="!text-left px-5 pt-4 pb-2">
+              <DrawerTitle className="font-heading text-lg leading-snug">
+                Descartar alterações?
+              </DrawerTitle>
+              <DrawerDescription className="text-sm leading-relaxed">
+                Você possui alterações na ordem dos momentos do cronograma que
+                ainda não foram salvas.
+              </DrawerDescription>
+            </DrawerHeader>
+            <DrawerFooter className="pt-1 pb-[max(1rem,env(safe-area-inset-bottom))]">
+              <Button
+                type="button"
+                onClick={handleSaveDrawer}
+                disabled={isPending}
+                className="min-h-11 w-full"
+              >
+                <CheckIcon className="size-4" />
+                Salvar agora
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleDiscardChanges}
+                className="min-h-11 w-full text-destructive hover:bg-destructive/10"
+              >
+                Descartar alterações
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowDiscardAlert(false)}
+                className="min-h-11 w-full"
+              >
+                Continuar editando
+              </Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <AlertDialog open={showDiscardAlert} onOpenChange={setShowDiscardAlert}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Descartar alterações?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Você possui alterações na ordem dos momentos do cronograma que
+                ainda não foram salvas.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2 sm:gap-0">
+              <AlertDialogCancel>Continuar editando</AlertDialogCancel>
+              <Button
+                variant="outline"
+                onClick={handleDiscardChanges}
+                className="text-destructive hover:bg-destructive/10"
+              >
+                Descartar alterações
+              </Button>
+              <AlertDialogAction onClick={handleSaveDrawer} disabled={isPending}>
+                Salvar agora
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
       {/* Edit Dialog */}
       {editingItem ? (
@@ -989,7 +1036,7 @@ function PlanReadView({
               </span>
               <Badge
                 variant="secondary"
-                className="mt-1 font-mono text-[10px] px-1.5 py-0.5 h-auto font-normal whitespace-nowrap"
+                className="mt-1 font-mono text-[11px] px-1.5 py-0.5 h-auto font-normal whitespace-nowrap"
               >
                 {formatDurationMinutesLabel(item.durationSeconds)}
               </Badge>
@@ -1016,7 +1063,7 @@ function PlanReadView({
                     <Music2Icon className="size-3" />
                     <span>{item.song.title}</span>
                     {item.song.tone ? (
-                      <span className="font-bold text-[10px] opacity-80">
+                      <span className="font-bold text-[11px] opacity-80">
                         ({item.song.tone})
                       </span>
                     ) : null}
@@ -1027,7 +1074,7 @@ function PlanReadView({
                 <div className="pt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Avatar className="size-4 shrink-0 ring-1 ring-border">
                     <AvatarImage src={item.person.avatarUrl ?? undefined} />
-                    <AvatarFallback className="text-[8px]">
+                    <AvatarFallback className="text-[11px]">
                       {getInitials(item.person.name)}
                     </AvatarFallback>
                   </Avatar>
@@ -1074,6 +1121,8 @@ function SortablePlanRow({
   onDelete,
   onOpenSong,
 }: SortablePlanRowProps) {
+  const isMobile = useIsMobile();
+  const [removeOpen, setRemoveOpen] = useState(false);
   const {
     attributes,
     listeners,
@@ -1257,36 +1306,88 @@ function SortablePlanRow({
               >
                 <PencilIcon className="size-3.5" />
               </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
+              {isMobile ? (
+                <>
                   <Button
                     variant="ghost"
                     size="icon-xs"
+                    onClick={() => setRemoveOpen(true)}
                     className="text-muted-foreground hover:text-destructive"
                     title="Remover"
+                    aria-label={`Remover ${item.title}`}
                   >
                     <Trash2Icon className="size-3.5" />
                   </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Remover momento?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Tem certeza que deseja remover &ldquo;{item.title}&rdquo; do
-                      cronograma?
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => onDelete(item.id)}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  <DrawerNestedRoot
+                    open={removeOpen}
+                    onOpenChange={setRemoveOpen}
+                  >
+                    <DrawerContent className="max-h-[85vh] p-0" role="alertdialog">
+                      <DrawerHeader className="!text-left px-5 pt-4 pb-2">
+                        <DrawerTitle className="font-heading text-lg leading-snug">
+                          Remover momento?
+                        </DrawerTitle>
+                        <DrawerDescription className="text-sm leading-relaxed">
+                          Tem certeza que deseja remover &ldquo;{item.title}
+                          &rdquo; do cronograma?
+                        </DrawerDescription>
+                      </DrawerHeader>
+                      <DrawerFooter className="pt-1 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          onClick={() => {
+                            setRemoveOpen(false);
+                            onDelete(item.id);
+                          }}
+                          className="min-h-11 w-full"
+                        >
+                          Remover
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setRemoveOpen(false)}
+                          className="min-h-11 w-full"
+                        >
+                          Cancelar
+                        </Button>
+                      </DrawerFooter>
+                    </DrawerContent>
+                  </DrawerNestedRoot>
+                </>
+              ) : (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      className="text-muted-foreground hover:text-destructive"
+                      title="Remover"
                     >
-                      Remover
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                      <Trash2Icon className="size-3.5" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remover momento?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Tem certeza que deseja remover &ldquo;{item.title}&rdquo;
+                        do cronograma?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => onDelete(item.id)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Remover
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </>
           ) : null}
         </div>
@@ -1311,7 +1412,7 @@ function SortablePlanRow({
               <Music2Icon className="size-3" />
               <span>{item.song.title}</span>
               {item.song.tone ? (
-                <span className="font-bold text-[10px] opacity-80">
+                <span className="font-bold text-[11px] opacity-80">
                   ({item.song.tone})
                 </span>
               ) : null}
@@ -1326,7 +1427,7 @@ function SortablePlanRow({
           <div className="flex items-center gap-1.5 min-w-0">
             <Avatar className="size-5 shrink-0 ring-1 ring-border">
               <AvatarImage src={item.person.avatarUrl ?? undefined} />
-              <AvatarFallback className="text-[9px]">
+              <AvatarFallback className="text-[11px]">
                 {getInitials(item.person.name)}
               </AvatarFallback>
             </Avatar>
