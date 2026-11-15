@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
-import { FingerprintIcon, Loader2Icon } from "lucide-react";
+import { EyeIcon, EyeOffIcon, FingerprintIcon, Loader2Icon } from "lucide-react";
 
 import {
   signInAction,
@@ -39,6 +39,7 @@ export function LoginForm({ redirectTo, initialError }: LoginFormProps) {
   const [lastMethod, setLastMethod] = useState<string | null>(null);
   const [passkeyPending, setPasskeyPending] = useState(false);
   const [passkeyError, setPasskeyError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     try {
@@ -124,7 +125,7 @@ export function LoginForm({ redirectTo, initialError }: LoginFormProps) {
           {lastMethod === "passkey" && !passkeyPending ? (
             <Badge
               variant="secondary"
-              className="ml-auto text-[10px] font-medium tracking-wide uppercase"
+              className="ml-auto text-[11px] font-medium tracking-wide uppercase"
             >
               Último usado
             </Badge>
@@ -135,7 +136,7 @@ export function LoginForm({ redirectTo, initialError }: LoginFormProps) {
 
         <div className="flex items-center gap-3 pt-2">
           <span className="h-px flex-1 bg-border" />
-          <span className="text-[0.7rem] tracking-[0.16em] text-muted-foreground uppercase">
+          <span className="text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
             ou com email e senha
           </span>
           <span className="h-px flex-1 bg-border" />
@@ -152,7 +153,7 @@ export function LoginForm({ redirectTo, initialError }: LoginFormProps) {
               {lastMethod === "email" ? (
                 <Badge
                   variant="secondary"
-                  className="text-[10px] font-medium tracking-wide uppercase"
+                  className="text-[11px] font-medium tracking-wide uppercase"
                 >
                   Último usado
                 </Badge>
@@ -181,16 +182,32 @@ export function LoginForm({ redirectTo, initialError }: LoginFormProps) {
             <div className="flex items-center justify-between gap-3">
               <FieldLabel htmlFor="password">Senha</FieldLabel>
             </div>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              placeholder="Sua senha"
-              className="h-10"
-              aria-invalid={Boolean(state?.fieldErrors?.password)}
-              required
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                placeholder="Sua senha"
+                className="h-10 pr-11"
+                aria-invalid={Boolean(state?.fieldErrors?.password)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((visible) => !visible)}
+                onMouseDown={(event) => event.preventDefault()}
+                aria-label={showPassword ? "Ocultar senha" : "Exibir senha"}
+                title={showPassword ? "Ocultar senha" : "Exibir senha"}
+                className="absolute inset-y-0 right-0 flex h-10 w-10 items-center justify-center rounded-r-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+              >
+                {showPassword ? (
+                  <EyeOffIcon className="size-4" aria-hidden="true" />
+                ) : (
+                  <EyeIcon className="size-4" aria-hidden="true" />
+                )}
+              </button>
+            </div>
             <FieldError
               errors={state?.fieldErrors?.password?.map((message) => ({
                 message,

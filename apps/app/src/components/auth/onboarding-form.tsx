@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import {
   createChurchAction,
@@ -16,6 +16,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { formatBrazilianPhone } from "@/lib/whatsapp-prompt";
 
 export function OnboardingForm({
   needsBirthday = false,
@@ -26,6 +27,7 @@ export function OnboardingForm({
     createChurchAction,
     undefined,
   );
+  const [phone, setPhone] = useState("");
 
   return (
     <form action={formAction} className="space-y-5">
@@ -59,8 +61,11 @@ export function OnboardingForm({
             id="phone"
             name="phone"
             type="tel"
+            inputMode="tel"
             autoComplete="tel"
             placeholder="Ex.: (11) 99999-8888"
+            value={phone}
+            onChange={(event) => setPhone(formatBrazilianPhone(event.target.value))}
             className="h-10"
             aria-invalid={Boolean(state?.fieldErrors?.phone)}
           />
