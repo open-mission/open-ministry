@@ -47,6 +47,8 @@ next-env.d.ts
 # agent tooling
 /.commandcode/
 /.agents/
+/.codex/
+/.github/hooks/
 skills-lock.json
 .impeccable/
 *report.md
