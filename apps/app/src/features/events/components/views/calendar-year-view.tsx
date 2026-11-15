@@ -69,7 +69,7 @@ export function CalendarYearView({
             </button>
 
             {/* Weekday headers */}
-            <div className="grid grid-cols-7 text-center text-[10px] font-semibold uppercase text-muted-foreground pb-1 border-b">
+            <div className="grid grid-cols-7 text-center text-[11px] font-semibold uppercase text-muted-foreground pb-1 border-b">
               {weekDays.map((wd, i) => (
                 <div key={i}>{wd}</div>
               ))}
@@ -107,7 +107,7 @@ export function CalendarYearView({
                   >
                     <span
                       className={cn(
-                        "size-5 flex items-center justify-center rounded-full text-[10px]",
+                        "size-5 flex items-center justify-center rounded-full text-[11px]",
                         isDayToday &&
                           "bg-primary text-primary-foreground font-bold",
                       )}

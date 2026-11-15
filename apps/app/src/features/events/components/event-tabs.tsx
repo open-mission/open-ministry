@@ -8,15 +8,15 @@ import {
 } from "lucide-react";
 
 import {
-  ScheduleEditor,
-  type ScheduleAssignment,
-} from "@/components/events/schedule-editor";
-import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import {
+  ScheduleEditor,
+  type ScheduleAssignment,
+} from "@/features/events/components/schedule-editor";
 import type { DepartmentRecord } from "@/lib/departments";
 
 export function EventTabs({
@@ -104,7 +104,7 @@ export function EventTabs({
             Cronograma do Culto
           </span>
           {planItemsCount > 0 ? (
-            <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-primary/10 px-1 text-[10px] font-semibold text-primary">
+            <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-primary/10 px-1 text-[11px] font-semibold text-primary">
               {planItemsCount}
             </span>
           ) : null}
@@ -118,7 +118,7 @@ export function EventTabs({
           <span className="truncate sm:hidden">Escala</span>
           <span className="hidden truncate sm:inline">Escala &amp; Equipes</span>
           {totalFunctions > 0 ? (
-            <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-muted-foreground/15 px-1 text-[10px] font-semibold text-muted-foreground">
+            <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-muted-foreground/15 px-1 text-[11px] font-semibold text-muted-foreground">
               {coveredFunctions}/{totalFunctions}
             </span>
           ) : null}

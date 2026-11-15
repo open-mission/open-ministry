@@ -21,6 +21,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import {
   Field,
   FieldError,
   FieldGroup,
@@ -30,6 +38,7 @@ import {
   NativeSelect,
   NativeSelectOption,
 } from "@/components/ui/native-select";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { PersonLike } from "@/lib/person-format";
 
 type DepartmentFunction = {
@@ -79,26 +88,64 @@ export function AddAssignmentDialog({
   onAssignmentRollback?: (tempId: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
+
+  const triggerButton = (
+    <Button
+      variant="outline"
+      size="sm"
+      disabled={functions.length === 0 || members.length === 0}
+      title={
+        members.length === 0
+          ? "Este departamento ainda não tem pessoas. Adicione membros ao departamento primeiro."
+          : functions.length === 0
+            ? "Cadastre funções neste departamento antes de escalar."
+            : undefined
+      }
+    >
+      <UserPlusIcon data-icon="inline-start" />
+      Escalar pessoa
+    </Button>
+  );
+
+  const assignmentForm = (
+    <AssignmentForm
+      eventId={eventId}
+      departmentId={departmentId}
+      functions={functions}
+      members={members}
+      assignments={assignments}
+      unavailablePeopleMap={unavailablePeopleMap}
+      onAssignmentAdded={onAssignmentAdded}
+      onAssignmentRollback={onAssignmentRollback}
+    />
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerTrigger asChild>{triggerButton}</DrawerTrigger>
+        <DrawerContent className="p-0">
+          <DrawerHeader className="border-b px-5 pt-4 pb-3 !text-left text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+            <DrawerTitle className="font-heading text-xl tracking-tight">
+              Escalar em {departmentName}
+            </DrawerTitle>
+            <DrawerDescription className="text-xs text-muted-foreground text-left">
+              Escolha a função e quem vai atuar nesta ocorrência. A escala é
+              salva na hora.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="max-h-[85vh] overflow-y-auto px-5 py-4 pb-8 [-webkit-overflow-scrolling:touch]">
+            {assignmentForm}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={functions.length === 0 || members.length === 0}
-          title={
-            members.length === 0
-              ? "Este departamento ainda não tem pessoas. Adicione membros ao departamento primeiro."
-              : functions.length === 0
-                ? "Cadastre funções neste departamento antes de escalar."
-                : undefined
-          }
-        >
-          <UserPlusIcon data-icon="inline-start" />
-          Escalar pessoa
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger asChild>{triggerButton}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-heading text-2xl tracking-tight">
@@ -109,16 +156,7 @@ export function AddAssignmentDialog({
             salva na hora.
           </DialogDescription>
         </DialogHeader>
-        <AssignmentForm
-          eventId={eventId}
-          departmentId={departmentId}
-          functions={functions}
-          members={members}
-          assignments={assignments}
-          unavailablePeopleMap={unavailablePeopleMap}
-          onAssignmentAdded={onAssignmentAdded}
-          onAssignmentRollback={onAssignmentRollback}
-        />
+        {assignmentForm}
       </DialogContent>
     </Dialog>
   );

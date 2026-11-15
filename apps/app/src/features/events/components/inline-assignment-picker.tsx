@@ -215,7 +215,7 @@ export function InlineAssignmentPicker({
                       src={member.image ?? undefined}
                       alt={member.name}
                     />
-                    <AvatarFallback className="bg-primary/10 text-[0.6rem] font-medium text-primary">
+                    <AvatarFallback className="bg-primary/10 text-[11px] font-medium text-primary">
                       {getInitials(member.name)}
                     </AvatarFallback>
                   </Avatar>
@@ -232,7 +232,7 @@ export function InlineAssignmentPicker({
                   {isPending ? (
                     <Loader2Icon className="size-3.5 shrink-0 animate-spin text-muted-foreground" />
                   ) : blocked ? (
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[0.65rem] font-medium text-amber-800 dark:text-amber-300">
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-800 dark:text-amber-300">
                       <AlertTriangleIcon className="size-3" />
                       Indisponível
                     </span>
