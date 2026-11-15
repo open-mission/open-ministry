@@ -1,3 +1,5 @@
+import { formatDayMonth } from "@/lib/format";
+
 export type SongUsageRow = {
   songId: string;
   eventKind: string;
@@ -31,6 +33,30 @@ export const EMPTY_SONG_USAGE: SongUsageSummary = {
   eventCount: 0,
   planItemCount: 0,
 };
+
+export type SongUsageRecency = {
+  lastEvent?: { startsAt: Date | string } | null;
+  eventCount?: number | null;
+};
+
+/**
+ * Frase curta de recência para listas e seletores de música.
+ * `null` quando a música tem apenas agendamentos futuros (nada a destacar).
+ */
+export function describeSongUsageRecency(
+  usage: SongUsageRecency | null | undefined,
+): string | null {
+  if (usage?.lastEvent?.startsAt) {
+    return `Último culto: ${formatDayMonth(usage.lastEvent.startsAt)}`;
+  }
+
+  // Só afirma "nunca usada" quando o histórico foi carregado e está zerado.
+  if (usage && usage.eventCount === 0) {
+    return "Nunca usada em cultos";
+  }
+
+  return null;
+}
 
 function toUsageEvent(row: SongUsageRow): SongUsageEvent {
   return {

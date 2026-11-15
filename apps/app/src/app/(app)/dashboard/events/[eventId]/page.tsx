@@ -289,6 +289,16 @@ async function EventContent({
               artist: s.artist,
               tone: s.tone,
               capo: s.capo,
+              collection: s.collection,
+              tags: s.tags,
+              lastEvent: s.usage?.lastEvent
+                ? {
+                    id: s.usage.lastEvent.eventId,
+                    title: s.usage.lastEvent.eventTitle,
+                    startsAt: s.usage.lastEvent.startsAt,
+                  }
+                : null,
+              eventCount: s.usage?.eventCount,
             }))}
             canManage={canManagePlan}
           />

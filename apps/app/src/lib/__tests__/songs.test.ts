@@ -23,7 +23,17 @@ import {
 } from "@/lib/music/lyrics-service";
 import { songInputSchema } from "@/lib/music/songs-schema";
 import {
+  CHORDS_FONT_SIZE_KEY,
+  LYRICS_FONT_SIZE_KEY,
+  readStoredPreference,
+  shiftFontSize,
+  VIEWER_FONT_SIZE_LABELS,
+  VIEWER_FONT_SIZES,
+} from "@/lib/music/viewer-preferences";
+import { formatDayMonth } from "@/lib/format";
+import {
   buildSongUsageMap,
+  describeSongUsageRecency,
   summarizeSongUsage,
 } from "@/lib/song-usage";
 
@@ -90,7 +100,9 @@ Me esvazio de mim`;
     });
 
     it("maps stage shortcuts only in fullscreen and outside interactive controls", () => {
-      expect(getStageShortcutAction("T", true, false, true)).toBe("focusTone");
+      expect(getStageShortcutAction("T", true, false, true)).toBe(
+        "cycleViewMode",
+      );
       expect(getStageShortcutAction("C", true, false, true)).toBe("copy");
       expect(getStageShortcutAction("+", true, false, true)).toBe(
         "transposeUp",
@@ -496,8 +508,58 @@ Vem me incendiar`;
     });
   });
 
-  describe("Next service query", () => {
-    it("adds a service-kind predicate so a nearer generic event is skipped", async () => {
+  describe("Song usage recency labels", () => {
+    it("describes the last service with a compact date", () => {
+      expect(
+        describeSongUsageRecency({
+          lastEvent: { startsAt: "2026-09-25T18:00:00.000Z" },
+          eventCount: 3,
+        }),
+      ).toBe("Último culto: 25/09");
+    });
+
+    it("marks songs that were never scheduled", () => {
+      expect(
+        describeSongUsageRecency({ lastEvent: null, eventCount: 0 }),
+      ).toBe("Nunca usada em cultos");
+      expect(describeSongUsageRecency(undefined)).toBeNull();
+    });
+
+    it("stays quiet when the song only has upcoming services", () => {
+      expect(
+        describeSongUsageRecency({ lastEvent: null, eventCount: 2 }),
+      ).toBeNull();
+    });
+
+    it("formats day and month in the church timezone", () => {
+      expect(formatDayMonth("2026-01-01T02:00:00.000Z")).toBe("31/12");
+      expect(formatDayMonth(new Date("2026-10-05T18:00:00.000Z"))).toBe(
+        "05/10",
+      );
+    });
+  });
+
+  describe("Viewer font size preferences", () => {
+    it("walks through the font scale without leaving its limits", () => {
+      expect(shiftFontSize("sm", -1)).toBe("sm");
+      expect(shiftFontSize("sm", 1)).toBe("base");
+      expect(shiftFontSize("lg", 1)).toBe("xl");
+      expect(shiftFontSize("xl", 1)).toBe("xl");
+    });
+
+    it("labels every font size for screen readers", () => {
+      for (const size of VIEWER_FONT_SIZES) {
+        expect(VIEWER_FONT_SIZE_LABELS[size].length).toBeGreaterThan(0);
+      }
+    });
+
+    it("ignores unknown stored values", () => {
+      expect(readStoredPreference(LYRICS_FONT_SIZE_KEY, VIEWER_FONT_SIZES)).toBeNull();
+      expect(readStoredPreference(CHORDS_FONT_SIZE_KEY, VIEWER_FONT_SIZES)).toBeNull();
+    });
+  });
+
+  describe("Next service query", () => {    it("adds a service-kind predicate so a nearer generic event is skipped", async () => {
       let eventWhere: SQL | undefined;
 
       mock.module("@/db", () => ({

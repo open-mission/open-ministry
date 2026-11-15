@@ -10,6 +10,7 @@ import {
   FileMusicIcon,
   FileTextIcon,
   FolderIcon,
+  GaugeIcon,
   HeadphonesIcon,
   MoreVerticalIcon,
   Music2Icon,
@@ -39,11 +40,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { songKeys } from "@/hooks/use-songs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatDate } from "@/lib/format";
 import { isStreamingSearchUrl } from "@/lib/music/lyrics-service";
 import type { SongRecord, SongWithUsage } from "@/lib/songs";
+import { cn } from "@/lib/utils";
 import { DeleteSongDialog } from "./delete-song-dialog";
 import { SetSongGroupDialog } from "./set-song-group-dialog";
 import { SongFormDialog } from "./song-form-dialog";
@@ -79,6 +86,23 @@ export function SongCard({
   const hasChords = Boolean(song.chords?.trim());
   const hasLyrics = Boolean(song.lyrics?.trim());
   const streamingLinks = getStreamingLinks(song);
+  const searchLinks = streamingLinks.filter((link) =>
+    isStreamingSearchUrl(link.url),
+  );
+  const hasSearchLinks = searchLinks.length > 0;
+  const onlySearchLinks =
+    hasSearchLinks && searchLinks.length === streamingLinks.length;
+  const streamingHint = onlySearchLinks
+    ? "Abre uma busca no streaming (o link direto ainda não foi cadastrado)"
+    : hasSearchLinks
+      ? "Alguns links abrem uma busca no streaming"
+      : "Links de áudio da música";
+  const rhythmLabel = [
+    song.bpm ? `${song.bpm} BPM` : null,
+    song.timeSignature,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   const usage = song.usage;
   const usageLabel = usage?.nextEvent
@@ -309,61 +333,66 @@ export function SongCard({
             ) : null}
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
             {song.collection ? (
               <Badge
                 variant="outline"
-                className="max-w-full shrink-0 gap-1 truncate border-primary/30 bg-primary/10 text-xs font-semibold text-primary"
+                className="max-w-full shrink-0 gap-1 truncate border-primary/25 bg-primary/5 text-[11px] font-semibold text-primary"
               >
-                <FolderIcon className="size-3 shrink-0 text-primary" />
+                <FolderIcon className="size-3 shrink-0" />
                 <span className="truncate">{song.collection}</span>
               </Badge>
             ) : null}
+
             {song.tone ? (
-              <Badge
-                variant="outline"
-                className="shrink-0 text-xs font-semibold text-primary"
-              >
-                Tom {song.tone}
-                {song.capo > 0 ? ` · Capo ${song.capo}` : ""}
-              </Badge>
+              <span className="inline-flex shrink-0 items-baseline gap-1">
+                <span className="text-xs font-semibold text-primary">
+                  Tom {song.tone}
+                </span>
+                {song.capo > 0 ? (
+                  <span className="text-[11px] font-medium text-muted-foreground">
+                    · Capo {song.capo}
+                  </span>
+                ) : null}
+              </span>
             ) : song.capo > 0 ? (
-              <Badge variant="secondary" className="shrink-0 text-xs">
+              <span className="text-[11px] font-medium text-muted-foreground">
                 Capo {song.capo}
-              </Badge>
-            ) : null}
-            {song.bpm ? (
-              <Badge variant="secondary" className="shrink-0 font-mono text-xs">
-                {song.bpm} BPM
-              </Badge>
-            ) : null}
-            {song.timeSignature ? (
-              <Badge variant="secondary" className="shrink-0 text-xs">
-                {song.timeSignature}
-              </Badge>
+              </span>
             ) : null}
 
-            {hasChords ? (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-xs font-medium text-emerald-800 dark:text-emerald-300">
-                <FileMusicIcon className="size-3" />
-                Cifra
+            {rhythmLabel ? (
+              <span className="inline-flex shrink-0 items-center gap-1 text-[11px] tabular-nums text-muted-foreground">
+                <GaugeIcon className="size-3 shrink-0" aria-hidden="true" />
+                {rhythmLabel}
               </span>
-            ) : (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-300">
-                Sem cifra
-              </span>
-            )}
+            ) : null}
 
-            {hasLyrics ? (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-sky-500/10 px-1.5 py-0.5 text-xs font-medium text-sky-800 dark:text-sky-300">
-                <FileTextIcon className="size-3" />
-                Letra
+            <span className="inline-flex shrink-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1",
+                  hasChords && "text-emerald-700 dark:text-emerald-300",
+                )}
+                title={hasChords ? "Cifra disponível" : "Sem cifra cadastrada"}
+              >
+                <FileMusicIcon className="size-3 shrink-0" aria-hidden="true" />
+                {hasChords ? "Cifra" : "Sem cifra"}
               </span>
-            ) : (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-300">
-                Sem letra
+              <span aria-hidden="true" className="text-border">
+                ·
               </span>
-            )}
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1",
+                  hasLyrics && "text-sky-700 dark:text-sky-300",
+                )}
+                title={hasLyrics ? "Letra disponível" : "Sem letra cadastrada"}
+              >
+                <FileTextIcon className="size-3 shrink-0" aria-hidden="true" />
+                {hasLyrics ? "Letra" : "Sem letra"}
+              </span>
+            </span>
           </div>
 
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -381,18 +410,29 @@ export function SongCard({
           <div className="min-w-0">
             {streamingLinks.length > 0 ? (
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-9 gap-1.5 text-xs font-medium"
-                    aria-label="Links de áudio da música"
-                  >
-                    <HeadphonesIcon className="size-3.5" />
-                    Ouvir
-                  </Button>
-                </DropdownMenuTrigger>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-9 gap-1.5 text-xs font-medium"
+                        aria-label={`Links de áudio da música — ${streamingHint}`}
+                      >
+                        <HeadphonesIcon className="size-3.5" />
+                        Ouvir
+                        {hasSearchLinks ? (
+                          <SearchIcon
+                            className="size-3 text-muted-foreground"
+                            aria-hidden="true"
+                          />
+                        ) : null}
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">{streamingHint}</TooltipContent>
+                </Tooltip>
                 <DropdownMenuContent align="start" className="w-56">
                   {streamingLinks.map((link) => (
                     <DropdownMenuItem key={link.platform} asChild>
