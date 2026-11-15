@@ -194,7 +194,7 @@ function NotificationPanel({
           {count > 0 ? (
             <Badge
               variant="secondary"
-              className="h-4.5 px-1.5 text-[10px] font-normal"
+              className="h-4.5 px-1.5 text-[11px] font-normal"
             >
               {count} {count === 1 ? "nova" : "novas"}
             </Badge>
@@ -289,7 +289,7 @@ function NotificationPanel({
                   >
                     {item.title}
                   </p>
-                  <span className="shrink-0 text-[10px] text-muted-foreground">
+                  <span className="shrink-0 text-[11px] text-muted-foreground">
                     {formatRelativeTime(item.createdAt)}
                   </span>
                 </div>
@@ -510,7 +510,7 @@ export function NotificationBell({
     >
       <BellIcon className="size-4" />
       {count > 0 ? (
-        <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.6rem] leading-none font-medium text-primary-foreground shadow-xs animate-in zoom-in-75">
+        <span className="absolute -top-0.5 -right-0.5 flex min-w-4 h-4 items-center justify-center rounded-full bg-primary px-1 text-[11px] leading-none font-medium text-primary-foreground shadow-xs animate-in zoom-in-75">
           {count > 9 ? "9+" : count}
         </span>
       ) : null}
