@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRightIcon, CakeIcon } from "lucide-react";
+import { ArrowRightIcon, CakeIcon, MessageCircleIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
   shortMonthLabel,
   type BirthdayEntry,
 } from "@/lib/birthdays";
+import { formatPhoneNumberForEvolution } from "@/lib/evolution-api";
 
 export function BirthdaysCard({ entries }: { entries: BirthdayEntry[] }) {
   const highlights = [
@@ -89,7 +90,7 @@ export function BirthdaysCard({ entries }: { entries: BirthdayEntry[] }) {
                       <span className="font-heading text-xl leading-none text-foreground tabular-nums">
                         {entry.day}
                       </span>
-                      <span className="mt-0.5 text-[0.6rem] tracking-[0.12em] text-muted-foreground">
+                      <span className="mt-0.5 text-[11px] tracking-[0.12em] text-muted-foreground">
                         {shortMonthLabel(entry.month)}
                       </span>
                     </span>
@@ -126,12 +127,22 @@ function Highlight({
   entry: BirthdayEntry;
   label: string;
 }) {
+  const whatsappPhone =
+    entry.isToday && entry.phone
+      ? formatPhoneNumberForEvolution(entry.phone)
+      : null;
+  const whatsappHref = whatsappPhone
+    ? `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(
+        `Olá, ${entry.name}! Feliz aniversário! 🎉 Que este novo ano de vida seja cheio das bênçãos de Deus, de alegria e de momentos especiais ao lado de quem você ama. Um grande abraço!`,
+      )}`
+    : null;
+
   return (
     <div className="flex items-center gap-3 rounded-lg bg-accent/60 px-4 py-3">
       <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-background/70 text-accent-foreground">
         <CakeIcon className="size-5" aria-hidden="true" />
       </span>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <Badge variant="secondary" className="mb-1 font-normal">
           {label}
         </Badge>
@@ -144,6 +155,24 @@ function Highlight({
             ? ` · completa ${entry.turningAge} anos`
             : ""}
         </p>
+        {whatsappHref ? (
+          <Button
+            asChild
+            variant="secondary"
+            size="sm"
+            className="mt-2 h-8 w-full gap-1.5 bg-background/70 text-xs text-foreground hover:bg-background sm:w-auto"
+          >
+            <a
+              href={whatsappHref}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={`Enviar felicitação de aniversário para ${entry.name} pelo WhatsApp`}
+            >
+              <MessageCircleIcon className="size-3.5" aria-hidden="true" />
+              Felicitar
+            </a>
+          </Button>
+        ) : null}
       </div>
     </div>
   );

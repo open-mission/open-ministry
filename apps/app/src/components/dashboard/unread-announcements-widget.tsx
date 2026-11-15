@@ -120,7 +120,7 @@ export function UnreadAnnouncementsWidget({
                 </CardTitle>
                 <Badge
                   variant="outline"
-                  className="border-amber-500/30 bg-amber-500/10 text-[10px] font-semibold text-amber-700 dark:text-amber-400 tabular-nums"
+                  className="border-amber-500/30 bg-amber-500/10 text-[11px] font-semibold text-amber-700 dark:text-amber-400 tabular-nums"
                 >
                   {announcements.length}{" "}
                   {announcements.length === 1 ? "não lido" : "não lidos"}

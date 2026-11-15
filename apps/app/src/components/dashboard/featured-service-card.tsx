@@ -100,7 +100,7 @@ export function FeaturedServiceCard({
             {event.recurrence ? (
               <Badge
                 variant="outline"
-                className="text-[0.68rem] font-normal text-muted-foreground"
+                className="text-[11px] font-normal text-muted-foreground"
               >
                 Culto recorrente
               </Badge>
@@ -147,7 +147,7 @@ export function FeaturedServiceCard({
             <span className="font-heading text-2xl font-bold leading-none tracking-tight tabular-nums">
               {parts.day}
             </span>
-            <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-primary/80">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary/80">
               {parts.monthShort}
             </span>
           </div>
@@ -168,7 +168,7 @@ export function FeaturedServiceCard({
                   {event.departments.map(({ department }) => (
                     <span
                       key={department.id}
-                      className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[0.68rem] font-medium text-muted-foreground"
+                      className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
                     >
                       {department.name}
                     </span>
@@ -196,7 +196,7 @@ export function FeaturedServiceCard({
                           className="size-8 border ring-2 ring-background"
                         >
                           <AvatarImage src={image ?? undefined} alt={name} />
-                          <AvatarFallback className="bg-primary/10 text-[0.62rem] font-medium text-primary">
+                          <AvatarFallback className="bg-primary/10 text-[11px] font-medium text-primary">
                             {getInitials(name)}
                           </AvatarFallback>
                         </Avatar>
