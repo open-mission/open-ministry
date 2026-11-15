@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import {
+  AlertTriangleIcon,
   BellIcon,
   Building2Icon,
   CheckCircle2Icon,
@@ -16,6 +17,7 @@ import {
   SparklesIcon,
   UserIcon,
   UsersIcon,
+  type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,6 +50,16 @@ import {
 } from "@/components/ui/native-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  ANNOUNCEMENT_PRESETS,
+  type AnnouncementPresetIcon,
+} from "@/lib/announcement-presets";
+import {
+  ANNOUNCEMENT_BODY_MAX_LENGTH,
+  ANNOUNCEMENT_CONSOLE_CHANNEL_WARNING,
+  ANNOUNCEMENT_TITLE_MAX_LENGTH,
+  hasAnyAnnouncementChannel,
+} from "@/lib/announcements-ux";
 
 export type AnnouncementDepartmentOption = {
   id: string;
@@ -71,44 +83,15 @@ type AnnouncementsConsoleProps = {
   currentUserName: string;
 };
 
-// Modelos prontos de aviso para agilizar o envio
-const ANNOUNCEMENT_PRESETS = [
-  {
-    id: "general",
-    label: "Comunicado Geral",
-    icon: MegaphoneIcon,
-    title: "Comunicado Importante da Liderança",
-    body: "Olá a todos! Gostaríamos de compartilhar um comunicado importante sobre as atividades e programações da nossa comunidade nesta semana. Fiquem atentos às orientações e que Deus abençoe!",
-  },
-  {
-    id: "schedule",
-    label: "Escala do Final de Semana",
-    icon: CheckCircle2Icon,
-    title: "Confirmação de Escala do Domingo",
-    body: "Atenção voluntários escalados para este domingo: por favor, confirmem sua presença no aplicativo ou avisem com antecedência caso necessitem de substituição. Contamos com vocês!",
-  },
-  {
-    id: "rehearsal",
-    label: "Ensaio e Reunião",
-    icon: ClockIcon,
-    title: "Lembrete: Ensaio e Alinhamento de Equipe",
-    body: "Olá equipe! Nosso ensaio/reunião de alinhamento está confirmado. Pedimos que cheguem com 15 minutos de antecedência para oração inicial e organização dos materiais.",
-  },
-  {
-    id: "urgent",
-    label: "Aviso Urgente",
-    icon: ShieldAlertIcon,
-    title: "Aviso Urgente: Alteração no Cronograma",
-    body: "Informamos que houve uma alteração importante de horário e programação no nosso encontro. Por favor, verifiquem o aplicativo para conferir todos os detalhes atualizados.",
-  },
-  {
-    id: "gratitude",
-    label: "Agradecimento",
-    icon: SparklesIcon,
-    title: "Agradecimento pelo Culto Abençoado",
-    body: "Queremos agradecer de coração a cada irmão e voluntário pelo serviço e dedicação no último culto. O empenho de vocês fez toda a diferença na vida da igreja!",
-  },
-];
+// Ícones dos modelos prontos de aviso — os textos pastorais ficam em
+// @/lib/announcement-presets para serem revisados e testados fora da UI.
+const PRESET_ICONS: Record<AnnouncementPresetIcon, LucideIcon> = {
+  megaphone: MegaphoneIcon,
+  check: CheckCircle2Icon,
+  clock: ClockIcon,
+  shield: ShieldAlertIcon,
+  sparkles: SparklesIcon,
+};
 
 export function AnnouncementsConsole({
   isAdmin,
@@ -143,6 +126,13 @@ export function AnnouncementsConsole({
   const [sendPush, setSendPush] = useState(true);
   const [sendEmail, setSendEmail] = useState(true);
 
+  const hasAnyChannel = hasAnyAnnouncementChannel({
+    sendInApp,
+    sendWhatsApp,
+    sendPush,
+    sendEmail,
+  });
+
   const [previewTab, setPreviewTab] = useState<"app" | "push" | "whatsapp">(
     "app",
   );
@@ -154,7 +144,7 @@ export function AnnouncementsConsole({
         sendInApp && "App",
         sendPush && "Push",
         sendWhatsApp && "WhatsApp",
-        sendEmail && "E-mail (Brevo)",
+        sendEmail && "E-mail",
       ]
         .filter(Boolean)
         .join(", ");
@@ -217,7 +207,7 @@ export function AnnouncementsConsole({
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {ANNOUNCEMENT_PRESETS.map((preset) => {
-                  const Icon = preset.icon;
+                  const Icon = PRESET_ICONS[preset.icon];
                   return (
                     <Button
                       key={preset.id}
@@ -401,7 +391,7 @@ export function AnnouncementsConsole({
                         <span>No Aplicativo</span>
                         <Badge
                           variant="outline"
-                          className="ml-auto text-[10px] py-0 px-1"
+                          className="ml-auto text-[11px] py-0 px-1"
                         >
                           Ativo
                         </Badge>
@@ -435,13 +425,13 @@ export function AnnouncementsConsole({
                         <span>WhatsApp</span>
                         <Badge
                           variant={isWhatsAppConfigured ? "secondary" : "outline"}
-                          className={`ml-auto text-[10px] py-0 px-1 ${
+                          className={`ml-auto text-[11px] py-0 px-1 ${
                             isWhatsAppConfigured
                               ? "text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400"
                               : "text-muted-foreground"
                           }`}
                         >
-                          {isWhatsAppConfigured ? "Conectado" : "Evolution API"}
+                          {isWhatsAppConfigured ? "Conectado" : "Disponível"}
                         </Badge>
                       </div>
                       <p className="text-[11px] text-muted-foreground leading-snug">
@@ -475,7 +465,7 @@ export function AnnouncementsConsole({
                         <span>Push Mobile (PWA)</span>
                         <Badge
                           variant="outline"
-                          className="ml-auto text-[10px] py-0 px-1"
+                          className="ml-auto text-[11px] py-0 px-1"
                         >
                           Ativo
                         </Badge>
@@ -486,7 +476,7 @@ export function AnnouncementsConsole({
                     </div>
                   </label>
 
-                  {/* Canal 4: E-mail (Brevo) */}
+                  {/* Canal 4: E-mail */}
                   <label
                     htmlFor="console-channel-email"
                     className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 transition-colors ${
@@ -509,13 +499,13 @@ export function AnnouncementsConsole({
                         <span>E-mail</span>
                         <Badge
                           variant="secondary"
-                          className="ml-auto text-[10px] py-0 px-1 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400"
+                          className="ml-auto text-[11px] py-0 px-1 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400"
                         >
-                          Brevo
+                          Caixa de entrada
                         </Badge>
                       </div>
                       <p className="text-[11px] text-muted-foreground leading-snug">
-                        Disparo transacional via Brevo
+                        Mensagem formatada entregue no e-mail
                       </p>
                     </div>
                   </label>
@@ -534,7 +524,7 @@ export function AnnouncementsConsole({
                   <div className="flex items-center justify-between">
                     <FieldLabel htmlFor="console-title">Título do aviso</FieldLabel>
                     <span className="text-[11px] text-muted-foreground font-mono">
-                      {title.length}/80
+                      {title.length}/{ANNOUNCEMENT_TITLE_MAX_LENGTH}
                     </span>
                   </div>
                   <Input
@@ -544,7 +534,7 @@ export function AnnouncementsConsole({
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Ex: Escala do Domingo ou Ensaio Geral"
                     className="h-10"
-                    maxLength={80}
+                    maxLength={ANNOUNCEMENT_TITLE_MAX_LENGTH}
                     required
                   />
                   <FieldError
@@ -558,7 +548,7 @@ export function AnnouncementsConsole({
                   <div className="flex items-center justify-between">
                     <FieldLabel htmlFor="console-body">Mensagem</FieldLabel>
                     <span className="text-[11px] text-muted-foreground font-mono">
-                      {body.length}/500
+                      {body.length}/{ANNOUNCEMENT_BODY_MAX_LENGTH}
                     </span>
                   </div>
                   <Textarea
@@ -568,7 +558,7 @@ export function AnnouncementsConsole({
                     onChange={(e) => setBody(e.target.value)}
                     placeholder="Escreva as instruções, orientações ou comunicado para a equipe..."
                     rows={4}
-                    maxLength={500}
+                    maxLength={ANNOUNCEMENT_BODY_MAX_LENGTH}
                     required
                   />
                   <FieldError
@@ -596,10 +586,24 @@ export function AnnouncementsConsole({
                 </span>
               </div>
 
+              {hasAnyChannel ? null : (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-2.5 text-xs text-amber-700 dark:text-amber-400"
+                >
+                  <AlertTriangleIcon
+                    className="mt-0.5 size-3.5 shrink-0"
+                    aria-hidden="true"
+                  />
+                  <span>{ANNOUNCEMENT_CONSOLE_CHANNEL_WARNING}</span>
+                </div>
+              )}
+
               <div className="flex justify-end pt-2">
                 <SubmitButton
-                  className="h-10 gap-2"
+                  className="h-10 gap-2 max-sm:min-h-11"
                   pendingLabel="Disparando aviso..."
+                  disabled={!hasAnyChannel}
                 >
                   <SendIcon className="size-4" />
                   Disparar comunicado
@@ -619,7 +623,7 @@ export function AnnouncementsConsole({
                 <InfoIcon className="size-4 text-primary" />
                 Prévia da Notificação
               </CardTitle>
-              <Badge variant="outline" className="text-[10px]">
+              <Badge variant="outline" className="text-[11px]">
                 Simulador
               </Badge>
             </div>
@@ -704,7 +708,7 @@ export function AnnouncementsConsole({
                       {body || "Texto que será entregue via WhatsApp."}
                     </p>
                     <div className="flex justify-end pt-1">
-                      <span className="text-[10px] text-muted-foreground font-mono">
+                      <span className="text-[11px] text-muted-foreground font-mono">
                         12:00 ✓✓
                       </span>
                     </div>

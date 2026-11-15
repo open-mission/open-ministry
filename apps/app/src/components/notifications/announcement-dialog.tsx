@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import {
+  AlertTriangleIcon,
   BellIcon,
   Building2Icon,
   MailIcon,
@@ -17,21 +18,12 @@ import {
   sendAnnouncementAction,
   type AnnouncementFormState,
 } from "@/app/actions/notifications";
+import { ResponsiveDialog } from "@/components/app/responsive-dialog";
 import { FormAlert } from "@/components/auth/form-alert";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   Field,
   FieldError,
@@ -44,6 +36,12 @@ import {
   NativeSelectOption,
 } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  ANNOUNCEMENT_BODY_MAX_LENGTH,
+  ANNOUNCEMENT_DIALOG_CHANNEL_WARNING,
+  ANNOUNCEMENT_TITLE_MAX_LENGTH,
+  hasAnyAnnouncementChannel,
+} from "@/lib/announcements-ux";
 
 export type AnnouncementDepartment = {
   id: string;
@@ -80,46 +78,34 @@ export function AnnouncementDialog({
   const [open, setOpen] = useState(false);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger ? (
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={setOpen}
+      trigger={
+        trigger ? (
           trigger
         ) : (
-          <Button size="lg" className="h-9">
+          <Button size="lg" className="h-9 max-sm:h-11">
             <MegaphoneIcon data-icon="inline-start" />
             Enviar aviso
           </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center gap-2">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <MegaphoneIcon className="size-5" />
-            </span>
-            <div>
-              <DialogTitle className="font-heading text-2xl tracking-tight">
-                Enviar aviso
-              </DialogTitle>
-              <DialogDescription className="text-xs">
-                Notifique sua equipe ou a igreja pelos canais disponíveis.
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
-
-        <AnnouncementForm
-          departments={departments}
-          people={people}
-          canBroadcastAll={canBroadcastAll}
-          isWhatsAppConfigured={isWhatsAppConfigured}
-          defaultDepartmentId={defaultDepartmentId}
-          defaultPersonId={defaultPersonId}
-          defaultAudienceType={defaultAudienceType}
-          onDone={() => setOpen(false)}
-        />
-      </DialogContent>
-    </Dialog>
+        )
+      }
+      title="Enviar aviso"
+      description="Notifique sua equipe ou a igreja pelos canais disponíveis."
+      contentClassName="sm:max-w-xl max-h-[90vh]"
+    >
+      <AnnouncementForm
+        departments={departments}
+        people={people}
+        canBroadcastAll={canBroadcastAll}
+        isWhatsAppConfigured={isWhatsAppConfigured}
+        defaultDepartmentId={defaultDepartmentId}
+        defaultPersonId={defaultPersonId}
+        defaultAudienceType={defaultAudienceType}
+        onDone={() => setOpen(false)}
+      />
+    </ResponsiveDialog>
   );
 }
 
@@ -175,6 +161,13 @@ function AnnouncementForm({
   const [sendWhatsApp, setSendWhatsApp] = useState(isWhatsAppConfigured);
   const [sendPush, setSendPush] = useState(true);
   const [sendEmail, setSendEmail] = useState(true);
+
+  const hasAnyChannel = hasAnyAnnouncementChannel({
+    sendInApp,
+    sendWhatsApp,
+    sendPush,
+    sendEmail,
+  });
 
   useEffect(() => {
     if (state?.success && !handled.current) {
@@ -344,7 +337,7 @@ function AnnouncementForm({
               <div className="flex items-center gap-1.5 font-medium text-foreground">
                 <BellIcon className="size-3.5 text-primary" />
                 <span>No aplicativo</span>
-                <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1">
+                <Badge variant="outline" className="ml-auto text-[11px] py-0 px-1">
                   Ativo
                 </Badge>
               </div>
@@ -375,7 +368,7 @@ function AnnouncementForm({
                 <span>WhatsApp</span>
                 <Badge
                   variant={isWhatsAppConfigured ? "secondary" : "outline"}
-                  className={`ml-auto text-[10px] py-0 px-1 ${
+                  className={`ml-auto text-[11px] py-0 px-1 ${
                     isWhatsAppConfigured
                       ? "text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400"
                       : "text-muted-foreground"
@@ -386,13 +379,13 @@ function AnnouncementForm({
               </div>
               <p className="text-[11px] text-muted-foreground leading-snug">
                 {isWhatsAppConfigured
-                  ? "Disparo direto via Evolution API"
+                  ? "Disparo direto no celular do voluntário"
                   : "Requer WhatsApp configurado"}
               </p>
             </div>
           </label>
 
-          {/* Canal 3: E-mail (Brevo) */}
+          {/* Canal 3: E-mail */}
           <label
             htmlFor="channel-email"
             className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 transition-colors ${
@@ -413,13 +406,13 @@ function AnnouncementForm({
                 <span>E-mail</span>
                 <Badge
                   variant="secondary"
-                  className="ml-auto text-[10px] py-0 px-1 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400"
+                  className="ml-auto text-[11px] py-0 px-1 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400"
                 >
-                  Brevo
+                  Caixa de entrada
                 </Badge>
               </div>
               <p className="text-[11px] text-muted-foreground leading-snug">
-                Envio transacional com React Email
+                Mensagem formatada entregue no e-mail do voluntário
               </p>
             </div>
           </label>
@@ -443,7 +436,7 @@ function AnnouncementForm({
               <div className="flex items-center gap-1.5 font-medium text-foreground">
                 <SmartphoneIcon className="size-3.5 text-primary" />
                 <span>Push Mobile / Web</span>
-                <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1">
+                <Badge variant="outline" className="ml-auto text-[11px] py-0 px-1">
                   Ativo
                 </Badge>
               </div>
@@ -470,7 +463,7 @@ function AnnouncementForm({
             name="title"
             placeholder="Ex: Escala de Domingo ou Ensaio Geral"
             className="h-10"
-            maxLength={80}
+            maxLength={ANNOUNCEMENT_TITLE_MAX_LENGTH}
             aria-invalid={Boolean(state?.fieldErrors?.title)}
             required
           />
@@ -488,7 +481,7 @@ function AnnouncementForm({
             name="body"
             placeholder="Escreva as instruções ou orientações para a equipe..."
             rows={4}
-            maxLength={500}
+            maxLength={ANNOUNCEMENT_BODY_MAX_LENGTH}
             aria-invalid={Boolean(state?.fieldErrors?.body)}
             required
           />
@@ -501,6 +494,19 @@ function AnnouncementForm({
       </FieldGroup>
 
       {state?.error ? <FormAlert>{state.error}</FormAlert> : null}
+
+      {!hasAnyChannel ? (
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-2.5 text-xs text-amber-700 dark:text-amber-400"
+        >
+          <AlertTriangleIcon
+            className="mt-0.5 size-3.5 shrink-0"
+            aria-hidden="true"
+          />
+          <span>{ANNOUNCEMENT_DIALOG_CHANNEL_WARNING}</span>
+        </div>
+      ) : null}
 
       {/* Confirmação explícita do destinatário para prevenir disparos acidentais */}
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
@@ -517,21 +523,25 @@ function AnnouncementForm({
         </span>
       </div>
 
-      <DialogFooter className="gap-2 sm:gap-0">
-        <DialogClose asChild>
-          <Button type="button" variant="outline" className="h-10">
-            Cancelar
-          </Button>
-        </DialogClose>
+      <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end sm:gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 max-sm:min-h-11"
+          onClick={onDone}
+        >
+          Cancelar
+        </Button>
         <SubmitButton
-          className="h-10"
+          className="h-10 max-sm:min-h-11"
           pendingLabel="Enviando..."
           size="default"
+          disabled={!hasAnyChannel}
         >
           <MegaphoneIcon data-icon="inline-start" />
           Enviar aviso
         </SubmitButton>
-      </DialogFooter>
+      </div>
     </form>
   );
 }

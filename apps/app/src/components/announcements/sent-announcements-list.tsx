@@ -22,6 +22,7 @@ import {
   retryAnnouncementSingleWhatsAppAction,
   retryAnnouncementWhatsAppAction,
 } from "@/app/actions/notifications";
+import { ResponsiveDialog } from "@/components/app/responsive-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,13 +33,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { SentAnnouncementReceipt } from "@/lib/notifications";
@@ -205,7 +199,7 @@ export function SentAnnouncementsList({
                 <div className="flex items-start justify-between gap-2">
                   <Badge
                     variant="secondary"
-                    className="gap-1 border-amber-500/20 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-400"
+                    className="gap-1 border-amber-500/20 bg-amber-500/10 text-[11px] text-amber-700 dark:text-amber-400"
                   >
                     <MegaphoneIcon className="size-3" />
                     <span>Aviso</span>
@@ -249,7 +243,7 @@ export function SentAnnouncementsList({
                       {item.whatsappSummary.failed > 0 && (
                         <Badge
                           variant="destructive"
-                          className="h-4 px-1.5 text-[10px]"
+                          className="h-4 px-1.5 text-[11px]"
                         >
                           {item.whatsappSummary.failed} falha(s)
                         </Badge>
@@ -259,7 +253,7 @@ export function SentAnnouncementsList({
                         0 && (
                         <Badge
                           variant="outline"
-                          className="h-4 border-amber-500/30 px-1.5 text-[10px] text-amber-600 bg-amber-500/5"
+                          className="h-4 border-amber-500/30 px-1.5 text-[11px] text-amber-600 bg-amber-500/5"
                         >
                           {item.whatsappSummary.pending +
                             item.whatsappSummary.sending}{" "}
@@ -403,102 +397,101 @@ function SentAnnouncementDetailDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] sm:max-w-2xl">
-        <DialogHeader className="gap-2">
-          <div className="flex items-center gap-2">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-              <MegaphoneIcon className="size-4" />
-            </span>
-            <div>
-              <DialogTitle className="font-heading text-lg sm:text-xl">
-                {announcement.title}
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
-                Enviado em {formatDateTime(announcement.createdAt)} por{" "}
-                {announcement.actorName}
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={
+        <span className="flex items-start gap-2.5">
+          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <MegaphoneIcon className="size-4" />
+          </span>
+          <span className="min-w-0">{announcement.title}</span>
+        </span>
+      }
+      description={`Enviado em ${formatDateTime(announcement.createdAt)} por ${announcement.actorName}`}
+      contentClassName="sm:max-w-2xl max-h-[90vh]"
+      bodyClassName="space-y-3"
+    >
+      {/* Message body preview with scroll */}
+      {announcement.body ? (
+        <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
+          <p className="max-h-[20vh] overflow-y-auto text-xs leading-relaxed text-foreground whitespace-pre-wrap select-text">
+            {announcement.body}
+          </p>
+        </div>
+      ) : null}
 
-        {/* Message body preview with scroll */}
-        {announcement.body ? (
-          <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
-            <p className="max-h-[20vh] overflow-y-auto text-xs leading-relaxed text-foreground whitespace-pre-wrap select-text">
-              {announcement.body}
-            </p>
-          </div>
-        ) : null}
+      {/* Delivery metrics and actions */}
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge
+              variant="outline"
+              className="gap-1 border-primary/30 bg-primary/5 text-xs text-primary"
+            >
+              <CheckCheckIcon className="size-3" />
+              <span>
+                App: {announcement.readRecipients} de{" "}
+                {announcement.totalRecipients} lidos
+              </span>
+            </Badge>
 
-        {/* Delivery metrics and actions */}
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge
-                variant="outline"
-                className="gap-1 border-primary/30 bg-primary/5 text-xs text-primary"
-              >
-                <CheckCheckIcon className="size-3" />
-                <span>
-                  App: {announcement.readRecipients} de{" "}
-                  {announcement.totalRecipients} lidos
-                </span>
-              </Badge>
+            {waSummary && waSummary.total > 0 && (
+              <>
+                <Badge
+                  variant="outline"
+                  className="gap-1 border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-600 dark:text-emerald-400"
+                >
+                  <MessageSquareIcon className="size-3" />
+                  <span>
+                    WhatsApp: {waSummary.delivered + waSummary.read} de{" "}
+                    {waSummary.total} entregues
+                  </span>
+                </Badge>
 
-              {waSummary && waSummary.total > 0 && (
-                <>
+                {waFailedOrPending > 0 && (
                   <Badge
                     variant="outline"
-                    className="gap-1 border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-600 dark:text-emerald-400"
+                    className="gap-1 border-destructive/30 text-xs text-destructive bg-destructive/5"
                   >
-                    <MessageSquareIcon className="size-3" />
-                    <span>
-                      WhatsApp: {waSummary.delivered + waSummary.read} de{" "}
-                      {waSummary.total} entregues
-                    </span>
+                    <AlertCircleIcon className="size-3" />
+                    <span>{waFailedOrPending} pendente(s)/falha(s)</span>
                   </Badge>
-
-                  {waFailedOrPending > 0 && (
-                    <Badge
-                      variant="outline"
-                      className="gap-1 border-destructive/30 text-xs text-destructive bg-destructive/5"
-                    >
-                      <AlertCircleIcon className="size-3" />
-                      <span>{waFailedOrPending} pendente(s)/falha(s)</span>
-                    </Badge>
-                  )}
-                </>
-              )}
-            </div>
-
-            {canRetry && waFailedOrPending > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRetryAll}
-                disabled={isRetrying}
-                className="h-8 gap-1.5 text-xs border-destructive/40 text-destructive hover:bg-destructive/10"
-              >
-                {isRetrying ? (
-                  <Loader2Icon className="size-3.5 animate-spin" />
-                ) : (
-                  <RotateCcwIcon className="size-3.5" />
                 )}
-                Reenviar falhas no WhatsApp
-              </Button>
+              </>
             )}
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          {canRetry && waFailedOrPending > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRetryAll}
+              disabled={isRetrying}
+              className="h-8 gap-1.5 text-xs border-destructive/40 text-destructive hover:bg-destructive/10"
+            >
+              {isRetrying ? (
+                <Loader2Icon className="size-3.5 animate-spin" />
+              ) : (
+                <RotateCcwIcon className="size-3.5" />
+              )}
+              Reenviar falhas no WhatsApp
+            </Button>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="w-full overflow-x-auto pb-0.5 sm:w-auto [-webkit-overflow-scrolling:touch]">
             <Tabs
               value={filter}
               onValueChange={(v) =>
-                setFilter(v as "all" | "read" | "unread" | "wa_ok" | "wa_pending")
+                setFilter(
+                  v as "all" | "read" | "unread" | "wa_ok" | "wa_pending",
+                )
               }
               className="w-auto"
             >
-              <TabsList className="h-8">
+              <TabsList className="h-8 w-max">
                 <TabsTrigger value="all" className="text-xs px-2.5">
                   Todos ({announcement.totalRecipients})
                 </TabsTrigger>
@@ -522,157 +515,157 @@ function SentAnnouncementDetailDialog({
                 )}
               </TabsList>
             </Tabs>
-
-            <div className="relative max-w-xs flex-1">
-              <SearchIcon className="absolute top-2.5 left-2.5 size-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome, email ou telefone..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-8 pl-8 text-xs"
-              />
-            </div>
           </div>
 
-          <div className="max-h-[35vh] divide-y divide-border/40 overflow-y-auto rounded-xl border border-border/60">
-            {filteredRecipients.length === 0 ? (
-              <div className="p-6 text-center text-xs text-muted-foreground">
-                Nenhum destinatário encontrado neste filtro.
-              </div>
-            ) : (
-              filteredRecipients.map((recipient) => {
-                const isSingleRetrying =
-                  isRetrying &&
-                  retryingLogId === recipient.whatsapp?.logId;
-
-                return (
-                  <div
-                    key={recipient.userId || recipient.personId || recipient.whatsapp?.phone}
-                    className="flex flex-col gap-2 p-3 text-xs sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <Avatar className="size-7">
-                        {recipient.image ? (
-                          <AvatarImage
-                            src={recipient.image}
-                            alt={recipient.name}
-                          />
-                        ) : null}
-                        <AvatarFallback className="text-[10px]">
-                          {getInitials(recipient.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-foreground">
-                          {recipient.name}
-                        </p>
-                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                          {recipient.email && (
-                            <span className="truncate">{recipient.email}</span>
-                          )}
-                          {recipient.whatsapp?.phone && (
-                            <span className="font-mono">
-                              {recipient.whatsapp.phone}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                      {/* App read status */}
-                      {recipient.readAt ? (
-                        <span className="flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                          <CheckCheckIcon className="size-3.5" />
-                          <span>Lido no App</span>
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                          <ClockIcon className="size-3.5" />
-                          <span>Aguardando App</span>
-                        </span>
-                      )}
-
-                      {/* WhatsApp status */}
-                      {recipient.whatsapp && (
-                        <div className="flex items-center gap-1.5 pl-2 border-l">
-                          {recipient.whatsapp.status === "read" && (
-                            <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 gap-1 text-[10px] font-normal">
-                              <CheckCheckIcon className="size-3" />
-                              Lido WhatsApp
-                            </Badge>
-                          )}
-
-                          {recipient.whatsapp.status === "delivered" && (
-                            <Badge className="bg-teal-500/15 text-teal-700 dark:text-teal-400 gap-1 text-[10px] font-normal">
-                              <CheckIcon className="size-3" />
-                              Entregue
-                            </Badge>
-                          )}
-
-                          {recipient.whatsapp.status === "sent" && (
-                            <Badge variant="secondary" className="gap-1 text-[10px] font-normal">
-                              <SendIcon className="size-3" />
-                              Enviado
-                            </Badge>
-                          )}
-
-                          {recipient.whatsapp.status === "sending" && (
-                            <Badge variant="outline" className="gap-1 text-[10px] font-normal text-blue-600">
-                              <Loader2Icon className="size-3 animate-spin" />
-                              Enviando...
-                            </Badge>
-                          )}
-
-                          {recipient.whatsapp.status === "pending" && (
-                            <Badge variant="outline" className="gap-1 text-[10px] font-normal border-amber-500/30 text-amber-600 bg-amber-500/5">
-                              <ClockIcon className="size-3" />
-                              Na fila
-                            </Badge>
-                          )}
-
-                          {recipient.whatsapp.status === "failed" && (
-                            <div className="flex items-center gap-1">
-                              <Badge
-                                variant="destructive"
-                                className="gap-1 text-[10px] font-normal"
-                                title={recipient.whatsapp.lastError || "Falha no envio"}
-                              >
-                                <XCircleIcon className="size-3" />
-                                Falha
-                              </Badge>
-                              {canRetry && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleRetrySingle(
-                                      recipient.whatsapp!.logId,
-                                    )
-                                  }
-                                  disabled={isSingleRetrying}
-                                  className="h-6 px-1.5 text-[10px] gap-1"
-                                >
-                                  {isSingleRetrying ? (
-                                    <Loader2Icon className="size-2.5 animate-spin" />
-                                  ) : (
-                                    <RotateCcwIcon className="size-2.5" />
-                                  )}
-                                  Reenviar
-                                </Button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
+          <div className="relative w-full max-w-xs flex-1">
+            <SearchIcon className="absolute top-2.5 left-2.5 size-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, email ou telefone..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-8 pl-8 text-xs"
+            />
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        <div className="max-h-[35vh] divide-y divide-border/40 overflow-y-auto rounded-xl border border-border/60">
+          {filteredRecipients.length === 0 ? (
+            <div className="p-6 text-center text-xs text-muted-foreground">
+              Nenhum destinatário encontrado neste filtro.
+            </div>
+          ) : (
+            filteredRecipients.map((recipient) => {
+              const isSingleRetrying =
+                isRetrying &&
+                retryingLogId === recipient.whatsapp?.logId;
+
+              return (
+                <div
+                  key={recipient.userId || recipient.personId || recipient.whatsapp?.phone}
+                  className="flex flex-col gap-2 p-3 text-xs sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <Avatar className="size-7">
+                      {recipient.image ? (
+                        <AvatarImage
+                          src={recipient.image}
+                          alt={recipient.name}
+                        />
+                      ) : null}
+                      <AvatarFallback className="text-[11px]">
+                        {getInitials(recipient.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-foreground">
+                        {recipient.name}
+                      </p>
+                      <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                        {recipient.email && (
+                          <span className="truncate">{recipient.email}</span>
+                        )}
+                        {recipient.whatsapp?.phone && (
+                          <span className="font-mono">
+                            {recipient.whatsapp.phone}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                    {/* App read status */}
+                    {recipient.readAt ? (
+                      <span className="flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                        <CheckCheckIcon className="size-3.5" />
+                        <span>Lido no App</span>
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <ClockIcon className="size-3.5" />
+                        <span>Aguardando App</span>
+                      </span>
+                    )}
+
+                    {/* WhatsApp status */}
+                    {recipient.whatsapp && (
+                      <div className="flex items-center gap-1.5 pl-2 border-l">
+                        {recipient.whatsapp.status === "read" && (
+                          <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 gap-1 text-[11px] font-normal">
+                            <CheckCheckIcon className="size-3" />
+                            Lido WhatsApp
+                          </Badge>
+                        )}
+
+                        {recipient.whatsapp.status === "delivered" && (
+                          <Badge className="bg-teal-500/15 text-teal-700 dark:text-teal-400 gap-1 text-[11px] font-normal">
+                            <CheckIcon className="size-3" />
+                            Entregue
+                          </Badge>
+                        )}
+
+                        {recipient.whatsapp.status === "sent" && (
+                          <Badge variant="secondary" className="gap-1 text-[11px] font-normal">
+                            <SendIcon className="size-3" />
+                            Enviado
+                          </Badge>
+                        )}
+
+                        {recipient.whatsapp.status === "sending" && (
+                          <Badge variant="outline" className="gap-1 text-[11px] font-normal text-blue-600">
+                            <Loader2Icon className="size-3 animate-spin" />
+                            Enviando...
+                          </Badge>
+                        )}
+
+                        {recipient.whatsapp.status === "pending" && (
+                          <Badge variant="outline" className="gap-1 text-[11px] font-normal border-amber-500/30 text-amber-600 bg-amber-500/5">
+                            <ClockIcon className="size-3" />
+                            Na fila
+                          </Badge>
+                        )}
+
+                        {recipient.whatsapp.status === "failed" && (
+                          <div className="flex items-center gap-1">
+                            <Badge
+                              variant="destructive"
+                              className="gap-1 text-[11px] font-normal"
+                              title={recipient.whatsapp.lastError || "Falha no envio"}
+                            >
+                              <XCircleIcon className="size-3" />
+                              Falha
+                            </Badge>
+                            {canRetry && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleRetrySingle(
+                                    recipient.whatsapp!.logId,
+                                  )
+                                }
+                                disabled={isSingleRetrying}
+                                className="h-6 px-1.5 text-[11px] gap-1"
+                              >
+                                {isSingleRetrying ? (
+                                  <Loader2Icon className="size-2.5 animate-spin" />
+                                ) : (
+                                  <RotateCcwIcon className="size-2.5" />
+                                )}
+                                Reenviar
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </ResponsiveDialog>
   );
 }
