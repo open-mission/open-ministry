@@ -26,8 +26,8 @@ export function FunctionsSection({
   );
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-3">
+    <Card className="min-w-0">
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1.5">
           <CardTitle className="font-heading text-xl tracking-tight">
             Funções

@@ -8,17 +8,10 @@ import {
   updateDepartmentAction,
   type DepartmentFormState,
 } from "@/app/actions/departments";
+import { ResponsiveDialog } from "@/components/app/responsive-dialog";
 import { FormAlert } from "@/components/auth/form-alert";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   Field,
   FieldError,
@@ -40,28 +33,24 @@ export function EditDepartmentDialog({
   const [open, setOpen] = useState(false);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={setOpen}
+      trigger={
+        <Button variant="outline" size="sm" className="max-sm:h-10">
           <PencilIcon data-icon="inline-start" />
           Editar
         </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="font-heading text-2xl tracking-tight">
-            Editar departamento
-          </DialogTitle>
-          <DialogDescription>
-            O nome e a descrição aparecem para toda a igreja.
-          </DialogDescription>
-        </DialogHeader>
-        <DepartmentForm
-          department={department}
-          onDone={() => setOpen(false)}
-        />
-      </DialogContent>
-    </Dialog>
+      }
+      title="Editar departamento"
+      description="O nome e a descrição aparecem para toda a igreja."
+      contentClassName="sm:max-w-md"
+    >
+      <DepartmentForm
+        department={department}
+        onDone={() => setOpen(false)}
+      />
+    </ResponsiveDialog>
   );
 }
 
