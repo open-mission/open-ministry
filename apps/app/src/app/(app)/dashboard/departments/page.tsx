@@ -33,7 +33,7 @@ async function DepartmentsContent() {
         <h1 className="font-heading text-4xl leading-none tracking-tight">
           Departamentos
         </h1>
-        {isAdmin ? <CreateDepartmentDialog /> : null}
+        {isAdmin && departments.length > 0 ? <CreateDepartmentDialog /> : null}
       </header>
 
       {departments.length === 0 ? (

@@ -8,18 +8,11 @@ import {
   addDepartmentMemberAction,
   type AddMemberFormState,
 } from "@/app/actions/departments";
+import { ResponsiveDialog } from "@/components/app/responsive-dialog";
 import { FormAlert } from "@/components/auth/form-alert";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   Field,
   FieldError,
@@ -50,35 +43,31 @@ export function AddDepartmentMemberDialog({
   const [open, setOpen] = useState(false);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={setOpen}
+      trigger={
         <Button
           variant="outline"
           size="sm"
+          className="max-sm:h-10"
           disabled={availableMembers.length === 0}
         >
           <UserPlusIcon data-icon="inline-start" />
           Adicionar pessoa
         </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="font-heading text-2xl tracking-tight">
-            Adicionar pessoa
-          </DialogTitle>
-          <DialogDescription>
-            Escolha alguém da igreja. Depois você define as funções e o nível de
-            experiência de cada uma.
-          </DialogDescription>
-        </DialogHeader>
-        <AddMemberForm
-          departmentId={departmentId}
-          availableMembers={availableMembers}
-          canManageLeaders={canManageLeaders}
-          onDone={() => setOpen(false)}
-        />
-      </DialogContent>
-    </Dialog>
+      }
+      title="Adicionar pessoa"
+      description="Escolha alguém da igreja. Depois você define as funções e o nível de experiência de cada uma."
+      contentClassName="sm:max-w-md"
+    >
+      <AddMemberForm
+        departmentId={departmentId}
+        availableMembers={availableMembers}
+        canManageLeaders={canManageLeaders}
+        onDone={() => setOpen(false)}
+      />
+    </ResponsiveDialog>
   );
 }
 
@@ -141,7 +130,7 @@ function AddMemberForm({
         </Field>
 
         {canManageLeaders ? (
-          <Field orientation="horizontal">
+          <Field orientation="horizontal" className="min-h-11">
             <Checkbox id="department-member-leader" name="isLeader" />
             <FieldLabel htmlFor="department-member-leader">
               Definir como líder do departamento

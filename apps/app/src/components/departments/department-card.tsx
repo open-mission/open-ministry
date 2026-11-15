@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRightIcon, CrownIcon } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { getInitials } from "@/lib/format";
 import {
   personDisplayImage,
@@ -104,16 +105,28 @@ export function DepartmentCard({
           </span>
         </div>
 
-        <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-          <CrownIcon className="size-3.5 shrink-0 text-accent-foreground" />
-          <span className="truncate">
-            {leaders.length === 0
-              ? "Sem líder definido"
-              : leaders
-                  .map((leader) => personDisplayName(leader.person))
-                  .join(", ")}
-          </span>
-        </div>
+        {leaders.length === 0 ? (
+          <Badge
+            variant="outline"
+            aria-label="Sem líder definido"
+            className="gap-1 border-amber-500/30 bg-amber-500/10 text-[11px] font-medium text-amber-700 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-300"
+          >
+            <CrownIcon className="size-3" aria-hidden />
+            Sem líder
+          </Badge>
+        ) : (
+          <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+            <CrownIcon
+              className="size-3.5 shrink-0 text-accent-foreground"
+              aria-hidden
+            />
+            <span className="truncate">
+              {leaders
+                .map((leader) => personDisplayName(leader.person))
+                .join(", ")}
+            </span>
+          </div>
+        )}
 
         <ArrowUpRightIcon className="size-4 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100" />
       </div>

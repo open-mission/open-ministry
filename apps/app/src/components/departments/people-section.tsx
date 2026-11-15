@@ -54,6 +54,78 @@ function sortMembers(members: DepartmentMember[]) {
   });
 }
 
+function MemberIdentity({ member }: { member: DepartmentMember }) {
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      <Avatar className="size-9">
+        <AvatarImage
+          src={personDisplayImage(member.person) ?? undefined}
+          alt={personDisplayName(member.person)}
+        />
+        <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
+          {getInitials(personDisplayName(member.person))}
+        </AvatarFallback>
+      </Avatar>
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <p className="truncate text-sm font-medium">
+            {personDisplayName(member.person)}
+          </p>
+          {member.isLeader ? (
+            <Badge variant="secondary" className="gap-1 font-normal">
+              <CrownIcon className="size-3" />
+              Líder
+            </Badge>
+          ) : null}
+          {!member.person.userId ? (
+            <Badge variant="outline" className="font-normal">
+              Sem conta
+            </Badge>
+          ) : null}
+        </div>
+        <p className="truncate text-xs text-muted-foreground">
+          {personDisplayEmail(member.person) ?? "Sem email cadastrado"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function MemberAssignments({
+  assignments,
+  canViewExperience,
+}: {
+  assignments: DepartmentMember["assignments"];
+  canViewExperience: boolean;
+}) {
+  if (assignments.length === 0) {
+    return (
+      <span className="text-xs text-muted-foreground">Sem função definida</span>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {assignments.map((assignment) => (
+        <span
+          key={assignment.id}
+          className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
+        >
+          {assignment.function.name}
+          {canViewExperience ? (
+            <span className="font-normal text-muted-foreground">
+              {" · "}
+              {experienceLevelLabels[
+                assignment.experienceLevel as ExperienceLevel
+              ] ?? assignment.experienceLevel}
+            </span>
+          ) : null}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function PeopleSection({
   department,
   availableMembers,
@@ -70,8 +142,8 @@ export function PeopleSection({
   const members = sortMembers(department.members);
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="flex flex-row items-start justify-between gap-3">
+    <Card className="min-w-0 overflow-hidden">
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1.5">
           <CardTitle className="font-heading text-xl tracking-tight">
             Pessoas
@@ -108,117 +180,94 @@ export function PeopleSection({
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Pessoa</TableHead>
-                  <TableHead>
-                    {canViewExperience ? "Funções e experiência" : "Funções"}
-                  </TableHead>
+          <>
+            <ul className="divide-y md:hidden">
+              {members.map((member) => (
+                <li key={member.id} className="space-y-3 p-4">
+                  <MemberIdentity member={member} />
+
+                  <MemberAssignments
+                    assignments={member.assignments}
+                    canViewExperience={canViewExperience}
+                  />
+
                   {canManage ? (
-                    <TableHead className="text-right">Ações</TableHead>
+                    <div className="flex items-center justify-end gap-1 border-t pt-2">
+                      <MemberFunctionsDialog
+                        member={member}
+                        functions={department.functions}
+                      />
+                      <DepartmentMemberActions
+                        memberId={member.id}
+                        memberName={personDisplayName(member.person)}
+                        isLeader={member.isLeader}
+                        canManageLeaders={canManageLeaders}
+                        departmentId={department.id}
+                        departmentName={department.name}
+                        personId={member.personId}
+                      />
+                    </div>
                   ) : null}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {members.map((member) => (
-                  <TableRow key={member.id}>
-                    <TableCell>
-                      <div className="flex min-w-48 items-center gap-3">
-                        <Avatar className="size-9">
-                          <AvatarImage
-                            src={
-                              personDisplayImage(member.person) ?? undefined
-                            }
-                            alt={personDisplayName(member.person)}
-                          />
-                          <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
-                            {getInitials(personDisplayName(member.person))}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <p className="truncate text-sm font-medium">
-                              {personDisplayName(member.person)}
-                            </p>
-                            {member.isLeader ? (
-                              <Badge
-                                variant="secondary"
-                                className="gap-1 font-normal"
-                              >
-                                <CrownIcon className="size-3" />
-                                Líder
-                              </Badge>
-                            ) : null}
-                            {!member.person.userId ? (
-                              <Badge
-                                variant="outline"
-                                className="font-normal"
-                              >
-                                Sem conta
-                              </Badge>
-                            ) : null}
-                          </div>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {personDisplayEmail(member.person) ??
-                              "Sem email cadastrado"}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
+                </li>
+              ))}
+            </ul>
 
-                    <TableCell>
-                      {member.assignments.length === 0 ? (
-                        <span className="text-xs text-muted-foreground">
-                          Sem função definida
-                        </span>
-                      ) : (
-                        <div className="flex min-w-40 flex-wrap gap-1.5">
-                          {member.assignments.map((assignment) => (
-                            <span
-                              key={assignment.id}
-                              className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
-                            >
-                              {assignment.function.name}
-                              {canViewExperience ? (
-                                <span className="font-normal text-muted-foreground">
-                                  {" · "}
-                                  {experienceLevelLabels[
-                                    assignment.experienceLevel as ExperienceLevel
-                                  ] ?? assignment.experienceLevel}
-                                </span>
-                              ) : null}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </TableCell>
-
+            <div className="hidden overflow-x-auto md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Pessoa</TableHead>
+                    <TableHead>
+                      {canViewExperience ? "Funções e experiência" : "Funções"}
+                    </TableHead>
                     {canManage ? (
+                      <TableHead className="text-right">Ações</TableHead>
+                    ) : null}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {members.map((member) => (
+                    <TableRow key={member.id}>
                       <TableCell>
-                        <div className="flex items-center justify-end gap-1">
-                          <MemberFunctionsDialog
-                            member={member}
-                            functions={department.functions}
-                          />
-                          <DepartmentMemberActions
-                            memberId={member.id}
-                            memberName={personDisplayName(member.person)}
-                            isLeader={member.isLeader}
-                            canManageLeaders={canManageLeaders}
-                            departmentId={department.id}
-                            departmentName={department.name}
-                            personId={member.personId}
+                        <div className="min-w-48">
+                          <MemberIdentity member={member} />
+                        </div>
+                      </TableCell>
+
+                      <TableCell>
+                        <div className="min-w-40">
+                          <MemberAssignments
+                            assignments={member.assignments}
+                            canViewExperience={canViewExperience}
                           />
                         </div>
                       </TableCell>
-                    ) : null}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+
+                      {canManage ? (
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-1">
+                            <MemberFunctionsDialog
+                              member={member}
+                              functions={department.functions}
+                            />
+                            <DepartmentMemberActions
+                              memberId={member.id}
+                              memberName={personDisplayName(member.person)}
+                              isLeader={member.isLeader}
+                              canManageLeaders={canManageLeaders}
+                              departmentId={department.id}
+                              departmentName={department.name}
+                              personId={member.personId}
+                            />
+                          </div>
+                        </TableCell>
+                      ) : null}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>
