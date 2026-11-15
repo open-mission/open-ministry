@@ -103,7 +103,7 @@ export function QuickActions({
         >
           Acessos rápidos
         </h2>
-        <span className="pb-0.5 text-[0.68rem] text-muted-foreground/75 sm:hidden">
+        <span className="pb-0.5 text-[11px] text-muted-foreground/75 sm:hidden">
           Arraste para o lado <span aria-hidden="true">&rarr;</span>
         </span>
       </div>
