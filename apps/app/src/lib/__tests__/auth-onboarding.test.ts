@@ -47,7 +47,10 @@ import { AuthShell } from "@/components/auth/auth-shell";
 import { LoginForm } from "@/components/auth/login-form";
 import { OnboardingForm } from "@/components/auth/onboarding-form";
 import { SignUpForm } from "@/components/auth/signup-form";
-import { DashboardOnboardingModal } from "@/components/onboarding/dashboard-onboarding-modal";
+import {
+  DashboardOnboardingModal,
+  ProfileCompletenessRing,
+} from "@/components/onboarding/dashboard-onboarding-modal";
 import { actionErrorMessage } from "@/lib/auth-errors";
 import {
   buildWhatsAppShareUrl,
@@ -336,6 +339,104 @@ describe("Onboarding — campo de WhatsApp com máscara dinâmica", () => {
     expect(phoneInput).toContain('autoComplete="tel"');
     expect(phoneInput).toContain('name="phone"');
     expect(phoneInput).toContain('value=""');
+  });
+});
+
+describe("Onboarding — anel de progresso circular do perfil", () => {
+  const CIRCUMFERENCE = 2 * Math.PI * 50;
+
+  const circleTags = (markup: string): string[] =>
+    markup.match(/<circle[^>]*>/g) ?? [];
+
+  const attribute = (tag: string, name: string): string | null => {
+    const match = tag.match(new RegExp(`\\b${name}="([^"]*)"`));
+    return match?.[1] ?? null;
+  };
+
+  it("desenha trilha e progresso como círculos SVG com strokeDashoffset calculado", () => {
+    const markup = render(
+      createElement(ProfileCompletenessRing, { completeness: 50 }),
+    );
+    const circles = circleTags(markup);
+
+    expect(circles).toHaveLength(2);
+
+    const [track, progress] = circles;
+    expect(track).toContain('stroke="currentColor"');
+    expect(track).toContain('stroke-width="6"');
+    expect(track).toContain('fill="none"');
+    expect(track).toContain("text-emerald-500/30");
+
+    expect(progress).toContain('stroke="currentColor"');
+    expect(progress).toContain('stroke-width="6"');
+    expect(progress).toContain('fill="none"');
+    expect(progress).toContain('stroke-linecap="round"');
+    expect(progress).toContain("text-emerald-400");
+    expect(attribute(progress, "r")).toBe("50");
+    expect(Number(attribute(progress, "stroke-dasharray"))).toBeCloseTo(
+      CIRCUMFERENCE,
+      6,
+    );
+    expect(Number(attribute(progress, "stroke-dashoffset"))).toBeCloseTo(
+      CIRCUMFERENCE / 2,
+      6,
+    );
+  });
+
+  it("a 100% zera o offset e fecha o anel sem abertura", () => {
+    const markup = render(
+      createElement(ProfileCompletenessRing, { completeness: 100 }),
+    );
+    const progress = circleTags(markup)[1];
+
+    expect(Number(attribute(progress, "stroke-dashoffset"))).toBe(0);
+    expect(markup).toContain("100%");
+    expect(markup).toContain("Completo");
+  });
+
+  it("a 0% mantém o anel vazio, iniciando às 12 horas com o texto central", () => {
+    const markup = render(
+      createElement(ProfileCompletenessRing, { completeness: 0 }),
+    );
+    const progress = circleTags(markup)[1];
+
+    expect(Number(attribute(progress, "stroke-dashoffset"))).toBeCloseTo(
+      CIRCUMFERENCE,
+      6,
+    );
+    expect(markup).toContain('viewBox="0 0 112 112"');
+    expect(markup).toContain("-rotate-90");
+    expect(markup).toContain("0%");
+    expect(markup).toContain("Completo");
+    expect(markup).toContain(
+      "text-[11px] font-medium uppercase tracking-wider text-emerald-300",
+    );
+  });
+
+  it("é anunciado como barra de progresso acessível", () => {
+    const markup = render(
+      createElement(ProfileCompletenessRing, { completeness: 50 }),
+    );
+
+    expect(markup).toContain('role="progressbar"');
+    expect(markup).toContain('aria-valuenow="50"');
+    expect(markup).toContain('aria-valuemin="0"');
+    expect(markup).toContain('aria-valuemax="100"');
+  });
+
+  it("não deixa nenhum clip-path quebrado no código-fonte do tour", () => {
+    const source = readFileSync(
+      fileURLToPath(
+        new URL(
+          "../../components/onboarding/dashboard-onboarding-modal.tsx",
+          import.meta.url,
+        ),
+      ),
+      "utf8",
+    );
+
+    expect(source).not.toContain("clipPath");
+    expect(source).not.toContain("polygon(");
   });
 });
 
