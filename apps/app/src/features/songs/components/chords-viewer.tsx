@@ -15,6 +15,7 @@ import {
   Columns3Icon,
   CopyIcon,
   FileMusicIcon,
+  KeyboardIcon,
   LayoutGridIcon,
   ListIcon,
   Maximize2Icon,
@@ -28,6 +29,16 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Kbd } from "@/components/ui/kbd";
 import { NativeSelect } from "@/components/ui/native-select";
 import {
   getSemitoneDistance,
@@ -40,6 +51,16 @@ import {
   transposeChord,
   transposeChordsText,
 } from "@/lib/music/chords-utils";
+import {
+  CHORDS_FONT_SIZE_KEY,
+  CHORDS_VIEW_MODE_KEY,
+  persistPreference,
+  readStoredPreference,
+  shiftFontSize,
+  VIEWER_FONT_SIZE_LABELS,
+  VIEWER_FONT_SIZES,
+  type ViewerFontSize,
+} from "@/lib/music/viewer-preferences";
 import { cn } from "@/lib/utils";
 import { SectionBadge } from "./section-badge";
 
@@ -51,12 +72,12 @@ type ChordsViewerProps = {
   songArtist?: string;
 };
 
-type FontSize = "sm" | "base" | "lg" | "xl";
+type FontSize = ViewerFontSize;
 type ViewMode = "sections" | "columns" | "continuous";
 
-const FONT_SIZE_KEY = "openministry:songs:viewer:font-size";
-const VIEW_MODE_KEY = "openministry:songs:viewer:view-mode";
-const FONT_SIZES: FontSize[] = ["sm", "base", "lg", "xl"];
+const FONT_SIZE_KEY = CHORDS_FONT_SIZE_KEY;
+const VIEW_MODE_KEY = CHORDS_VIEW_MODE_KEY;
+const FONT_SIZES: FontSize[] = [...VIEWER_FONT_SIZES];
 const VIEW_MODES: ViewMode[] = ["sections", "columns", "continuous"];
 
 const FONT_CLASS: Record<FontSize, string> = {
@@ -66,18 +87,17 @@ const FONT_CLASS: Record<FontSize, string> = {
   xl: "text-lg leading-loose font-medium sm:text-xl",
 };
 
-function readStoredPreference<T extends string>(
-  key: string,
-  allowed: readonly T[],
-): T | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const value = window.localStorage.getItem(key);
-    return allowed.includes(value as T) ? (value as T) : null;
-  } catch {
-    return null;
-  }
-}
+const STAGE_SHORTCUTS: { keys: string[]; label: string }[] = [
+  { keys: ["+"], label: "Sobe meio tom" },
+  { keys: ["−"], label: "Desce meio tom" },
+  { keys: ["0"], label: "Volta ao tom original" },
+  { keys: ["F"], label: "Entra ou sai da tela cheia" },
+  { keys: ["T"], label: "Alterna seções, colunas e contínua" },
+  { keys: ["C"], label: "Copia a cifra" },
+  { keys: ["↑", "↓"], label: "Aumenta ou diminui a fonte" },
+  { keys: ["Esc"], label: "Sai do modo palco" },
+  { keys: ["?"], label: "Abre esta ajuda" },
+];
 
 function ToolbarButton({
   label,
@@ -124,6 +144,7 @@ export function ChordsViewer({
   );
 
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [semitones, setSemitones] = useState(0);
   const [copied, setCopied] = useState(false);
   const [fontSize, setFontSize] = useState<FontSize>("base");
@@ -131,8 +152,13 @@ export function ChordsViewer({
 
   const fullscreenRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const helpOpenRef = useRef(false);
 
   const safeCapo = Math.min(12, Math.max(0, Number(capo) || 0));
+
+  useEffect(() => {
+    helpOpenRef.current = helpOpen;
+  }, [helpOpen]);
 
   // Preferências do músico persistem entre músicas e sessões.
   useEffect(() => {
@@ -149,19 +175,11 @@ export function ChordsViewer({
   }, []);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(FONT_SIZE_KEY, fontSize);
-    } catch {
-      // Armazenamento indisponível (modo privado) — apenas ignora.
-    }
+    persistPreference(FONT_SIZE_KEY, fontSize);
   }, [fontSize]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(VIEW_MODE_KEY, viewMode);
-    } catch {
-      // Armazenamento indisponível (modo privado) — apenas ignora.
-    }
+    persistPreference(VIEW_MODE_KEY, viewMode);
   }, [viewMode]);
 
   const currentTone = useMemo(() => {
@@ -197,14 +215,71 @@ export function ChordsViewer({
   );
 
   const moveFontSize = useCallback((direction: 1 | -1) => {
-    setFontSize((current) => {
-      const index = FONT_SIZES.indexOf(current);
-      const next = Math.min(
-        FONT_SIZES.length - 1,
-        Math.max(0, index + direction),
-      );
-      return FONT_SIZES[next] ?? current;
+    setFontSize((current) => shiftFontSize(current, direction));
+  }, []);
+
+  const cycleViewMode = useCallback(() => {
+    setViewMode((current) => {
+      const index = VIEW_MODES.indexOf(current);
+      return VIEW_MODES[(index + 1) % VIEW_MODES.length] ?? current;
     });
+  }, []);
+
+  // Mantém a tela acesa durante o modo palco e readquire o lock ao voltar para a aba.
+  useEffect(() => {
+    if (!isFullscreen) return;
+    if (typeof navigator === "undefined" || !("wakeLock" in navigator)) return;
+
+    let sentinel: WakeLockSentinel | null = null;
+    let disposed = false;
+
+    const requestWakeLock = async () => {
+      try {
+        sentinel = await navigator.wakeLock.request("screen");
+      } catch {
+        // Permissão negada ou API indisponível — segue sem manter a tela acesa.
+        sentinel = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (disposed) return;
+      if (document.visibilityState !== "visible") return;
+      if (sentinel && !sentinel.released) return;
+      void requestWakeLock();
+    };
+
+    void requestWakeLock();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      disposed = true;
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      sentinel?.release().catch(() => {});
+      sentinel = null;
+    };
+  }, [isFullscreen]);
+
+  // Ajuda de palco: "?" fica disponível também fora da tela cheia.
+  useEffect(() => {
+    const handleHelpKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "?" || event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+
+      const target = event.target;
+      const isTyping =
+        target instanceof Element &&
+        Boolean(target.closest("input, textarea, select, [contenteditable]"));
+
+      if (isTyping) return;
+
+      event.preventDefault();
+      setHelpOpen((open) => !open);
+    };
+
+    window.addEventListener("keydown", handleHelpKeyDown);
+    return () => window.removeEventListener("keydown", handleHelpKeyDown);
   }, []);
 
   // Tela cheia acessível: trava o foco, bloqueia o scroll e restaura o foco.
@@ -224,7 +299,8 @@ export function ChordsViewer({
     });
 
     const handleTab = (event: KeyboardEvent) => {
-      if (event.key !== "Tab" || !container) return;
+      // Com a ajuda aberta, o Dialog cuida da própria armadilha de foco.
+      if (event.key !== "Tab" || !container || helpOpenRef.current) return;
       const focusable = Array.from(
         container.querySelectorAll<HTMLElement>(
           "a[href], button:not([disabled]), select:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])",
@@ -283,6 +359,8 @@ export function ChordsViewer({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
+      // A ajuda aberta captura o teclado para si (Esc e Tab ficam no Dialog).
+      if (helpOpenRef.current) return;
 
       const target = event.target;
       const isInteractiveTarget =
@@ -323,13 +401,11 @@ export function ChordsViewer({
         case "toggleFullscreen":
           toggleFullscreen();
           break;
+        case "cycleViewMode":
+          cycleViewMode();
+          break;
         case "close":
           closeFullscreen();
-          break;
-        case "focusTone":
-          fullscreenRef.current
-            ?.querySelector<HTMLSelectElement>("[data-stage-target-tone]")
-            ?.focus();
           break;
         case "copy":
           void handleCopy();
@@ -341,6 +417,7 @@ export function ChordsViewer({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
     closeFullscreen,
+    cycleViewMode,
     handleCopy,
     isFullscreen,
     moveFontSize,
@@ -421,7 +498,7 @@ export function ChordsViewer({
             </span>
           ) : null}
           {semitones !== 0 ? (
-            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-semibold text-primary">
               {semitones > 0 ? `+${semitones}` : semitones}
             </span>
           ) : null}
@@ -435,8 +512,7 @@ export function ChordsViewer({
           value={currentTone ?? ""}
           onChange={(event) => handleTargetToneChange(event.target.value)}
           disabled={!originalTone}
-          title="Selecionar tom alvo (T)"
-          data-stage-target-tone
+          title="Selecionar tom alvo"
           className="[&_select]:h-11 [&_select]:text-xs sm:[&_select]:h-9"
           aria-label="Selecionar tom alvo"
         >
@@ -489,7 +565,7 @@ export function ChordsViewer({
           {FONT_SIZES.map((size, index) => (
             <ToolbarButton
               key={size}
-              label={`Tamanho da fonte ${index + 1}`}
+              label={`Tamanho da fonte: ${VIEWER_FONT_SIZE_LABELS[size]}`}
               active={fontSize === size}
               onClick={() => setFontSize(size)}
             >
@@ -545,6 +621,18 @@ export function ChordsViewer({
           <span className="hidden sm:inline">
             {copied ? "Copiado!" : "Copiar"}
           </span>
+        </Button>
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setHelpOpen(true)}
+          className="h-11 w-11 shrink-0 px-0 text-muted-foreground shadow-2xs hover:text-foreground sm:h-9 sm:w-9"
+          aria-label="Ver atalhos do modo palco"
+          title="Atalhos do modo palco (?)"
+        >
+          <KeyboardIcon className="size-4" />
         </Button>
 
         <Button
@@ -680,7 +768,7 @@ export function ChordsViewer({
                   >
                     <Minimize2Icon className="size-4" />
                     <span>Sair</span>
-                    <kbd className="hidden rounded bg-primary-foreground/20 px-1 py-0.5 font-mono text-[10px] sm:inline">
+                    <kbd className="hidden rounded bg-primary-foreground/20 px-1 py-0.5 font-mono text-[11px] sm:inline">
                       ESC
                     </kbd>
                   </Button>
@@ -715,6 +803,62 @@ export function ChordsViewer({
             document.body,
           )
         : null}
+
+      <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
+        <DialogContent
+          showCloseButton={false}
+          className={cn(
+            "max-h-[85vh] overflow-y-auto sm:max-w-md",
+            // Fica acima da sobreposição do modo palco (z-100).
+            isFullscreen && "z-[120]",
+          )}
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <KeyboardIcon className="size-4" />
+              </span>
+              Atalhos do modo palco
+            </DialogTitle>
+            <DialogDescription id="stage-help-description">
+              Durante o culto, use o teclado sem tirar os olhos da cifra. Os
+              atalhos valem com a tela cheia aberta.
+            </DialogDescription>
+          </DialogHeader>
+
+          <ul className="divide-y divide-border/60 overflow-hidden rounded-xl border border-border/80">
+            {STAGE_SHORTCUTS.map((shortcut) => (
+              <li
+                key={shortcut.label}
+                className="flex items-center justify-between gap-3 bg-card px-3.5 py-2.5"
+              >
+                <span className="text-sm text-foreground">{shortcut.label}</span>
+                <span className="flex shrink-0 items-center gap-1">
+                  {shortcut.keys.map((key) => (
+                    <Kbd key={key} className="min-w-6 px-1.5 py-0.5">
+                      {key}
+                    </Kbd>
+                  ))}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Toque em “Tela cheia” para entrar no modo palco. A tela permanece
+            acesa enquanto ele estiver aberto.
+          </p>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" className="h-11 sm:h-9">
+                Fechar
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+

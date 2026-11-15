@@ -2,6 +2,7 @@
 
 import { useId, useMemo, useState } from "react";
 import {
+  CalendarClockIcon,
   CheckIcon,
   ChevronDownIcon,
   FolderIcon,
@@ -41,6 +42,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { describeSongUsageRecency } from "@/lib/song-usage";
 import { cn } from "@/lib/utils";
 import type { SongOption } from "./plan-item-dialog";
 
@@ -363,6 +365,10 @@ export function PlanSongPicker({
         {filteredSongs.length > 0 ? (
           filteredSongs.map((song) => {
             const isSelected = selectedSong?.id === song.id;
+            const recency = describeSongUsageRecency({
+              lastEvent: song.lastEvent,
+              eventCount: song.eventCount,
+            });
             return (
               <button
                 key={song.id}
@@ -391,21 +397,31 @@ export function PlanSongPicker({
                         {song.title}
                       </span>
                       {song.tone ? (
-                        <span className="rounded bg-primary/15 px-1.5 py-0.2 text-[10px] font-bold text-primary">
+                        <span className="rounded bg-primary/15 px-1.5 py-0.2 text-[11px] font-bold text-primary">
                           {song.tone}
                         </span>
                       ) : null}
                     </div>
 
-                    <p className="truncate text-[11px] text-muted-foreground">
+                    <span className="block truncate text-[11px] text-muted-foreground">
                       {song.artist || "Artista não informado"}
-                    </p>
+                    </span>
+
+                    {recency ? (
+                      <span className="flex items-center gap-1 pt-0.5 text-[11px] text-muted-foreground">
+                        <CalendarClockIcon
+                          className="size-3 shrink-0 opacity-70"
+                          aria-hidden="true"
+                        />
+                        <span className="truncate">{recency}</span>
+                      </span>
+                    ) : null}
 
                     {/* BADGES COMPLEMENTARES: COLEÇÃO E TAGS */}
                     {(song.collection || (song.tags && song.tags.length > 0)) && (
                       <div className="flex flex-wrap items-center gap-1 pt-0.5">
                         {song.collection ? (
-                          <span className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.2 text-[9px] font-medium text-muted-foreground">
+                          <span className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.2 text-[11px] font-medium text-muted-foreground">
                             <FolderIcon className="size-2.5 opacity-70" />
                             {song.collection}
                           </span>
@@ -413,7 +429,7 @@ export function PlanSongPicker({
                         {song.tags?.slice(0, 2).map((t) => (
                           <span
                             key={t}
-                            className="rounded bg-muted px-1.5 py-0.2 text-[9px] text-muted-foreground"
+                            className="rounded bg-muted px-1.5 py-0.2 text-[11px] text-muted-foreground"
                           >
                             #{t}
                           </span>
@@ -499,15 +515,15 @@ export function PlanSongPicker({
                       {selectedSong.tone ? (
                         <Badge
                           variant="secondary"
-                          className="px-1 py-0 text-[10px] font-bold text-primary"
+                          className="px-1 py-0 text-[11px] font-bold text-primary"
                         >
                           {selectedSong.tone}
                         </Badge>
                       ) : null}
                     </div>
-                    <p className="truncate text-xs text-muted-foreground">
+                    <span className="block truncate text-xs text-muted-foreground">
                       {selectedSong.artist || "Artista não informado"}
-                    </p>
+                    </span>
                   </div>
                 </div>
               ) : (
@@ -593,21 +609,21 @@ export function PlanSongPicker({
                       {selectedSong.tone ? (
                         <Badge
                           variant="secondary"
-                          className="px-1 py-0 text-[10px] font-bold text-primary"
+                          className="px-1 py-0 text-[11px] font-bold text-primary"
                         >
                           {selectedSong.tone}
                         </Badge>
                       ) : null}
                       {selectedSong.collection ? (
-                        <span className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.2 text-[10px] font-medium text-muted-foreground">
+                        <span className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.2 text-[11px] font-medium text-muted-foreground">
                           <FolderIcon className="size-2.5 opacity-70" />
                           {selectedSong.collection}
                         </span>
                       ) : null}
                     </div>
-                    <p className="truncate text-xs text-muted-foreground">
+                    <span className="block truncate text-xs text-muted-foreground">
                       {selectedSong.artist || "Artista não informado"}
-                    </p>
+                    </span>
                   </div>
                 </div>
               ) : (
