@@ -27,6 +27,7 @@ import {
   type EvolutionSettingsView,
 } from "@/app/actions/settings";
 import { copyToClipboard } from "@/lib/clipboard";
+import { formatBrazilianPhone } from "@/lib/whatsapp-prompt";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -395,9 +396,12 @@ export function AdminEvolutionApiCard({
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Input
               type="tel"
+              inputMode="tel"
               placeholder="Ex.: (11) 99999-8888"
               value={testPhone}
-              onChange={(e) => setTestPhone(e.target.value)}
+              onChange={(e) =>
+                setTestPhone(formatBrazilianPhone(e.target.value))
+              }
               className="h-9 max-w-xs text-xs font-mono"
             />
             <Button

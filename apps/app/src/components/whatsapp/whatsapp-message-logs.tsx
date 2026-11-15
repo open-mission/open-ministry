@@ -16,6 +16,7 @@ import {
   XCircleIcon,
 } from "lucide-react";
 
+import { ResponsiveDialog } from "@/components/app/responsive-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,13 +26,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   NativeSelect,
@@ -60,15 +54,15 @@ function formatDateTime(date: Date | string | null): string {
 function typeBadge(type: string) {
   switch (type) {
     case "announcement":
-      return <Badge variant="secondary" className="text-[10px]">Aviso</Badge>;
+      return <Badge variant="secondary" className="text-[11px]">Aviso</Badge>;
     case "assignment":
-      return <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">Escala</Badge>;
+      return <Badge variant="outline" className="text-[11px] border-primary/30 text-primary">Escala</Badge>;
     case "welcome":
-      return <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-600">Boas-vindas</Badge>;
+      return <Badge variant="outline" className="text-[11px] border-emerald-500/30 text-emerald-600">Boas-vindas</Badge>;
     case "monthly_availability":
-      return <Badge variant="outline" className="text-[10px] border-blue-500/30 text-blue-600">Disponibilidade</Badge>;
+      return <Badge variant="outline" className="text-[11px] border-blue-500/30 text-blue-600">Disponibilidade</Badge>;
     default:
-      return <Badge variant="secondary" className="text-[10px]">{type}</Badge>;
+      return <Badge variant="secondary" className="text-[11px]">{type}</Badge>;
   }
 }
 
@@ -320,7 +314,7 @@ export function WhatsAppMessageLogsCard() {
                           {log.content}
                         </p>
                         {log.lastError && (
-                          <p className="text-[10px] text-destructive truncate flex items-center gap-1 mt-0.5">
+                          <p className="text-[11px] text-destructive truncate flex items-center gap-1 mt-0.5">
                             <AlertCircleIcon className="size-3 shrink-0" />
                             {log.lastError}
                           </p>
@@ -334,7 +328,7 @@ export function WhatsAppMessageLogsCard() {
                       <td className="p-3 whitespace-nowrap text-muted-foreground text-[11px]">
                         <div>{formatDateTime(log.createdAt)}</div>
                         {log.readAt && (
-                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                          <div className="text-[11px] text-emerald-600 dark:text-emerald-400">
                             Lido: {formatDateTime(log.readAt)}
                           </div>
                         )}
@@ -383,77 +377,64 @@ export function WhatsAppMessageLogsCard() {
           <span>
             Mostrando {logs.length} de {total} registros
           </span>
-          <span>Atualizado automaticamente pelo Webhook Evolution</span>
+          <span>
+            Atualizado automaticamente pelo sistema de confirmações de leitura
+          </span>
         </div>
       </CardContent>
 
       {/* Detail Dialog */}
-      <Dialog
+      <ResponsiveDialog
         open={Boolean(selectedLog)}
         onOpenChange={(open) => !open && setSelectedLogId(null)}
+        title="Mensagem WhatsApp"
+        description={`Para: ${selectedLog?.recipientName} (${selectedLog?.recipientPhone})`}
+        contentClassName="sm:max-w-md max-h-[85vh]"
       >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <div className="flex items-center gap-2">
-              <span className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
-                <MessageSquareIcon className="size-4" />
+        <div className="space-y-3 pt-2 text-xs">
+          <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-2.5">
+            <span className="text-muted-foreground">Status atual:</span>
+            {selectedLog && statusBadge(selectedLog.status, selectedLog.lastError)}
+          </div>
+
+          {selectedLog?.evolutionMessageId && (
+            <div className="rounded-lg border bg-muted/30 p-2.5 space-y-0.5">
+              <span className="text-muted-foreground text-[11px] uppercase font-semibold">
+                Identificador da mensagem:
               </span>
-              <div>
-                <DialogTitle className="font-heading text-lg">
-                  Mensagem WhatsApp
-                </DialogTitle>
-                <DialogDescription className="text-xs">
-                  Para: {selectedLog?.recipientName} ({selectedLog?.recipientPhone})
-                </DialogDescription>
-              </div>
+              <p className="font-mono text-[11px] break-all select-all">
+                {selectedLog.evolutionMessageId}
+              </p>
             </div>
-          </DialogHeader>
+          )}
 
-          <div className="space-y-3 pt-2 text-xs">
-            <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-2.5">
-              <span className="text-muted-foreground">Status atual:</span>
-              {selectedLog && statusBadge(selectedLog.status, selectedLog.lastError)}
-            </div>
-
-            {selectedLog?.evolutionMessageId && (
-              <div className="rounded-lg border bg-muted/30 p-2.5 space-y-0.5">
-                <span className="text-muted-foreground text-[10px] uppercase font-semibold">
-                  ID Evolution WhatsApp:
-                </span>
-                <p className="font-mono text-[11px] break-all select-all">
-                  {selectedLog.evolutionMessageId}
-                </p>
-              </div>
-            )}
-
-            {selectedLog?.lastError && (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-2.5 text-destructive space-y-0.5">
-                <span className="text-[10px] uppercase font-semibold flex items-center gap-1">
-                  <AlertCircleIcon className="size-3" />
-                  Erro reportado:
-                </span>
-                <p className="font-mono text-[11px]">{selectedLog.lastError}</p>
-              </div>
-            )}
-
-            <div className="space-y-1">
-              <span className="text-muted-foreground text-[10px] uppercase font-semibold">
-                Conteúdo do texto:
+          {selectedLog?.lastError && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-2.5 text-destructive space-y-0.5">
+              <span className="text-[11px] uppercase font-semibold flex items-center gap-1">
+                <AlertCircleIcon className="size-3" />
+                Erro reportado:
               </span>
-              <div className="max-h-[30vh] overflow-y-auto rounded-xl border bg-card p-3 whitespace-pre-wrap font-mono text-xs select-text">
-                {selectedLog?.content}
-              </div>
+              <p className="font-mono text-[11px]">{selectedLog.lastError}</p>
             </div>
+          )}
 
-            <div className="grid grid-cols-2 gap-2 text-[11px] text-muted-foreground pt-1">
-              <div>Criado em: {formatDateTime(selectedLog?.createdAt ?? null)}</div>
-              <div>Entregue em: {formatDateTime(selectedLog?.deliveredAt ?? null)}</div>
-              <div>Tentativas: {selectedLog?.attempts}</div>
-              <div>Lido em: {formatDateTime(selectedLog?.readAt ?? null)}</div>
+          <div className="space-y-1">
+            <span className="text-muted-foreground text-[11px] uppercase font-semibold">
+              Conteúdo do texto:
+            </span>
+            <div className="max-h-[30vh] overflow-y-auto rounded-xl border bg-card p-3 whitespace-pre-wrap font-mono text-xs select-text">
+              {selectedLog?.content}
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+
+          <div className="grid grid-cols-2 gap-2 text-[11px] text-muted-foreground pt-1">
+            <div>Criado em: {formatDateTime(selectedLog?.createdAt ?? null)}</div>
+            <div>Entregue em: {formatDateTime(selectedLog?.deliveredAt ?? null)}</div>
+            <div>Tentativas: {selectedLog?.attempts}</div>
+            <div>Lido em: {formatDateTime(selectedLog?.readAt ?? null)}</div>
+          </div>
+        </div>
+      </ResponsiveDialog>
     </Card>
   );
 }
