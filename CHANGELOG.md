@@ -6,6 +6,29 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.2.0] - 2026-11-15
+
+### Adicionado e Melhorado
+- **Módulo de Músicas & Repertório de Louvor**:
+  - **Screen Wake Lock API**: Prevenção automática de desligamento ou bloqueio da tela durante a visualização de cifras e letras no palco, ensaios ou cultos.
+  - **Controle Tipográfico e Atalhos**: Seletor rápido de tamanho de fonte das letras/cifras e atalhos de teclado para navegação veloz entre canções.
+  - **Histórico e Recência**: Indicadores visuais de músicas tocadas recentemente para diversificar o repertório ministerial.
+- **Módulo de Departamentos & Ministérios**:
+  - **Diálogos Responsivos (`ResponsiveDialog` / `ResponsiveAlertDialog`)**: Modais no desktop convertidos automaticamente em gaveta inferior deslizante (`Drawer`) em smartphones.
+  - **Permissões Humanizadas**: Rótulos e descrições pastorais claras para atribuição de responsabilidades e acessos ministeriais.
+- **Painel Inicial & Acolhimento**:
+  - **Saudação de Aniversário por WhatsApp**: Ação direta de felicitações pelo WhatsApp com sanitização de DDI 55 e telefone no card de aniversariantes.
+  - **Versículo do Dia Adaptativo**: Modal de reflexão bíblica e meditação com suporte a gestos e leitura em gaveta no celular.
+- **Autenticação, Convites & Onboarding**:
+  - **Anel de Progresso do Perfil em SVG (`ProfileCompletenessRing`)**: Renderização geométrica precisa sem interrupção de contorno na etapa de conclusão de cadastro ministerial.
+  - **Máscara Progressiva de Telefone**: Formatação automática `(DD) 99999-9999`, botão acessível de exibir senha e alvos de toque $\ge 28\times 28$px.
+- **Avisos, Notificações & Integração WhatsApp**:
+  - **Experiência Mobile Unificada**: Modais de detalhes de envio, convite e prompt de telefone convertidos em `Drawer` no mobile.
+  - **Piso Tipográfico Rigoroso**: Eliminação de fontes microscópicas em todos os badges de status, logs e templates ($\ge 11$px).
+  - **Comunicação Humanizada**: Eliminação de jargões técnicos crus, validação prévia de canais e suíte de testes com 380 testes aprovados.
+
+---
+
 ## [1.1.5] - 2026-11-13
 
 ### Corrigido e Melhorado

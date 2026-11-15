@@ -213,7 +213,7 @@ export function MemberDashboard({
                           <span className="font-heading text-xl leading-none tabular-nums">
                             {parts.day}
                           </span>
-                          <span className="mt-0.5 text-[0.6rem] tracking-[0.12em] text-muted-foreground">
+                          <span className="mt-0.5 text-[11px] tracking-[0.12em] text-muted-foreground">
                             {parts.monthShort}
                           </span>
                         </span>

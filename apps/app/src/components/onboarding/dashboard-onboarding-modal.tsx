@@ -61,6 +61,74 @@ function isoToBRDate(iso?: string | null): string {
   return iso;
 }
 
+const PROGRESS_RING_RADIUS = 50;
+const PROGRESS_RING_CIRCUMFERENCE = 2 * Math.PI * PROGRESS_RING_RADIUS;
+
+interface ProfileCompletenessRingProps {
+  completeness: number;
+}
+
+/**
+ * Anel de progresso circular em SVG.
+ *
+ * Um recorte poligonal em CSS não consegue desenhar um arco: ele corta o anel
+ * com retas e deixa uma fatia aberta mesmo a 100%. Com `stroke-dasharray` e
+ * `stroke-dashoffset`, 100% zera o offset e o círculo fecha por completo.
+ */
+export function ProfileCompletenessRing({
+  completeness,
+}: ProfileCompletenessRingProps) {
+  const value = Math.min(100, Math.max(0, completeness));
+  const strokeDashoffset = PROGRESS_RING_CIRCUMFERENCE * (1 - value / 100);
+
+  return (
+    <div
+      role="progressbar"
+      aria-valuenow={value}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label="Completude do perfil ministerial"
+      className="relative mx-auto flex h-28 w-28 items-center justify-center rounded-full bg-emerald-950/60 shadow-xl"
+    >
+      <svg
+        className="absolute inset-0 size-full -rotate-90"
+        viewBox="0 0 112 112"
+        aria-hidden="true"
+      >
+        <circle
+          cx="56"
+          cy="56"
+          r={PROGRESS_RING_RADIUS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="6"
+          className="text-emerald-500/30"
+        />
+        <circle
+          cx="56"
+          cy="56"
+          r={PROGRESS_RING_RADIUS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeDasharray={PROGRESS_RING_CIRCUMFERENCE}
+          strokeDashoffset={strokeDashoffset}
+          className="text-emerald-400 transition-all duration-700 ease-out"
+        />
+      </svg>
+      <div className="flex flex-col items-center">
+        <span className="text-2xl font-bold font-serif text-white">
+          {value}%
+        </span>
+        <span className="text-[11px] font-medium uppercase tracking-wider text-emerald-300">
+          Completo
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function DashboardOnboardingModal({
   userName,
   initialPhone,
@@ -204,42 +272,48 @@ export function DashboardOnboardingModal({
         <div className="pointer-events-auto h-[100dvh] w-full max-w-none md:h-[660px] md:max-w-5xl rounded-none md:rounded-3xl border-0 md:border md:border-white/10 bg-background md:bg-card/95 text-foreground shadow-[0_25px_70px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden animate-in fade-in-0 zoom-in-95 duration-250 backdrop-blur-2xl">
           
           {/* Header Bar */}
-          <div className="flex h-16 shrink-0 items-center justify-between border-b border-border/40 px-5 sm:px-7 pt-[env(safe-area-inset-top)] md:pt-0 bg-card/60 backdrop-blur-md">
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white font-serif font-bold text-sm shadow-sm ring-1 ring-white/20">
+          <div className="flex min-h-16 shrink-0 items-center justify-between gap-2 border-b border-border/40 px-4 pt-[env(safe-area-inset-top)] sm:gap-4 sm:px-7 md:pt-0 bg-card/60 backdrop-blur-md">
+            <div className="hidden min-w-0 items-center gap-3 min-[340px]:flex">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white font-serif font-bold text-sm shadow-sm ring-1 ring-white/20">
                 ✝
               </div>
-              <div className="flex flex-col">
-                <span className="font-serif text-sm font-bold tracking-tight text-foreground">
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate font-serif text-sm font-bold tracking-tight text-foreground">
                   OpenMinistry
                 </span>
-                <span className="text-[10px] text-muted-foreground font-medium -mt-0.5">
+                <span className="truncate text-[11px] text-muted-foreground font-medium -mt-0.5">
                   Introdução Interativa
                 </span>
               </div>
             </div>
 
             {/* Stepper Dots & Close */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5">
+            <div className="flex shrink-0 items-center gap-1 sm:gap-4">
+              <div className="flex items-center gap-0.5 sm:gap-1.5">
                 {Array.from({ length: totalSteps }).map((_, idx) => (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => setCurrentStep(idx)}
                     aria-label={`Ir para o passo ${idx + 1}`}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${
-                      idx === currentStep
-                        ? "w-7 bg-primary shadow-xs"
-                        : idx < currentStep
-                        ? "w-2 bg-primary/40 hover:bg-primary/60"
-                        : "w-2 bg-muted hover:bg-muted-foreground/30"
-                    }`}
-                  />
+                    aria-current={idx === currentStep ? "step" : undefined}
+                    className="flex min-h-[28px] min-w-[28px] items-center justify-center rounded-full p-1 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        idx === currentStep
+                          ? "w-7 bg-primary shadow-xs"
+                          : idx < currentStep
+                          ? "w-2 bg-primary/40 hover:bg-primary/60"
+                          : "w-2 bg-muted hover:bg-muted-foreground/30"
+                      }`}
+                    />
+                  </button>
                 ))}
               </div>
 
-              <div className="h-4 w-px bg-border/60" />
+              <div className="hidden h-4 w-px bg-border/60 sm:block" />
 
               <button
                 type="button"
@@ -284,7 +358,7 @@ export function DashboardOnboardingModal({
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
                         <div className="text-left text-white">
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">
                             Comunidade & Liderança
                           </p>
                           <p className="text-xs font-medium text-white/90">
@@ -312,7 +386,7 @@ export function DashboardOnboardingModal({
                             <span className="font-semibold text-emerald-400 flex items-center gap-1.5">
                               <CalendarCheckIcon className="h-3.5 w-3.5" /> Domingo • Culto 19h
                             </span>
-                            <span className="rounded-full bg-emerald-500/20 text-emerald-300 px-2 py-0.5 text-[10px] font-bold">
+                            <span className="rounded-full bg-emerald-500/20 text-emerald-300 px-2 py-0.5 text-[11px] font-bold">
                               Sem Conflitos
                             </span>
                           </div>
@@ -345,9 +419,9 @@ export function DashboardOnboardingModal({
                         </div>
                         <div>
                           <p className="text-xs font-bold text-white">OpenMinistry WhatsApp</p>
-                          <p className="text-[10px] text-emerald-300">Mensagem Instantânea</p>
+                          <p className="text-[11px] text-emerald-300">Mensagem Instantânea</p>
                         </div>
-                        <span className="ml-auto text-[10px] text-emerald-400/80">agora</span>
+                        <span className="ml-auto text-[11px] text-emerald-400/80">agora</span>
                       </div>
 
                       <div className="rounded-xl bg-card/90 p-3.5 text-xs text-foreground border border-border/60 shadow-sm space-y-2">
@@ -403,7 +477,7 @@ export function DashboardOnboardingModal({
                                   key={tone}
                                   type="button"
                                   onClick={() => setCurrentKey(tone)}
-                                  className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold transition-all ${
+                                  className={`px-1.5 py-0.5 rounded text-[11px] font-mono font-bold transition-all ${
                                     currentKey === tone
                                       ? "bg-amber-400 text-black shadow-xs"
                                       : "bg-white/20 text-white hover:bg-white/30"
@@ -426,22 +500,7 @@ export function DashboardOnboardingModal({
                 {/* Visual 4: Profile Completeness Score */}
                 {currentStep === 4 && (
                   <div className="space-y-4 w-full max-w-xs text-center">
-                    <div className="relative mx-auto flex h-28 w-28 items-center justify-center rounded-full border-4 border-emerald-500/30 bg-emerald-950/60 shadow-xl">
-                      <div
-                        className="absolute inset-0 rounded-full border-4 border-emerald-400 transition-all duration-700"
-                        style={{
-                          clipPath: `polygon(50% 50%, -50% -50%, ${completeness * 2}% 0%, 100% 100%, 0% 100%)`,
-                        }}
-                      />
-                      <div className="flex flex-col items-center">
-                        <span className="text-2xl font-bold font-serif text-white">
-                          {completeness}%
-                        </span>
-                        <span className="text-[10px] text-emerald-300 font-medium uppercase tracking-wider">
-                          Completo
-                        </span>
-                      </div>
-                    </div>
+                    <ProfileCompletenessRing completeness={completeness} />
                     <div className="space-y-1 text-white">
                       <p className="text-sm font-semibold">Perfil Ministerial</p>
                       <p className="text-xs text-white/70">
@@ -461,7 +520,7 @@ export function DashboardOnboardingModal({
                       <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white font-serif font-bold text-lg flex items-center justify-center shadow-lg my-auto">
                         ✝
                       </div>
-                      <p className="text-[9px] font-semibold text-white/80 mt-auto">OpenMinistry</p>
+                      <p className="text-[11px] font-semibold text-white/80 mt-auto">OpenMinistry</p>
                     </div>
                     <p className="text-xs text-white/90 font-medium">
                       {isStandalone ? "Aplicativo Ativo no seu Dispositivo" : "Instale e use em Tela Cheia"}
@@ -635,20 +694,24 @@ export function DashboardOnboardingModal({
                     <div className="space-y-4 pt-1">
                       {/* WhatsApp Phone Field */}
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+                        <label
+                          htmlFor="onboarding-tour-phone"
+                          className="text-xs font-semibold text-foreground flex items-center justify-between"
+                        >
                           <span className="flex items-center gap-1.5">
                             <PhoneIcon className="h-3.5 w-3.5 text-emerald-600" />
                             WhatsApp
                           </span>
                           {hasPhone ? (
-                            <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                            <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
                               <CheckIcon className="h-3 w-3" /> Preenchido
                             </span>
                           ) : (
-                            <span className="text-[10px] text-amber-600 font-medium">Obrigatório com DDD</span>
+                            <span className="text-[11px] text-amber-600 font-medium">Obrigatório com DDD</span>
                           )}
                         </label>
                         <Input
+                          id="onboarding-tour-phone"
                           type="tel"
                           value={phone}
                           onChange={(e) => {
@@ -661,27 +724,31 @@ export function DashboardOnboardingModal({
                         {phoneError && (
                           <p className="text-[11px] text-destructive">{phoneError}</p>
                         )}
-                        <p className="text-[10px] text-muted-foreground">
+                        <p className="text-[11px] text-muted-foreground">
                           Utilizado para envio de lembretes e confirmações de escala.
                         </p>
                       </div>
 
                       {/* Birthday Field */}
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+                        <label
+                          htmlFor="onboarding-tour-birthday"
+                          className="text-xs font-semibold text-foreground flex items-center justify-between"
+                        >
                           <span className="flex items-center gap-1.5">
                             <CalendarIcon className="h-3.5 w-3.5 text-teal-600" />
                             Data de Nascimento
                           </span>
                           {hasBirthday ? (
-                            <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                            <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
                               <CheckIcon className="h-3 w-3" /> Preenchido
                             </span>
                           ) : (
-                            <span className="text-[10px] text-muted-foreground">Dia / Mês / Ano</span>
+                            <span className="text-[11px] text-muted-foreground">Dia / Mês / Ano</span>
                           )}
                         </label>
                         <Input
+                          id="onboarding-tour-birthday"
                           type="text"
                           value={birthday}
                           onChange={(e) => {
@@ -695,7 +762,7 @@ export function DashboardOnboardingModal({
                         {birthdayError && (
                           <p className="text-[11px] text-destructive">{birthdayError}</p>
                         )}
-                        <p className="text-[10px] text-muted-foreground">
+                        <p className="text-[11px] text-muted-foreground">
                           Para celebrarmos seu aniversário no mural da igreja.
                         </p>
                       </div>

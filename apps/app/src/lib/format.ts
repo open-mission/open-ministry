@@ -5,6 +5,12 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   timeZone: "America/Sao_Paulo",
 });
 
+const dayMonthFormatter = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  timeZone: "America/Sao_Paulo",
+});
+
 const dateTimeFormatter = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
   month: "short",
@@ -16,6 +22,11 @@ const dateTimeFormatter = new Intl.DateTimeFormat("pt-BR", {
 
 export function formatDate(value: Date | string | number): string {
   return dateFormatter.format(new Date(value));
+}
+
+/** Data curta para espaços apertados: 25/09. */
+export function formatDayMonth(value: Date | string | number): string {
+  return dayMonthFormatter.format(new Date(value));
 }
 
 export function formatDateTime(value: Date | string | number): string {

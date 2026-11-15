@@ -11,15 +11,8 @@ import {
 import { toast } from "sonner";
 
 import { getDepartmentWhatsAppInviteMessageAction } from "@/app/actions/departments";
+import { ResponsiveDialog } from "@/components/app/responsive-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { copyToClipboard } from "@/lib/clipboard";
 import { buildWhatsAppShareUrl } from "@/lib/message-templates";
@@ -76,94 +69,105 @@ export function DepartmentWhatsAppInviteDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogTrigger asChild>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={handleOpen}
+      trigger={
         <Button
           type="button"
           variant="ghost"
           size="icon-xs"
-          className="text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400"
+          className="text-muted-foreground hover:text-emerald-600 max-sm:size-9 dark:hover:text-emerald-400"
           title={`Enviar convite de ${departmentName} via WhatsApp para ${personName}`}
-          aria-label="Avisar por WhatsApp"
+          aria-label={`Avisar ${personName} por WhatsApp`}
         >
           <MessageSquareIcon className="size-3.5" />
         </Button>
-      </DialogTrigger>
-
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <div className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
-              <MessageSquareIcon className="size-4" />
-            </span>
-            <DialogTitle className="font-heading text-xl">
-              Avisar via WhatsApp
-            </DialogTitle>
+      }
+      title={
+        <span className="flex items-center gap-2">
+          <span
+            aria-hidden
+            className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+          >
+            <MessageSquareIcon className="size-4" />
+          </span>
+          Avisar via WhatsApp
+        </span>
+      }
+      titleClassName="text-xl"
+      description={
+        <>
+          Envie o convite de <strong className="text-foreground">{departmentName}</strong>{" "}
+          diretamente para{" "}
+          <strong className="text-foreground">{personName}</strong>.
+        </>
+      }
+      contentClassName="sm:max-w-md"
+    >
+      {isPending ? (
+        <div className="flex flex-col items-center justify-center gap-2 py-8 text-muted-foreground">
+          <RefreshCwIcon className="size-5 animate-spin text-primary" />
+          <p className="text-xs">Gerando mensagem personalizada...</p>
+        </div>
+      ) : (
+        <div className="space-y-4 pt-1">
+          <div className="space-y-1.5">
+            <label
+              htmlFor="whatsapp-invite-phone"
+              className="text-xs font-medium text-muted-foreground"
+            >
+              WhatsApp da pessoa{" "}
+              <span className="font-normal">
+                (opcional, para abrir direto no chat)
+              </span>
+            </label>
+            <Input
+              id="whatsapp-invite-phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={phone}
+              onChange={(event) => setPhone(event.target.value)}
+              placeholder="Ex: 11988887777 (com DDD)"
+              className="h-10 bg-background text-sm"
+            />
           </div>
-          <DialogDescription>
-            Envie o convite de <strong>{departmentName}</strong> diretamente para{" "}
-            <strong>{personName}</strong>.
-          </DialogDescription>
-        </DialogHeader>
 
-        {isPending ? (
-          <div className="flex flex-col items-center justify-center py-8 gap-2 text-muted-foreground">
-            <RefreshCwIcon className="size-5 animate-spin text-primary" />
-            <p className="text-xs">Gerando mensagem personalizada...</p>
+          <div className="max-h-56 overflow-y-auto rounded-xl border bg-muted/40 p-3.5 text-sm leading-relaxed whitespace-pre-wrap">
+            {message || "Carregando mensagem..."}
           </div>
-        ) : (
-          <div className="space-y-4 pt-1">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">
-                WhatsApp da pessoa (opcional para abrir direto no chat):
-              </label>
-              <Input
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Ex: 11988887777 (com DDD)"
-                className="h-8 text-xs bg-background"
-              />
-            </div>
 
-            <div className="rounded-xl border bg-muted/40 p-3.5 text-xs font-mono leading-relaxed whitespace-pre-wrap max-h-56 overflow-y-auto">
-              {message || "Carregando mensagem..."}
-            </div>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleCopy}
+              className="min-h-10 gap-1.5 text-xs"
+            >
+              {copied ? (
+                <CheckIcon className="size-3.5 text-primary" />
+              ) : (
+                <CopyIcon className="size-3.5" />
+              )}
+              Copiar mensagem
+            </Button>
 
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleCopy}
-                className="gap-1.5 text-xs"
-              >
-                {copied ? (
-                  <CheckIcon className="size-3.5 text-primary" />
-                ) : (
-                  <CopyIcon className="size-3.5" />
-                )}
-                Copiar Mensagem
-              </Button>
-
-              <Button
-                type="button"
-                size="sm"
-                asChild
-                className="gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
-                <a
-                  href={currentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <ExternalLinkIcon className="size-3.5" />
-                  Abrir no WhatsApp
-                </a>
-              </Button>
-            </div>
+            <Button
+              type="button"
+              size="sm"
+              asChild
+              className="min-h-10 gap-1.5 bg-emerald-600 text-xs text-white hover:bg-emerald-700"
+            >
+              <a href={currentUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLinkIcon className="size-3.5" />
+                Abrir no WhatsApp
+              </a>
+            </Button>
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
+        </div>
+      )}
+    </ResponsiveDialog>
   );
 }

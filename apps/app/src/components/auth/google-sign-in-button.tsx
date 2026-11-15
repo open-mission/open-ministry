@@ -66,7 +66,7 @@ export function GoogleSignInButton({
         {isLastUsed && !pending ? (
           <Badge
             variant="secondary"
-            className="ml-auto text-[10px] font-medium tracking-wide uppercase"
+            className="ml-auto text-[11px] font-medium tracking-wide uppercase"
           >
             Último usado
           </Badge>

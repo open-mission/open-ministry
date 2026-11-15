@@ -66,6 +66,12 @@ export type SongOption = {
   capo?: number | null;
   collection?: string | null;
   tags?: string[] | null;
+  lastEvent?: {
+    id: string;
+    title: string;
+    startsAt: Date | string;
+  } | null;
+  eventCount?: number;
 };
 
 type PlanItemDialogProps = {

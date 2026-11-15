@@ -13,16 +13,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { ResponsiveDialog } from "@/components/app/responsive-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import type { VerseOfTheDayData } from "@/lib/youversion";
 
 export function VerseOfTheDayCard({
@@ -86,7 +80,7 @@ export function VerseOfTheDayCard({
               <div className="flex items-center gap-2">
                 <Badge
                   variant="outline"
-                  className="h-5 border-border/60 bg-background/60 px-2 text-[10px] font-medium text-muted-foreground"
+                  className="h-5 border-border/60 bg-background/60 px-2 text-[11px] font-medium text-muted-foreground"
                 >
                   {verse.versionName} • YouVersion
                 </Badge>
@@ -169,43 +163,42 @@ export function VerseOfTheDayCard({
         </CardContent>
       </Card>
 
-      {/* Modal para exibir a imagem do versículo fornecida pelo YouVersion */}
+      {/* Painel responsivo para exibir a imagem do versículo fornecida pelo YouVersion */}
       {verse.imageUrl ? (
-        <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
-          <DialogContent className="max-w-md p-4">
-            <DialogHeader>
-              <DialogTitle className="text-sm font-semibold">
-                {verse.reference}
-              </DialogTitle>
-              <DialogDescription className="sr-only">
-                Imagem ilustrativa do versículo do dia: {verse.reference}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="relative mt-2 overflow-hidden rounded-xl border">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={verse.imageUrl}
-                alt={`Versículo do dia: ${verse.reference}`}
-                width={1200}
-                height={675}
-                loading="lazy"
-                decoding="async"
-                className="w-full h-auto object-cover"
-              />
-            </div>
-            <div className="flex justify-end gap-2 mt-3">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleShare}
-              >
-                <Share2Icon className="size-3.5 mr-1" aria-hidden="true" />
-                Compartilhar
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ResponsiveDialog
+          open={imageDialogOpen}
+          onOpenChange={setImageDialogOpen}
+          title={verse.reference}
+          titleClassName="text-base sm:text-lg"
+          description={`Imagem ilustrativa do versículo do dia: ${verse.reference}`}
+          contentClassName="sm:max-w-md"
+          bodyClassName="mt-2"
+          footer={
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="min-h-[44px] w-full sm:ml-auto sm:w-auto"
+              onClick={handleShare}
+            >
+              <Share2Icon className="size-3.5 mr-1" aria-hidden="true" />
+              Compartilhar
+            </Button>
+          }
+        >
+          <div className="relative overflow-hidden rounded-xl border">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={verse.imageUrl}
+              alt={`Versículo do dia: ${verse.reference}`}
+              width={1200}
+              height={675}
+              loading="lazy"
+              decoding="async"
+              className="w-full h-auto object-cover"
+            />
+          </div>
+        </ResponsiveDialog>
       ) : null}
     </>
   );

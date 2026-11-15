@@ -16,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { formatPhoneNumberForEvolution } from "@/lib/evolution-api";
 import {
   MOOD_LEVELS,
   type MoodOverview,
@@ -141,7 +142,7 @@ export function PastoralCarePreview({
               <h3 className="text-sm font-semibold text-foreground">
                 Membros precisando de carinho & contato
               </h3>
-              <Badge variant="outline" className="border-rose-500/20 bg-rose-500/10 text-[0.65rem] font-normal text-rose-600 dark:text-rose-400 tabular-nums">
+              <Badge variant="outline" className="border-rose-500/20 bg-rose-500/10 text-[11px] font-normal text-rose-600 dark:text-rose-400 tabular-nums">
                 {overview.recentCareRequests.length} no total
               </Badge>
             </div>
@@ -149,7 +150,7 @@ export function PastoralCarePreview({
             <div className="space-y-2.5">
               {topRequests.map((req) => {
                 const phoneClean = req.personPhone
-                  ? req.personPhone.replace(/\D/g, "")
+                  ? formatPhoneNumberForEvolution(req.personPhone)
                   : null;
                 const level = MOOD_LEVELS[req.score] ?? MOOD_LEVELS[3];
 
@@ -176,7 +177,7 @@ export function PastoralCarePreview({
                           </p>
                           <span
                             className={cn(
-                              "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[0.65rem] font-medium border",
+                              "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium border",
                               level.bg,
                               level.color,
                               level.border,
@@ -191,7 +192,7 @@ export function PastoralCarePreview({
                           {req.needsPrayer && (
                             <Badge
                               variant="outline"
-                              className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 text-[0.65rem] py-0"
+                              className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 text-[11px] py-0"
                             >
                               🙏 Pediu oração
                             </Badge>
@@ -199,7 +200,7 @@ export function PastoralCarePreview({
                           {req.needsTalk && (
                             <Badge
                               variant="outline"
-                              className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30 text-[0.65rem] py-0"
+                              className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30 text-[11px] py-0"
                             >
                               💬 Pediu conversa
                             </Badge>
@@ -222,7 +223,7 @@ export function PastoralCarePreview({
                           className="h-8 gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
                         >
                           <a
-                            href={`https://wa.me/55${phoneClean}?text=Ol%C3%A1%20${encodeURIComponent(req.personName)}%2C%20vi%20seu%20recado%20no%20app%20da%20igreja.%20Como%20voc%C3%AA%20est%C3%A1%3F`}
+                            href={`https://wa.me/${phoneClean}?text=Ol%C3%A1%20${encodeURIComponent(req.personName)}%2C%20vi%20seu%20recado%20no%20app%20da%20igreja.%20Como%20voc%C3%AA%20est%C3%A1%3F`}
                             target="_blank"
                             rel="noreferrer"
                           >

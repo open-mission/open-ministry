@@ -79,7 +79,7 @@ export function RecentPeopleCarousel({
                   {role ? (
                     <RoleBadge role={role} />
                   ) : (
-                    <Badge variant="outline" className="py-0 text-[0.65rem] font-normal">
+                    <Badge variant="outline" className="py-0 text-[11px] font-normal">
                       Membro
                     </Badge>
                   )}

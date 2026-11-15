@@ -65,8 +65,8 @@ export type StageShortcutAction =
   | "fontSizeUp"
   | "fontSizeDown"
   | "toggleFullscreen"
+  | "cycleViewMode"
   | "close"
-  | "focusTone"
   | "copy";
 
 export function getStageShortcutAction(
@@ -99,7 +99,7 @@ export function getStageShortcutAction(
       return "close";
     case "t":
     case "T":
-      return "focusTone";
+      return "cycleViewMode";
     case "c":
     case "C":
       return "copy";

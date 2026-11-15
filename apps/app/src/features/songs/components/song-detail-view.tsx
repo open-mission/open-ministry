@@ -220,8 +220,7 @@ export function SongDetailView({
             className="shrink-0 gap-1.5 px-2.5 text-xs sm:text-sm"
           >
             <FileMusicIcon className="size-4 shrink-0" />
-            <span>Cifra</span>
-            <span className="hidden sm:inline">com Transposição</span>
+            <span>Cifra &amp; Transposição</span>
           </TabsTrigger>
           <TabsTrigger
             value="letra"

@@ -18,6 +18,7 @@ export type BirthdayEntry = {
   userId: string | null;
   name: string;
   image: string | null;
+  phone?: string | null;
   month: number;
   day: number;
   dateLabel: string;
@@ -29,7 +30,7 @@ export type BirthdayEntry = {
   turningAge: number | null;
 };
 
-type BirthdayPerson = PersonLike & { id: string };
+type BirthdayPerson = PersonLike & { id: string; phone?: string | null };
 
 const monthFormatter = new Intl.DateTimeFormat("pt-BR", {
   month: "long",
@@ -160,6 +161,7 @@ export function buildBirthdayEntries(
       userId: person.userId,
       name: personDisplayName(person),
       image: personDisplayImage(person),
+      phone: person.phone ?? null,
       month: birthday.month,
       day: birthday.day,
       dateLabel: `${birthday.day} de ${monthLabel(birthday.month).toLowerCase()}`,

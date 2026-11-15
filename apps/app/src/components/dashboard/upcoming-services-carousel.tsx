@@ -67,7 +67,7 @@ export function UpcomingServicesCarousel({
                       <span className="font-heading text-lg leading-none tabular-nums">
                         {parts.day}
                       </span>
-                      <span className="text-[0.62rem] uppercase tracking-wider text-muted-foreground">
+                      <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
                         {parts.monthShort}
                       </span>
                     </div>
@@ -86,7 +86,7 @@ export function UpcomingServicesCarousel({
                     <Badge
                       variant="outline"
                       className={cn(
-                        "px-1.5 py-0 text-[0.65rem] font-normal tabular-nums",
+                        "px-1.5 py-0 text-[11px] font-normal tabular-nums",
                         progress.status === "complete"
                           ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                           : "bg-muted text-muted-foreground",

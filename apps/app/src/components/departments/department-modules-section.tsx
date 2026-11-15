@@ -67,7 +67,7 @@ export function DepartmentModulesSection({
   };
 
   return (
-    <Card className="overflow-hidden border-border/80 shadow-xs">
+    <Card className="min-w-0 overflow-hidden border-border/80 shadow-xs">
       <CardHeader className="gap-1.5 pb-4">
         <div className="flex items-center gap-2">
           <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
