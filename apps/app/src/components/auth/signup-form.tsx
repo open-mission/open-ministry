@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 
 import {
   signUpAction,
@@ -29,6 +30,7 @@ export function SignUpForm({ redirectTo }: SignUpFormProps) {
     signUpAction,
     undefined,
   );
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="space-y-8">
@@ -52,7 +54,7 @@ export function SignUpForm({ redirectTo }: SignUpFormProps) {
         />
         <div className="flex items-center gap-3">
           <span className="h-px flex-1 bg-border" />
-          <span className="text-[0.7rem] tracking-[0.16em] text-muted-foreground uppercase">
+          <span className="text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
             ou
           </span>
           <span className="h-px flex-1 bg-border" />
@@ -144,16 +146,32 @@ export function SignUpForm({ redirectTo }: SignUpFormProps) {
 
           <Field data-invalid={Boolean(state?.fieldErrors?.password)}>
             <FieldLabel htmlFor="password">Senha</FieldLabel>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              placeholder="Crie uma senha"
-              className="h-10"
-              aria-invalid={Boolean(state?.fieldErrors?.password)}
-              required
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                placeholder="Crie uma senha"
+                className="h-10 pr-11"
+                aria-invalid={Boolean(state?.fieldErrors?.password)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((visible) => !visible)}
+                onMouseDown={(event) => event.preventDefault()}
+                aria-label={showPassword ? "Ocultar senha" : "Exibir senha"}
+                title={showPassword ? "Ocultar senha" : "Exibir senha"}
+                className="absolute inset-y-0 right-0 flex h-10 w-10 items-center justify-center rounded-r-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+              >
+                {showPassword ? (
+                  <EyeOffIcon className="size-4" aria-hidden="true" />
+                ) : (
+                  <EyeIcon className="size-4" aria-hidden="true" />
+                )}
+              </button>
+            </div>
             <FieldDescription>
               Use pelo menos 8 caracteres.
             </FieldDescription>

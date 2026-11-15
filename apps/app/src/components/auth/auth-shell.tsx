@@ -49,7 +49,7 @@ export function AuthShell({ children, contentClassName }: AuthShellProps) {
             <span className="font-heading text-xl tracking-tight">
               OpenMinistry
             </span>
-            <span className="mt-1 text-[0.65rem] tracking-[0.18em] text-primary-foreground/60 uppercase">
+            <span className="mt-1 text-[11px] tracking-[0.18em] text-primary-foreground/60 uppercase">
               Cuidado que se organiza
             </span>
           </span>
