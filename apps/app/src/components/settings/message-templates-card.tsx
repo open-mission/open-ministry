@@ -33,6 +33,7 @@ import {
   type ResolvedTemplate,
   type TemplateVariable,
 } from "@/lib/message-templates";
+import { formatBrazilianPhone } from "@/lib/whatsapp-prompt";
 
 export function MessageTemplatesCard({
   initialTemplates,
@@ -228,11 +229,11 @@ export function MessageTemplatesCard({
           <div className="flex items-center justify-between rounded-lg border bg-accent/20 px-4 py-2.5 text-xs text-muted-foreground">
             <p>{currentTemplate.description}</p>
             {currentTemplate.isCustomized ? (
-              <Badge variant="secondary" className="text-[10px] shrink-0 ml-3">
+              <Badge variant="secondary" className="text-[11px] shrink-0 ml-3">
                 Personalizado
               </Badge>
             ) : (
-              <Badge variant="outline" className="text-[10px] shrink-0 ml-3">
+              <Badge variant="outline" className="text-[11px] shrink-0 ml-3">
                 Padrão do Sistema
               </Badge>
             )}
@@ -319,7 +320,7 @@ export function MessageTemplatesCard({
                 <SmartphoneIcon className="size-3.5 text-primary" />
                 Pré-visualização no WhatsApp
               </span>
-              <Badge variant="outline" className="text-[10px]">
+              <Badge variant="outline" className="text-[11px]">
                 Tempo Real
               </Badge>
             </div>
@@ -332,7 +333,7 @@ export function MessageTemplatesCard({
                   {formatWhatsAppText(simulatedText)}
                 </div>
 
-                <div className="flex items-center justify-end gap-1 text-[10px] text-zinc-500 dark:text-zinc-400">
+                <div className="flex items-center justify-end gap-1 text-[11px] text-zinc-500 dark:text-zinc-400">
                   <span>12:00</span>
                   <CheckCheckIcon className="size-3 text-[#53bdeb]" />
                 </div>
@@ -348,8 +349,11 @@ export function MessageTemplatesCard({
               <div className="flex items-center gap-2">
                 <Input
                   value={testPhone}
-                  onChange={(e) => setTestPhone(e.target.value)}
-                  placeholder="DDD + Número (ex: 11988887777)"
+                  onChange={(e) =>
+                    setTestPhone(formatBrazilianPhone(e.target.value))
+                  }
+                  inputMode="tel"
+                  placeholder="DDD + Número (ex: (11) 98888-7777)"
                   className="h-9 text-xs bg-background"
                 />
                 <Button
