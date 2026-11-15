@@ -31,16 +31,56 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.2.0";
+export const CURRENT_APP_VERSION = "1.2.1";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.2.1",
+    title: "Escalas Mais Fluidas no Celular, Gestão de Cultos e Modelos de Liturgia",
+    subtitle:
+      "Gavetas deslizantes para escalação rápida e compartilhamento em smartphones, modelos reutilizáveis de liturgia e piso tipográfico aprimorado.",
+    releaseDate: "15 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Módulo de Escalas, Cultos & Cronograma",
+        badge: "Usabilidade & Mobile",
+        features: [
+          {
+            title: "Escalação Rápida e Diálogos em Gaveta (Drawer)",
+            description:
+              "Modais de escalação rápida de voluntários, compartilhamento público do plano de culto e exclusão segura agora abrem como gavetas deslizantes no celular, ideais para o manuseio rápido no templo.",
+            iconName: "CalendarDaysIcon",
+            badge: "Mobile",
+          },
+          {
+            title: "Modelos Reutilizáveis de Liturgia",
+            description:
+              "Salve e aplique ordens de culto completas com diálogos adaptados e confirmações seguras, agilizando o planejamento semanal da equipe ministerial.",
+            iconName: "SparklesIcon",
+          },
+          {
+            title: "Legibilidade e Piso Tipográfico Refinado",
+            description:
+              "Fontes ajustadas para no mínimo 11px em badges de sobretempo, cifras musicais, tons e blocos de calendário, garantindo clareza para equipes técnicas e pastorais.",
+            iconName: "SmartphoneIcon",
+          },
+          {
+            title: "Arquitetura Centralizada e Mais Rápida",
+            description:
+              "Eliminação de código redundante e centralização dos componentes de eventos, garantindo transições mais fluidas e carregamento ágil.",
+            iconName: "ShieldCheckIcon",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.2.0",
     title: "Experiência Mobile, Acessibilidade e Integração WhatsApp",
     subtitle:
       "Gavetas deslizantes e diálogos responsivos em smartphones, tipografia aprimorada, tela sempre ativa no louvor, máscaras de telefone e integração com WhatsApp.",
     releaseDate: "15 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Músicas & Repertório de Louvor",

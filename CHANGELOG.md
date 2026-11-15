@@ -6,6 +6,18 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.2.1] - 2026-11-15
+
+### Adicionado e Melhorado
+- **Módulo de Escalas, Cultos & Cronograma**:
+  - **Diálogos e Gavetas Mobile (`Drawer` via `useIsMobile`)**: Modais de escalação rápida (`add-assignment-dialog`), compartilhamento público (`share-plan-dialog`), exclusão segura de cultos e séries (`delete-event-button`) e gestão de modelos litúrgicos (`plan-template-dialogs`) adaptados como gavetas deslizantes inferiores em celulares.
+  - **Modelos Reutilizáveis de Liturgia**: Fluxos de salvar, gerenciar e aplicar modelos de liturgia com confirmações responsivas (`ResponsiveAlertDialog` e `Drawer` aninhado).
+  - **Piso Tipográfico Rigoroso ($\ge$ 11px)**: Correção de 27 ocorrências com fontes reduzidas em badges de sobretempo, cifras musicais, tons, abas de eventos e blocos de calendário.
+  - **Unificação Arquitetural e Limpeza**: Código de componentes centralizado em `apps/app/src/features/events/components/`, transformando a pasta legada `components/events/` em reexportações enxutas.
+  - **Testes e Qualidade**: Suíte dedicada `events-schedules-ux.test.ts` com 11 testes automatizados cobrindo exportações de cronograma e cálculo de progresso de escalas (total de 391 testes aprovados).
+
+---
+
 ## [1.2.0] - 2026-11-15
 
 ### Adicionado e Melhorado
