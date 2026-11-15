@@ -6,9 +6,6 @@ import { CopyIcon, CrownIcon, Loader2Icon } from "lucide-react";
 import { toast } from "sonner";
 
 import { copyLastScaleAction } from "@/app/actions/events";
-import { AddAssignmentDialog } from "@/components/events/add-assignment-dialog";
-import { InlineAssignmentPicker } from "@/components/events/inline-assignment-picker";
-import { RemoveAssignmentButton } from "@/components/events/remove-assignment-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +15,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { AddAssignmentDialog } from "@/features/events/components/add-assignment-dialog";
+import { InlineAssignmentPicker } from "@/features/events/components/inline-assignment-picker";
+import { RemoveAssignmentButton } from "@/features/events/components/remove-assignment-button";
 import type { DepartmentRecord } from "@/lib/departments";
 import { getInitials } from "@/lib/format";
 import {
@@ -301,7 +301,7 @@ export function ScheduleEditor({
                                   }
                                   alt={personDisplayName(assignment.person)}
                                 />
-                                <AvatarFallback className="bg-primary/10 text-[0.55rem] font-medium text-primary">
+                                <AvatarFallback className="bg-primary/10 text-[11px] font-medium text-primary">
                                   {getInitials(
                                     personDisplayName(assignment.person),
                                   )}

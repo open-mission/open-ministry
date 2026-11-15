@@ -37,9 +37,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerNestedRoot,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type SharePlanDialogProps = {
   eventId: string;
@@ -47,12 +59,17 @@ type SharePlanDialogProps = {
   trigger?: React.ReactNode;
 };
 
+const REGENERATE_WARNING =
+  "Isso invalidará o link compartilhado anteriormente. Pessoas com a URL antiga não conseguirão mais acessar até receberem a nova.";
+
 export function SharePlanDialog({
   eventId,
   eventTitle,
   trigger,
 }: SharePlanDialogProps) {
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
+  const [confirmRegenerateOpen, setConfirmRegenerateOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
 
@@ -164,16 +181,252 @@ export function SharePlanDialog({
     );
   };
 
+  const triggerNode = trigger || (
+    <Button variant="outline" size="sm" className="gap-1.5 h-9">
+      <Share2Icon className="size-4 text-primary" />
+      <span>Compartilhar</span>
+    </Button>
+  );
+
+  const shareBody = (
+    <div className="space-y-5 pt-3">
+      {/* Toggle Principal */}
+      <div className="flex items-center justify-between gap-3 rounded-xl border p-4 bg-muted/40">
+        <div className="space-y-0.5">
+          <Label className="text-sm font-semibold flex items-center gap-1.5">
+            {isEnabled ? (
+              <GlobeIcon className="size-4 text-emerald-500" />
+            ) : (
+              <LockIcon className="size-4 text-muted-foreground" />
+            )}
+            Link público de visualização
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            {isEnabled
+              ? "Ativo • Qualquer pessoa com o link pode visualizar."
+              : "Desativado • O acesso é restrito ao painel."}
+          </p>
+        </div>
+        <Switch
+          checked={isEnabled}
+          onCheckedChange={handleToggle}
+          disabled={isPending || loading}
+        />
+      </div>
+
+      {isEnabled && token ? (
+        <div className="space-y-4">
+          {/* Campo com o Link */}
+          <div className="space-y-2">
+            <Label className="text-xs font-medium text-muted-foreground">
+              URL de Visualização
+            </Label>
+            <div className="flex items-center gap-2">
+              <Input
+                readOnly
+                value={shareUrl}
+                className="font-mono text-xs bg-muted/50"
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleCopy}
+                className="shrink-0 gap-1.5 min-h-11"
+              >
+                {copied ? (
+                  <CheckIcon className="size-3.5 text-emerald-600" />
+                ) : (
+                  <CopyIcon className="size-3.5" />
+                )}
+                <span>{copied ? "Copiado" : "Copiar"}</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Botões de Ação Rápida */}
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              asChild
+              className="gap-1.5 text-xs min-h-11"
+            >
+              <a href={shareUrl} target="_blank" rel="noreferrer">
+                <ExternalLinkIcon className="size-3.5" />
+                <span>Ver como visitante</span>
+              </a>
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleWhatsApp}
+              className="gap-1.5 text-xs min-h-11 text-emerald-600 hover:text-emerald-700"
+            >
+              <Share2Icon className="size-3.5" />
+              <span>No WhatsApp</span>
+            </Button>
+          </div>
+
+          {/* Toggle de PDF */}
+          <div className="flex items-center justify-between gap-3 border-t pt-3">
+            <div className="space-y-0.5">
+              <Label className="text-xs font-medium">
+                Permitir download do PDF pelo link
+              </Label>
+              <p className="text-[11px] text-muted-foreground">
+                Visitantes poderão baixar o PDF oficial.
+              </p>
+            </div>
+            <Switch
+              checked={allowPdf}
+              onCheckedChange={handleTogglePdf}
+              disabled={isPending}
+            />
+          </div>
+
+          {/* Regenerar Token */}
+          <div className="border-t pt-3 flex justify-between items-center gap-3">
+            <div className="space-y-0.5">
+              <p className="text-xs font-medium text-muted-foreground">
+                Link comprometido?
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                Gere uma nova URL e cancele a anterior.
+              </p>
+            </div>
+
+            {isMobile ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="gap-1 text-xs text-muted-foreground hover:text-foreground min-h-11"
+                disabled={isPending}
+                onClick={() => setConfirmRegenerateOpen(true)}
+              >
+                <RefreshCwIcon className="size-3" />
+                <span>Regenerar link</span>
+              </Button>
+            ) : (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 text-xs text-muted-foreground hover:text-foreground"
+                    disabled={isPending}
+                  >
+                    <RefreshCwIcon className="size-3" />
+                    <span>Regenerar link</span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Regenerar link público?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {REGENERATE_WARNING}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleRegenerate}
+                      disabled={isPending}
+                    >
+                      Sim, regenerar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+
+  const regenerateConfirmation = isMobile ? (
+    <DrawerNestedRoot
+      open={confirmRegenerateOpen}
+      onOpenChange={setConfirmRegenerateOpen}
+    >
+      <DrawerContent className="max-h-[85vh] p-0" role="alertdialog">
+        <DrawerHeader className="!text-left px-5 pt-4 pb-2">
+          <DrawerTitle className="font-heading text-lg leading-snug">
+            Regenerar link público?
+          </DrawerTitle>
+          <DrawerDescription className="text-sm leading-relaxed">
+            {REGENERATE_WARNING}
+          </DrawerDescription>
+        </DrawerHeader>
+        <DrawerFooter className="pt-1 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <Button
+            type="button"
+            onClick={() => {
+              setConfirmRegenerateOpen(false);
+              handleRegenerate();
+            }}
+            disabled={isPending}
+            className="min-h-11 w-full"
+          >
+            Sim, regenerar
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setConfirmRegenerateOpen(false)}
+            disabled={isPending}
+            className="min-h-11 w-full"
+          >
+            Cancelar
+          </Button>
+        </DrawerFooter>
+      </DrawerContent>
+    </DrawerNestedRoot>
+  ) : null;
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={handleOpenChange}>
+        <DrawerTrigger asChild>{triggerNode}</DrawerTrigger>
+        <DrawerContent className="p-0">
+          <DrawerHeader className="border-b px-5 pt-4 pb-3 !text-left text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+            <DrawerTitle className="flex items-center justify-start gap-2 font-heading text-xl tracking-tight">
+              <Share2Icon className="size-5 text-primary" />
+              Compartilhar Cronograma
+            </DrawerTitle>
+            <DrawerDescription className="text-xs text-muted-foreground text-left">
+              Permita que pessoas fora da plataforma (músicos, visitantes ou
+              equipe) acessem o cronograma deste evento via link público.
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="max-h-[85vh] overflow-y-auto px-5 py-4 pb-6 [-webkit-overflow-scrolling:touch]">
+            {shareBody}
+          </div>
+
+          <DrawerFooter className="border-t pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <DrawerClose asChild>
+              <Button type="button" variant="outline" className="min-h-11 w-full">
+                Fechar
+              </Button>
+            </DrawerClose>
+          </DrawerFooter>
+
+          {regenerateConfirmation}
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="outline" size="sm" className="gap-1.5 h-9">
-            <Share2Icon className="size-4 text-primary" />
-            <span>Compartilhar</span>
-          </Button>
-        )}
-      </DialogTrigger>
+      <DialogTrigger asChild>{triggerNode}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -185,151 +438,7 @@ export function SharePlanDialog({
             equipe) acessem o cronograma deste evento via link público.
           </DialogDescription>
         </DialogHeader>
-
-        <div className="space-y-5 pt-3">
-          {/* Toggle Principal */}
-          <div className="flex items-center justify-between rounded-xl border p-4 bg-muted/40">
-            <div className="space-y-0.5">
-              <Label className="text-sm font-semibold flex items-center gap-1.5">
-                {isEnabled ? (
-                  <GlobeIcon className="size-4 text-emerald-500" />
-                ) : (
-                  <LockIcon className="size-4 text-muted-foreground" />
-                )}
-                Link público de visualização
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                {isEnabled
-                  ? "Ativo • Qualquer pessoa com o link pode visualizar."
-                  : "Desativado • O acesso é restrito ao painel."}
-              </p>
-            </div>
-            <Switch
-              checked={isEnabled}
-              onCheckedChange={handleToggle}
-              disabled={isPending || loading}
-            />
-          </div>
-
-          {isEnabled && token ? (
-            <div className="space-y-4">
-              {/* Campo com o Link */}
-              <div className="space-y-2">
-                <Label className="text-xs font-medium text-muted-foreground">
-                  URL de Visualização
-                </Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    readOnly
-                    value={shareUrl}
-                    className="font-mono text-xs bg-muted/50"
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={handleCopy}
-                    className="shrink-0 gap-1.5"
-                  >
-                    {copied ? (
-                      <CheckIcon className="size-3.5 text-emerald-600" />
-                    ) : (
-                      <CopyIcon className="size-3.5" />
-                    )}
-                    <span>{copied ? "Copiado" : "Copiar"}</span>
-                  </Button>
-                </div>
-              </div>
-
-              {/* Botões de Ação Rápida */}
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  asChild
-                  className="gap-1.5 text-xs"
-                >
-                  <a href={shareUrl} target="_blank" rel="noreferrer">
-                    <ExternalLinkIcon className="size-3.5" />
-                    <span>Ver como visitante</span>
-                  </a>
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleWhatsApp}
-                  className="gap-1.5 text-xs text-emerald-600 hover:text-emerald-700"
-                >
-                  <Share2Icon className="size-3.5" />
-                  <span>No WhatsApp</span>
-                </Button>
-              </div>
-
-              {/* Toggle de PDF */}
-              <div className="flex items-center justify-between border-t pt-3">
-                <div className="space-y-0.5">
-                  <Label className="text-xs font-medium">
-                    Permitir download do PDF pelo link
-                  </Label>
-                  <p className="text-[11px] text-muted-foreground">
-                    Visitantes poderão baixar o PDF oficial.
-                  </p>
-                </div>
-                <Switch
-                  checked={allowPdf}
-                  onCheckedChange={handleTogglePdf}
-                  disabled={isPending}
-                />
-              </div>
-
-              {/* Regenerar Token */}
-              <div className="border-t pt-3 flex justify-between items-center">
-                <div className="space-y-0.5">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    Link comprometido?
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    Gere uma nova URL e cancele a anterior.
-                  </p>
-                </div>
-
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1 text-xs text-muted-foreground hover:text-foreground"
-                      disabled={isPending}
-                    >
-                      <RefreshCwIcon className="size-3" />
-                      <span>Regenerar link</span>
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Regenerar link público?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Isso invalidará o link compartilhado anteriormente.
-                        Pessoas com a URL antiga não conseguirão mais acessar até
-                        receberem a nova.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleRegenerate}>
-                        Sim, regenerar
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </div>
-          ) : null}
-        </div>
+        {shareBody}
       </DialogContent>
     </Dialog>
   );

@@ -103,7 +103,7 @@ function ScheduleRow({
         <span className="font-heading text-xl leading-none sm:text-2xl">
           {parts.day}
         </span>
-        <span className="mt-0.5 text-[0.55rem] font-medium tracking-[0.14em] text-muted-foreground sm:text-[0.6rem]">
+        <span className="mt-0.5 text-[11px] font-medium tracking-[0.14em] text-muted-foreground">
           {parts.monthShort}
         </span>
       </div>
@@ -139,7 +139,7 @@ function ScheduleRow({
                     src={personDisplayImage(person) ?? undefined}
                     alt={personDisplayName(person)}
                   />
-                  <AvatarFallback className="bg-primary/10 text-[0.55rem] font-medium text-primary">
+                  <AvatarFallback className="bg-primary/10 text-[11px] font-medium text-primary">
                     {getInitials(personDisplayName(person))}
                   </AvatarFallback>
                 </Avatar>

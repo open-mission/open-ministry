@@ -42,7 +42,7 @@ export function PastEventsSheet({ count, children }: PastEventsSheetProps) {
       type="button"
       variant="outline"
       size="sm"
-      className="group inline-flex items-center gap-1.5 rounded-xl border-border/80 px-3 py-1.5 text-xs font-medium text-foreground shadow-2xs transition-all hover:border-primary/40 hover:bg-muted/50 hover:text-primary sm:text-sm"
+      className="group relative inline-flex h-9 items-center gap-1.5 rounded-xl border-border/80 px-3 text-xs font-medium text-foreground shadow-2xs transition-all after:absolute after:-inset-1 after:rounded-xl after:content-[''] hover:border-primary/40 hover:bg-muted/50 hover:text-primary sm:text-sm"
     >
       <HistoryIcon className="size-4 text-primary transition-transform group-hover:rotate-[-20deg]" />
       <span>Histórico</span>

@@ -102,7 +102,7 @@ function EventRow({
         <span className="font-heading text-xl leading-none sm:text-2xl">
           {parts.day}
         </span>
-        <span className="mt-0.5 text-[0.55rem] font-medium tracking-[0.14em] text-muted-foreground sm:text-[0.6rem]">
+        <span className="mt-0.5 text-[11px] font-medium tracking-[0.14em] text-muted-foreground">
           {parts.monthShort}
         </span>
       </div>
