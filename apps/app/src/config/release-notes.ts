@@ -31,16 +31,44 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.2.2";
+export const CURRENT_APP_VERSION = "1.2.3";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.2.3",
+    title: "Login Mais Seguro e Conta Protegida",
+    subtitle:
+      "Melhorias na proteção do acesso à sua conta, com reconhecimento mais preciso do aparelho e do navegador usados no login.",
+    releaseDate: "16 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Segurança & Autenticação",
+        badge: "Plataforma & Acesso",
+        features: [
+          {
+            title: "Acesso Protegido em Todos os Aparelhos",
+            description:
+              "O sistema agora reconhece com mais precisão o aparelho e o navegador usados no seu login, reforçando a proteção da conta contra acessos indevidos.",
+            iconName: "ShieldCheckIcon",
+            badge: "Segurança",
+          },
+          {
+            title: "Entrada na Conta Sem Interrupções",
+            description:
+              "Entrar na sua conta funciona de forma consistente no celular e no computador, com a proteção de acesso sempre ativa.",
+            iconName: "ShieldCheckIcon",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.2.2",
     title: "Tarefas Mais Fluidas no Celular, Privacidade Reforçada e Estabilidade",
     subtitle:
       "Correção da rolagem e organização dos botões nas gavetas de tarefas no celular, além de melhorias de privacidade, segurança e estabilidade.",
     releaseDate: "16 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Módulo de Tarefas & Demandas",
