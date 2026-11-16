@@ -157,14 +157,13 @@ export async function createTaskAction(
       },
     );
 
-    sentryLogger.info(
-      sentryLogger.fmt`Tarefa '${data.title}' criada com sucesso por ${session.user.name ?? userId}`,
-      {
-        taskId: primaryTask.id,
-        scope: data.scope,
-        createdCount,
-      },
-    );
+    sentryLogger.info("Tarefa criada com sucesso", {
+      taskId: primaryTask.id,
+      userId,
+      organizationId: organization.id,
+      scope: data.scope,
+      createdCount,
+    });
 
     const personalNotifHref =
       createdCount > 1
@@ -338,7 +337,11 @@ export async function updateTaskAction(
           : undefined,
     });
 
-    sentryLogger.info(`Tarefa '${updated.title}' atualizada com sucesso`);
+    sentryLogger.info("Tarefa atualizada com sucesso", {
+      taskId: updated.id,
+      userId,
+      organizationId: organization.id,
+    });
 
     // Notificar novo responsável caso alterado e diferente do usuário atual
     if (
@@ -427,9 +430,12 @@ export async function updateTaskStatusAction(
       status,
     );
 
-    sentryLogger.info(
-      sentryLogger.fmt`Status da tarefa '${updated.title}' alterado para '${status}'`,
-    );
+    sentryLogger.info("Status da tarefa atualizado", {
+      taskId: updated.id,
+      status,
+      userId,
+      organizationId: organization.id,
+    });
 
     revalidatePath("/tasks");
     revalidatePath("/dashboard/tasks");

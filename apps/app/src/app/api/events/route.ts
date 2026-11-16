@@ -1,15 +1,18 @@
 import { connection } from "next/server";
 import type { NextRequest } from "next/server";
 
+import { requireApiOrganizationContext } from "@/lib/api-auth";
 import { listEvents, splitEvents } from "@/lib/events";
-import { requireOrganizationContext } from "@/lib/organizations";
 import { can } from "@/lib/permissions/service";
 
 export async function GET(_request: NextRequest) {
   await connection();
 
   try {
-    const { organization } = await requireOrganizationContext();
+    const auth = await requireApiOrganizationContext();
+    if (!auth.ok) return auth.response;
+
+    const { organization } = auth.context;
     const allowed = await can("agenda", "read");
     if (!allowed) {
       return Response.json(

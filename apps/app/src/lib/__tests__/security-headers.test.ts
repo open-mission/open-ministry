@@ -43,6 +43,54 @@ describe("buildSecurityHeaders", () => {
     expect(csp?.value).toContain("connect-src 'self';");
   });
 
+  it("inclui o origin do Sentinel no connect-src quando configurado", () => {
+    const [csp] = buildSecurityHeaders({
+      nodeEnv: "production",
+      sentinelUrl: "https://kv.better-auth.com/identify",
+    }).filter((h) => h.key === "Content-Security-Policy");
+
+    expect(csp?.value).toContain(
+      "connect-src 'self' https://kv.better-auth.com;",
+    );
+  });
+
+  it("não duplica origins repetidos no connect-src", () => {
+    const [csp] = buildSecurityHeaders({
+      nodeEnv: "production",
+      realtimeUrl: "https://kv.better-auth.com/ws",
+      sentinelUrl: "https://kv.better-auth.com/identify",
+    }).filter((h) => h.key === "Content-Security-Policy");
+    const value = csp?.value ?? "";
+    const connectDirective = value
+      .split("; ")
+      .find((directive) => directive.startsWith("connect-src"));
+
+    expect(connectDirective).toBe("connect-src 'self' https://kv.better-auth.com");
+  });
+
+  it("aceita Sentinel em http apenas fora de produção", () => {
+    const [devCsp] = buildSecurityHeaders({
+      nodeEnv: "development",
+      sentinelUrl: "http://localhost:8787",
+    }).filter((h) => h.key === "Content-Security-Policy");
+    expect(devCsp?.value).toContain("http://localhost:8787");
+
+    const [prodCsp] = buildSecurityHeaders({
+      nodeEnv: "production",
+      sentinelUrl: "http://localhost:8787",
+    }).filter((h) => h.key === "Content-Security-Policy");
+    expect(prodCsp?.value).not.toContain("http://localhost:8787");
+  });
+
+  it("ignora sentinelUrl inválido sem quebrar a CSP", () => {
+    const [csp] = buildSecurityHeaders({
+      nodeEnv: "production",
+      sentinelUrl: "not a url",
+    }).filter((h) => h.key === "Content-Security-Policy");
+
+    expect(csp?.value).toContain("connect-src 'self';");
+  });
+
   it("emite os headers de segurança clássicos", () => {
     const headers = buildSecurityHeaders({ nodeEnv: "production" });
     const byKey = Object.fromEntries(headers.map((h) => [h.key, h.value]));

@@ -60,12 +60,17 @@ mock.module("next/server", () => ({
   ...nextServer,
   connection: async () => undefined,
 }));
-mock.module("@/lib/organizations", () => ({
-  requireOrganizationContext: async () => ({
+mock.module("@/lib/organizations", () => {
+  const context = async () => ({
     session: { user: { id: "user-1" } },
     organization: { id: "org-1", name: "Church" },
-  }),
-}));
+  });
+
+  return {
+    requireOrganizationContext: context,
+    getOrganizationContext: context,
+  };
+});
 mock.module("@/lib/permissions/service", () => ({
   can: async (moduleKey: string, action: string) =>
     moduleKey === "music" &&
