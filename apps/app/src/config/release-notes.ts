@@ -31,16 +31,62 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.2.1";
+export const CURRENT_APP_VERSION = "1.2.2";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.2.2",
+    title: "Tarefas Mais Fluidas no Celular, Privacidade Reforçada e Estabilidade",
+    subtitle:
+      "Correção da rolagem e organização dos botões nas gavetas de tarefas no celular, além de melhorias de privacidade, segurança e estabilidade.",
+    releaseDate: "16 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Módulo de Tarefas & Demandas",
+        badge: "Mobile & Usabilidade",
+        features: [
+          {
+            title: "Rolagem Livre nos Detalhes e Formulários no Celular",
+            description:
+              "Corrigida a rolagem interna das gavetas de tarefas no celular para ler toda a descrição, prazos e responsáveis com conforto, sem o toque arrastar a janela por engano.",
+            iconName: "SmartphoneIcon",
+            badge: "Mobile",
+          },
+          {
+            title: "Botões Organizados Sem Apertar o Conteúdo",
+            description:
+              "Ações secundárias (Histórico e Excluir) passaram para o final da rolagem da tarefa no celular, mantendo o rodapé limpo com as ações principais sempre acessíveis.",
+            iconName: "CheckSquare2Icon",
+          },
+        ],
+      },
+      {
+        moduleName: "Privacidade, Segurança & Estabilidade",
+        badge: "Infra & Qualidade",
+        features: [
+          {
+            title: "Proteção de Dados Pessoais na Telemetria",
+            description:
+              "Registros de diagnóstico e gravações de sessão agora mascaram automaticamente textos, e-mails e dados sensíveis antes de qualquer envio.",
+            iconName: "ShieldCheckIcon",
+          },
+          {
+            title: "Carregamento Mais Limpo e Rotas Estáveis",
+            description:
+              "Imagens do tutorial inicial ajustadas para diferentes tamanhos de tela e aprimoramentos internos de roteamento e autenticação.",
+            iconName: "SparklesIcon",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.2.1",
     title: "Escalas Mais Fluidas no Celular, Gestão de Cultos e Modelos de Liturgia",
     subtitle:
       "Gavetas deslizantes para escalação rápida e compartilhamento em smartphones, modelos reutilizáveis de liturgia e piso tipográfico aprimorado.",
     releaseDate: "15 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Módulo de Escalas, Cultos & Cronograma",
