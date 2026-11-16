@@ -6,6 +6,18 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.2.2] - 2026-11-16
+
+### Corrigido e Melhorado
+- **Módulo de Tarefas & Demandas (Mobile)**:
+  - **Rolagem Livre e Gestos no Drawer**: Altura dinâmica em `dvh` em `drawer.tsx`, área rolável com `data-vaul-no-drag`, `min-h-0`, `overscroll-y-contain` e `touch-pan-y` nos diálogos de detalhes, formulário, histórico e menu de ações, evitando conflito de toque com a gaveta no iOS/mobile.
+  - **Rodapé Organizado no Celular**: Ações secundárias (`Histórico` e `Excluir`) movidas para o fim do conteúdo rolável em `task-detail-dialog.tsx`, mantendo o rodapé fixo em uma linha com as ações principais (`Editar` e `Concluir/Reabrir tarefa`).
+  - **Testes**: Adicionada suíte `tasks-drawer-layout.test.tsx` com 6 testes automatizados cobrindo o layout mobile e desktop.
+- **Privacidade, Autenticação & Estabilidade (Next.js 16 / Sentry)**:
+  - **Sanitização de Telemetria & LGPD (Issue #1)**: Criação de `sanitize.ts` para redigir e-mails, tokens, segredos e parâmetros SQL em eventos e logs do Sentry, `maskAllText` e `blockAllMedia` ativos no Session Replay e identificação de usuário restrita a `id` e `churchId`.
+  - **Estabilidade de Rotas & Pré-renderização (Issues #2, #4 e #5)**: Uso de `await connection()` no `SentryUserLoader`, retorno HTTP `401` JSON nas rotas de API sem `redirect()`, atributo `sizes` nas imagens do onboarding e ajuste de rewrites em `next.config.ts` (`:path+` após rotas exatas).
+  - **Better Auth Infra & Segurança (Issue #3)**: `trustedOrigins` explícitos em `auth.ts`, ativação condicional de `dash()`/`sentinel()`/`sentinelClient()`, liberação do origin do KV na diretiva `connect-src` da CSP e repasse de variáveis no `turbo.json` e `.env.example`.
+
 ## [1.2.1] - 2026-11-15
 
 ### Adicionado e Melhorado
