@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import type { BetterAuthPlugin } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { passkey } from "@better-auth/passkey";
@@ -12,7 +13,7 @@ import {
   username,
 } from "better-auth/plugins";
 import { jwt } from "better-auth/plugins/jwt";
-import { dash } from "@better-auth/infra";
+import { dash, sentinel } from "@better-auth/infra";
 import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
@@ -24,9 +25,62 @@ import {
   createRedisRateLimitStorage,
 } from "@/lib/rate-limit-storage";
 
+// Better Auth Infra (Dash + Sentinel). Ambos dependem de API key e URL do KV;
+// sem os dois configurados, os plugins não são registrados.
+const infraApiKey = process.env.BETTER_AUTH_API_KEY?.trim();
+const infraKvUrl = (
+  process.env.BETTER_AUTH_KV_URL || process.env.NEXT_PUBLIC_BETTER_AUTH_KV_URL
+)?.trim();
+const isInfraConfigured = Boolean(infraApiKey && infraKvUrl);
+
+/** Normaliza uma origem aceitando URL completa ou apenas o host. */
+function normalizeTrustedOrigin(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  try {
+    const url = new URL(
+      trimmed.includes("://") ? trimmed : `https://${trimmed}`,
+    );
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Origens confiáveis para cookies/callbacks do Better Auth: URL base da app,
+ * variáveis de ambiente da Vercel e domínios canônicos do OpenMinistry.
+ */
+function getTrustedOrigins(): string[] {
+  const candidates = [
+    getAppBaseUrl(),
+    process.env.BETTER_AUTH_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+    process.env.VERCEL_BRANCH_URL
+      ? `https://${process.env.VERCEL_BRANCH_URL}`
+      : null,
+    "https://app.openministry.online",
+    "https://open-ministry.vercel.app",
+    "https://openministry-openmission.vercel.app",
+    "https://openministry-git-main-openmission.vercel.app",
+    process.env.NODE_ENV !== "production" ? "http://localhost:3000" : null,
+  ];
+
+  const origins = candidates
+    .filter((value): value is string => typeof value === "string")
+    .map(normalizeTrustedOrigin)
+    .filter((value): value is string => value !== null);
+
+  return Array.from(new Set(origins));
+}
+
 export const auth = betterAuth({
   appName: "OpenMinistry",
   baseURL: getAppBaseUrl(),
+  trustedOrigins: getTrustedOrigins,
   secret: process.env.BETTER_AUTH_SECRET,
   rateLimit: {
     // Limites por IP; o better-auth habilita o limiter em produção e deixa
@@ -208,7 +262,22 @@ export const auth = betterAuth({
     multiSession({
       maximumSessions: 5,
     }),
-    dash(),
+    ...(isInfraConfigured
+      ? [
+          dash({ apiKey: infraApiKey, kvUrl: infraKvUrl }),
+          // O `@better-auth/infra` pode resolver uma instância própria de
+          // `better-auth`; o cast mantém a inferência dos demais plugins.
+          sentinel({
+            apiKey: infraApiKey,
+            kvUrl: infraKvUrl,
+            security: {
+              credentialStuffing: {
+                enabled: true,
+              },
+            },
+          }) as unknown as BetterAuthPlugin,
+        ]
+      : []),
     lastLoginMethod(),
     jwt({
       jwks: {

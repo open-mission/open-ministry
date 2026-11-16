@@ -6,20 +6,18 @@ import { setSentryUser } from "@/lib/telemetry/sentry";
 
 export function SentryUser({
   userId,
-  email,
-  name,
+  churchId,
 }: {
   userId: string;
-  email?: string | null;
-  name?: string | null;
+  churchId?: string | null;
 }) {
   useEffect(() => {
-    setSentryUser({ id: userId, email, name });
+    setSentryUser({ id: userId, churchId });
 
     return () => {
       setSentryUser(null);
     };
-  }, [userId, email, name]);
+  }, [userId, churchId]);
 
   return null;
 }

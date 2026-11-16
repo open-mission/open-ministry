@@ -4,8 +4,8 @@ import type { NextRequest } from "next/server";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { requireApiOrganizationContext } from "@/lib/api-auth";
 import { songInputSchema } from "@/lib/music/songs-schema";
-import { requireOrganizationContext } from "@/lib/organizations";
 import { can } from "@/lib/permissions/service";
 import {
   getNextSongSortOrder,
@@ -18,7 +18,10 @@ export async function GET(request: NextRequest) {
   await connection();
 
   try {
-    const { organization } = await requireOrganizationContext();
+    const auth = await requireApiOrganizationContext();
+    if (!auth.ok) return auth.response;
+
+    const { organization } = auth.context;
     const allowed = await can("music", "read");
     if (!allowed) {
       return Response.json(
@@ -49,7 +52,10 @@ export async function POST(request: NextRequest) {
   await connection();
 
   try {
-    const { organization, session } = await requireOrganizationContext();
+    const auth = await requireApiOrganizationContext();
+    if (!auth.ok) return auth.response;
+
+    const { organization, session } = auth.context;
     const allowed = await can("music", "createSong");
     if (!allowed) {
       return Response.json(

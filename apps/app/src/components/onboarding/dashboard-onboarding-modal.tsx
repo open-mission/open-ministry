@@ -353,6 +353,7 @@ export function DashboardOnboardingModal({
                         src="/onboarding/hero.jpg"
                         alt="OpenMinistry Sanctuary"
                         fill
+                        sizes="(max-width: 640px) 100vw, 384px"
                         priority
                         className="object-cover transition-transform duration-700 hover:scale-105"
                       />
@@ -378,6 +379,7 @@ export function DashboardOnboardingModal({
                         src="/onboarding/scheduling.jpg"
                         alt="Escalas e Voluntários"
                         fill
+                        sizes="(max-width: 640px) 100vw, 384px"
                         className="object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex items-end p-4">
@@ -463,6 +465,7 @@ export function DashboardOnboardingModal({
                         src="/onboarding/worship.jpg"
                         alt="Repertório e Músicas"
                         fill
+                        sizes="(max-width: 640px) 100vw, 384px"
                         className="object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex items-end p-4">

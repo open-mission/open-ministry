@@ -196,15 +196,12 @@ export async function inviteMemberAction(
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/members");
 
-    sentryLogger.info(
-      sentryLogger.fmt`Invitation issued to ${parsed.data.email} as ${parsed.data.role} for ${churchName}`,
-      {
-        organizationId: orgId,
-        invitationId: invitation.id,
-        role: parsed.data.role,
-        hasPhone: Boolean(parsed.data.phone),
-      },
-    );
+    sentryLogger.info("Convite emitido com sucesso", {
+      organizationId: orgId,
+      invitationId: invitation.id,
+      role: parsed.data.role,
+      hasPhone: Boolean(parsed.data.phone),
+    });
 
     return {
       invitation: {
@@ -225,7 +222,6 @@ export async function inviteMemberAction(
     sentryLogger.error(error instanceof Error ? error : String(error), {
       action: "inviteMemberAction",
       organizationId: session.session.activeOrganizationId,
-      targetEmail: parsed.data.email,
     });
     return { error: actionErrorMessage(error) };
   }

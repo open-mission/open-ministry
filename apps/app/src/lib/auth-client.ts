@@ -10,6 +10,10 @@ import {
 import { createAuthClient } from "better-auth/react";
 import { sentinelClient } from "@better-auth/infra/client";
 
+// O plugin só é registrado quando o endpoint do Sentinel/identify está
+// configurado; sem ele, requisições de identify seriam feitas sem destino.
+const sentinelIdentifyUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_KV_URL?.trim();
+
 export const authClient = createAuthClient({
   plugins: [
     organizationClient(),
@@ -19,6 +23,8 @@ export const authClient = createAuthClient({
     multiSessionClient(),
     lastLoginMethodClient(),
     jwtClient(),
-    sentinelClient(),
+    ...(sentinelIdentifyUrl
+      ? [sentinelClient({ identifyUrl: sentinelIdentifyUrl })]
+      : []),
   ],
 });

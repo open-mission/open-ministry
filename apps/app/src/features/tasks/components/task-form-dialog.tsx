@@ -922,8 +922,8 @@ export function TaskFormDialog({
     const Wrapper = nested ? DrawerNestedRoot : Drawer;
     return (
       <Wrapper open={open} onOpenChange={(v) => !v && onClose()}>
-        <DrawerContent className="flex max-h-[85vh] flex-col px-4 pb-6">
-          <DrawerHeader className="!text-left shrink-0 px-0">
+        <DrawerContent className="flex h-auto max-h-[90dvh] data-[vaul-drawer-direction=bottom]:max-h-[90dvh] flex-col gap-0 rounded-t-[24px] bg-background p-0">
+          <DrawerHeader className="shrink-0 border-b px-4 pt-3 pb-3 !text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
             <div className="flex items-center justify-between gap-2">
               <DrawerTitle className="font-heading text-xl font-bold">
                 {isEditing ? "Editar tarefa" : "Nova tarefa"}
@@ -948,16 +948,28 @@ export function TaskFormDialog({
             </DrawerDescription>
           </DrawerHeader>
 
-          <div className="flex-1 overflow-y-auto [-webkit-overflow-scrolling:touch] py-2 pr-1">
-            {formBody}
+          <div
+            data-vaul-no-drag=""
+            className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain touch-pan-y [-webkit-overflow-scrolling:touch]"
+          >
+            <div className="px-4 py-3.5">{formBody}</div>
           </div>
 
-          <DrawerFooter className="shrink-0 border-t bg-background px-0 pt-3">
+          <DrawerFooter className="shrink-0 flex-row items-center gap-2 border-t bg-background px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={submitting}
+              onClick={onClose}
+              className="min-h-[44px] shrink-0 px-4"
+            >
+              Cancelar
+            </Button>
             <Button
               type="submit"
               form="task-editor-form"
               disabled={submitting}
-              className="min-h-[44px] w-full"
+              className="min-h-[44px] flex-1"
             >
               {submitting ? (
                 <>
@@ -969,15 +981,6 @@ export function TaskFormDialog({
               ) : (
                 "Criar tarefa"
               )}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={submitting}
-              onClick={onClose}
-              className="min-h-[44px] w-full"
-            >
-              Cancelar
             </Button>
           </DrawerFooter>
 

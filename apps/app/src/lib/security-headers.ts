@@ -12,15 +12,48 @@
  * - connect-src inclui o origin do realtime Neon (WebSocket externo) quando
  *   configurado; ws/wss same-origin já cobertos por 'self' nos browsers
  *   atuais.
+ * - connect-src também inclui o origin do Better Auth Sentinel/KV (identify)
+ *   quando configurado; http só é aceito fora de produção.
  */
 export type SecurityHeader = { key: string; value: string };
 
 type BuildOptions = {
   nodeEnv: string;
   realtimeUrl?: string | null;
+  sentinelUrl?: string | null;
 };
 
+/**
+ * Extrai um origin seguro para a CSP. Aceita `https:` sempre e `http:` apenas
+ * fora de produção (ex.: KV local em desenvolvimento).
+ */
+function extractSecureOrigin(
+  value: string | null | undefined,
+  nodeEnv: string,
+): string | null {
+  if (!value) return null;
+
+  try {
+    const url = new URL(value);
+    if (url.protocol === "https:") return url.origin;
+    if (nodeEnv !== "production" && url.protocol === "http:") {
+      return url.origin;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 function buildCsp(options: BuildOptions): string {
+  const connectSources = ["'self'"];
+
+  if (options.realtimeUrl) connectSources.push(options.realtimeUrl);
+  if (options.sentinelUrl) connectSources.push(options.sentinelUrl);
+
+  const uniqueConnectSources = Array.from(new Set(connectSources));
+
   const directives: string[] = [
     "default-src 'self'",
     // Next.js injeta scripts inline de bootstrap no App Router; sem middleware
@@ -34,9 +67,7 @@ function buildCsp(options: BuildOptions): string {
     // https: para imagens externas dentro do preview de e-mails.
     "img-src 'self' data: blob: https:",
     "font-src 'self'",
-    `connect-src 'self'${
-      options.realtimeUrl ? ` ${options.realtimeUrl}` : ""
-    }`,
+    `connect-src ${uniqueConnectSources.join(" ")}`,
     "worker-src 'self'",
     "manifest-src 'self'",
     "object-src 'none'",
@@ -62,9 +93,12 @@ export function buildSecurityHeaders(options: BuildOptions): SecurityHeader[] {
     }
   }
 
+  const sentinelOrigin = extractSecureOrigin(options.sentinelUrl, options.nodeEnv);
+
   const csp = buildCsp({
     nodeEnv: options.nodeEnv,
     realtimeUrl: realtimeOrigin ?? undefined,
+    sentinelUrl: sentinelOrigin ?? undefined,
   });
 
   return [

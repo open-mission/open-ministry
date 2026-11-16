@@ -1,57 +1,21 @@
 import * as Sentry from "@sentry/nextjs";
 
+import {
+  sanitizeLogAttributes,
+  sanitizeTelemetryText,
+  type SentryLogAttributes,
+} from "./sanitize";
+
 /**
  * Structured Telemetry & Sentry Logging utility for OpenMinistry.
  * Implements Sentry Structured Logs (Sentry.logger), distributed tracing,
  * isolation scopes, wide events, and metric collection across client, server, and edge.
  */
 
-const SENSITIVE_KEYS_REGEX =
-  /pass(word|phrase)?|secret|token|api[_-]?key|auth(orization)?|credit[_-]?card|cvv|cookie|session/i;
-
-export type SentryLogAttributes = Record<string, string | number | boolean>;
-
-/**
- * Normalizes and sanitizes attributes for Sentry Structured Logs.
- * Sentry Logs strictly accepts string | number | boolean primitives.
- * Sensitive keys are automatically redacted.
- */
-export function sanitizeLogAttributes(
-  context?: Record<string, unknown>,
-): SentryLogAttributes {
-  if (!context || typeof context !== "object") return {};
-
-  const sanitized: SentryLogAttributes = {};
-
-  for (const [key, value] of Object.entries(context)) {
-    if (value === undefined || value === null) continue;
-
-    if (SENSITIVE_KEYS_REGEX.test(key)) {
-      sanitized[key] = "[REDACTED]";
-      continue;
-    }
-
-    if (
-      typeof value === "string" ||
-      typeof value === "number" ||
-      typeof value === "boolean"
-    ) {
-      sanitized[key] = value;
-    } else if (value instanceof Date) {
-      sanitized[key] = value.toISOString();
-    } else if (value instanceof Error) {
-      sanitized[key] = `${value.name}: ${value.message}`;
-    } else {
-      try {
-        sanitized[key] = JSON.stringify(value);
-      } catch {
-        sanitized[key] = String(value);
-      }
-    }
-  }
-
-  return sanitized;
-}
+// Mantém a API pública anterior para consumidores que importavam o helper
+// diretamente deste módulo.
+export { sanitizeLogAttributes };
+export type { SentryLogAttributes };
 
 /**
  * Native Sentry Structured Logger (`Sentry.logger.*`).
@@ -95,16 +59,20 @@ export const sentryLogger = {
    * Failure requiring investigation. Logs to Sentry Logs.
    */
   error(errorOrMessage: Error | string, attributes?: Record<string, unknown>) {
-    const message =
+    const message = sanitizeTelemetryText(
       typeof errorOrMessage === "string"
         ? errorOrMessage
-        : `${errorOrMessage.name}: ${errorOrMessage.message}`;
+        : `${errorOrMessage.name}: ${errorOrMessage.message}`,
+    );
     const cleanAttrs = sanitizeLogAttributes({
       ...(typeof errorOrMessage !== "string"
         ? { errorName: errorOrMessage.name, errorStack: errorOrMessage.stack }
         : {}),
       ...attributes,
     });
+    if (typeof cleanAttrs.errorStack === "string") {
+      cleanAttrs.errorStack = sanitizeTelemetryText(cleanAttrs.errorStack);
+    }
     Sentry.logger.error(message, cleanAttrs);
   },
 
@@ -112,16 +80,20 @@ export const sentryLogger = {
    * Critical system failure or unrecoverable crash.
    */
   fatal(errorOrMessage: Error | string, attributes?: Record<string, unknown>) {
-    const message =
+    const message = sanitizeTelemetryText(
       typeof errorOrMessage === "string"
         ? errorOrMessage
-        : `${errorOrMessage.name}: ${errorOrMessage.message}`;
+        : `${errorOrMessage.name}: ${errorOrMessage.message}`,
+    );
     const cleanAttrs = sanitizeLogAttributes({
       ...(typeof errorOrMessage !== "string"
         ? { errorName: errorOrMessage.name, errorStack: errorOrMessage.stack }
         : {}),
       ...attributes,
     });
+    if (typeof cleanAttrs.errorStack === "string") {
+      cleanAttrs.errorStack = sanitizeTelemetryText(cleanAttrs.errorStack);
+    }
     Sentry.logger.fatal(message, cleanAttrs);
   },
 
@@ -194,62 +166,67 @@ export const telemetryLogger = {
   },
 
   info(message: string, context?: Record<string, unknown>) {
-    sentryLogger.info(message, context);
+    const cleanContext = sanitizeLogAttributes(context);
+    sentryLogger.info(message, cleanContext);
     Sentry.addBreadcrumb({
       category: "app.info",
       message,
       level: "info",
-      data: context,
+      data: cleanContext,
     });
     if (process.env.NODE_ENV !== "production") {
-      console.info(`[OpenMinistry:Info] ${message}`, context || "");
+      console.info(`[OpenMinistry:Info] ${message}`, cleanContext);
     }
   },
 
   warn(message: string, context?: Record<string, unknown>) {
-    sentryLogger.warn(message, context);
+    const cleanContext = sanitizeLogAttributes(context);
+    sentryLogger.warn(message, cleanContext);
     Sentry.addBreadcrumb({
       category: "app.warn",
       message,
       level: "warning",
-      data: context,
+      data: cleanContext,
     });
     if (process.env.NODE_ENV !== "production") {
-      console.warn(`[OpenMinistry:Warn] ${message}`, context || "");
+      console.warn(`[OpenMinistry:Warn] ${message}`, cleanContext);
     }
   },
 
   error(error: Error | string, context?: Record<string, unknown>) {
-    sentryLogger.error(error, context);
+    const cleanContext = sanitizeLogAttributes(context);
+    sentryLogger.error(error, cleanContext);
     if (typeof error === "string") {
-      Sentry.captureMessage(error, {
+      const message = sanitizeTelemetryText(error);
+      Sentry.captureMessage(message, {
         level: "error",
-        extra: context,
+        extra: cleanContext,
       });
-      console.error(`[OpenMinistry:Error] ${error}`, context || "");
+      console.error(`[OpenMinistry:Error] ${message}`, cleanContext);
     } else {
       Sentry.captureException(error, {
-        extra: context,
+        extra: cleanContext,
       });
       console.error(
-        `[OpenMinistry:Error] ${error.message}`,
+        `[OpenMinistry:Error] ${sanitizeTelemetryText(error.message)}`,
         error,
-        context || "",
+        cleanContext,
       );
     }
   },
 
   fatal(error: Error | string, context?: Record<string, unknown>) {
-    sentryLogger.fatal(error, context);
+    const cleanContext = sanitizeLogAttributes(context);
+    sentryLogger.fatal(error, cleanContext);
     if (typeof error === "string") {
-      Sentry.captureMessage(error, {
+      Sentry.captureMessage(sanitizeTelemetryText(error), {
         level: "fatal",
-        extra: context,
+        extra: cleanContext,
       });
     } else {
       Sentry.captureException(error, {
         level: "fatal",
-        extra: context,
+        extra: cleanContext,
       });
     }
   },
@@ -392,8 +369,6 @@ export function setSentryUser(user: {
 
   Sentry.setUser({
     id: user.id,
-    email: user.email || undefined,
-    username: user.name || undefined,
-    churchId: user.churchId || undefined,
+    ...(user.churchId ? { churchId: user.churchId } : {}),
   });
 }

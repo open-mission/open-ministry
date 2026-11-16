@@ -47,16 +47,16 @@ export function exampleBasicLogging(userId: string, eventId: string) {
 // Best Practice: Use tagged template literal `fmt` to create human-readable
 // log messages that are simultaneously indexed as discrete parameters in Sentry.
 export function exampleParameterizedLogging(
-  senderName: string,
+  senderId: string,
   recipientCount: number,
   channel: "whatsapp" | "email",
 ) {
   sentryLogger.info(
-    sentryLogger.fmt`${senderName} broadcasted notification to ${recipientCount} recipients via ${channel}`,
+    sentryLogger.fmt`${senderId} broadcasted notification to ${recipientCount} recipients via ${channel}`,
     {
       channel,
       recipientCount,
-      senderName,
+      senderId,
     },
   );
 }
@@ -140,7 +140,7 @@ export async function exampleApiTracing() {
 // ============================================================================
 export function exampleTelemetryFacade() {
   telemetryLogger.info("Member checked in at Sunday service", {
-    serviceName: "Culto da Família",
+    eventId: "evt_123",
     attendees: 180,
   });
 }

@@ -1,14 +1,17 @@
 import { connection } from "next/server";
 import type { NextRequest } from "next/server";
 
+import { requireApiOrganizationContext } from "@/lib/api-auth";
 import { listDepartments } from "@/lib/departments";
-import { requireOrganizationContext } from "@/lib/organizations";
 
 export async function GET(_request: NextRequest) {
   await connection();
 
   try {
-    const { organization } = await requireOrganizationContext();
+    const auth = await requireApiOrganizationContext();
+    if (!auth.ok) return auth.response;
+
+    const { organization } = auth.context;
     const departments = await listDepartments(organization.id);
 
     return Response.json({ departments });
