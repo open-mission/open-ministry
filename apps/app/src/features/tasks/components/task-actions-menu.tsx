@@ -144,7 +144,10 @@ export function TaskActionsMenu({
 
   const deleteConfirmModal = isMobile ? (
     <Drawer open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
-      <DrawerContent className="px-4 pb-6">
+      <DrawerContent
+        role="alertdialog"
+        className="max-h-[85dvh] data-[vaul-drawer-direction=bottom]:max-h-[85dvh] rounded-t-[24px] bg-background px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+      >
         <DrawerHeader className="!text-left px-0">
           <DrawerTitle className="font-heading text-lg font-bold">
             Excluir tarefa?
@@ -228,8 +231,8 @@ export function TaskActionsMenu({
               <MoreHorizontalIcon className="size-5" />
             </Button>
           </DrawerTrigger>
-          <DrawerContent className="px-4 pb-8">
-            <DrawerHeader className="!text-left pb-2">
+          <DrawerContent className="flex h-auto max-h-[88dvh] data-[vaul-drawer-direction=bottom]:max-h-[88dvh] flex-col gap-0 rounded-t-[24px] bg-background p-0">
+            <DrawerHeader className="shrink-0 border-b px-4 pt-3 pb-2.5 !text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
               <DrawerTitle className="font-heading text-lg font-bold line-clamp-1">
                 {task.title}
               </DrawerTitle>
@@ -238,185 +241,193 @@ export function TaskActionsMenu({
               </DrawerDescription>
             </DrawerHeader>
 
-            <div className="flex flex-col gap-1.5 py-2">
-              {onView ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
-                  onClick={() => {
-                    setDrawerOpen(false);
-                    onView(task);
-                  }}
-                >
-                  <EyeIcon className="size-4 text-muted-foreground" />
-                  Visualizar detalhes
-                </Button>
-              ) : null}
-
-              {canUpdateStatus ? (
-                <>
+            <div
+              data-vaul-no-drag=""
+              className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain touch-pan-y [-webkit-overflow-scrolling:touch]"
+            >
+              <div className="flex flex-col gap-1.5 px-4 py-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+                {onView ? (
                   <Button
                     type="button"
                     variant="ghost"
                     className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
-                    onClick={() =>
-                      handleSetStatus(isCompleted ? "todo" : "completed")
-                    }
+                    onClick={() => {
+                      setDrawerOpen(false);
+                      onView(task);
+                    }}
                   >
-                    {isCompleted ? (
-                      <>
+                    <EyeIcon className="size-4 text-muted-foreground" />
+                    Visualizar detalhes
+                  </Button>
+                ) : null}
+
+                {canUpdateStatus ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
+                      onClick={() =>
+                        handleSetStatus(isCompleted ? "todo" : "completed")
+                      }
+                    >
+                      {isCompleted ? (
+                        <>
+                          <CircleIcon className="size-4 text-muted-foreground" />
+                          Reabrir tarefa
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2Icon className="size-4 text-emerald-600" />
+                          Marcar como concluída
+                        </>
+                      )}
+                    </Button>
+
+                    {!isInProgress ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
+                        onClick={() => handleSetStatus("in_progress")}
+                      >
+                        <ClockIcon className="size-4 text-amber-600" />
+                        Mover para em andamento
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
+                        onClick={() => handleSetStatus("todo")}
+                      >
                         <CircleIcon className="size-4 text-muted-foreground" />
-                        Reabrir tarefa
+                        Mover para a fazer
+                      </Button>
+                    )}
+
+                    {!isCanceled ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
+                        onClick={() => handleSetStatus("canceled")}
+                      >
+                        <XCircleIcon className="size-4 text-muted-foreground" />
+                        Cancelar tarefa
+                      </Button>
+                    ) : null}
+                  </>
+                ) : null}
+
+                {canPin ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
+                    onClick={handleTogglePin}
+                  >
+                    {task.isPinned ? (
+                      <>
+                        <PinOffIcon className="size-4 text-muted-foreground" />
+                        Remover do topo
                       </>
                     ) : (
                       <>
-                        <CheckCircle2Icon className="size-4 text-emerald-600" />
-                        Marcar como concluída
+                        <PinIcon className="size-4 text-primary" />
+                        Fixar no topo
                       </>
                     )}
                   </Button>
+                ) : null}
 
-                  {!isInProgress ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
-                      onClick={() => handleSetStatus("in_progress")}
-                    >
-                      <ClockIcon className="size-4 text-amber-600" />
-                      Mover para em andamento
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
-                      onClick={() => handleSetStatus("todo")}
-                    >
-                      <CircleIcon className="size-4 text-muted-foreground" />
-                      Mover para a fazer
-                    </Button>
-                  )}
-
-                  {!isCanceled ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
-                      onClick={() => handleSetStatus("canceled")}
-                    >
-                      <XCircleIcon className="size-4 text-muted-foreground" />
-                      Cancelar tarefa
-                    </Button>
-                  ) : null}
-                </>
-              ) : null}
-
-              {canPin ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
-                  onClick={handleTogglePin}
-                >
-                  {task.isPinned ? (
-                    <>
-                      <PinOffIcon className="size-4 text-muted-foreground" />
-                      Remover do topo
-                    </>
-                  ) : (
-                    <>
-                      <PinIcon className="size-4 text-primary" />
-                      Fixar no topo
-                    </>
-                  )}
-                </Button>
-              ) : null}
-
-              {canEdit && onEdit ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
-                  onClick={() => {
-                    setDrawerOpen(false);
-                    onEdit(task);
-                  }}
-                >
-                  <EditIcon className="size-4 text-muted-foreground" />
-                  Editar tarefa
-                </Button>
-              ) : null}
-
-              {onOpenAudit ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
-                  onClick={() => {
-                    setDrawerOpen(false);
-                    onOpenAudit(task);
-                  }}
-                >
-                  <HistoryIcon className="size-4 text-muted-foreground" />
-                  Histórico de alterações
-                </Button>
-              ) : null}
-
-              {canDelete ? (
-                <div className="mt-2 border-t pt-2">
-                  <DrawerNestedRoot
-                    open={confirmDeleteOpen}
-                    onOpenChange={setConfirmDeleteOpen}
+                {canEdit && onEdit ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
+                    onClick={() => {
+                      setDrawerOpen(false);
+                      onEdit(task);
+                    }}
                   >
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() => setConfirmDeleteOpen(true)}
+                    <EditIcon className="size-4 text-muted-foreground" />
+                    Editar tarefa
+                  </Button>
+                ) : null}
+
+                {onOpenAudit ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
+                    onClick={() => {
+                      setDrawerOpen(false);
+                      onOpenAudit(task);
+                    }}
+                  >
+                    <HistoryIcon className="size-4 text-muted-foreground" />
+                    Histórico de alterações
+                  </Button>
+                ) : null}
+
+                {canDelete ? (
+                  <div className="mt-2 border-t pt-2">
+                    <DrawerNestedRoot
+                      open={confirmDeleteOpen}
+                      onOpenChange={setConfirmDeleteOpen}
                     >
-                      <Trash2Icon className="size-4" />
-                      Excluir tarefa
-                    </Button>
-                    <DrawerContent className="px-4 pb-6">
-                      <DrawerHeader className="!text-left px-0">
-                        <DrawerTitle className="font-heading text-lg font-bold">
-                          Excluir tarefa?
-                        </DrawerTitle>
-                        <DrawerDescription>
-                          Tem certeza que deseja excluir &ldquo;{task.title}&rdquo;? Esta ação não poderá ser desfeita.
-                        </DrawerDescription>
-                      </DrawerHeader>
-                      <DrawerFooter className="px-0 pt-2">
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          disabled={isPending}
-                          onClick={handleConfirmDelete}
-                          className="min-h-[44px] w-full"
-                        >
-                          {isPending ? (
-                            <Loader2Icon className="mr-2 size-4 animate-spin" />
-                          ) : (
-                            <Trash2Icon className="mr-2 size-4" />
-                          )}
-                          Excluir definitivamente
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={isPending}
-                          onClick={() => setConfirmDeleteOpen(false)}
-                          className="min-h-[44px] w-full"
-                        >
-                          Cancelar
-                        </Button>
-                      </DrawerFooter>
-                    </DrawerContent>
-                  </DrawerNestedRoot>
-                </div>
-              ) : null}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => setConfirmDeleteOpen(true)}
+                      >
+                        <Trash2Icon className="size-4" />
+                        Excluir tarefa
+                      </Button>
+                      <DrawerContent
+                        role="alertdialog"
+                        className="max-h-[85dvh] data-[vaul-drawer-direction=bottom]:max-h-[85dvh] rounded-t-[24px] bg-background px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+                      >
+                        <DrawerHeader className="!text-left px-0">
+                          <DrawerTitle className="font-heading text-lg font-bold">
+                            Excluir tarefa?
+                          </DrawerTitle>
+                          <DrawerDescription>
+                            Tem certeza que deseja excluir &ldquo;{task.title}&rdquo;? Esta ação não poderá ser desfeita.
+                          </DrawerDescription>
+                        </DrawerHeader>
+                        <DrawerFooter className="px-0 pt-2">
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            disabled={isPending}
+                            onClick={handleConfirmDelete}
+                            className="min-h-[44px] w-full"
+                          >
+                            {isPending ? (
+                              <Loader2Icon className="mr-2 size-4 animate-spin" />
+                            ) : (
+                              <Trash2Icon className="mr-2 size-4" />
+                            )}
+                            Excluir definitivamente
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={isPending}
+                            onClick={() => setConfirmDeleteOpen(false)}
+                            className="min-h-[44px] w-full"
+                          >
+                            Cancelar
+                          </Button>
+                        </DrawerFooter>
+                      </DrawerContent>
+                    </DrawerNestedRoot>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </DrawerContent>
         </Drawer>

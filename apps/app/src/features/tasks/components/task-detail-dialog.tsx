@@ -14,6 +14,7 @@ import {
   Trash2Icon,
   UserIcon,
   UsersIcon,
+  XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,6 +40,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Drawer,
+  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -107,6 +109,14 @@ export function TaskDetailDialog({
   const recurrenceLabel = task.isRecurring
     ? formatRecurrenceSummary(task.recurrenceRule)
     : null;
+  const assigneeName = task.assignee?.name ?? task.assigneePerson?.name ?? null;
+  const hasDeadlineDetails = Boolean(
+    whenLabel ||
+      deadlineInfo ||
+      task.department ||
+      assigneeName ||
+      recurrenceLabel,
+  );
 
   const handleStatusChange = (nextStatus: TaskStatus) => {
     if (nextStatus === task.status) return;
@@ -211,7 +221,7 @@ export function TaskDetailDialog({
 
       {/* Descrição / Notas */}
       {task.description ? (
-        <div className="rounded-xl border bg-card p-3.5 text-sm whitespace-pre-wrap leading-relaxed text-foreground">
+        <div className="rounded-xl border bg-card p-3.5 text-sm whitespace-pre-wrap break-words leading-relaxed text-foreground">
           {task.description}
         </div>
       ) : (
@@ -221,77 +231,79 @@ export function TaskDetailDialog({
       )}
 
       {/* Prazos e Responsáveis */}
-      <div className="grid grid-cols-1 gap-2.5 rounded-xl border bg-muted/20 p-3.5 text-sm sm:grid-cols-2">
-        {whenLabel ? (
-          <div className="flex items-start gap-2.5">
-            <CalendarIcon className="mt-0.5 size-4 shrink-0 text-primary" />
-            <div>
-              <p className="text-xs text-muted-foreground">Data planejada</p>
-              <p className="font-medium text-foreground">{whenLabel}</p>
+      {hasDeadlineDetails ? (
+        <div className="grid grid-cols-1 gap-2.5 rounded-xl border bg-muted/20 p-3.5 text-sm sm:grid-cols-2">
+          {whenLabel ? (
+            <div className="flex items-start gap-2.5">
+              <CalendarIcon className="mt-0.5 size-4 shrink-0 text-primary" />
+              <div>
+                <p className="text-xs text-muted-foreground">Data planejada</p>
+                <p className="font-medium text-foreground">{whenLabel}</p>
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        {deadlineInfo ? (
-          <div className="flex items-start gap-2.5">
-            <ClockIcon
-              className={cn(
-                "mt-0.5 size-4 shrink-0",
-                deadlineInfo.isOverdue
-                  ? "text-destructive"
-                  : "text-muted-foreground",
-              )}
-            />
-            <div>
-              <p className="text-xs text-muted-foreground">Prazo de entrega</p>
-              <p
+          {deadlineInfo ? (
+            <div className="flex items-start gap-2.5">
+              <ClockIcon
                 className={cn(
-                  "font-medium",
+                  "mt-0.5 size-4 shrink-0",
                   deadlineInfo.isOverdue
                     ? "text-destructive"
-                    : "text-foreground",
+                    : "text-muted-foreground",
                 )}
-              >
-                {deadlineInfo.label}
-              </p>
+              />
+              <div>
+                <p className="text-xs text-muted-foreground">Prazo de entrega</p>
+                <p
+                  className={cn(
+                    "font-medium",
+                    deadlineInfo.isOverdue
+                      ? "text-destructive"
+                      : "text-foreground",
+                  )}
+                >
+                  {deadlineInfo.label}
+                </p>
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        {task.department ? (
-          <div className="flex items-start gap-2.5">
-            <UsersIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-            <div>
-              <p className="text-xs text-muted-foreground">Departamento</p>
-              <p className="font-medium text-foreground">
-                {task.department.name}
-              </p>
+          {task.department ? (
+            <div className="flex items-start gap-2.5">
+              <UsersIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+              <div>
+                <p className="text-xs text-muted-foreground">Departamento</p>
+                <p className="font-medium text-foreground">
+                  {task.department.name}
+                </p>
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        {task.assignee ? (
-          <div className="flex items-start gap-2.5">
-            <UserIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-            <div>
-              <p className="text-xs text-muted-foreground">Responsável</p>
-              <p className="font-medium text-foreground">
-                {task.assignee.name ?? "Membro"}
-              </p>
+          {assigneeName ? (
+            <div className="flex items-start gap-2.5">
+              <UserIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+              <div>
+                <p className="text-xs text-muted-foreground">Responsável</p>
+                <p className="font-medium break-words text-foreground">
+                  {assigneeName}
+                </p>
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        {recurrenceLabel ? (
-          <div className="flex items-start gap-2.5 sm:col-span-2">
-            <BellRingIcon className="mt-0.5 size-4 shrink-0 text-primary" />
-            <div>
-              <p className="text-xs text-muted-foreground">Lembrete semanal</p>
-              <p className="font-medium text-foreground">{recurrenceLabel}</p>
+          {recurrenceLabel ? (
+            <div className="flex items-start gap-2.5 sm:col-span-2">
+              <BellRingIcon className="mt-0.5 size-4 shrink-0 text-primary" />
+              <div>
+                <p className="text-xs text-muted-foreground">Lembrete semanal</p>
+                <p className="font-medium text-foreground">{recurrenceLabel}</p>
+              </div>
             </div>
-          </div>
-        ) : null}
-      </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {/* Etiquetas */}
       {task.tags && task.tags.length > 0 ? (
@@ -319,22 +331,44 @@ export function TaskDetailDialog({
     </div>
   );
 
-  const actions = (
-    <div
-      className={cn(
-        "flex w-full gap-2",
-        isMobile ? "flex-col" : "items-center justify-between",
-      )}
-    >
-      <div className={cn("flex gap-2", isMobile ? "w-full" : "")}>
+  const showEditAction = Boolean(canEdit && onEdit);
+
+  // Ações secundárias no mobile ficam no fim da rolagem para nunca cobrir os detalhes
+  const mobileSecondaryActions = (
+    <div className="flex gap-2 border-t pt-3">
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setAuditOpen(true)}
+        className="min-h-[44px] flex-1 gap-1.5"
+      >
+        <HistoryIcon className="size-4" />
+        Histórico
+      </Button>
+
+      {canDelete ? (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setConfirmDeleteOpen(true)}
+          disabled={isPending}
+          className="min-h-[44px] flex-1 gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+        >
+          <Trash2Icon className="size-4" />
+          Excluir
+        </Button>
+      ) : null}
+    </div>
+  );
+
+  const desktopActions = (
+    <div className="flex w-full items-center justify-between gap-2">
+      <div className="flex gap-2">
         <Button
           type="button"
           variant="outline"
           onClick={() => setAuditOpen(true)}
-          className={cn(
-            "min-h-[44px] sm:min-h-[36px] gap-1.5",
-            isMobile && "flex-1",
-          )}
+          className="min-h-[36px] gap-1.5"
         >
           <HistoryIcon className="size-4" />
           Histórico
@@ -346,10 +380,7 @@ export function TaskDetailDialog({
             variant="outline"
             onClick={() => setConfirmDeleteOpen(true)}
             disabled={isPending}
-            className={cn(
-              "min-h-[44px] sm:min-h-[36px] gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive",
-              isMobile && "flex-1",
-            )}
+            className="min-h-[36px] gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
           >
             <Trash2Icon className="size-4" />
             Excluir
@@ -357,16 +388,16 @@ export function TaskDetailDialog({
         ) : null}
       </div>
 
-      <div className={cn("flex gap-2", isMobile ? "w-full flex-col-reverse" : "")}>
-        {canEdit && onEdit ? (
+      <div className="flex gap-2">
+        {showEditAction ? (
           <Button
             type="button"
             variant="outline"
             onClick={() => {
               onClose();
-              onEdit(task);
+              onEdit?.(task);
             }}
-            className="min-h-[44px] sm:min-h-[36px] gap-1.5"
+            className="min-h-[36px] gap-1.5"
           >
             <EditIcon className="size-4" />
             Editar
@@ -378,7 +409,7 @@ export function TaskDetailDialog({
             type="button"
             onClick={() => handleStatusChange(isCompleted ? "todo" : "completed")}
             disabled={isPending}
-            className="min-h-[44px] sm:min-h-[36px] gap-1.5"
+            className="min-h-[36px] gap-1.5"
           >
             {isPending ? (
               <Loader2Icon className="size-4 animate-spin" />
@@ -396,29 +427,93 @@ export function TaskDetailDialog({
     return (
       <>
         <Drawer open={open} onOpenChange={(v) => !v && onClose()}>
-          <DrawerContent className="flex max-h-[85vh] flex-col px-4 pb-6">
-            <DrawerHeader className="!text-left shrink-0 px-0">
-              <DrawerTitle
-                className={cn(
-                  "font-heading text-xl font-bold",
-                  isCompleted && "line-through text-muted-foreground",
-                )}
-              >
-                {task.title}
-              </DrawerTitle>
-              <DrawerDescription>
-                {task.createdBy?.name
-                  ? `Criada por ${task.createdBy.name}`
-                  : "Detalhes da tarefa"}
-              </DrawerDescription>
+          <DrawerContent className="flex h-auto max-h-[90dvh] data-[vaul-drawer-direction=bottom]:max-h-[90dvh] flex-col gap-0 rounded-t-[24px] bg-background p-0">
+            <DrawerHeader className="shrink-0 border-b px-4 pt-3 pb-3 !text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <DrawerTitle
+                    className={cn(
+                      "font-heading text-lg font-bold leading-snug break-words",
+                      isCompleted && "line-through text-muted-foreground",
+                    )}
+                  >
+                    {task.title}
+                  </DrawerTitle>
+                  <DrawerDescription>
+                    {task.createdBy?.name
+                      ? `Criada por ${task.createdBy.name}`
+                      : "Detalhes da tarefa"}
+                  </DrawerDescription>
+                </div>
+                <DrawerClose asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Fechar detalhes da tarefa"
+                    className="size-11 -mr-2 -mt-1 shrink-0 text-muted-foreground hover:text-foreground"
+                  >
+                    <XIcon className="size-5" />
+                  </Button>
+                </DrawerClose>
+              </div>
             </DrawerHeader>
 
-            <div className="flex-1 overflow-y-auto [-webkit-overflow-scrolling:touch] py-2 pr-1">
-              {content}
+            <div
+              data-vaul-no-drag=""
+              className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain touch-pan-y [-webkit-overflow-scrolling:touch]"
+            >
+              <div className="space-y-4 px-4 py-3.5">
+                {content}
+                {mobileSecondaryActions}
+              </div>
             </div>
 
-            <DrawerFooter className="shrink-0 border-t bg-background px-0 pt-3">
-              {actions}
+            <DrawerFooter className="shrink-0 flex-row items-center gap-2 border-t bg-background px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+              {showEditAction ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    onClose();
+                    onEdit?.(task);
+                  }}
+                  className="min-h-[44px] shrink-0 gap-1.5 px-4"
+                >
+                  <EditIcon className="size-4" />
+                  Editar
+                </Button>
+              ) : null}
+
+              {canUpdateStatus ? (
+                <Button
+                  type="button"
+                  onClick={() =>
+                    handleStatusChange(isCompleted ? "todo" : "completed")
+                  }
+                  disabled={isPending}
+                  className="min-h-[44px] flex-1 gap-1.5"
+                >
+                  {isPending ? (
+                    <Loader2Icon className="size-4 animate-spin" />
+                  ) : (
+                    <CheckIcon className="size-4" />
+                  )}
+                  {isCompleted ? "Reabrir tarefa" : "Concluir tarefa"}
+                </Button>
+              ) : null}
+
+              {!showEditAction && !canUpdateStatus ? (
+                <DrawerClose asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="min-h-[44px] w-full"
+                  >
+                    Fechar
+                  </Button>
+                </DrawerClose>
+              ) : null}
             </DrawerFooter>
 
             <TaskAuditHistoryDialog
@@ -434,7 +529,10 @@ export function TaskDetailDialog({
               open={confirmDeleteOpen}
               onOpenChange={setConfirmDeleteOpen}
             >
-              <DrawerContent className="px-4 pb-6">
+              <DrawerContent
+                role="alertdialog"
+                className="max-h-[85dvh] data-[vaul-drawer-direction=bottom]:max-h-[85dvh] rounded-t-[24px] bg-background px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+              >
                 <DrawerHeader className="!text-left px-0">
                   <DrawerTitle className="font-heading text-lg font-bold">
                     Excluir tarefa?
@@ -479,11 +577,11 @@ export function TaskDetailDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[85vh] flex-col gap-0 p-0 sm:max-w-lg">
+          <DialogHeader className="shrink-0 border-b px-6 pt-6 pb-4">
             <DialogTitle
               className={cn(
-                "font-heading text-xl font-bold pr-6",
+                "font-heading text-xl font-bold pr-6 break-words",
                 isCompleted && "line-through text-muted-foreground",
               )}
             >
@@ -496,9 +594,13 @@ export function TaskDetailDialog({
             </DialogDescription>
           </DialogHeader>
 
-          {content}
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+            {content}
+          </div>
 
-          <DialogFooter className="pt-2">{actions}</DialogFooter>
+          <DialogFooter className="mx-0 mb-0 shrink-0 border-t px-6 py-4">
+            {desktopActions}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

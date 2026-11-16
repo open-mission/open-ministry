@@ -26,6 +26,7 @@ import {
   Drawer,
   DrawerContent,
   DrawerDescription,
+  DrawerFooter,
   DrawerHeader,
   DrawerNestedRoot,
   DrawerTitle,
@@ -272,20 +273,23 @@ export function TaskAuditHistoryDialog({
     const Wrapper = nested ? DrawerNestedRoot : Drawer;
     return (
       <Wrapper open={open} onOpenChange={(v) => !v && onClose()}>
-        <DrawerContent className="px-4 pb-6 max-h-[85vh]">
-          <DrawerHeader className="!text-left px-0">
-            <DrawerTitle className="font-heading text-lg font-bold flex items-center gap-2">
-              <HistoryIcon className="size-5 text-primary" />
+        <DrawerContent className="flex h-auto max-h-[90dvh] data-[vaul-drawer-direction=bottom]:max-h-[90dvh] flex-col gap-0 rounded-t-[24px] bg-background p-0">
+          <DrawerHeader className="shrink-0 border-b px-4 pt-3 pb-3 !text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+            <DrawerTitle className="font-heading text-lg font-bold flex items-center gap-2 break-words">
+              <HistoryIcon className="size-5 shrink-0 text-primary" />
               Histórico de alterações
             </DrawerTitle>
             <DrawerDescription>
               {task?.title ?? "Registro de atividades da tarefa"}
             </DrawerDescription>
           </DrawerHeader>
-          <div className="overflow-y-auto [-webkit-overflow-scrolling:touch] pr-1">
-            {content}
+          <div
+            data-vaul-no-drag=""
+            className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain touch-pan-y [-webkit-overflow-scrolling:touch]"
+          >
+            <div className="px-4 py-3">{content}</div>
           </div>
-          <div className="pt-3 border-t mt-2">
+          <DrawerFooter className="shrink-0 border-t bg-background px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <Button
               type="button"
               variant="outline"
@@ -294,7 +298,7 @@ export function TaskAuditHistoryDialog({
             >
               Fechar
             </Button>
-          </div>
+          </DrawerFooter>
         </DrawerContent>
       </Wrapper>
     );
