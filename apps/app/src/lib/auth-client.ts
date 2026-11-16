@@ -10,9 +10,19 @@ import {
 import { createAuthClient } from "better-auth/react";
 import { sentinelClient } from "@better-auth/infra/client";
 
+import { resolveClientIdentifyUrl } from "@/lib/better-auth-infra";
+
 // O plugin só é registrado quando o endpoint do Sentinel/identify está
 // configurado; sem ele, requisições de identify seriam feitas sem destino.
-const sentinelIdentifyUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_KV_URL?.trim();
+// Os acessos a process.env precisam ser literais para o inline do Next.
+const sentinelIdentifyUrl = resolveClientIdentifyUrl({
+  NEXT_PUBLIC_BETTER_AUTH_IDENTIFY_URL:
+    process.env.NEXT_PUBLIC_BETTER_AUTH_IDENTIFY_URL,
+  BETTER_AUTH_IDENTIFY_URL: process.env.BETTER_AUTH_IDENTIFY_URL,
+  NEXT_PUBLIC_BETTER_AUTH_KV_URL:
+    process.env.NEXT_PUBLIC_BETTER_AUTH_KV_URL,
+  BETTER_AUTH_KV_URL: process.env.BETTER_AUTH_KV_URL,
+});
 
 export const authClient = createAuthClient({
   plugins: [

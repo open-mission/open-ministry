@@ -6,6 +6,15 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.2.3] - 2026-11-16
+
+### Corrigido e Melhorado
+- **Autenticação & Better Auth Infra (KV)**:
+  - **Suporte a `BETTER_AUTH_IDENTIFY_URL`**: Novo módulo `better-auth-infra.ts` com normalização separada para servidor e cliente — o servidor usa a base do KV sem `/api/v1` nem `/api/v1/projects/<id>` e o cliente preserva o path do projeto —, mantendo fallback para as variáveis de KV existentes.
+  - **Integração no Servidor e no Cliente**: `auth.ts` e `auth-client.ts` passam a usar as URLs normalizadas ao configurar `dash()`/`sentinel()` e `sentinelClient()`.
+  - **Configuração e Empacotamento**: `next.config.ts` expõe `NEXT_PUBLIC_BETTER_AUTH_IDENTIFY_URL` ao cliente e ao `connect-src` da CSP; `turbo.json` e `.env.example` foram atualizados para repassar e documentar a nova variável.
+  - **Testes**: Adicionada suíte `better-auth-infra.test.ts` com 25 testes automatizados cobrindo normalização, fallbacks e entradas inválidas.
+
 ## [1.2.2] - 2026-11-16
 
 ### Corrigido e Melhorado

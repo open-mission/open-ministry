@@ -2,12 +2,32 @@ import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 
 import { buildSecurityHeaders } from "./src/lib/security-headers";
+import { resolveClientIdentifyUrl } from "./src/lib/better-auth-infra";
+
+// Variáveis sem prefixo NEXT_PUBLIC_ não entram no bundle do cliente por
+// padrão. Quando BETTER_AUTH_IDENTIFY_URL (ou BETTER_AUTH_KV_URL) estiver
+// configurada no servidor, expomos a URL de identify normalizada abaixo.
+const betterAuthIdentifyUrl = resolveClientIdentifyUrl({
+  NEXT_PUBLIC_BETTER_AUTH_IDENTIFY_URL:
+    process.env.NEXT_PUBLIC_BETTER_AUTH_IDENTIFY_URL,
+  BETTER_AUTH_IDENTIFY_URL: process.env.BETTER_AUTH_IDENTIFY_URL,
+  NEXT_PUBLIC_BETTER_AUTH_KV_URL:
+    process.env.NEXT_PUBLIC_BETTER_AUTH_KV_URL,
+  BETTER_AUTH_KV_URL: process.env.BETTER_AUTH_KV_URL,
+});
 
 const nextConfig: NextConfig = {
   /* config options here */
   transpilePackages: ["@openministry/ui", "@openministry/db"],
   cacheComponents: true,
   partialPrefetching: true,
+  ...(betterAuthIdentifyUrl
+    ? {
+        env: {
+          NEXT_PUBLIC_BETTER_AUTH_IDENTIFY_URL: betterAuthIdentifyUrl,
+        },
+      }
+    : {}),
   async headers() {
     return [
       {
@@ -15,7 +35,7 @@ const nextConfig: NextConfig = {
         headers: buildSecurityHeaders({
           nodeEnv: process.env.NODE_ENV ?? "development",
           realtimeUrl: process.env.NEXT_PUBLIC_NEON_REALTIME_URL,
-          sentinelUrl: process.env.NEXT_PUBLIC_BETTER_AUTH_KV_URL,
+          sentinelUrl: betterAuthIdentifyUrl,
         }),
       },
     ];

@@ -19,6 +19,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { getAppBaseUrl } from "@/lib/app-url";
+import { resolveServerKvUrl } from "@/lib/better-auth-infra";
 import { sendTransactionalEmail } from "@/lib/email/service";
 import { getRedisClient, isRedisConfigured } from "@/lib/queue";
 import {
@@ -27,10 +28,20 @@ import {
 
 // Better Auth Infra (Dash + Sentinel). Ambos dependem de API key e URL do KV;
 // sem os dois configurados, os plugins não são registrados.
+//
+// Aceita BETTER_AUTH_IDENTIFY_URL (URL do projeto no Dash, no formato
+// `https://kv.better-auth.com/api/v1/projects/<id>`) e deriva a base do KV
+// usada pelo servidor (`https://kv.better-auth.com`). Também aceita
+// BETTER_AUTH_KV_URL/NEXT_PUBLIC_BETTER_AUTH_KV_URL explicitamente.
 const infraApiKey = process.env.BETTER_AUTH_API_KEY?.trim();
-const infraKvUrl = (
-  process.env.BETTER_AUTH_KV_URL || process.env.NEXT_PUBLIC_BETTER_AUTH_KV_URL
-)?.trim();
+const infraKvUrl = resolveServerKvUrl({
+  BETTER_AUTH_KV_URL: process.env.BETTER_AUTH_KV_URL,
+  NEXT_PUBLIC_BETTER_AUTH_KV_URL:
+    process.env.NEXT_PUBLIC_BETTER_AUTH_KV_URL,
+  BETTER_AUTH_IDENTIFY_URL: process.env.BETTER_AUTH_IDENTIFY_URL,
+  NEXT_PUBLIC_BETTER_AUTH_IDENTIFY_URL:
+    process.env.NEXT_PUBLIC_BETTER_AUTH_IDENTIFY_URL,
+});
 const isInfraConfigured = Boolean(infraApiKey && infraKvUrl);
 
 /** Normaliza uma origem aceitando URL completa ou apenas o host. */
