@@ -14,16 +14,17 @@ import {
 } from "@/lib/permissions/defaults";
 
 describe("Permissions and Module Catalog", () => {
-  it("registersExactlyFourInitialModules", () => {
+  it("registersAllInitialModules", () => {
     const expectedKeys: ModuleKey[] = [
       "agenda",
       "schedules",
       "music",
       "announcements",
       "tasks",
+      "rehearsals",
     ];
 
-    expect(MODULE_KEYS).toHaveLength(5);
+    expect(MODULE_KEYS).toHaveLength(6);
     expect([...MODULE_KEYS].sort()).toEqual([...expectedKeys].sort());
 
     const registeredKeys = Object.keys(SYSTEM_MODULES);
@@ -40,6 +41,12 @@ describe("Permissions and Module Catalog", () => {
     expect(SYSTEM_MODULES.music.routePrefixes).toContain("/dashboard/songs");
     expect(SYSTEM_MODULES.announcements.routePrefixes).toContain("/dashboard/announcements");
     expect(SYSTEM_MODULES.tasks.routePrefixes).toContain("/dashboard/tasks");
+    expect(SYSTEM_MODULES.rehearsals.routePrefixes).toContain("/rehearsals");
+    expect(SYSTEM_MODULES.rehearsals.routePrefixes).toContain(
+      "/dashboard/rehearsals",
+    );
+    expect(SYSTEM_MODULES.rehearsals.name).toBe("Ensaios");
+    expect(SYSTEM_MODULES.rehearsals.navGroups).toEqual([]);
   });
 
   it("rejectsUnknownActions", () => {
@@ -61,6 +68,11 @@ describe("Permissions and Module Catalog", () => {
     expect(memberPolicy.tasks.createPersonal).toBe(true);
     expect(memberPolicy.tasks.createDepartment).toBe(false);
     expect(memberPolicy.tasks.createOrganization).toBe(false);
+    expect(memberPolicy.rehearsals.read).toBe(true);
+    expect(memberPolicy.rehearsals.createRehearsal).toBe(false);
+    expect(memberPolicy.rehearsals.updateRehearsal).toBe(false);
+    expect(memberPolicy.rehearsals.deleteRehearsal).toBe(false);
+    expect(memberPolicy.rehearsals.manageAlerts).toBe(false);
 
     // Member has manageOwnAvailability in schedules
     expect(memberPolicy.schedules.manageOwnAvailability).toBe(true);
@@ -103,6 +115,10 @@ describe("Permissions and Module Catalog", () => {
     expect(isActionDelegable("tasks", "createDepartment")).toBe(true);
     expect(isActionDelegable("tasks", "update")).toBe(true);
     expect(isActionDelegable("tasks", "delete")).toBe(true);
+    expect(isActionDelegable("rehearsals", "createRehearsal")).toBe(true);
+    expect(isActionDelegable("rehearsals", "updateRehearsal")).toBe(true);
+    expect(isActionDelegable("rehearsals", "deleteRehearsal")).toBe(true);
+    expect(isActionDelegable("rehearsals", "manageAlerts")).toBe(true);
 
     // Non-delegable: church-wide, self, and music actions
     expect(isActionDelegable("agenda", "read")).toBe(false);
@@ -119,6 +135,7 @@ describe("Permissions and Module Catalog", () => {
     expect(isActionDelegable("tasks", "read")).toBe(false);
     expect(isActionDelegable("tasks", "createPersonal")).toBe(false);
     expect(isActionDelegable("tasks", "createOrganization")).toBe(false);
+    expect(isActionDelegable("rehearsals", "read")).toBe(false);
   });
 
   it("buildDefaultOrganizationPermissionRows creates repeatable policy rows", () => {

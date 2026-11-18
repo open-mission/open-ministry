@@ -51,6 +51,15 @@ export async function setDepartmentModuleEnabled(
         moduleKey,
       });
     }
+
+    // Ensaios é opt-in: ao ativar no departamento, garante os 3 lembretes
+    // padrão sem duplicar regras já personalizadas pela liderança.
+    if (moduleKey === "rehearsals") {
+      const { getOrSeedDepartmentAlertRules } = await import(
+        "@/features/rehearsals/services/rehearsals-service"
+      );
+      await getOrSeedDepartmentAlertRules(organizationId, departmentId);
+    }
   } else {
     await db
       .delete(schema.departmentModule)

@@ -4,6 +4,7 @@ import {
   ClipboardListIcon,
   MegaphoneIcon,
   Music2Icon,
+  Music4Icon,
 } from "lucide-react";
 
 import type { ModuleKey, SystemModule } from "./types";
@@ -85,6 +86,17 @@ export const SYSTEM_MODULES: Record<ModuleKey, SystemModule> = {
     icon: CheckSquare2Icon,
     navGroups: [],
     routePrefixes: ["/tasks", "/dashboard/tasks"],
+  },
+  rehearsals: {
+    key: "rehearsals",
+    name: "Ensaios",
+    shortName: "Ensaios",
+    description:
+      "Agende ensaios do ministério, monte o repertório de cada encontro e configure lembretes automáticos para a equipe.",
+    badge: "Ensaios",
+    icon: Music4Icon,
+    navGroups: [],
+    routePrefixes: ["/rehearsals", "/dashboard/rehearsals"],
   },
 };
 
