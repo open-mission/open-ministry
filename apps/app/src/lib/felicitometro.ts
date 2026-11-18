@@ -2,13 +2,14 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, gte, inArray } from "drizzle-orm";
-import { format, subDays } from "date-fns";
+import { subDays } from "date-fns";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { remember } from "@/lib/cache";
 import { listUserLeaderDepartments } from "@/lib/departments";
 import {
+  formatDateStringInSaoPaulo,
   getTodayDateString,
   MOOD_LEVELS,
   type MoodDefinition,
@@ -16,6 +17,7 @@ import {
 } from "@/lib/felicitometro-types";
 
 export {
+  formatDateStringInSaoPaulo,
   getTodayDateString,
   MOOD_LEVELS,
   type MoodDefinition,
@@ -93,7 +95,7 @@ export async function getPersonMoodHistory(
   personId: string,
   days = 30,
 ) {
-  const cutoffDate = format(subDays(new Date(), days), "yyyy-MM-dd");
+  const cutoffDate = formatDateStringInSaoPaulo(subDays(new Date(), days));
 
   return db.query.personMood.findMany({
     where: and(
@@ -176,7 +178,7 @@ export async function getOrganizationMoodOverview({
     `org:${organizationId}:mood-overview:${viewerUserId}:${isAdmin}:${days}`,
     120,
     async () => {
-      const cutoffDate = format(subDays(new Date(), days), "yyyy-MM-dd");
+      const cutoffDate = formatDateStringInSaoPaulo(subDays(new Date(), days));
 
   let allowedPersonIds: string[] | null = null;
 
@@ -290,7 +292,7 @@ export async function getOrganizationMoodOverview({
   >();
 
   for (let i = days; i >= 0; i--) {
-    const d = format(subDays(new Date(), i), "yyyy-MM-dd");
+    const d = formatDateStringInSaoPaulo(subDays(new Date(), i));
     timelineMap.set(d, { sum: 0, count: 0, prayer: 0, talk: 0 });
   }
 

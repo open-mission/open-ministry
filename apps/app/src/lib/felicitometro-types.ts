@@ -1,5 +1,3 @@
-import { format } from "date-fns";
-
 export type MoodDefinition = {
   score: number;
   label: string;
@@ -58,8 +56,31 @@ export const MOOD_LEVELS: Record<number, MoodDefinition> = {
   },
 };
 
-export function getTodayDateString(): string {
-  return format(new Date(), "yyyy-MM-dd");
+const saoPauloDateFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/Sao_Paulo",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/**
+ * Retorna a data (yyyy-mm-dd) no fuso de São Paulo.
+ *
+ * O felicitômetro usa o dia local da igreja: perto da meia-noite UTC, o dia
+ * em São Paulo ainda é o anterior. Usar UTC aqui fazia o check-in cair no dia
+ * errado e o job diário não encontrar quem já havia respondido.
+ */
+export function formatDateStringInSaoPaulo(date: Date = new Date()): string {
+  const parts = saoPauloDateFormatter.formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value ?? "";
+  const month = parts.find((part) => part.type === "month")?.value ?? "";
+  const day = parts.find((part) => part.type === "day")?.value ?? "";
+
+  return `${year}-${month}-${day}`;
+}
+
+export function getTodayDateString(now: Date = new Date()): string {
+  return formatDateStringInSaoPaulo(now);
 }
 
 export type MoodOverview = {

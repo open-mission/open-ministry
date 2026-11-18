@@ -148,6 +148,17 @@ export async function sendFelicitometroPromptAction(): Promise<{
 }> {
   try {
     const context = await requireOrganizationContext();
+
+    if (!context.isAdmin) {
+      return {
+        success: false,
+        sentCount: 0,
+        pendingCount: 0,
+        error:
+          "Apenas administradores podem enviar lembretes do felicitômetro.",
+      };
+    }
+
     const today = getTodayDateString();
 
     // Membros que já responderam hoje
@@ -179,8 +190,16 @@ export async function sendFelicitometroPromptAction(): Promise<{
           url: "/dashboard",
         });
         if (res.sentCount > 0) sentCount += res.sentCount;
-      } catch {
-        // Ignora falha de envio individual
+      } catch (error) {
+        const errorName = error instanceof Error ? error.name : "UnknownError";
+        console.error(
+          "[felicitometro] Falha ao enviar lembrete para o membro:",
+          { userId: member.userId, errorName },
+        );
+        sentryLogger.warn("Falha ao enviar lembrete do felicitômetro", {
+          userId: member.userId,
+          errorName,
+        });
       }
     }
 
