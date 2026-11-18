@@ -12,6 +12,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 const actualDrawer = await import("@/components/ui/drawer");
 const actualSheet = await import("@/components/ui/sheet");
 const actualDialog = await import("@/components/ui/dialog");
+const actualTabs = await import("@/components/ui/tabs");
 const actualUseMobile = await import("@/hooks/use-mobile");
 const actualRehearsalActions = await import("@/app/actions/rehearsals");
 const actualNavigation = await import("next/navigation");
@@ -138,6 +139,50 @@ mock.module("@/components/ui/dialog", () => ({
   DialogClose: passthrough,
 }));
 
+const TabsMock = ({ children }: MockProps) =>
+  createElement(Fragment, null, children);
+
+const TabsTriggerMock = ({
+  className,
+  children,
+  value,
+  ...props
+}: MockProps) => (
+  <button
+    type="button"
+    data-slot="tabs-trigger"
+    data-value={value}
+    className={className}
+    {...props}
+  >
+    {children}
+  </button>
+);
+
+const TabsContentMock = ({
+  className,
+  children,
+  value,
+  ...props
+}: MockProps) => (
+  <div
+    data-slot="tabs-content"
+    data-value={value}
+    className={className}
+    {...props}
+  >
+    {children}
+  </div>
+);
+
+mock.module("@/components/ui/tabs", () => ({
+  Tabs: TabsMock,
+  TabsList: slotDiv("tabs-list"),
+  TabsTrigger: TabsTriggerMock,
+  TabsContent: TabsContentMock,
+  tabsListVariants: () => "",
+}));
+
 mock.module("@/hooks/use-mobile", () => ({
   useIsMobile: () => isMobileViewport,
 }));
@@ -181,6 +226,7 @@ afterAll(() => {
   mock.module("@/components/ui/drawer", () => ({ ...actualDrawer }));
   mock.module("@/components/ui/sheet", () => ({ ...actualSheet }));
   mock.module("@/components/ui/dialog", () => ({ ...actualDialog }));
+  mock.module("@/components/ui/tabs", () => ({ ...actualTabs }));
   mock.module("@/hooks/use-mobile", () => ({ ...actualUseMobile }));
   mock.module("@/app/actions/rehearsals", () => ({
     ...actualRehearsalActions,
@@ -210,7 +256,7 @@ function renderSheet() {
   );
 }
 
-function renderPanel() {
+function renderPanel(canUpdate = false) {
   return renderToStaticMarkup(
     createElement(RehearsalPanel, {
       departmentId: "dept-1",
@@ -245,7 +291,7 @@ function renderPanel() {
         },
       ],
       alertRules: [],
-      canUpdate: false,
+      canUpdate,
       canDelete: false,
       canManageAlerts: false,
     }),
@@ -261,6 +307,29 @@ describe("Rehearsal setlist — abrir cifra", () => {
     expect(markup).toContain("Tom A");
     expect(markup).toContain("Entrar no refrão");
     expect(markup).toContain("min-h-11");
+  });
+});
+
+describe("Rehearsal setlist — remover música", () => {
+  it("mostra um botão de remover por música quando canUpdate é true", () => {
+    const markup = renderPanel(true);
+
+    expect(markup).toContain(
+      'aria-label="Remover Grande é o Senhor do repertório"',
+    );
+    expect(markup).toContain(
+      'aria-label="Abrir cifra de Grande é o Senhor"',
+    );
+    expect(markup).toContain("hover:text-destructive");
+  });
+
+  it("esconde o botão de remover quando canUpdate é false", () => {
+    const markup = renderPanel(false);
+
+    expect(markup).not.toContain("Remover Grande é o Senhor do repertório");
+    expect(markup).toContain(
+      'aria-label="Abrir cifra de Grande é o Senhor"',
+    );
   });
 });
 
@@ -287,19 +356,114 @@ describe("SongChordsSheet — mobile", () => {
     });
   });
 
-  it("mostra uma mensagem amigável quando a cifra não foi cadastrada", () => {
+  it("mostra uma mensagem amigável quando cifra e letra não foram cadastradas", () => {
     isMobileViewport = true;
     chordsViewerProps.length = 0;
     const markup = renderToStaticMarkup(
       createElement(SongChordsSheet, {
-        song: { ...song, chords: "" },
+        song: { ...song, chords: "", lyrics: null },
         open: true,
         onOpenChange: () => undefined,
       }),
     );
 
-    expect(markup).toContain("Cifra não cadastrada para esta música");
+    expect(markup).toContain(
+      "Cifra e letra não cadastradas para esta música",
+    );
+    expect(markup).not.toContain('data-slot="tabs-trigger"');
     expect(chordsViewerProps).toHaveLength(0);
+  });
+});
+
+describe("SongChordsSheet — detalhes da música e abas", () => {
+  it("exibe as abas Cifra e Letra com os detalhes disponíveis no cabeçalho", () => {
+    isMobileViewport = true;
+    chordsViewerProps.length = 0;
+    const markup = renderToStaticMarkup(
+      createElement(SongChordsSheet, {
+        song: {
+          ...song,
+          collection: "Hinário",
+          tags: ["adoração", "louvor"],
+          bpm: 92,
+          lyrics: "Santo, santo, santo\nDeus poderoso",
+        },
+        open: true,
+        onOpenChange: () => undefined,
+      }),
+    );
+
+    expect(markup).toContain('data-slot="tabs-trigger"');
+    expect(markup).toContain("Cifra</button>");
+    expect(markup).toContain("Letra</button>");
+
+    expect(markup).toContain("Artista");
+    expect(markup).toContain("Tom G");
+    expect(markup).toContain("Capo 2");
+    expect(markup).toContain("Coleção: Hinário");
+    expect(markup).toContain("Tags: adoração, louvor");
+    expect(markup).toContain("92 BPM");
+    expect(markup).toContain("Santo, santo, santo");
+
+    expect(chordsViewerProps.at(-1)).toMatchObject({
+      chords: song.chords,
+      hideFullscreenButton: true,
+    });
+  });
+
+  it("mostra o estado vazio da letra quando só a cifra existe", () => {
+    isMobileViewport = true;
+    const markup = renderToStaticMarkup(
+      createElement(SongChordsSheet, {
+        song: { ...song, lyrics: null },
+        open: true,
+        onOpenChange: () => undefined,
+      }),
+    );
+
+    expect(markup).toContain('data-slot="tabs-trigger"');
+    expect(markup).toContain("Letra</button>");
+    expect(markup).toContain("Letra não cadastrada para esta música");
+    expect(markup).not.toContain(
+      "Cifra e letra não cadastradas para esta música",
+    );
+  });
+
+  it("mostra o estado vazio da cifra quando só a letra existe", () => {
+    isMobileViewport = true;
+    chordsViewerProps.length = 0;
+    const markup = renderToStaticMarkup(
+      createElement(SongChordsSheet, {
+        song: { ...song, chords: "", lyrics: "Só a letra desta música" },
+        open: true,
+        onOpenChange: () => undefined,
+      }),
+    );
+
+    expect(markup).toContain('data-slot="tabs-trigger"');
+    expect(markup).toContain("Cifra</button>");
+    expect(markup).toContain("Cifra não cadastrada para esta música");
+    expect(markup).toContain("Só a letra desta música");
+    expect(chordsViewerProps).toHaveLength(0);
+  });
+
+  it("não renderiza linha de detalhes vazia quando só há o título", () => {
+    isMobileViewport = true;
+    const markup = renderToStaticMarkup(
+      createElement(SongChordsSheet, {
+        song: {
+          title: "Música sem detalhes",
+          chords: "G D",
+          lyrics: null,
+        },
+        open: true,
+        onOpenChange: () => undefined,
+      }),
+    );
+
+    expect(markup).toContain("Música sem detalhes");
+    expect(markup).not.toContain("Artista não informado");
+    expect(markup).not.toContain("mt-0.5 truncate text-xs");
   });
 });
 

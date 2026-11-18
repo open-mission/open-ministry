@@ -31,16 +31,58 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.3.3";
+export const CURRENT_APP_VERSION = "1.4.0";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.4.0",
+    title: "Visão Global de Ensaios, Detalhes no Repertório e Correção Mobile",
+    subtitle:
+      "Acesso direto a todos os ensaios pelo menu, detalhes completos com Cifra e Letra dentro do ensaio, remoção rápida de músicas e ajustes de navegação no celular.",
+    releaseDate: "18 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Ensaios & Repertório",
+        badge: "Novidade",
+        features: [
+          {
+            title: "Aba Global de Ensaios no Menu",
+            description:
+              "Acesse todos os ensaios dos seus departamentos em um único lugar pelo menu lateral ou mobile, com filtro por departamento e separação entre próximos e realizados.",
+            iconName: "CalendarDaysIcon",
+            badge: "Ensaios",
+          },
+          {
+            title: "Detalhes da Música + Cifra e Letra no Ensaio",
+            description:
+              "Ao tocar em uma música do repertório do ensaio, veja tom, capo, coleção, tags, BPM e alterne entre Cifra e Letra sem sair da tela, além de remover músicas direto da lista.",
+            iconName: "MusicIcon",
+            badge: "Repertório",
+          },
+        ],
+      },
+      {
+        moduleName: "Agenda & Navegação Mobile",
+        badge: "Melhorias",
+        features: [
+          {
+            title: "Navegação Inferior Estável e Rótulos Padronizados",
+            description:
+              "Correção do posicionamento da barra inferior no celular (iOS) e padronização do botão da agenda para Mais detalhes.",
+            iconName: "SmartphoneIcon",
+            badge: "Mobile",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.3.3",
     title: "Cifra Direta no Ensaio e Tela Cheia Enxuta",
     subtitle:
       "Abra a cifra de qualquer música direto do repertório do ensaio e leia com mais espaço no modo tela cheia no celular.",
     releaseDate: "18 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Ensaios & Visualizador de Cifras",

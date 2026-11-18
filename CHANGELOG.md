@@ -6,6 +6,17 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.4.0] - 2026-11-18
+
+### Adicionado e Melhorado
+- **Visão Global de Ensaios (`/dashboard/rehearsals` & Menu):** nova aba **Ensaios** no menu lateral e mobile (exibida quando o módulo está ativo) com listagem unificada dos ensaios de todos os departamentos acessíveis, filtro por departamento, agrupamento em Próximos/Realizados, camada backend dedicada (`listAccessibleRehearsals`, `getAccessibleRehearsalDepartments`, `listAllRehearsalsAction` e `GET /api/rehearsals`) e rewrites `/rehearsals`.
+- **Detalhes + Abas Cifra/Letra no Painel do Ensaio (`SongChordsSheet`):** ao clicar em uma música do repertório dentro do ensaio, o painel exibe cabeçalho com detalhes da música (artista, tom, capo, coleção, tags e BPM) e abas **Cifra** e **Letra** no mesmo Drawer/Sheet.
+- **Remoção Rápida no Repertório do Ensaio (`RehearsalPanel`):** botão de remover ao lado de cada música do repertório para usuários com permissão de edição (`canUpdate`), com atualização otimista e feedback imediato.
+
+### Corrigido
+- **Agenda (`CalendarAgendaView`):** padronização do texto do botão de ação de `"Ver culto"` para `"Mais detalhes"` nos demais tipos de evento (incluindo ensaios), mantendo `"Ver disponibilidade"` e `"Ver membro"`.
+- **Barra de Navegação Mobile no iOS (`MobileNavShell`):** remoção de `backdrop-blur-xl` e troca para fundo opaco (`bg-background`), evitando deslocamento visual da barra fixa inferior no WebKit/iOS.
+
 ## [1.3.3] - 2026-11-18
 
 ### Adicionado e Melhorado

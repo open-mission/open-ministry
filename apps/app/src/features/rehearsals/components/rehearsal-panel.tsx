@@ -1,17 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   BellRingIcon,
   CheckCircle2Icon,
   ClockIcon,
+  Loader2Icon,
   MapPinIcon,
   Music2Icon,
   PencilIcon,
   Trash2Icon,
 } from "lucide-react";
+import { toast } from "sonner";
 
+import { updateRehearsalAction } from "@/app/actions/rehearsals";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,10 +36,12 @@ import {
   type SongChordsSheetSong,
 } from "@/features/rehearsals/components/song-chords-sheet";
 import {
+  buildRehearsalPayload,
   formatAlertRuleSummary,
   formatRehearsalFullDate,
   formatRehearsalTimeRange,
   rehearsalSongCountLabel,
+  toRehearsalFormValues,
   type RehearsalSongOption,
 } from "@/features/rehearsals/lib/rehearsal-ui";
 
@@ -51,8 +56,11 @@ export type RehearsalPanelRehearsal = Omit<RehearsalListItem, "songs"> & {
       artist?: string | null;
       tone?: string | null;
       capo?: number | null;
+      bpm?: number | null;
       chords?: string | null;
       lyrics?: string | null;
+      collection?: string | null;
+      tags?: string[] | null;
     } | null;
   }[];
 };
@@ -86,8 +94,58 @@ export function RehearsalPanel({
     null,
   );
   const [chordsOpen, setChordsOpen] = useState(false);
+  const [selectedSongId, setSelectedSongId] = useState<string | null>(null);
+  const [removingSongId, setRemovingSongId] = useState<string | null>(null);
+  const [removedSongIds, setRemovedSongIds] = useState<string[]>([]);
+  const [, startTransition] = useTransition();
 
-  const entries = rehearsal.songs ?? [];
+  const handleRemoveSong = async (entry: { songId: string }) => {
+    if (!canUpdate || removingSongId) return;
+
+    setRemovingSongId(entry.songId);
+
+    try {
+      const values = toRehearsalFormValues(rehearsal);
+      values.songs = values.songs.filter(
+        (song) =>
+          song.songId !== entry.songId &&
+          !removedSongIds.includes(song.songId),
+      );
+      const payload = buildRehearsalPayload(values);
+      const result = await updateRehearsalAction(
+        departmentId,
+        rehearsal.id,
+        payload,
+      );
+
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+
+      if (selectedSongId === entry.songId) {
+        setSelectedSong(null);
+        setSelectedSongId(null);
+        setChordsOpen(false);
+      }
+
+      setRemovedSongIds((current) => [...current, entry.songId]);
+      toast.success("Música removida do repertório.");
+      startTransition(() => router.refresh());
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível remover a música. Tente novamente.",
+      );
+    } finally {
+      setRemovingSongId(null);
+    }
+  };
+
+  const entries = (rehearsal.songs ?? []).filter(
+    (entry) => !removedSongIds.includes(entry.songId),
+  );
   const songsById = new Map(songs.map((song) => [song.id, song]));
 
   return (
@@ -178,51 +236,80 @@ export function RehearsalPanel({
 
                   return (
                     <li key={entry.songId}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedSong({
-                            title,
-                            artist: song?.artist ?? null,
-                            tone: song?.tone ?? null,
-                            capo: entry.song?.capo ?? 0,
-                            chords: entry.song?.chords ?? null,
-                          });
-                          setChordsOpen(true);
-                        }}
-                        aria-label={`Abrir cifra de ${title}`}
-                        className="group flex min-h-11 w-full items-start gap-2.5 rounded-xl border border-border/70 p-3 text-left transition-colors hover:border-primary/40 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-0"
-                      >
-                        <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-violet-500/10 text-xs font-semibold text-violet-700 dark:text-violet-300">
-                          {index + 1}
-                        </span>
-                        <div className="min-w-0 flex-1 space-y-2">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="truncate text-sm font-semibold">
-                              {title}
-                            </span>
-                            {tone ? (
-                              <Badge
-                                variant="secondary"
-                                className="px-1.5 py-0 text-[11px] font-bold text-primary"
-                              >
-                                Tom {tone}
-                              </Badge>
+                      <div className="flex items-start gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedSong({
+                              title,
+                              artist: song?.artist ?? null,
+                              tone: song?.tone ?? null,
+                              capo: entry.song?.capo ?? 0,
+                              chords: entry.song?.chords ?? null,
+                              lyrics: entry.song?.lyrics ?? null,
+                              collection: entry.song?.collection ?? null,
+                              tags: entry.song?.tags ?? null,
+                              bpm: entry.song?.bpm ?? null,
+                            });
+                            setSelectedSongId(entry.songId);
+                            setChordsOpen(true);
+                          }}
+                          aria-label={`Abrir cifra de ${title}`}
+                          className="group flex min-h-11 min-w-0 flex-1 items-start gap-2.5 rounded-xl border border-border/70 p-3 text-left transition-colors hover:border-primary/40 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-0"
+                        >
+                          <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-violet-500/10 text-xs font-semibold text-violet-700 dark:text-violet-300">
+                            {index + 1}
+                          </span>
+                          <div className="min-w-0 flex-1 space-y-2">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="truncate text-sm font-semibold">
+                                {title}
+                              </span>
+                              {tone ? (
+                                <Badge
+                                  variant="secondary"
+                                  className="px-1.5 py-0 text-[11px] font-bold text-primary"
+                                >
+                                  Tom {tone}
+                                </Badge>
+                              ) : null}
+                            </div>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {song?.artist || "Artista não informado"}
+                            </p>
+                            {entry.notes ? (
+                              <p className="text-xs leading-relaxed text-muted-foreground">
+                                {entry.notes}
+                              </p>
                             ) : null}
                           </div>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {song?.artist || "Artista não informado"}
-                          </p>
-                          {entry.notes ? (
-                            <p className="text-xs leading-relaxed text-muted-foreground">
-                              {entry.notes}
-                            </p>
-                          ) : null}
-                        </div>
-                        <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
-                          <Music2Icon className="size-4" aria-hidden />
-                        </span>
-                      </button>
+                          <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+                            <Music2Icon className="size-4" aria-hidden />
+                          </span>
+                        </button>
+
+                        {canUpdate ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveSong(entry)}
+                            disabled={removingSongId !== null}
+                            aria-label={`Remover ${title} do repertório`}
+                            title="Remover do repertório"
+                            className="mt-0.5 size-9 min-h-11 shrink-0 text-muted-foreground hover:text-destructive sm:min-h-9"
+                          >
+                            {removingSongId === entry.songId ? (
+                              <Loader2Icon
+                                className="size-4 animate-spin"
+                                aria-hidden
+                              />
+                            ) : (
+                              <Trash2Icon className="size-4" aria-hidden />
+                            )}
+                          </Button>
+                        ) : null}
+                      </div>
                     </li>
                   );
                 })}

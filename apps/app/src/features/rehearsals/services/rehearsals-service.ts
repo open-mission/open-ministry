@@ -19,6 +19,12 @@ import {
   type RehearsalAlertRule,
 } from "@/features/rehearsals/lib/rehearsal-alerts";
 
+export {
+  getAccessibleRehearsalDepartments,
+  listAccessibleRehearsals,
+  type AccessibleRehearsalDepartment,
+} from "@/features/rehearsals/services/rehearsals-global-service";
+
 const REHEARSAL_NOTIFICATION_CHANNELS = [
   "in_app",
   "push",
@@ -133,6 +139,7 @@ function cacheTags(organizationId: string, departmentId: string) {
   return [
     `events:${organizationId}`,
     `departments:${organizationId}`,
+    `rehearsals:${organizationId}:all`,
     `rehearsals:${organizationId}:${departmentId}`,
   ];
 }

@@ -4,6 +4,7 @@ import {
   createRehearsalAction as createRehearsalActionImpl,
   deleteRehearsalAction as deleteRehearsalActionImpl,
   getRehearsalAction as getRehearsalActionImpl,
+  listAllRehearsalsAction as listAllRehearsalsActionImpl,
   listRehearsalAlertRulesAction as listRehearsalAlertRulesActionImpl,
   listRehearsalsAction as listRehearsalsActionImpl,
   resetRehearsalAlertRulesAction as resetRehearsalAlertRulesActionImpl,
@@ -13,6 +14,10 @@ import {
 
 export async function listRehearsalsAction(departmentId: string) {
   return listRehearsalsActionImpl(departmentId);
+}
+
+export async function listAllRehearsalsAction(departmentId?: string) {
+  return listAllRehearsalsActionImpl(departmentId);
 }
 
 export async function getRehearsalAction(

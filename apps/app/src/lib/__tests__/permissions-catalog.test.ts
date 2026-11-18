@@ -46,7 +46,15 @@ describe("Permissions and Module Catalog", () => {
       "/dashboard/rehearsals",
     );
     expect(SYSTEM_MODULES.rehearsals.name).toBe("Ensaios");
-    expect(SYSTEM_MODULES.rehearsals.navGroups).toEqual([]);
+    expect(SYSTEM_MODULES.rehearsals.navGroups).toHaveLength(1);
+    expect(SYSTEM_MODULES.rehearsals.navGroups[0]?.title).toBe("Ensaios");
+    expect(SYSTEM_MODULES.rehearsals.navGroups[0]?.items).toEqual([
+      expect.objectContaining({
+        href: "/rehearsals",
+        label: "Ensaios",
+        exact: false,
+      }),
+    ]);
   });
 
   it("rejectsUnknownActions", () => {
