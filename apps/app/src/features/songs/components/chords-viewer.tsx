@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dialog";
 import { Kbd } from "@/components/ui/kbd";
 import { NativeSelect } from "@/components/ui/native-select";
+import { getChordsViewerControlVisibility } from "@/features/songs/lib/chords-viewer-controls";
 import {
   getSemitoneDistance,
   getShapeTone,
@@ -70,6 +71,11 @@ type ChordsViewerProps = {
   capo?: number | null;
   songTitle?: string;
   songArtist?: string;
+  /**
+   * Esconde o botão "Tela cheia". Use quando o visualizador já está dentro de
+   * um Sheet/Drawer, para o modo palco em portal não conflitar com o foco.
+   */
+  hideFullscreenButton?: boolean;
 };
 
 type FontSize = ViewerFontSize;
@@ -136,6 +142,7 @@ export function ChordsViewer({
   capo = 0,
   songTitle,
   songArtist,
+  hideFullscreenButton = false,
 }: ChordsViewerProps) {
   const isClient = useSyncExternalStore(
     () => () => {},
@@ -483,6 +490,67 @@ export function ChordsViewer({
     );
   }
 
+  const controlVisibility = getChordsViewerControlVisibility({
+    isFullscreen,
+    hideFullscreenButton,
+  });
+
+  // Copiar, atalhos e tela cheia só fazem sentido fora do modo palco. No palco
+  // a barra fica enxuta para liberar espaço vertical.
+  const secondaryControls = (
+    <>
+      {controlVisibility.copy ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleCopy}
+          className="h-11 gap-1.5 px-3 text-xs font-medium shadow-2xs sm:h-9"
+          aria-label={copied ? "Cifra copiada" : "Copiar cifra"}
+          title="Copiar cifra (C)"
+        >
+          {copied ? (
+            <CheckIcon className="size-4 text-emerald-700 dark:text-emerald-300" />
+          ) : (
+            <CopyIcon className="size-4" />
+          )}
+          <span className="hidden sm:inline">
+            {copied ? "Copiado!" : "Copiar"}
+          </span>
+        </Button>
+      ) : null}
+
+      {controlVisibility.help ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setHelpOpen(true)}
+          className="h-11 w-11 shrink-0 px-0 text-muted-foreground shadow-2xs hover:text-foreground sm:h-9 sm:w-9"
+          aria-label="Ver atalhos do modo palco"
+          title="Atalhos do modo palco (?)"
+        >
+          <KeyboardIcon className="size-4" />
+        </Button>
+      ) : null}
+
+      {controlVisibility.fullscreen ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={toggleFullscreen}
+          className="h-11 gap-1.5 px-3 text-xs font-semibold text-primary shadow-2xs hover:bg-primary/10 sm:h-9"
+          aria-label="Abrir modo palco em tela cheia"
+          title="Modo palco (F)"
+        >
+          <Maximize2Icon className="size-4" />
+          <span className="hidden sm:inline">Tela cheia</span>
+        </Button>
+      ) : null}
+    </>
+  );
+
   const controls = (
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div className="flex flex-wrap items-center gap-2">
@@ -604,49 +672,7 @@ export function ChordsViewer({
           </ToolbarButton>
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleCopy}
-          className="h-11 gap-1.5 px-3 text-xs font-medium shadow-2xs sm:h-9"
-          aria-label={copied ? "Cifra copiada" : "Copiar cifra"}
-          title="Copiar cifra (C)"
-        >
-          {copied ? (
-            <CheckIcon className="size-4 text-emerald-700 dark:text-emerald-300" />
-          ) : (
-            <CopyIcon className="size-4" />
-          )}
-          <span className="hidden sm:inline">
-            {copied ? "Copiado!" : "Copiar"}
-          </span>
-        </Button>
-
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => setHelpOpen(true)}
-          className="h-11 w-11 shrink-0 px-0 text-muted-foreground shadow-2xs hover:text-foreground sm:h-9 sm:w-9"
-          aria-label="Ver atalhos do modo palco"
-          title="Atalhos do modo palco (?)"
-        >
-          <KeyboardIcon className="size-4" />
-        </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={toggleFullscreen}
-          className="h-11 gap-1.5 px-3 text-xs font-semibold text-primary shadow-2xs hover:bg-primary/10 sm:h-9"
-          aria-label="Abrir modo palco em tela cheia"
-          title="Modo palco (F)"
-        >
-          <Maximize2Icon className="size-4" />
-          <span className="hidden sm:inline">Tela cheia</span>
-        </Button>
+        {secondaryControls}
       </div>
     </div>
   );
@@ -737,10 +763,10 @@ export function ChordsViewer({
               tabIndex={-1}
               className="fixed inset-0 z-[100] flex h-dvh max-h-dvh flex-col overflow-hidden overscroll-contain bg-background text-foreground select-text focus:outline-none"
             >
-              <div className="flex shrink-0 flex-col gap-2.5 border-b border-border/70 bg-card/95 px-3.5 py-2.5 shadow-xs backdrop-blur-xs sm:px-6 sm:py-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <div className="flex shrink-0 flex-col gap-2 border-b border-border/70 bg-card/95 px-3 py-2 shadow-xs backdrop-blur-xs sm:px-5 sm:py-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="hidden size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary sm:flex">
                       <Music2Icon className="size-4" />
                     </span>
                     <div className="min-w-0">

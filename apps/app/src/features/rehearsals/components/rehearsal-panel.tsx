@@ -29,6 +29,10 @@ import {
   type RehearsalListItem,
 } from "@/features/rehearsals/components/rehearsal-list";
 import {
+  SongChordsSheet,
+  type SongChordsSheetSong,
+} from "@/features/rehearsals/components/song-chords-sheet";
+import {
   formatAlertRuleSummary,
   formatRehearsalFullDate,
   formatRehearsalTimeRange,
@@ -36,7 +40,7 @@ import {
   type RehearsalSongOption,
 } from "@/features/rehearsals/lib/rehearsal-ui";
 
-export type RehearsalPanelRehearsal = RehearsalListItem & {
+export type RehearsalPanelRehearsal = Omit<RehearsalListItem, "songs"> & {
   songs?: {
     songId: string;
     musicalKey?: string | null;
@@ -46,6 +50,9 @@ export type RehearsalPanelRehearsal = RehearsalListItem & {
       title: string;
       artist?: string | null;
       tone?: string | null;
+      capo?: number | null;
+      chords?: string | null;
+      lyrics?: string | null;
     } | null;
   }[];
 };
@@ -75,6 +82,10 @@ export function RehearsalPanel({
   const [formOpen, setFormOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [selectedSong, setSelectedSong] = useState<SongChordsSheetSong | null>(
+    null,
+  );
+  const [chordsOpen, setChordsOpen] = useState(false);
 
   const entries = rehearsal.songs ?? [];
   const songsById = new Map(songs.map((song) => [song.id, song]));
@@ -163,38 +174,55 @@ export function RehearsalPanel({
                 {entries.map((entry, index) => {
                   const song = entry.song ?? songsById.get(entry.songId);
                   const tone = entry.musicalKey ?? song?.tone ?? null;
+                  const title = song?.title ?? "Música removida";
 
                   return (
-                    <li
-                      key={entry.songId}
-                      className="flex items-start gap-2.5 rounded-xl border border-border/70 p-3"
-                    >
-                      <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-violet-500/10 text-xs font-semibold text-violet-700 dark:text-violet-300">
-                        {index + 1}
-                      </span>
-                      <div className="min-w-0 flex-1 space-y-2">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="truncate text-sm font-semibold">
-                            {song?.title ?? "Música removida"}
-                          </span>
-                          {tone ? (
-                            <Badge
-                              variant="secondary"
-                              className="px-1.5 py-0 text-[11px] font-bold text-primary"
-                            >
-                              Tom {tone}
-                            </Badge>
+                    <li key={entry.songId}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedSong({
+                            title,
+                            artist: song?.artist ?? null,
+                            tone: song?.tone ?? null,
+                            capo: entry.song?.capo ?? 0,
+                            chords: entry.song?.chords ?? null,
+                          });
+                          setChordsOpen(true);
+                        }}
+                        aria-label={`Abrir cifra de ${title}`}
+                        className="group flex min-h-11 w-full items-start gap-2.5 rounded-xl border border-border/70 p-3 text-left transition-colors hover:border-primary/40 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-0"
+                      >
+                        <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-violet-500/10 text-xs font-semibold text-violet-700 dark:text-violet-300">
+                          {index + 1}
+                        </span>
+                        <div className="min-w-0 flex-1 space-y-2">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="truncate text-sm font-semibold">
+                              {title}
+                            </span>
+                            {tone ? (
+                              <Badge
+                                variant="secondary"
+                                className="px-1.5 py-0 text-[11px] font-bold text-primary"
+                              >
+                                Tom {tone}
+                              </Badge>
+                            ) : null}
+                          </div>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {song?.artist || "Artista não informado"}
+                          </p>
+                          {entry.notes ? (
+                            <p className="text-xs leading-relaxed text-muted-foreground">
+                              {entry.notes}
+                            </p>
                           ) : null}
                         </div>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {song?.artist || "Artista não informado"}
-                        </p>
-                        {entry.notes ? (
-                          <p className="text-xs leading-relaxed text-muted-foreground">
-                            {entry.notes}
-                          </p>
-                        ) : null}
-                      </div>
+                        <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+                          <Music2Icon className="size-4" aria-hidden />
+                        </span>
+                      </button>
                     </li>
                   );
                 })}
@@ -264,6 +292,12 @@ export function RehearsalPanel({
           </CardContent>
         </Card>
       </div>
+
+      <SongChordsSheet
+        song={selectedSong}
+        open={chordsOpen}
+        onOpenChange={setChordsOpen}
+      />
 
       <RehearsalFormDialog
         departmentId={departmentId}
