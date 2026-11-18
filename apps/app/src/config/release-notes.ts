@@ -31,16 +31,45 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.3.2";
+export const CURRENT_APP_VERSION = "1.3.3";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.3.3",
+    title: "Cifra Direta no Ensaio e Tela Cheia Enxuta",
+    subtitle:
+      "Abra a cifra de qualquer música direto do repertório do ensaio e leia com mais espaço no modo tela cheia no celular.",
+    releaseDate: "18 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Ensaios & Visualizador de Cifras",
+        badge: "Usabilidade & Mobile",
+        features: [
+          {
+            title: "Cifra Acessível Pelo Ensaio",
+            description:
+              "Clicar em uma música do setlist do ensaio abre a cifra em painel lateral no desktop ou gaveta em tela cheia no celular, mantendo o contexto do ensaio.",
+            iconName: "MusicIcon",
+            badge: "Ensaios",
+          },
+          {
+            title: "Barra Limpa no Modo Tela Cheia",
+            description:
+              "O modo tela cheia do visualizador de cifras agora mantém apenas tom, zoom e layout, escondendo botões secundários para dar mais espaço à letra e às cifras.",
+            iconName: "SmartphoneIcon",
+            badge: "Mobile",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.3.2",
     title: "Abas de Departamento Mais Limpas no Mobile",
     subtitle:
       "Barra de navegação dos departamentos simplificada apenas com ícone e rótulo para economizar espaço na tela.",
     releaseDate: "18 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Departamentos & Navegação Mobile",
