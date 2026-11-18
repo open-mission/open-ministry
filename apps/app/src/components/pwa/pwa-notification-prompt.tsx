@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import {
   dismissPwaNotificationPrompt,
   isPwaNotificationPromptDismissed,
-  isPushActiveOnDevice,
+  isPushFullyActive,
   isPushSupported,
   subscribeDeviceToPush,
 } from "@/lib/push-client";
@@ -38,8 +38,8 @@ export function PwaNotificationPrompt() {
       // If user explicitly denied notifications in browser settings, do not show
       if (Notification.permission === "denied") return;
 
-      // If already active on device, do not show
-      const isActive = await isPushActiveOnDevice();
+      // If already active on both device and server, do not show
+      const isActive = await isPushFullyActive();
       if (isActive) return;
 
       if (mounted) {
@@ -74,7 +74,6 @@ export function PwaNotificationPrompt() {
       const res = await subscribeDeviceToPush();
       if (res.ok) {
         toast.success("Notificações push ativadas com sucesso!");
-        dismissPwaNotificationPrompt(365);
         setVisible(false);
       } else {
         toast.error(res.error || "Não foi possível ativar as notificações.");
@@ -117,7 +116,8 @@ export function PwaNotificationPrompt() {
             </h4>
             <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
               Você instalou o aplicativo! Ative as notificações para receber
-              escalas, mudanças e avisos importantes da igreja em tempo real.
+              escalas, avisos e o lembrete diário do Felicitômetro em tempo
+              real.
             </p>
           </div>
 

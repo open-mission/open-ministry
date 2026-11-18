@@ -39,6 +39,35 @@ export async function isPushActiveOnDevice(): Promise<boolean> {
   }
 }
 
+const PUSH_VAPID_KEY_CACHE = "openministry_push_vapid_key";
+
+export function getCachedVapidKey(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(PUSH_VAPID_KEY_CACHE);
+  } catch {
+    return null;
+  }
+}
+
+export function setCachedVapidKey(key: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(PUSH_VAPID_KEY_CACHE, key);
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+export function clearCachedVapidKey(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(PUSH_VAPID_KEY_CACHE);
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
 export async function subscribeDeviceToPush(vapidPublicKey?: string): Promise<{
   ok: boolean;
   error?: string;
@@ -62,13 +91,8 @@ export async function subscribeDeviceToPush(vapidPublicKey?: string): Promise<{
       };
     }
 
-    let key = vapidPublicKey;
-    if (!key) {
-      const status = await getPushSubscriptionStatusAction();
-      if (status.ok && status.publicKey) {
-        key = status.publicKey;
-      }
-    }
+    const status = await getPushSubscriptionStatusAction();
+    const key = vapidPublicKey || (status.ok ? status.publicKey : "");
 
     if (!key) {
       return {
@@ -79,6 +103,14 @@ export async function subscribeDeviceToPush(vapidPublicKey?: string): Promise<{
 
     const registration = await navigator.serviceWorker.ready;
     let subscription = await registration.pushManager.getSubscription();
+
+    const cachedKey = getCachedVapidKey();
+    if (subscription && cachedKey && cachedKey !== key) {
+      // A chave pública do servidor mudou: a inscrição antiga não é mais
+      // aceita, então é preciso cancelá-la e criar uma nova.
+      await subscription.unsubscribe();
+      subscription = null;
+    }
 
     if (!subscription) {
       subscription = await registration.pushManager.subscribe({
@@ -110,6 +142,8 @@ export async function subscribeDeviceToPush(vapidPublicKey?: string): Promise<{
       };
     }
 
+    setCachedVapidKey(key);
+
     return { ok: true };
   } catch (err) {
     console.error("Falha ao ativar notificações push:", err);
@@ -118,6 +152,82 @@ export async function subscribeDeviceToPush(vapidPublicKey?: string): Promise<{
       error: "Não foi possível ativar as notificações push.",
     };
   }
+}
+
+export async function getPushStatus(): Promise<{
+  supported: boolean;
+  permission: NotificationPermission | "unsupported";
+  deviceActive: boolean;
+  serverSubscribed: boolean;
+  vapidPublicKey: string;
+  keyMismatch: boolean;
+}> {
+  if (!isPushSupported()) {
+    return {
+      supported: false,
+      permission: "unsupported",
+      deviceActive: false,
+      serverSubscribed: false,
+      vapidPublicKey: "",
+      keyMismatch: false,
+    };
+  }
+
+  const permission = Notification.permission;
+
+  let subscription: PushSubscription | null = null;
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    subscription = await registration.pushManager.getSubscription();
+  } catch {
+    subscription = null;
+  }
+  const deviceActive = Boolean(subscription);
+
+  const status = await getPushSubscriptionStatusAction();
+  let serverSubscribed = Boolean(status.ok && status.isSubscribed);
+  const vapidPublicKey = status.ok ? status.publicKey : "";
+
+  const cachedKey = getCachedVapidKey();
+  const keyMismatch = Boolean(
+    deviceActive && cachedKey && cachedKey !== vapidPublicKey,
+  );
+
+  // Repara automaticamente o caso em que o dispositivo tem inscrição mas o
+  // servidor perdeu o registro (por exemplo, banco recriado ou sessão nova).
+  if (deviceActive && subscription && !serverSubscribed) {
+    const json = subscription.toJSON();
+    const res = await savePushSubscriptionAction({
+      endpoint: subscription.endpoint,
+      keys: {
+        p256dh: json.keys?.p256dh || "",
+        auth: json.keys?.auth || "",
+      },
+    });
+    if (res.ok) {
+      serverSubscribed = true;
+    }
+  }
+
+  return {
+    supported: true,
+    permission,
+    deviceActive,
+    serverSubscribed,
+    vapidPublicKey,
+    keyMismatch,
+  };
+}
+
+export async function isPushFullyActive(): Promise<boolean> {
+  const status = await getPushStatus();
+  return (
+    status.supported &&
+    status.permission === "granted" &&
+    status.deviceActive &&
+    status.serverSubscribed &&
+    !status.keyMismatch
+  );
 }
 
 const PWA_NOTIFICATION_PROMPT_DISMISS_KEY =
