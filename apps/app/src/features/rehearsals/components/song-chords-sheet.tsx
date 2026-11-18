@@ -1,6 +1,7 @@
 "use client";
 
-import { Music2Icon, XIcon } from "lucide-react";
+import { FileMusicIcon, FileTextIcon, Music2Icon, XIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +18,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChordsViewer } from "@/features/songs/components/chords-viewer";
+import { SongLyricsViewer } from "@/features/songs/components/song-lyrics-viewer";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export type SongChordsSheetSong = {
@@ -25,7 +28,11 @@ export type SongChordsSheetSong = {
   artist?: string | null;
   tone?: string | null;
   capo?: number | null;
+  bpm?: number | null;
   chords?: string | null;
+  lyrics?: string | null;
+  collection?: string | null;
+  tags?: string[] | null;
 };
 
 type SongChordsSheetProps = {
@@ -41,8 +48,21 @@ function SongChordsHeader({
   song: SongChordsSheetSong;
   onClose: () => void;
 }) {
+  const artist = song.artist?.trim();
   const tone = song.tone?.trim();
+  const collection = song.collection?.trim();
   const capo = Number(song.capo) || 0;
+  const bpm = Number(song.bpm) || 0;
+  const tags = (song.tags ?? []).map((tag) => tag.trim()).filter(Boolean);
+
+  const details = [
+    artist,
+    tone ? `Tom ${tone}` : null,
+    capo > 0 ? `Capo ${capo}` : null,
+    collection ? `Coleção: ${collection}` : null,
+    tags.length > 0 ? `Tags: ${tags.join(", ")}` : null,
+    bpm > 0 ? `${bpm} BPM` : null,
+  ].filter((detail): detail is string => Boolean(detail));
 
   return (
     <div className="flex items-start gap-2.5">
@@ -53,11 +73,11 @@ function SongChordsHeader({
         <h2 className="truncate font-heading text-base font-bold tracking-tight text-foreground">
           {song.title}
         </h2>
-        <p className="truncate text-xs text-muted-foreground">
-          {song.artist?.trim() || "Artista não informado"}
-          {tone ? ` · Tom ${tone}` : ""}
-          {capo > 0 ? ` · Capo ${capo}` : ""}
-        </p>
+        {details.length > 0 ? (
+          <p className="truncate text-xs text-muted-foreground">
+            {details.join(" · ")}
+          </p>
+        ) : null}
       </div>
       <Button
         type="button"
@@ -74,6 +94,28 @@ function SongChordsHeader({
   );
 }
 
+function ViewerEmptyState({
+  icon: Icon,
+  title,
+  description,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed px-4 py-10 text-center">
+      <span className="flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground">
+        <Icon className="size-5" aria-hidden />
+      </span>
+      <p className="text-sm font-medium">{title}</p>
+      <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
+        {description}
+      </p>
+    </div>
+  );
+}
+
 export function SongChordsSheet({
   song,
   open,
@@ -84,29 +126,66 @@ export function SongChordsSheet({
   if (!song) return null;
 
   const hasChords = Boolean(song.chords?.trim());
+  const hasLyrics = Boolean(song.lyrics?.trim());
 
-  const content = hasChords ? (
-    <ChordsViewer
-      chords={song.chords ?? ""}
-      originalTone={song.tone}
-      capo={song.capo ?? 0}
-      songTitle={song.title}
-      songArtist={song.artist ?? undefined}
-      hideFullscreenButton
-    />
-  ) : (
-    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed px-4 py-10 text-center">
-      <span className="flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        <Music2Icon className="size-5" aria-hidden />
-      </span>
-      <p className="text-sm font-medium">
-        Cifra não cadastrada para esta música
-      </p>
-      <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-        A liderança ainda não adicionou os acordes desta música ao repertório.
-      </p>
-    </div>
-  );
+  const content =
+    hasChords || hasLyrics ? (
+      <Tabs defaultValue="cifra" className="w-full min-w-0 gap-3">
+        <TabsList className="h-11 w-full max-w-full justify-start overflow-x-auto scrollbar-none sm:w-fit">
+          <TabsTrigger
+            value="cifra"
+            className="min-h-9 shrink-0 gap-1.5 px-3 text-xs sm:text-sm"
+          >
+            <FileMusicIcon className="size-4 shrink-0" aria-hidden />
+            Cifra
+          </TabsTrigger>
+          <TabsTrigger
+            value="letra"
+            className="min-h-9 shrink-0 gap-1.5 px-3 text-xs sm:text-sm"
+          >
+            <FileTextIcon className="size-4 shrink-0" aria-hidden />
+            Letra
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="cifra" className="pt-1">
+          {hasChords ? (
+            <ChordsViewer
+              chords={song.chords ?? ""}
+              originalTone={song.tone}
+              capo={song.capo ?? 0}
+              songTitle={song.title}
+              songArtist={song.artist ?? undefined}
+              hideFullscreenButton
+            />
+          ) : (
+            <ViewerEmptyState
+              icon={FileMusicIcon}
+              title="Cifra não cadastrada para esta música"
+              description="A liderança ainda não adicionou os acordes desta música ao repertório."
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="letra" className="pt-1">
+          {hasLyrics ? (
+            <SongLyricsViewer lyrics={song.lyrics ?? ""} />
+          ) : (
+            <ViewerEmptyState
+              icon={FileTextIcon}
+              title="Letra não cadastrada para esta música"
+              description="A liderança ainda não adicionou a letra desta música ao repertório."
+            />
+          )}
+        </TabsContent>
+      </Tabs>
+    ) : (
+      <ViewerEmptyState
+        icon={Music2Icon}
+        title="Cifra e letra não cadastradas para esta música"
+        description="A liderança ainda não adicionou os acordes ou a letra desta música ao repertório."
+      />
+    );
 
   if (isMobile) {
     return (
@@ -115,7 +194,7 @@ export function SongChordsSheet({
           <DrawerHeader className="shrink-0 border-b border-border/70 bg-background px-4 pt-3 pb-3 !text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
             <DrawerTitle className="sr-only">{song.title}</DrawerTitle>
             <DrawerDescription className="sr-only">
-              Cifra e transposição da música {song.title}.
+              Cifra, letra e transposição da música {song.title}.
             </DrawerDescription>
             <SongChordsHeader
               song={song}
@@ -144,7 +223,7 @@ export function SongChordsSheet({
         <SheetHeader className="shrink-0 border-b border-border/70 px-6 py-4 text-left">
           <SheetTitle className="sr-only">{song.title}</SheetTitle>
           <SheetDescription className="sr-only">
-            Cifra e transposição da música {song.title}.
+            Cifra, letra e transposição da música {song.title}.
           </SheetDescription>
           <SongChordsHeader song={song} onClose={() => onOpenChange(false)} />
         </SheetHeader>
