@@ -90,7 +90,6 @@ async function DepartmentContent({
 
   const { department } = access;
   const leaders = department.members.filter((member) => member.isLeader);
-  const activeModuleCount = department.modules?.length ?? 0;
   const assignedIds = new Set(
     department.members.map((member) => member.personId),
   );
@@ -249,14 +248,7 @@ async function DepartmentContent({
 
       <Tabs defaultValue="team" className="min-w-0 gap-5">
         <DepartmentSectionTabs
-          membersCount={department.members.length}
-          functionsCount={department.functions.length}
-          activeModuleCount={activeModuleCount}
-          rehearsalsCount={
-            showRehearsalsTab && rehearsalBundle
-              ? rehearsalBundle.rehearsals.length
-              : null
-          }
+          showRehearsals={Boolean(showRehearsalsTab && rehearsalBundle)}
         />
 
         <TabsContent
