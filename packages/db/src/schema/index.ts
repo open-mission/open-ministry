@@ -7,5 +7,6 @@ export * from "./people";
 export * from "./songs";
 export * from "./jobs";
 export * from "./permissions";
+export * from "./rehearsals";
 export * from "./tasks";
 

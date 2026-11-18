@@ -1,10 +1,11 @@
-export const EVENT_KINDS = ["service", "event"] as const;
+export const EVENT_KINDS = ["service", "event", "rehearsal"] as const;
 
 export type EventKind = (typeof EVENT_KINDS)[number];
 
 export const eventKindLabels: Record<EventKind, string> = {
   service: "Culto",
   event: "Evento",
+  rehearsal: "Ensaio",
 };
 
 export const RECURRENCE_OPTIONS = [

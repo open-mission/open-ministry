@@ -56,6 +56,13 @@ export const DEFAULT_PERMISSION_POLICY: FullPermissionPolicy = {
       update: true,
       delete: true,
     },
+    rehearsals: {
+      read: true,
+      createRehearsal: true,
+      updateRehearsal: true,
+      deleteRehearsal: true,
+      manageAlerts: true,
+    },
   },
   leader: {
     agenda: {
@@ -92,6 +99,13 @@ export const DEFAULT_PERMISSION_POLICY: FullPermissionPolicy = {
       update: true,
       delete: true,
     },
+    rehearsals: {
+      read: true,
+      createRehearsal: true,
+      updateRehearsal: true,
+      deleteRehearsal: true,
+      manageAlerts: true,
+    },
   },
   member: {
     agenda: {
@@ -127,6 +141,13 @@ export const DEFAULT_PERMISSION_POLICY: FullPermissionPolicy = {
       createOrganization: false,
       update: true,
       delete: true,
+    },
+    rehearsals: {
+      read: true,
+      createRehearsal: false,
+      updateRehearsal: false,
+      deleteRehearsal: false,
+      manageAlerts: false,
     },
   },
 };

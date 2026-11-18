@@ -116,7 +116,12 @@ export type NotificationJob = {
   whatsappLogId?: string;
   batchId?: string;
   organizationId: string;
-  type: "welcome" | "assignment" | "announcement" | "monthly_availability";
+  type:
+    | "welcome"
+    | "assignment"
+    | "announcement"
+    | "monthly_availability"
+    | "rehearsal_reminder";
   recipientPhone?: string | null;
   recipientName?: string;
   userId?: string | null;
@@ -163,4 +168,81 @@ export async function enqueueNotificationJob(
   }
 
   return { enqueued: false };
+}
+
+/**
+ * Limite conservador para agendamentos no QStash. Lembretes mais distantes
+ * ficam pendentes no banco e são processados pelo job de varredura.
+ */
+const MAX_QSTASH_SCHEDULE_MS = 7 * 24 * 60 * 60 * 1000;
+
+function resolveAppBaseUrl(): string | null {
+  return (
+    process.env.APP_BASE_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.BETTER_AUTH_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+  );
+}
+
+/**
+ * Agenda um lembrete de ensaio no QStash. Retorna o messageId quando o
+ * agendamento foi aceito; `null` quando o QStash não está configurado, o
+ * lembrete está distante demais ou houve falha (o job de varredura cobre).
+ */
+export async function scheduleRehearsalReminderJob(input: {
+  reminderId: string;
+  organizationId: string;
+  deliverAt: Date;
+  dedupeKey: string;
+}): Promise<string | null> {
+  const qstash = getQStashClient();
+  const appBaseUrl = resolveAppBaseUrl();
+
+  if (!qstash || !appBaseUrl) {
+    return null;
+  }
+
+  const delayMs = input.deliverAt.getTime() - Date.now();
+  if (delayMs > MAX_QSTASH_SCHEDULE_MS) {
+    return null;
+  }
+
+  try {
+    const result = await qstash.publishJSON({
+      url: `${appBaseUrl.replace(/\/+$/, "")}/api/jobs/rehearsal-reminders`,
+      body: {
+        reminderId: input.reminderId,
+        organizationId: input.organizationId,
+      },
+      notBefore: Math.floor(input.deliverAt.getTime() / 1000),
+      deduplicationId: input.dedupeKey,
+      retries: 3,
+    });
+
+    return result.messageId ?? null;
+  } catch (error) {
+    console.warn("Falha ao agendar lembrete de ensaio no QStash:", error);
+    return null;
+  }
+}
+
+/**
+ * Cancela uma mensagem agendada no QStash de forma best-effort.
+ */
+export async function cancelScheduledQStashMessage(
+  messageId: string,
+): Promise<boolean> {
+  const qstash = getQStashClient();
+  if (!qstash || !messageId) {
+    return false;
+  }
+
+  try {
+    await qstash.messages.cancel(messageId);
+    return true;
+  } catch (error) {
+    console.warn("Falha ao cancelar mensagem agendada no QStash:", error);
+    return false;
+  }
 }

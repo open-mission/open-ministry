@@ -246,6 +246,13 @@
       "when": 1794545423346,
       "tag": "0034_lazy_mentor",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1794968798862,
+      "tag": "0035_gorgeous_lizard",
+      "breakpoints": true
     }
   ]
 }

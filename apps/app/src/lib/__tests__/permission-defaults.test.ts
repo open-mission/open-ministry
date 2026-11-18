@@ -13,7 +13,7 @@ describe("Permission and Module Provisioning Defaults", () => {
     const orgId = "org-test-123";
     const rows = buildOrganizationModuleRows(orgId);
 
-    expect(rows).toHaveLength(5);
+    expect(rows).toHaveLength(6);
     const keys = rows.map((r) => r.moduleKey);
     expect(keys.sort()).toEqual([...MODULE_KEYS].sort());
 
@@ -39,8 +39,9 @@ describe("Permission and Module Provisioning Defaults", () => {
       "tasks",
     ]);
 
-    // Music must NEVER appear in the default department seed
+    // Music and rehearsals must NEVER appear in the default department seed
     expect(keys).not.toContain("music");
+    expect(keys).not.toContain("rehearsals");
 
     for (const row of rows) {
       expect(row.departmentId).toBe(deptId);
@@ -58,6 +59,7 @@ describe("Permission and Module Provisioning Defaults", () => {
       "music",
       "announcements",
       "tasks",
+      "rehearsals",
     ]);
     for (const row of orgRows) {
       expect(knownKeys.has(row.moduleKey)).toBe(true);
@@ -67,6 +69,7 @@ describe("Permission and Module Provisioning Defaults", () => {
     for (const row of deptRows) {
       expect(knownKeys.has(row.moduleKey)).toBe(true);
       expect(row.moduleKey).not.toBe("music");
+      expect(row.moduleKey).not.toBe("rehearsals");
     }
   });
 });

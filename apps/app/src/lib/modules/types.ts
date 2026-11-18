@@ -6,7 +6,8 @@ export type ModuleKey =
   | "schedules"
   | "music"
   | "announcements"
-  | "tasks";
+  | "tasks"
+  | "rehearsals";
 
 export type SystemModule = {
   key: ModuleKey;
