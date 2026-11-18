@@ -6,6 +6,12 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.3.1] - 2026-11-18
+
+### Corrigido
+- **Navegação de Abas no Mobile (`DepartmentSectionTabs`):** correção de overflow na barra de abas dos departamentos em telas pequenas. Agora os triggers possuem rolagem horizontal suave (`overflow-x-auto`) sem cortar a aba de Ensaios à direita da viewport.
+- **Legendas Autodescritivas nos Badges das Abas:** substituição de números crus sem contexto por rótulos descritivos e com suporte a singular/plural (ex.: `7 pessoas · 5 funções`, `6 recursos` e `0 ensaios`).
+
 ## [1.3.0] - 2026-11-18
 
 ### Adicionado

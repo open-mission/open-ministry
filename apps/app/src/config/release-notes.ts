@@ -31,16 +31,45 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.3.0";
+export const CURRENT_APP_VERSION = "1.3.1";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.3.1",
+    title: "Ajustes de Navegação Mobile e Legendas nos Departamentos",
+    subtitle:
+      "Rolagem horizontal suave nas abas dos departamentos em telas mobile e legendas descritivas nos contadores de membros, funções e ensaios.",
+    releaseDate: "18 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Departamentos & Navegação Mobile",
+        badge: "Usabilidade & UI",
+        features: [
+          {
+            title: "Abas Adaptadas para Telas Pequenas",
+            description:
+              "A barra de abas do departamento agora conta com rolagem horizontal suave no celular, garantindo que a aba de Ensaios e outras abas não fiquem cortadas na tela.",
+            iconName: "SmartphoneIcon",
+            badge: "Mobile",
+          },
+          {
+            title: "Contadores Autodescritivos",
+            description:
+              "Os indicadores das abas agora exibem legendas completas com contagem no singular e plural (ex.: 7 pessoas · 5 funções, 6 recursos, 0 ensaios).",
+            iconName: "UsersIcon",
+            badge: "Acessibilidade",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.3.0",
     title: "Módulo de Ensaios por Departamento",
     subtitle:
       "Planeje ensaios dentro dos departamentos com setlist organizado, vínculo opcional a eventos do calendário e lembretes automáticos para a equipe.",
     releaseDate: "18 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Ensaios por Departamento",

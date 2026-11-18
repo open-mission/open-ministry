@@ -3,19 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import {
-  ArrowLeftIcon,
-  CalendarClockIcon,
-  CrownIcon,
-  LayersIcon,
-  MegaphoneIcon,
-  Settings2Icon,
-  UsersIcon,
-} from "lucide-react";
+import { ArrowLeftIcon, CrownIcon, MegaphoneIcon } from "lucide-react";
 
 import { DeleteDepartmentButton } from "@/components/departments/delete-department-button";
 import { DepartmentModulesSection } from "@/components/departments/department-modules-section";
 import { DepartmentPermissionsSection } from "@/components/departments/department-permissions-section";
+import { DepartmentSectionTabs } from "@/components/departments/department-section-tabs";
 import { EditDepartmentDialog } from "@/components/departments/edit-department-dialog";
 import { FunctionsSection } from "@/components/departments/functions-section";
 import { PeopleSection } from "@/components/departments/people-section";
@@ -23,7 +16,7 @@ import { AnnouncementDialog } from "@/components/notifications/announcement-dial
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { listDepartmentGrantsAction } from "@/app/actions/department-permissions";
 import { RehearsalsTab } from "@/features/rehearsals/components/rehearsals-tab";
 import {
@@ -255,59 +248,16 @@ async function DepartmentContent({
       </header>
 
       <Tabs defaultValue="team" className="min-w-0 gap-5">
-        <TabsList
-          aria-label="Seções do departamento"
-          className="h-auto min-h-11 w-full justify-stretch p-1 sm:h-10 sm:w-fit"
-        >
-          <TabsTrigger
-            value="team"
-            className="h-auto min-h-9 flex-1 gap-1.5 px-2 py-1.5 text-xs leading-tight whitespace-normal sm:h-[calc(100%-2px)] sm:flex-none sm:px-3 sm:text-sm sm:whitespace-nowrap"
-          >
-            <UsersIcon className="size-4 shrink-0" aria-hidden />
-            <span>Equipe &amp; Funções</span>
-            <span
-              aria-label={`${department.members.length} pessoas e ${department.functions.length} funções`}
-              className="inline-flex shrink-0 items-center gap-1 rounded-full bg-background/80 px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground"
-            >
-              <span aria-hidden>
-                {department.members.length}
-                <span className="px-0.5 text-border">·</span>
-                {department.functions.length}
-              </span>
-            </span>
-          </TabsTrigger>
-
-          <TabsTrigger
-            value="settings"
-            className="h-auto min-h-9 flex-1 gap-1.5 px-2 py-1.5 text-xs leading-tight whitespace-normal sm:h-[calc(100%-2px)] sm:flex-none sm:px-3 sm:text-sm sm:whitespace-nowrap"
-          >
-            <Settings2Icon className="size-4 shrink-0" aria-hidden />
-            <span>Configurações &amp; Acesso</span>
-            <span
-              aria-label={`${activeModuleCount} recursos ativos no departamento`}
-              className="inline-flex shrink-0 items-center gap-1 rounded-full bg-background/80 px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground"
-            >
-              <LayersIcon className="size-3" aria-hidden />
-              <span aria-hidden>{activeModuleCount}</span>
-            </span>
-          </TabsTrigger>
-
-          {showRehearsalsTab && rehearsalBundle ? (
-            <TabsTrigger
-              value="rehearsals"
-              className="h-auto min-h-9 flex-1 gap-1.5 px-2 py-1.5 text-xs leading-tight whitespace-normal sm:h-[calc(100%-2px)] sm:flex-none sm:px-3 sm:text-sm sm:whitespace-nowrap"
-            >
-              <CalendarClockIcon className="size-4 shrink-0" aria-hidden />
-              <span>Ensaios</span>
-              <span
-                aria-label={`${rehearsalBundle.rehearsals.length} ensaios`}
-                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-background/80 px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground"
-              >
-                <span aria-hidden>{rehearsalBundle.rehearsals.length}</span>
-              </span>
-            </TabsTrigger>
-          ) : null}
-        </TabsList>
+        <DepartmentSectionTabs
+          membersCount={department.members.length}
+          functionsCount={department.functions.length}
+          activeModuleCount={activeModuleCount}
+          rehearsalsCount={
+            showRehearsalsTab && rehearsalBundle
+              ? rehearsalBundle.rehearsals.length
+              : null
+          }
+        />
 
         <TabsContent
           value="team"
