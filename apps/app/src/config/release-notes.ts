@@ -31,16 +31,38 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.3.1";
+export const CURRENT_APP_VERSION = "1.3.2";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.3.2",
+    title: "Abas de Departamento Mais Limpas no Mobile",
+    subtitle:
+      "Barra de navegação dos departamentos simplificada apenas com ícone e rótulo para economizar espaço na tela.",
+    releaseDate: "18 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Departamentos & Navegação Mobile",
+        badge: "Usabilidade & UI",
+        features: [
+          {
+            title: "Navegação Sem Badges Redundantes",
+            description:
+              "As abas do departamento agora exibem apenas ícone e nome (Equipe & Funções, Configurações & Acesso e Ensaios), ganhando espaço horizontal no celular enquanto as contagens seguem visíveis na lista e dentro de cada aba.",
+            iconName: "SmartphoneIcon",
+            badge: "Mobile",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.3.1",
     title: "Ajustes de Navegação Mobile e Legendas nos Departamentos",
     subtitle:
       "Rolagem horizontal suave nas abas dos departamentos em telas mobile e legendas descritivas nos contadores de membros, funções e ensaios.",
     releaseDate: "18 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Departamentos & Navegação Mobile",
