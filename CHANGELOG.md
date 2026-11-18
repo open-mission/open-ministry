@@ -6,6 +6,14 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.3.0] - 2026-11-18
+
+### Adicionado
+- **Módulo de Ensaios por Departamento (`rehearsals`):** módulo opt-in ativável por departamento para planejamento de ensaios vinculados a eventos (`event.kind = 'rehearsal'`), com setlist ordenado e regras de permissão RBAC (`rehearsals:read`, `rehearsals:create`, `rehearsals:update`, `rehearsals:delete`, `rehearsals:manage_alerts`).
+- **Schema e Migração Drizzle (`0035_gorgeous_lizard.sql`):** novas tabelas `department_rehearsal_alert`, `rehearsal_reminder` e `rehearsal_song` com políticas RLS e permissões para `app_authenticated`.
+- **Alertas Configuráveis e Lembretes Agendados:** regras padrão de antecedência por departamento (ex.: 2 dias antes às 19:00 e 2 horas antes), agendamento dinâmico via QStash (`notBefore` dentro de 7 dias), endpoint cron de contingência `POST /api/jobs/rehearsal-reminders` e disparo in-app + Push PWA.
+- **Interface de Ensaios no Departamento e Calendário:** aba dedicada no departamento, criação e edição de ensaios (avulsos ou vinculados a evento), seletor de músicas com busca por tom/BPM/tag, badges visuais no calendário (dia, semana, mês e agenda) e painel lateral contextual no evento.
+
 ## [1.2.4] - 2026-11-17
 
 ### Corrigido e Melhorado
