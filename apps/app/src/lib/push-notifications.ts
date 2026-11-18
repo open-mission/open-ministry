@@ -6,22 +6,29 @@ import { sendNotification, setVapidDetails } from "web-push";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { sentryLogger } from "@/lib/telemetry/sentry";
 
 export function getVapidConfig() {
-  const publicKey =
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
-    "BMaaBVPbvftXXNQZjGKkmjReWSqSBsureipQG9fsbk9tpisjZ8lc0ygHlSyhC1AvBwQjhxnsi0A2XFiPDXwpZcM";
-  const privateKey =
-    process.env.VAPID_PRIVATE_KEY ||
-    "NYhbo8J_kHAWM4wnC165HBT5LnFppVe8wOIoyUej5I4";
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() || "";
+  const privateKey = process.env.VAPID_PRIVATE_KEY?.trim() || "";
   const subject =
-    process.env.VAPID_SUBJECT || "mailto:suporte@openministry.app";
+    process.env.VAPID_SUBJECT?.trim() || "mailto:suporte@openministry.app";
 
   return { publicKey, privateKey, subject };
 }
 
-function initWebPush() {
-  const { publicKey, privateKey, subject } = getVapidConfig();
+export function isVapidConfigured(
+  config: {
+    publicKey: string;
+    privateKey: string;
+    subject?: string;
+  } = getVapidConfig(),
+): boolean {
+  return Boolean(config.publicKey && config.privateKey);
+}
+
+function initWebPush(config = getVapidConfig()) {
+  const { publicKey, privateKey, subject } = config;
   setVapidDetails(subject, publicKey, privateKey);
 }
 
@@ -105,7 +112,22 @@ export async function sendWebPushToUser(
   userId: string,
   options: SendPushOptions,
 ): Promise<{ sentCount: number; errors: number }> {
-  initWebPush();
+  const config = getVapidConfig();
+
+  if (!isVapidConfigured(config)) {
+    sentryLogger.error(
+      "Web push não enviado: chaves VAPID não configuradas no servidor",
+      { userId },
+    );
+    console.error(
+      "[push-notifications] Chaves VAPID não configuradas; tentando OneSignal.",
+      { userId },
+    );
+    await maybeSendOneSignal(userId, options);
+    return { sentCount: 0, errors: 1 };
+  }
+
+  initWebPush(config);
 
   const subscriptions = await db.query.pushSubscription.findMany({
     where: eq(schema.pushSubscription.userId, userId),
@@ -149,7 +171,21 @@ export async function sendWebPushToUser(
           .delete(schema.pushSubscription)
           .where(eq(schema.pushSubscription.id, sub.id))
           .catch(() => {});
+        continue;
       }
+
+      // Nunca logar endpoint, p256dh, auth ou chaves privadas: apenas
+      // identificadores internos e o status HTTP da falha.
+      const safeDetails = {
+        userId,
+        subscriptionId: sub.id,
+        statusCode,
+      };
+      console.error(
+        "[push-notifications] Falha ao enviar web push:",
+        safeDetails,
+      );
+      sentryLogger.warn("Falha ao enviar web push", safeDetails);
     }
   }
 

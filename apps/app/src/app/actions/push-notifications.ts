@@ -6,6 +6,7 @@ import {
   countUserPushSubscriptions,
   deletePushSubscription,
   getVapidConfig,
+  isVapidConfigured,
   savePushSubscription,
   sendWebPushToUser,
   type PushSubscriptionInput,
@@ -64,6 +65,13 @@ export async function sendTestPushNotificationAction() {
   const context = await getOrganizationContext();
   if (!context) {
     return { ok: false, error: "Sua sessão expirou." };
+  }
+
+  if (!isVapidConfigured()) {
+    return {
+      ok: false,
+      error: "Chaves VAPID não configuradas no servidor.",
+    };
   }
 
   try {

@@ -14,9 +14,7 @@ import {
 } from "lucide-react";
 
 import {
-  getPushSubscriptionStatusAction,
   removePushSubscriptionAction,
-  savePushSubscriptionAction,
   sendTestPushNotificationAction,
 } from "@/app/actions/push-notifications";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +27,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { urlB64ToUint8Array } from "@/lib/push-client";
+import { getPushStatus, subscribeDeviceToPush } from "@/lib/push-client";
 
 export function NotificationPreferencesCard() {
   const [scheduleAlerts, setScheduleAlerts] = useState(true);
@@ -51,19 +49,35 @@ export function NotificationPreferencesCard() {
         : "default",
   );
   const [isPushSubscribed, setIsPushSubscribed] = useState(false);
+  const [pushDeviceActive, setPushDeviceActive] = useState(false);
+  const [pushServerSubscribed, setPushServerSubscribed] = useState(false);
+  const [pushKeyMismatch, setPushKeyMismatch] = useState(false);
   const [vapidPublicKey, setVapidPublicKey] = useState("");
   const [loadingPush, setLoadingPush] = useState(false);
   const [testingPush, setTestingPush] = useState(false);
 
   useEffect(() => {
-    if (pushSupported) {
-      getPushSubscriptionStatusAction().then((res) => {
-        if (res.ok) {
-          setIsPushSubscribed(res.isSubscribed);
-          setVapidPublicKey(res.publicKey);
-        }
-      });
-    }
+    if (!pushSupported) return;
+
+    let mounted = true;
+
+    getPushStatus().then((status) => {
+      if (!mounted) return;
+      setPushPermission(
+        status.permission === "unsupported" ? "default" : status.permission,
+      );
+      setPushDeviceActive(status.deviceActive);
+      setPushServerSubscribed(status.serverSubscribed);
+      setPushKeyMismatch(status.keyMismatch);
+      setVapidPublicKey(status.vapidPublicKey);
+      setIsPushSubscribed(
+        status.deviceActive && status.serverSubscribed && !status.keyMismatch,
+      );
+    });
+
+    return () => {
+      mounted = false;
+    };
   }, [pushSupported]);
 
   function handleToggle(
@@ -83,40 +97,18 @@ export function NotificationPreferencesCard() {
 
     setLoadingPush(true);
     try {
-      const permission = await Notification.requestPermission();
-      setPushPermission(permission);
+      const res = await subscribeDeviceToPush(vapidPublicKey || undefined);
 
-      if (permission !== "granted") {
-        toast.error("Permissão de notificações não concedida.");
-        return;
-      }
-
-      const registration = await navigator.serviceWorker.ready;
-      let subscription = await registration.pushManager.getSubscription();
-
-      if (!subscription && vapidPublicKey) {
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlB64ToUint8Array(vapidPublicKey),
-        });
-      }
-
-      if (subscription) {
-        const json = subscription.toJSON();
-        const res = await savePushSubscriptionAction({
-          endpoint: subscription.endpoint,
-          keys: {
-            p256dh: json.keys?.p256dh || "",
-            auth: json.keys?.auth || "",
-          },
-        });
-
-        if (res.ok) {
-          setIsPushSubscribed(true);
-          toast.success("Notificações push ativadas com sucesso!");
-        } else {
-          toast.error(res.error || "Erro ao registrar subscrição no servidor.");
-        }
+      if (res.ok) {
+        setPushPermission("granted");
+        setPushDeviceActive(true);
+        setPushServerSubscribed(true);
+        setPushKeyMismatch(false);
+        setIsPushSubscribed(true);
+        toast.success("Notificações push ativadas com sucesso!");
+      } else {
+        setPushPermission(Notification.permission);
+        toast.error(res.error || "Erro ao registrar subscrição no servidor.");
       }
     } catch (err) {
       console.error("Falha ao ativar notificações push:", err);
@@ -212,6 +204,20 @@ export function NotificationPreferencesCard() {
               No iPhone (iOS 16.4+), lembre-se de primeiro adicionar o OpenMinistry
               à Tela de Início via Safari para habilitar o suporte a notificações push nativas.
             </p>
+          </div>
+
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <p>
+              Diagnóstico: dispositivo{" "}
+              {pushDeviceActive ? "registrado" : "não registrado"} • servidor{" "}
+              {pushServerSubscribed ? "registrado" : "não registrado"}
+            </p>
+            {pushKeyMismatch ? (
+              <p className="text-amber-600 dark:text-amber-400">
+                A chave de notificações do servidor mudou. Reative o push neste
+                dispositivo para voltar a receber alertas.
+              </p>
+            ) : null}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
