@@ -8,18 +8,12 @@ import {
 import { DepartmentSectionTabs } from "@/components/departments/department-section-tabs";
 
 type TabsProps = {
-  membersCount?: number;
-  functionsCount?: number;
-  activeModuleCount?: number;
-  rehearsalsCount?: number | null;
+  showRehearsals?: boolean;
 };
 
 function renderTabs(props: TabsProps = {}) {
   return DepartmentSectionTabs({
-    membersCount: 7,
-    functionsCount: 5,
-    activeModuleCount: 6,
-    rehearsalsCount: 0,
+    showRehearsals: true,
     ...props,
   });
 }
@@ -86,12 +80,6 @@ function textOf(node: ReactNode): string {
   }
 
   return "";
-}
-
-function findBadge(tree: ReactNode, labelPattern: RegExp) {
-  return collectElements(tree).find((element) =>
-    labelPattern.test(String(elementProps(element)["aria-label"] ?? "")),
-  );
 }
 
 function expectClasses(className: string, classes: string[]) {
@@ -161,23 +149,25 @@ describe("Department section tabs — mobile layout", () => {
     }
   });
 
-  it("keeps the counters as small, non-shrinking 11px pills", () => {
+  it("renders only an icon and a label in each tab, with no count badges", () => {
     const tree = renderTabs();
+    const triggers = findTriggers(tree);
     const badges = collectElements(tree).filter((element) =>
-      /pessoas|recursos ativos|ensaios/.test(
+      /pessoas|funções|recursos|ensaios/.test(
         String(elementProps(element)["aria-label"] ?? ""),
       ),
     );
 
-    expect(badges).toHaveLength(3);
-    for (const badge of badges) {
-      const className = classNameOf(badge);
-      expectClasses(className, ["shrink-0", "text-[11px]", "tabular-nums"]);
-    }
+    expect(badges).toHaveLength(0);
+    expect(triggers.map((trigger) => textOf(trigger))).toEqual([
+      "Equipe & Funções",
+      "Configurações & Acesso",
+      "Ensaios",
+    ]);
   });
 
   it("hides the rehearsals tab when the department has no rehearsals module", () => {
-    const triggers = findTriggers(renderTabs({ rehearsalsCount: null }));
+    const triggers = findTriggers(renderTabs({ showRehearsals: false }));
 
     expect(triggers).toHaveLength(2);
     expect(
@@ -186,46 +176,3 @@ describe("Department section tabs — mobile layout", () => {
   });
 });
 
-describe("Department section tabs — badge labels", () => {
-  it("spells out members and functions instead of a bare pair of numbers", () => {
-    const tree = renderTabs();
-    const badge = findBadge(tree, /pessoas/);
-
-    expect(badge).toBeDefined();
-    const text = textOf(badge!);
-
-    expect(text).toContain("7 pessoas");
-    expect(text).toContain("5 funções");
-    expect(elementProps(badge!).title).toBe("7 pessoas e 5 funções");
-  });
-
-  it("names the active resources and the rehearsals counts", () => {
-    const tree = renderTabs();
-    const resources = findBadge(tree, /recursos/);
-    const rehearsals = findBadge(tree, /ensaios/);
-
-    expect(resources).toBeDefined();
-    expect(rehearsals).toBeDefined();
-
-    expect(textOf(resources!)).toContain("6 recursos");
-    expect(textOf(rehearsals!)).toContain("0 ensaios");
-    expect(elementProps(resources!).title).toBe(
-      "6 recursos ativos no departamento",
-    );
-    expect(elementProps(rehearsals!).title).toBe("0 ensaios");
-  });
-
-  it("uses the singular when a count is one", () => {
-    const tree = renderTabs({
-      membersCount: 1,
-      functionsCount: 1,
-      activeModuleCount: 1,
-      rehearsalsCount: 1,
-    });
-
-    expect(textOf(findBadge(tree, /pessoas/)!)).toContain("1 pessoa");
-    expect(textOf(findBadge(tree, /pessoas/)!)).toContain("1 função");
-    expect(textOf(findBadge(tree, /recursos/)!)).toContain("1 recurso");
-    expect(textOf(findBadge(tree, /ensaios/)!)).toContain("1 ensaio");
-  });
-});
