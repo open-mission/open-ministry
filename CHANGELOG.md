@@ -6,6 +6,11 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.3.2] - 2026-11-18
+
+### Melhorado
+- **Abas de Departamento Mais Limpas (`DepartmentSectionTabs`):** remoção dos badges de contagem das abas (`Equipe & Funções`, `Configurações & Acesso` e `Ensaios`), mantendo apenas ícone e rótulo para reduzir ruído visual e economizar espaço horizontal no mobile. Os totais continuam visíveis nos cards da lista de departamentos e dentro de cada aba.
+
 ## [1.3.1] - 2026-11-18
 
 ### Corrigido
