@@ -230,7 +230,7 @@ export function CalendarAgendaView({
                             ? "Ver disponibilidade"
                             : item.type === "birthday"
                               ? "Ver membro"
-                              : "Ver culto"}
+                              : "Mais detalhes"}
                           <ExternalLinkIcon className="size-3" />
                         </Link>
                       </Button>
