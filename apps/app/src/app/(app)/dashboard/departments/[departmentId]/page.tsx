@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import {
   ArrowLeftIcon,
+  CalendarClockIcon,
   CrownIcon,
   LayersIcon,
   MegaphoneIcon,
@@ -24,11 +25,20 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listDepartmentGrantsAction } from "@/app/actions/department-permissions";
+import { RehearsalsTab } from "@/features/rehearsals/components/rehearsals-tab";
+import {
+  getOrSeedDepartmentAlertRules,
+  listDepartmentRehearsals,
+} from "@/features/rehearsals/services/rehearsals-service";
 import { getDepartmentAccess } from "@/lib/departments";
 import { getOrganizationEvolutionConfig } from "@/lib/notification-service";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { MODULE_KEYS } from "@/lib/permissions/catalog";
-import { isOrganizationModuleEnabled } from "@/lib/permissions/service";
+import {
+  can,
+  isOrganizationModuleEnabled,
+} from "@/lib/permissions/service";
+import { listSongs } from "@/lib/songs";
 import {
   listPeople,
   personDisplayEmail,
@@ -100,6 +110,51 @@ async function DepartmentContent({
       hasAccount: Boolean(person.userId),
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+
+  // O módulo de ensaios só aparece quando está ativo no departamento e
+  // habilitado para a igreja. A leitura ainda depende da permissão do usuário.
+  const rehearsalsModuleActive = (department.modules ?? []).some(
+    (module) => module.moduleKey === "rehearsals",
+  );
+  const rehearsalsModuleAvailable =
+    rehearsalsModuleActive && Boolean(churchModuleAvailability.rehearsals);
+
+  const [
+    canReadRehearsals,
+    canCreateRehearsal,
+    canUpdateRehearsal,
+    canDeleteRehearsal,
+    canManageRehearsalAlerts,
+  ] = rehearsalsModuleAvailable
+    ? await Promise.all([
+        can("rehearsals", "read", { departmentId: department.id }),
+        can("rehearsals", "createRehearsal", { departmentId: department.id }),
+        can("rehearsals", "updateRehearsal", { departmentId: department.id }),
+        can("rehearsals", "deleteRehearsal", { departmentId: department.id }),
+        can("rehearsals", "manageAlerts", { departmentId: department.id }),
+      ])
+    : [false, false, false, false, false];
+
+  const showRehearsalsTab = rehearsalsModuleAvailable && canReadRehearsals;
+
+  const rehearsalBundle = showRehearsalsTab
+    ? await Promise.all([
+        listDepartmentRehearsals(context.organization.id, department.id),
+        getOrSeedDepartmentAlertRules(context.organization.id, department.id),
+        listSongs(context.organization.id),
+      ]).then(([rehearsals, alertRules, songs]) => ({
+        rehearsals,
+        alertRules,
+        songs: songs.map((song) => ({
+          id: song.id,
+          title: song.title,
+          artist: song.artist,
+          tone: song.tone,
+          collection: song.collection,
+          tags: song.tags,
+        })),
+      }))
+    : null;
 
   return (
     <div className="mx-auto flex w-full max-w-6xl min-w-0 flex-col gap-8">
@@ -236,6 +291,22 @@ async function DepartmentContent({
               <span aria-hidden>{activeModuleCount}</span>
             </span>
           </TabsTrigger>
+
+          {showRehearsalsTab && rehearsalBundle ? (
+            <TabsTrigger
+              value="rehearsals"
+              className="h-auto min-h-9 flex-1 gap-1.5 px-2 py-1.5 text-xs leading-tight whitespace-normal sm:h-[calc(100%-2px)] sm:flex-none sm:px-3 sm:text-sm sm:whitespace-nowrap"
+            >
+              <CalendarClockIcon className="size-4 shrink-0" aria-hidden />
+              <span>Ensaios</span>
+              <span
+                aria-label={`${rehearsalBundle.rehearsals.length} ensaios`}
+                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-background/80 px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+              >
+                <span aria-hidden>{rehearsalBundle.rehearsals.length}</span>
+              </span>
+            </TabsTrigger>
+          ) : null}
         </TabsList>
 
         <TabsContent
@@ -276,6 +347,26 @@ async function DepartmentContent({
             canManage={access.canManage}
           />
         </TabsContent>
+
+        {showRehearsalsTab && rehearsalBundle ? (
+          <TabsContent
+            value="rehearsals"
+            forceMount
+            className="min-w-0 data-[state=inactive]:hidden"
+          >
+            <RehearsalsTab
+              departmentId={department.id}
+              departmentName={department.name}
+              rehearsals={rehearsalBundle.rehearsals}
+              songs={rehearsalBundle.songs}
+              alertRules={rehearsalBundle.alertRules}
+              canCreate={canCreateRehearsal}
+              canUpdate={canUpdateRehearsal}
+              canDelete={canDeleteRehearsal}
+              canManageAlerts={canManageRehearsalAlerts}
+            />
+          </TabsContent>
+        ) : null}
       </Tabs>
     </div>
   );

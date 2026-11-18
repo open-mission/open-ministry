@@ -1,4 +1,4 @@
-import { and, eq, gte } from "drizzle-orm";
+import { and, eq, gte, ne } from "drizzle-orm";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
@@ -53,7 +53,12 @@ export async function listEvents(organizationId: string) {
     60,
     async () => {
       return db.query.event.findMany({
-        where: eq(schema.event.organizationId, organizationId),
+        // Ensaios têm fluxo próprio (aba do departamento) e não entram na
+        // agenda de cultos nem na cobertura de escalas.
+        where: and(
+          eq(schema.event.organizationId, organizationId),
+          ne(schema.event.kind, "rehearsal"),
+        ),
         with: {
           departments: {
             with: {

@@ -17,13 +17,17 @@ import {
 import { getAppBaseUrl } from "@/lib/app-url";
 import { sendWebPushToUser } from "@/lib/push-notifications";
 import { decryptSecret } from "@/lib/secret-crypto";
-import type { MessageTemplateType } from "@/lib/message-templates";
 import { renderOrganizationMessageText } from "@/lib/message-templates-server";
 import { sendTransactionalEmail } from "@/lib/email/service";
 
 export type DispatchNotificationOptions = {
   organizationId: string;
-  type: "welcome" | "assignment" | "announcement" | "monthly_availability";
+  type:
+    | "welcome"
+    | "assignment"
+    | "announcement"
+    | "monthly_availability"
+    | "rehearsal_reminder";
   title: string;
   body?: string | null;
   href?: string | null;
@@ -136,6 +140,34 @@ export function buildWhatsAppMessageText(
         `${body || ""}\n\n` +
         `Para mais informações, acesse:\n${fullLink}`
       );
+
+    case "rehearsal_reminder": {
+      const eventTitle = (metadata?.eventTitle as string) || title;
+      const date = metadata?.eventDate ? `• *Data:* ${metadata.eventDate}\n` : "";
+      const time = metadata?.eventTime
+        ? `• *Horário:* ${metadata.eventTime}\n`
+        : "";
+      const location = metadata?.location
+        ? `• *Local:* ${metadata.location}\n`
+        : "";
+      const songs = Array.isArray(metadata?.songs)
+        ? (metadata.songs as string[]).filter(Boolean)
+        : [];
+      const songsBlock =
+        songs.length > 0
+          ? `\n🎵 *Repertório do ensaio:*\n${songs
+              .map((song, index) => `${index + 1}. ${song}`)
+              .join("\n")}\n`
+          : "";
+
+      return (
+        `🎶 *Lembrete de Ensaio - ${churchName}*\n\n` +
+        `Olá, *${name}*! Este é um lembrete do nosso ensaio:\n\n` +
+        `• *Ensaio:* ${eventTitle}\n${date}${time}${location}${songsBlock}\n` +
+        `${body ? `${body}\n\n` : ""}` +
+        `Acesse o painel para ver todos os detalhes:\n${fullLink}`
+      );
+    }
 
     case "monthly_availability":
       return (
@@ -306,6 +338,45 @@ export async function dispatchNotification(
           },
         });
         emailSent = res.ok;
+      } else if (type === "rehearsal_reminder") {
+        const eventTitle = (metadata?.eventTitle as string) || title;
+        const songs = Array.isArray(metadata?.songs)
+          ? (metadata.songs as string[]).filter(Boolean)
+          : [];
+        const details = [
+          body || "",
+          (metadata?.eventDate as string)
+            ? `Data: ${metadata?.eventDate}`
+            : "",
+          (metadata?.eventTime as string)
+            ? `Horário: ${metadata?.eventTime}`
+            : "",
+          (metadata?.location as string)
+            ? `Local: ${metadata?.location}`
+            : "",
+          songs.length > 0 ? `Repertório: ${songs.join(", ")}` : "",
+        ]
+          .filter(Boolean)
+          .join("\n");
+
+        const res = await sendTransactionalEmail({
+          type: "announcement",
+          to: { email: targetEmail, name: recipientName },
+          organizationId,
+          userId: userId ?? null,
+          personId: personId ?? null,
+          notificationId: options.notificationId ?? null,
+          batchId: options.batchId ?? null,
+          subject: title,
+          data: {
+            name: recipientName,
+            churchName,
+            title: eventTitle,
+            body: details,
+            announcementUrl: fullLink,
+          },
+        });
+        emailSent = res.ok;
       } else if (type === "welcome") {
         const res = await sendTransactionalEmail({
           type: "welcome",
@@ -335,25 +406,9 @@ export async function dispatchNotification(
   );
 
   let messageText = "";
-  try {
-    messageText = await renderOrganizationMessageText({
-      organizationId,
-      type: type as MessageTemplateType,
-      variables: {
-        name: recipientName,
-        church_name: churchName,
-        link: fullLink,
-        event_title: (metadata?.eventTitle as string) || "",
-        function_name: (metadata?.functionName as string) || "",
-        event_date: (metadata?.eventDate as string) || "",
-        event_time: (metadata?.eventTime as string) || "",
-        title,
-        body: body || "",
-        church_phone: evolutionConfig?.instanceName || "",
-        whatsapp_name: evolutionConfig?.instanceName || "",
-      },
-    });
-  } catch {
+  if (type === "rehearsal_reminder") {
+    // Lembretes de ensaio usam o texto dedicado (repertório + detalhes),
+    // sem depender de um modelo configurável pela igreja.
     messageText = buildWhatsAppMessageText(type, {
       name: recipientName,
       churchName,
@@ -362,6 +417,35 @@ export async function dispatchNotification(
       href,
       metadata,
     });
+  } else {
+    try {
+      messageText = await renderOrganizationMessageText({
+        organizationId,
+        type,
+        variables: {
+          name: recipientName,
+          church_name: churchName,
+          link: fullLink,
+          event_title: (metadata?.eventTitle as string) || "",
+          function_name: (metadata?.functionName as string) || "",
+          event_date: (metadata?.eventDate as string) || "",
+          event_time: (metadata?.eventTime as string) || "",
+          title,
+          body: body || "",
+          church_phone: evolutionConfig?.instanceName || "",
+          whatsapp_name: evolutionConfig?.instanceName || "",
+        },
+      });
+    } catch {
+      messageText = buildWhatsAppMessageText(type, {
+        name: recipientName,
+        churchName,
+        title,
+        body,
+        href,
+        metadata,
+      });
+    }
   }
 
   // 4. Create persistent queue log record

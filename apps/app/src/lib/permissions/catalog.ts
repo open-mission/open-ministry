@@ -8,6 +8,7 @@ export const MODULE_KEYS: readonly ModuleKey[] = [
   "music",
   "announcements",
   "tasks",
+  "rehearsals",
 ] as const;
 
 export type PermissionRole = "admin" | "leader" | "member";
@@ -44,6 +45,12 @@ export type ModuleActionMap = {
     | "createOrganization"
     | "update"
     | "delete";
+  rehearsals:
+    | "read"
+    | "createRehearsal"
+    | "updateRehearsal"
+    | "deleteRehearsal"
+    | "manageAlerts";
 };
 
 export type PermissionAction<M extends ModuleKey = ModuleKey> =
@@ -257,6 +264,50 @@ export const PERMISSION_CATALOG: {
         key: "delete",
         label: "Excluir tarefas",
         description: "Permite remover tarefas sob sua responsabilidade ou liderança.",
+        scope: "department",
+        delegable: true,
+      },
+    },
+  },
+  rehearsals: {
+    key: "rehearsals",
+    name: "Ensaios",
+    description:
+      "Agendamento de ensaios, repertório e lembretes automáticos do ministério.",
+    actions: {
+      read: {
+        key: "read",
+        label: "Visualizar ensaios",
+        description: "Permite consultar os ensaios e repertórios do departamento.",
+        scope: "department",
+        delegable: false,
+      },
+      createRehearsal: {
+        key: "createRehearsal",
+        label: "Agendar ensaios",
+        description: "Permite criar novos ensaios para o departamento.",
+        scope: "department",
+        delegable: true,
+      },
+      updateRehearsal: {
+        key: "updateRehearsal",
+        label: "Editar ensaios",
+        description: "Permite alterar data, local e repertório dos ensaios.",
+        scope: "department",
+        delegable: true,
+      },
+      deleteRehearsal: {
+        key: "deleteRehearsal",
+        label: "Excluir ensaios",
+        description: "Permite remover ensaios agendados do departamento.",
+        scope: "department",
+        delegable: true,
+      },
+      manageAlerts: {
+        key: "manageAlerts",
+        label: "Gerenciar lembretes de ensaio",
+        description:
+          "Permite configurar quando e por quais canais a equipe será avisada dos ensaios.",
         scope: "department",
         delegable: true,
       },

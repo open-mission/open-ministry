@@ -11,6 +11,7 @@ import {
   ClockIcon,
   ExternalLinkIcon,
   MapPinIcon,
+  Music2Icon,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -130,6 +131,9 @@ export function CalendarAgendaView({
                 const isTeamUnavailability =
                   item.type === "unavailability" &&
                   item.metadata?.isMine === false;
+                const isRehearsal =
+                  item.metadata?.eventKind === "rehearsal" ||
+                  item.color === "purple";
 
                 return (
                   <div
@@ -139,6 +143,9 @@ export function CalendarAgendaView({
                       item.type === "assignment" && "bg-emerald-500/2",
                       item.type === "unavailability" && "bg-amber-500/2",
                       item.type === "birthday" && "bg-rose-500/2",
+                      item.type === "event" &&
+                        isRehearsal &&
+                        "bg-violet-500/2",
                     )}
                   >
                     <button
@@ -155,10 +162,16 @@ export function CalendarAgendaView({
                               Minha escala
                             </Badge>
                           )}
-                          {item.type === "event" && (
+                          {item.type === "event" && !isRehearsal && (
                             <Badge variant="secondary" className="text-xs">
                               <CalendarDaysIcon className="mr-1 size-3 text-primary" />
                               Culto ou evento
+                            </Badge>
+                          )}
+                          {item.type === "event" && isRehearsal && (
+                            <Badge className="border-violet-500/20 bg-violet-500/10 text-xs text-violet-700 dark:text-violet-300">
+                              <Music2Icon className="mr-1 size-3" />
+                              Ensaio
                             </Badge>
                           )}
                           {item.type === "unavailability" && (

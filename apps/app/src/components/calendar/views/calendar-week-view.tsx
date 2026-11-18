@@ -13,6 +13,7 @@ import {
   CalendarX2Icon,
   CheckCircle2Icon,
   MapPinIcon,
+  Music2Icon,
 } from "lucide-react";
 
 import {
@@ -247,6 +248,9 @@ export function CalendarWeekView({
                     {/* Positioned Events Layer */}
                     {positionedItems.map((position) => {
                       const item = position.item;
+                      const isRehearsal =
+                        item.metadata?.eventKind === "rehearsal" ||
+                        item.color === "purple";
                       return (
                         <button
                           key={item.id}
@@ -263,15 +267,24 @@ export function CalendarWeekView({
                             item.type === "assignment" &&
                               "border border-emerald-500/40 bg-emerald-500/15 text-emerald-950 dark:text-emerald-100",
                             item.type === "event" &&
+                              !isRehearsal &&
                               "border border-primary/30 bg-primary/10 text-primary",
+                            item.type === "event" &&
+                              isRehearsal &&
+                              "border border-violet-500/40 bg-violet-500/15 text-violet-950 dark:text-violet-100",
                             item.type === "unavailability" &&
                               "border border-amber-500/40 bg-amber-500/15 text-amber-950 dark:text-amber-100",
                           )}
-                          title={`${item.title} (${position.startTimeLabel} - ${position.endTimeLabel})`}
+                          title={`${item.title}${
+                            isRehearsal ? " (ensaio)" : ""
+                          } (${position.startTimeLabel} - ${position.endTimeLabel})`}
                         >
                           <div className="flex items-center gap-1 text-xs leading-tight font-semibold">
                             {item.type === "assignment" && (
                               <CheckCircle2Icon className="size-3 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                            )}
+                            {isRehearsal && (
+                              <Music2Icon className="size-3 shrink-0 text-violet-600 dark:text-violet-400" />
                             )}
                             <span className="truncate">{item.title}</span>
                           </div>

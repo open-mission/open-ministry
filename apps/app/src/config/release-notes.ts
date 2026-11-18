@@ -31,16 +31,58 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.2.4";
+export const CURRENT_APP_VERSION = "1.3.0";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.3.0",
+    title: "Módulo de Ensaios por Departamento",
+    subtitle:
+      "Planeje ensaios dentro dos departamentos com setlist organizado, vínculo opcional a eventos do calendário e lembretes automáticos para a equipe.",
+    releaseDate: "18 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Ensaios por Departamento",
+        badge: "Novo Módulo",
+        features: [
+          {
+            title: "Ensaios Opt-in no Departamento",
+            description:
+              "Ative o módulo de Ensaios em cada departamento para gerenciar datas, horários, local e observações sem poluir a agenda geral.",
+            iconName: "CalendarDaysIcon",
+            badge: "Novo",
+          },
+          {
+            title: "Repertório e Setlist do Ensaio",
+            description:
+              "Selecione e ordene as músicas que serão passadas no ensaio com busca por tom, BPM e tags, além de notas por faixa.",
+            iconName: "MusicIcon",
+            badge: "Setlist",
+          },
+          {
+            title: "Alertas Configuráveis e Lembretes Push",
+            description:
+              "Defina regras de antecedência por departamento (ex.: 2 dias antes e 2 horas antes) para avisar automaticamente os membros via notificação no app e Push.",
+            iconName: "BellIcon",
+            badge: "Lembretes",
+          },
+          {
+            title: "Integração com Eventos e Calendário",
+            description:
+              "Vincule ensaios a eventos específicos, acompanhe badges de ensaio nas visões do calendário e acesse permissões granulares por perfil.",
+            iconName: "ShieldCheckIcon",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.2.4",
     title: "Push do PWA Sincronizado e Lembrete Diário do Felicitômetro",
     subtitle:
       "Diagnóstico e re-sincronização automática das notificações push no PWA, junto com o lembrete diário do Felicitômetro às 08:00.",
     releaseDate: "17 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Notificações Push & Felicitômetro",

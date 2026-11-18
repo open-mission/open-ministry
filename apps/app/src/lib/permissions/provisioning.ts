@@ -19,7 +19,8 @@ export type DepartmentModuleSeedRow = {
 
 /**
  * Módulos iniciais comuns ativados por padrão em todos os departamentos.
- * Música ("music") é estritamente opt-in e não deve ser incluída nesta lista.
+ * Música ("music") e Ensaios ("rehearsals") são estritamente opt-in e não
+ * devem ser incluídos nesta lista.
  */
 export const COMMON_DEPARTMENT_MODULES: readonly ModuleKey[] = [
   "agenda",
@@ -43,7 +44,7 @@ export function buildOrganizationModuleRows(
 
 /**
  * Constrói linhas puras de ativação departamental padrão.
- * Contém apenas agenda, schedules e announcements.
+ * Contém apenas agenda, schedules, announcements e tasks.
  */
 export function buildDepartmentModuleRows(
   _organizationId: string,
