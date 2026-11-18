@@ -6,6 +6,12 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.3.3] - 2026-11-18
+
+### Adicionado e Melhorado
+- **Cifra Direta no Ensaio (`SongChordsSheet` / `RehearsalPanel`):** ao clicar em uma música do repertório dentro do painel do ensaio, a cifra abre diretamente em uma gaveta lateral (`Sheet`) no desktop ou em tela cheia (`Drawer` `100dvh`) no mobile, sem nova chamada de API e com mensagem amigável quando a música não possui cifra cadastrada.
+- **Modo Tela Cheia da Cifra Enxuto (`ChordsViewer`):** no modo fullscreen, a barra de controles exibe apenas o essencial (tom, zoom e layout), ocultando os botões de Copiar, Atalhos e Tela cheia para liberar espaço de leitura no celular.
+
 ## [1.3.2] - 2026-11-18
 
 ### Melhorado
