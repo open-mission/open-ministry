@@ -16,6 +16,7 @@ import {
   CalendarDaysIcon,
   CalendarX2Icon,
   CheckCircle2Icon,
+  Music2Icon,
 } from "lucide-react";
 
 import {
@@ -34,11 +35,17 @@ type CalendarMonthViewProps = {
   onSelectItem: (item: CalendarItem) => void;
 };
 
+function isRehearsalItem(item: CalendarItem): boolean {
+  return item.metadata?.eventKind === "rehearsal" || item.color === "purple";
+}
+
 function ItemTypeIcon({
   type,
+  rehearsal = false,
   className,
 }: {
   type: CalendarItem["type"];
+  rehearsal?: boolean;
   className?: string;
 }) {
   if (type === "assignment") {
@@ -58,6 +65,13 @@ function ItemTypeIcon({
   if (type === "birthday") {
     return (
       <CakeIcon className={cn("text-rose-600 dark:text-rose-400", className)} />
+    );
+  }
+  if (rehearsal) {
+    return (
+      <Music2Icon
+        className={cn("text-violet-600 dark:text-violet-400", className)}
+      />
     );
   }
   return (
@@ -188,6 +202,7 @@ export function CalendarMonthView({
                   <ItemTypeIcon
                     key={item.id}
                     type={item.type}
+                    rehearsal={isRehearsalItem(item)}
                     className="size-3"
                   />
                 ))}
@@ -205,6 +220,7 @@ export function CalendarMonthView({
               <div className="hidden flex-1 flex-col gap-1 overflow-hidden pt-1 sm:flex">
                 {visibleItems.map((item) => {
                   const startTime = calendarTimeLabel(item.startsAt, timeZone);
+                  const isRehearsal = isRehearsalItem(item);
 
                   return (
                     <button
@@ -216,18 +232,23 @@ export function CalendarMonthView({
                         item.type === "assignment" &&
                           "border border-emerald-500/30 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300",
                         item.type === "event" &&
+                          !isRehearsal &&
                           "border border-primary/20 bg-primary/10 text-primary",
+                        item.type === "event" &&
+                          isRehearsal &&
+                          "border border-violet-500/30 bg-violet-500/15 text-violet-800 dark:text-violet-300",
                         item.type === "unavailability" &&
                           "border border-amber-500/30 bg-amber-500/15 text-amber-800 dark:text-amber-300",
                         item.type === "birthday" &&
                           "border border-rose-500/30 bg-rose-500/15 text-rose-800 dark:text-rose-300",
                       )}
-                      title={`${item.title} (${
-                        item.allDay ? "Dia todo" : startTime
-                      })`}
+                      title={`${item.title}${
+                        isRehearsal ? " (ensaio)" : ""
+                      } (${item.allDay ? "Dia todo" : startTime})`}
                     >
                       <ItemTypeIcon
                         type={item.type}
+                        rehearsal={isRehearsal}
                         className="size-3.5 shrink-0"
                       />
                       <span className="truncate font-medium">{item.title}</span>

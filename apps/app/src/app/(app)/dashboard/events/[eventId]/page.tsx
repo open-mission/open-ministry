@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import { ArrowLeftIcon, MapPinIcon, RepeatIcon } from "lucide-react";
 
 import { getEventUnavailablePeopleAction } from "@/app/actions/availability";
@@ -11,6 +11,11 @@ import { EventTabs } from "@/components/events/event-tabs";
 import { PlanEditor } from "@/components/events/plan-editor";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RehearsalPanel } from "@/features/rehearsals/components/rehearsal-panel";
+import {
+  getOrSeedDepartmentAlertRules,
+  getRehearsalById,
+} from "@/features/rehearsals/services/rehearsals-service";
 import {
   listDepartmentOptions,
   listDepartmentsByIds,
@@ -25,11 +30,12 @@ import {
   toInputDate,
   toInputTime,
 } from "@/lib/events";
+import type { EventRecord } from "@/lib/events";
 import { eventKindLabels, type EventKind } from "@/lib/event-options";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { listPeopleSummary } from "@/lib/people";
 import { personDisplayImage } from "@/lib/person-format";
-import { can } from "@/lib/permissions/service";
+import { can, canAnyDepartment } from "@/lib/permissions/service";
 import { listSongs } from "@/lib/songs";
 
 export const metadata: Metadata = {
@@ -67,24 +73,85 @@ async function EventContent({
   const { organization, session, isAdmin } =
     await requireOrganizationContext();
 
-  // The event fetch and the access check are independent, and the subsequent
-  // permission checks share the same cached permission bundles.
-  const [hasAccess, event] = await Promise.all([
-    can("agenda", "read"),
-    getEvent(organization.id, eventId),
-  ]);
-
-  if (!hasAccess) {
-    notFound();
-  }
+  const event = await getEvent(organization.id, eventId);
 
   if (!event) {
     notFound();
   }
 
+  const isRehearsal = event.kind === "rehearsal";
   const actingDepartmentIds = event.departments.map(
     (item) => item.departmentId,
   );
+
+  // Ensaios têm permissão própria por departamento e não usam a agenda.
+  const hasAccess = isRehearsal
+    ? await canAnyDepartment("rehearsals", "read", actingDepartmentIds)
+    : await can("agenda", "read");
+
+  if (!hasAccess) {
+    notFound();
+  }
+
+  const parts = eventDateParts(event.startsAt);
+
+  if (isRehearsal) {
+    const rehearsalDepartment = event.departments[0];
+
+    if (!rehearsalDepartment) {
+      notFound();
+    }
+
+    const departmentId = rehearsalDepartment.departmentId;
+    const [
+      rehearsal,
+      songs,
+      alertRules,
+      canUpdateRehearsal,
+      canDeleteRehearsal,
+      canManageAlerts,
+    ] = await Promise.all([
+      getRehearsalById(organization.id, event.id),
+      listSongs(organization.id),
+      getOrSeedDepartmentAlertRules(organization.id, departmentId),
+      can("rehearsals", "updateRehearsal", { departmentId }),
+      can("rehearsals", "deleteRehearsal", { departmentId }),
+      can("rehearsals", "manageAlerts", { departmentId }),
+    ]);
+
+    if (!rehearsal) {
+      notFound();
+    }
+
+    return (
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+        <EventHeader
+          event={event}
+          parts={parts}
+          backHref={`/dashboard/departments/${departmentId}`}
+          backLabel={rehearsalDepartment.department.name}
+        />
+
+        <RehearsalPanel
+          departmentId={departmentId}
+          departmentName={rehearsalDepartment.department.name}
+          rehearsal={rehearsal}
+          songs={songs.map((song) => ({
+            id: song.id,
+            title: song.title,
+            artist: song.artist,
+            tone: song.tone,
+            collection: song.collection,
+            tags: song.tags,
+          }))}
+          alertRules={alertRules}
+          canUpdate={canUpdateRehearsal}
+          canDelete={canDeleteRehearsal}
+          canManageAlerts={canManageAlerts}
+        />
+      </div>
+    );
+  }
 
   const [
     canEditEvent,
@@ -141,21 +208,116 @@ async function EventContent({
     }
     return dept;
   });
-  const parts = eventDateParts(event.startsAt);
   const defaultDuration = Math.round(
     (event.endsAt.getTime() - event.startsAt.getTime()) / 60_000,
   );
   const defaultTab = query.tab === "teams" ? "teams" : "order";
 
+  const actions =
+    canEditEvent || canDeleteEvent ? (
+      <EventActionsMenu
+        event={{
+          id: event.id,
+          title: event.title,
+          description: event.description,
+          kind: event.kind,
+          location: event.location,
+          seriesId: event.seriesId,
+        }}
+        departments={departmentOptions}
+        selectedDepartmentIds={actingDepartmentIds}
+        selectedFunctionIds={(event.functions ?? []).map(
+          (fn) => fn.functionId,
+        )}
+        departmentAssignmentCounts={departmentAssignmentCounts}
+        seriesOccurrences={seriesOccurrences}
+        defaultDate={toInputDate(event.startsAt)}
+        defaultTime={toInputTime(event.startsAt)}
+        defaultDuration={defaultDuration}
+        canEdit={canEditEvent}
+        canDelete={canDeleteEvent}
+      />
+    ) : null;
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+      <EventHeader
+        event={event}
+        parts={parts}
+        backHref="/dashboard/events"
+        backLabel="Cultos e eventos"
+        actions={actions}
+      />
+
+      <EventTabs
+        defaultTab={defaultTab}
+        planItemsCount={event.planItems?.length ?? 0}
+        eventId={event.id}
+        departments={eventActingDepartments}
+        assignments={assignments}
+        currentUserId={session.user.id}
+        isAdmin={isAdmin}
+        unavailablePeopleMap={unavailablePeopleMap}
+        plan={
+          <PlanEditor
+            eventId={event.id}
+            eventTitle={event.title}
+            startsAt={event.startsAt}
+            endsAt={event.endsAt}
+            planItems={event.planItems ?? []}
+            people={people.map((p) => ({
+              id: p.id,
+              name: p.name,
+              avatarUrl: personDisplayImage(p),
+            }))}
+            songs={songs.map((s) => ({
+              id: s.id,
+              title: s.title,
+              artist: s.artist,
+              tone: s.tone,
+              capo: s.capo,
+              collection: s.collection,
+              tags: s.tags,
+              lastEvent: s.usage?.lastEvent
+                ? {
+                    id: s.usage.lastEvent.eventId,
+                    title: s.usage.lastEvent.eventTitle,
+                    startsAt: s.usage.lastEvent.startsAt,
+                  }
+                : null,
+              eventCount: s.usage?.eventCount,
+            }))}
+            canManage={canManagePlan}
+          />
+        }
+      />
+    </div>
+  );
+}
+
+function EventHeader({
+  event,
+  parts,
+  backHref,
+  backLabel,
+  actions,
+}: {
+  event: EventRecord;
+  parts: ReturnType<typeof eventDateParts>;
+  backHref: string;
+  backLabel: string;
+  actions?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-8">
       <div className="hidden sm:block">
         <Link
-          href="/dashboard/events"
+          href={backHref}
+          prefetch={true}
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeftIcon className="size-4" />
-          Cultos e eventos
+          {backLabel}
         </Link>
       </div>
 
@@ -192,30 +354,7 @@ async function EventContent({
                     ) ?? "Série"}
                   </Badge>
                 ) : null}
-                {canEditEvent || canDeleteEvent ? (
-                  <EventActionsMenu
-                    event={{
-                      id: event.id,
-                      title: event.title,
-                      description: event.description,
-                      kind: event.kind,
-                      location: event.location,
-                      seriesId: event.seriesId,
-                    }}
-                    departments={departmentOptions}
-                    selectedDepartmentIds={actingDepartmentIds}
-                    selectedFunctionIds={(event.functions ?? []).map(
-                      (fn) => fn.functionId,
-                    )}
-                    departmentAssignmentCounts={departmentAssignmentCounts}
-                    seriesOccurrences={seriesOccurrences}
-                    defaultDate={toInputDate(event.startsAt)}
-                    defaultTime={toInputTime(event.startsAt)}
-                    defaultDuration={defaultDuration}
-                    canEdit={canEditEvent}
-                    canDelete={canDeleteEvent}
-                  />
-                ) : null}
+                {actions}
               </div>
 
               <p className="text-sm text-muted-foreground">
@@ -261,49 +400,6 @@ async function EventContent({
           </div>
         ) : null}
       </header>
-
-      <EventTabs
-        defaultTab={defaultTab}
-        planItemsCount={event.planItems?.length ?? 0}
-        eventId={event.id}
-        departments={eventActingDepartments}
-        assignments={assignments}
-        currentUserId={session.user.id}
-        isAdmin={isAdmin}
-        unavailablePeopleMap={unavailablePeopleMap}
-        plan={
-          <PlanEditor
-            eventId={event.id}
-            eventTitle={event.title}
-            startsAt={event.startsAt}
-            endsAt={event.endsAt}
-            planItems={event.planItems ?? []}
-            people={people.map((p) => ({
-              id: p.id,
-              name: p.name,
-              avatarUrl: personDisplayImage(p),
-            }))}
-            songs={songs.map((s) => ({
-              id: s.id,
-              title: s.title,
-              artist: s.artist,
-              tone: s.tone,
-              capo: s.capo,
-              collection: s.collection,
-              tags: s.tags,
-              lastEvent: s.usage?.lastEvent
-                ? {
-                    id: s.usage.lastEvent.eventId,
-                    title: s.usage.lastEvent.eventTitle,
-                    startsAt: s.usage.lastEvent.startsAt,
-                  }
-                : null,
-              eventCount: s.usage?.eventCount,
-            }))}
-            canManage={canManagePlan}
-          />
-        }
-      />
     </div>
   );
 }

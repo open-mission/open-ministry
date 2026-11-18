@@ -10,6 +10,7 @@ import {
   CheckCircle2Icon,
   ClockIcon,
   MapPinIcon,
+  Music2Icon,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -256,12 +257,17 @@ export function CalendarDayView({
                 {/* Positioned Events Layer with Exact Duration Heights */}
                 {positionedItems.map((position) => {
                   const item = position.item;
+                  const isRehearsal =
+                    item.metadata?.eventKind === "rehearsal" ||
+                    item.color === "purple";
                   const typeLabel =
                     item.type === "assignment"
                       ? "Minha escala"
                       : item.type === "unavailability"
                         ? "Indisponibilidade"
-                        : "Culto ou evento";
+                        : isRehearsal
+                          ? "Ensaio"
+                          : "Culto ou evento";
 
                   return (
                     <button
@@ -280,7 +286,11 @@ export function CalendarDayView({
                         item.type === "assignment" &&
                           "border-emerald-500/40 bg-emerald-500/10 hover:border-emerald-500/60",
                         item.type === "event" &&
+                          !isRehearsal &&
                           "border-primary/30 bg-primary/5 hover:border-primary/50",
+                        item.type === "event" &&
+                          isRehearsal &&
+                          "border-violet-500/40 bg-violet-500/10 hover:border-violet-500/60",
                         item.type === "unavailability" &&
                           "border-amber-500/40 bg-amber-500/10",
                       )}
@@ -291,6 +301,12 @@ export function CalendarDayView({
                             <Badge className="border-emerald-500/30 bg-emerald-500/15 text-xs text-emerald-800 dark:text-emerald-300">
                               <CheckCircle2Icon className="mr-1 size-3" />
                               Minha Escala
+                            </Badge>
+                          )}
+                          {item.type === "event" && isRehearsal && (
+                            <Badge className="border-violet-500/30 bg-violet-500/15 text-xs text-violet-800 dark:text-violet-300">
+                              <Music2Icon className="mr-1 size-3" />
+                              Ensaio
                             </Badge>
                           )}
                           <h4 className="truncate font-heading text-sm font-semibold text-foreground sm:text-base">
