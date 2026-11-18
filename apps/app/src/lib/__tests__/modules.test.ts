@@ -43,6 +43,31 @@ describe("Modules System Foundation", () => {
     expect(titles).not.toContain("Repertório");
   });
 
+  it("registers the Ensaios navigation entry for the rehearsals module", () => {
+    const rehearsalsMod = getSystemModule("rehearsals");
+    expect(rehearsalsMod).not.toBeNull();
+    expect(rehearsalsMod?.navGroups[0]?.title).toBe("Ensaios");
+    expect(
+      rehearsalsMod?.navGroups.some((group) =>
+        group.items.some(
+          (item) => item.href === "/rehearsals" && item.label === "Ensaios",
+        ),
+      ),
+    ).toBe(true);
+
+    const activeNav = buildAccessibleNavGroups(["rehearsals"]);
+    const activeHrefs = activeNav.flatMap((group) =>
+      group.items.map((item) => item.href),
+    );
+    expect(activeHrefs).toContain("/rehearsals");
+
+    const inactiveNav = buildAccessibleNavGroups([]);
+    const inactiveHrefs = inactiveNav.flatMap((group) =>
+      group.items.map((item) => item.href),
+    );
+    expect(inactiveHrefs).not.toContain("/rehearsals");
+  });
+
   it("injects module nav groups dynamically when module is active", () => {
     const activeNav = buildAccessibleNavGroups([
       "agenda",

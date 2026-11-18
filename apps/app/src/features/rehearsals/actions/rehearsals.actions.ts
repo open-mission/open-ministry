@@ -12,6 +12,10 @@ import {
   saveDepartmentAlertRules,
   updateRehearsal,
 } from "@/features/rehearsals/services/rehearsals-service";
+import {
+  getAccessibleRehearsalDepartments,
+  listAccessibleRehearsals,
+} from "@/features/rehearsals/services/rehearsals-global-service";
 import { getOrganizationContext } from "@/lib/organizations";
 import { can } from "@/lib/permissions/service";
 
@@ -63,6 +67,43 @@ export async function listRehearsalsAction(
       departmentId,
     );
     return { ok: true, data: rehearsals };
+  } catch (error) {
+    return {
+      ok: false,
+      error: toErrorMessage(error, "Não foi possível carregar os ensaios."),
+    };
+  }
+}
+
+export async function listAllRehearsalsAction(
+  departmentId?: string,
+): Promise<
+  ActionResult<{
+    rehearsals: Awaited<ReturnType<typeof listAccessibleRehearsals>>;
+    departments: Awaited<
+      ReturnType<typeof getAccessibleRehearsalDepartments>
+    >;
+  }>
+> {
+  try {
+    const context = await getContext();
+    const allowed = await can("rehearsals", "read");
+    if (!allowed) return permissionError("visualizar os ensaios");
+
+    const departments = await getAccessibleRehearsalDepartments(
+      context.organization.id,
+    );
+
+    if (departmentId && !departments.some((item) => item.id === departmentId)) {
+      return permissionError("visualizar os ensaios");
+    }
+
+    const rehearsals = await listAccessibleRehearsals(
+      context.organization.id,
+      departmentId ? [departmentId] : departments.map((item) => item.id),
+    );
+
+    return { ok: true, data: { rehearsals, departments } };
   } catch (error) {
     return {
       ok: false,

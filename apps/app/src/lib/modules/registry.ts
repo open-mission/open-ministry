@@ -95,7 +95,19 @@ export const SYSTEM_MODULES: Record<ModuleKey, SystemModule> = {
       "Agende ensaios do ministério, monte o repertório de cada encontro e configure lembretes automáticos para a equipe.",
     badge: "Ensaios",
     icon: Music4Icon,
-    navGroups: [],
+    navGroups: [
+      {
+        title: "Ensaios",
+        items: [
+          {
+            href: "/rehearsals",
+            label: "Ensaios",
+            icon: Music4Icon,
+            exact: false,
+          },
+        ],
+      },
+    ],
     routePrefixes: ["/rehearsals", "/dashboard/rehearsals"],
   },
 };

@@ -65,6 +65,11 @@ const nextConfig: NextConfig = {
       { source: "/announcements/:path+", destination: "/dashboard/announcements/:path+" },
       { source: "/songs", destination: "/dashboard/songs" },
       { source: "/songs/:path+", destination: "/dashboard/songs/:path+" },
+      { source: "/rehearsals", destination: "/dashboard/rehearsals" },
+      {
+        source: "/rehearsals/:path+",
+        destination: "/dashboard/rehearsals/:path+",
+      },
       { source: "/whatsapp", destination: "/dashboard/whatsapp" },
       { source: "/whatsapp/:path+", destination: "/dashboard/whatsapp/:path+" },
       { source: "/emails", destination: "/dashboard/emails" },
