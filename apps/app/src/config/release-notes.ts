@@ -31,16 +31,44 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.2.3";
+export const CURRENT_APP_VERSION = "1.2.4";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.2.4",
+    title: "Push do PWA Sincronizado e Lembrete Diário do Felicitômetro",
+    subtitle:
+      "Diagnóstico e re-sincronização automática das notificações push no PWA, junto com o lembrete diário do Felicitômetro às 08:00.",
+    releaseDate: "17 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Notificações Push & Felicitômetro",
+        badge: "PWA & Lembretes",
+        features: [
+          {
+            title: "Diagnóstico e Sincronização Automática no PWA",
+            description:
+              "Diagnóstico de notificações push nas configurações e re-sincronização automática do aparelho com o servidor quando a chave de envio mudar ou a inscrição se perder.",
+            iconName: "BellIcon",
+            badge: "Push",
+          },
+          {
+            title: "Lembrete Diário do Felicitômetro às 08:00",
+            description:
+              "Aviso no app para ativar o lembrete diário das 08:00 do Felicitômetro no PWA e envio diário ajustado ao horário de Brasília sem repetições.",
+            iconName: "HeartHandshakeIcon",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.2.3",
     title: "Login Mais Seguro e Conta Protegida",
     subtitle:
       "Melhorias na proteção do acesso à sua conta, com reconhecimento mais preciso do aparelho e do navegador usados no login.",
     releaseDate: "16 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Segurança & Autenticação",

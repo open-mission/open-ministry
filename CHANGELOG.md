@@ -6,6 +6,15 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.2.4] - 2026-11-17
+
+### Corrigido e Melhorado
+- **Notificações Push (PWA) & Felicitômetro Diário**:
+  - **Reconciliação Dispositivo ↔ Servidor**: `push-client.ts` passa a verificar e manter sincronizada a inscrição no navegador e no servidor, detecta troca de chave VAPID e re-subscreve automaticamente; `pwa-notification-prompt.tsx` e `notification-preferences-card.tsx` exibem diagnóstico claro e só ocultam o prompt quando ambos os lados estão ativos.
+  - **Agendamento Diário (08:00 BRT) e Fuso Horário**: Correção do cálculo de data do Felicitômetro (`formatDateStringInSaoPaulo` em `America/Sao_Paulo`), deduplicação diária por usuário/organização via Redis (`TTL 24h`) e envio em lotes no endpoint `/api/jobs/felicitometro-prompt`, com schedule diário às `08:00` BRT no Upstash QStash.
+  - **Segurança VAPID e Observabilidade**: Remoção das chaves VAPID fixas do código em `push-notifications.ts` (exigindo variáveis de ambiente), restrição de administrador em `sendFelicitometroPromptAction`, logs seguros no Sentry e repasse de `CRON_SECRET`, `APP_BASE_URL`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` e `NEXT_PUBLIC_ONESIGNAL_APP_ID` no `turbo.json`.
+  - **Testes**: Adicionadas as suítes `push-client.test.ts` (8 testes) e `felicitometro-push.test.ts` (8 testes).
+
 ## [1.2.3] - 2026-11-16
 
 ### Corrigido e Melhorado
