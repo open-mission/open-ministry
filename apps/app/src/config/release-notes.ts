@@ -31,16 +31,92 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.4.0";
+export const CURRENT_APP_VERSION = "1.5.0";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.5.0",
+    title: "Notas por Seção, Formação da Banda e E-mail de Ensaio Repaginado",
+    subtitle:
+      "Anote cada trecho da música por departamento, monte a formação da banda e receba lembretes de ensaio com o repertório organizado e o logo da sua igreja.",
+    releaseDate: "19 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Músicas & Repertório",
+        badge: "Novidade",
+        features: [
+          {
+            title: "Notas por Seção na Cifra e na Letra",
+            description:
+              "Adicione observações em cada parte da música (introdução, verso, refrão) por departamento. As notas aparecem junto da cifra e da letra e continuam no lugar certo mesmo ao transpor ou editar a música.",
+            iconName: "MusicIcon",
+            badge: "Notas",
+          },
+          {
+            title: "Formação da Banda por Departamento",
+            description:
+              "Marque quais funções do departamento a música pede e escolha o departamento direto no painel da música, no formulário e dentro do ensaio.",
+            iconName: "UsersIcon",
+            badge: "Banda",
+          },
+        ],
+      },
+      {
+        moduleName: "E-mails & Ensaios",
+        badge: "Melhorias",
+        features: [
+          {
+            title: "Lembrete de Ensaio com Repertório Organizado",
+            description:
+              "O e-mail de lembrete de ensaio agora tem modelo próprio: data, horário e local em linhas separadas e o repertório em lista numerada, uma música por linha.",
+            iconName: "BellIcon",
+            badge: "E-mail",
+          },
+          {
+            title: "Logo da Igreja nos E-mails",
+            description:
+              "Quando a igreja tem logo cadastrado, ele aparece no cabeçalho dos e-mails. Sem logo, permanece o selo do OpenMinistry.",
+            iconName: "SparklesIcon",
+            badge: "Marca",
+          },
+          {
+            title: "Todos os Modelos em E-mails",
+            description:
+              "A tela de e-mails lista todos os modelos disponíveis, incluindo o Lembrete de Ensaio, com filtro no histórico e envio de teste.",
+            iconName: "CheckSquare2Icon",
+            badge: "Modelos",
+          },
+        ],
+      },
+      {
+        moduleName: "Correções",
+        badge: "Estabilidade",
+        features: [
+          {
+            title: "Upload de Imagens Funcionando",
+            description:
+              "A política de segurança do app bloqueava o envio direto ao serviço de arquivos. Logo da igreja, cifras e avatares voltam a subir, com mensagem clara em português quando a rede falhar.",
+            iconName: "ShieldCheckIcon",
+            badge: "Upload",
+          },
+          {
+            title: "Lembretes de Ensaio Agendados de Verdade",
+            description:
+              "Correção no agendamento dos lembretes, que podiam ficar pendentes por causa do identificador de deduplicação recusado pelo serviço de filas.",
+            iconName: "CalendarDaysIcon",
+            badge: "Ensaios",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.4.0",
     title: "Visão Global de Ensaios, Detalhes no Repertório e Correção Mobile",
     subtitle:
       "Acesso direto a todos os ensaios pelo menu, detalhes completos com Cifra e Letra dentro do ensaio, remoção rápida de músicas e ajustes de navegação no celular.",
     releaseDate: "18 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Ensaios & Repertório",

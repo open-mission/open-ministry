@@ -6,6 +6,21 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.5.0] - 2026-11-19
+
+### Adicionado e Melhorado
+- **Notas por Seção na Cifra e na Letra (`Notas & Banda`):** cada seção da música (introdução, verso, refrão…) agora aceita observações por departamento, exibidas junto da cifra e da letra. A chave da seção é estável (com ocorrência para repetições, ex.: `refrao#1`, `refrao#2`), então a nota não "escorrega" ao transpor ou editar a música. A edição aparece apenas para quem tem permissão de atualizar música e fica desabilitada no modo palco.
+- **Formação da Banda por Departamento:** nova aba no formulário da música para marcar quais funções do departamento (guitarra, vocal, bateria…) a música pede. O seletor de departamento também aparece no painel rápido e no painel da música dentro do ensaio, deixando claro de qual departamento são as notas e funções.
+- **Lembrete de Ensaio com E-mail Próprio (`RehearsalReminderEmail`):** o e-mail deixou de reaproveitar o modelo de aviso. Agora traz cabeçalho "Lembrete de Ensaio", data, horário e local em linhas separadas e o repertório como lista numerada, uma música por linha.
+- **Logo da Igreja nos E-mails (`BaseEmailLayout`):** quando a igreja tem logo cadastrado, ele aparece no cabeçalho; sem logo, permanece o selo do OpenMinistry. O logo é carregado automaticamente em todos os e-mails transacionais da igreja.
+- **Catálogo Completo em `/dashboard/emails`:** a tela passa a listar todos os modelos servidos pelo backend, incluindo o **Lembrete de Ensaio**, com card próprio, filtro de histórico e envio de teste.
+
+### Corrigido
+- **Falha no Upload de Imagens ("Something went wrong"):** a política de segurança (CSP) liberava apenas o próprio domínio em `connect-src`, bloqueando o envio direto do navegador ao UploadThing. Os hosts `*.ingest.uploadthing.com`, `*.uploadthing.com`, `*.ufs.sh` e `utfs.io` foram liberados, sem abrir `https:` genérico. Vale para o logo da igreja, cifras e avatares.
+- **Mensagem de Erro no Upload:** falhas de rede deixam de exibir o texto cru em inglês do UploadThing e passam a orientar o usuário em português; o erro original continua no console.
+- **Agendamento de Lembrete de Ensaio (QStash):** o identificador de deduplicação era rejeitado pelo Upstash por conter `:` (`DeduplicationId cannot contain ':'`), deixando lembretes como `pending`. O identificador agora é um hash SHA-256 em hexadecimal.
+- **Dados de Exemplo em E-mails Reais:** o renderizador mesclava dados de demonstração incondicionalmente e podia vazar texto fictício (ex.: nome de autor de exemplo) em e-mails enviados pela igreja. O uso de dados de exemplo agora é explícito.
+
 ## [1.4.0] - 2026-11-18
 
 ### Adicionado e Melhorado
