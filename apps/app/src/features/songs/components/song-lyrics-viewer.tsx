@@ -10,6 +10,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import type { SongSectionNoteMap } from "@/features/songs/lib/song-arrangements";
 import { parseSongSections } from "@/lib/music/chords-utils";
 import {
   LYRICS_FONT_SIZE_KEY,
@@ -22,9 +23,12 @@ import {
 } from "@/lib/music/viewer-preferences";
 import { cn } from "@/lib/utils";
 import { SectionBadge } from "./section-badge";
+import { SectionNoteStrip } from "./section-note-strip";
 
 type SongLyricsViewerProps = {
   lyrics: string;
+  /** Notas por seção, chaveadas por `SongSection.key` (ex.: `refrao#1`). */
+  sectionNotes?: SongSectionNoteMap;
 };
 
 const LYRICS_FONT_CLASS: Record<ViewerFontSize, string> = {
@@ -42,7 +46,10 @@ const LYRICS_FONT_PREVIEW_CLASS: Record<ViewerFontSize, string> = {
   xl: "text-lg",
 };
 
-export function SongLyricsViewer({ lyrics }: SongLyricsViewerProps) {
+export function SongLyricsViewer({
+  lyrics,
+  sectionNotes,
+}: SongLyricsViewerProps) {
   const [copied, setCopied] = useState(false);
   const [fontSize, setFontSize] = useState<ViewerFontSize>("base");
 
@@ -183,6 +190,15 @@ export function SongLyricsViewer({ lyrics }: SongLyricsViewerProps) {
             <CardHeader className="flex flex-row items-center justify-between border-b border-border/50 bg-muted/15 px-3.5 py-1.5 sm:px-4 sm:py-2">
               <SectionBadge type={section.type} name={section.name} />
             </CardHeader>
+            {sectionNotes?.[section.key] ? (
+              <div className="border-b border-border/50 bg-primary/[0.03] px-3.5 py-1.5 sm:px-4">
+                <SectionNoteStrip
+                  note={sectionNotes[section.key]}
+                  sectionKey={section.key}
+                  sectionName={section.name}
+                />
+              </div>
+            ) : null}
             <CardContent className="px-3.5 py-2.5 sm:px-4 sm:py-3.5">
               <div
                 className={cn(

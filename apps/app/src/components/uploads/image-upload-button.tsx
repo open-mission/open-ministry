@@ -29,8 +29,21 @@ export function ImageUploadButton({
       }
     },
     onUploadError: (error) => {
+      // O UploadThing devolve mensagens cruas em inglês (ex.: "Something went
+      // wrong... FetchError") quando a checagem HEAD de deduplicação falha —
+      // comum em redes locais, bloqueadores ou instabilidade com o ingest.
+      // Mantemos o erro original no console para diagnóstico, mas mostramos
+      // ao usuário uma mensagem clara e acionável.
+      console.error("[ImageUploadButton] Falha no upload:", error);
+
+      const raw = error.message || "";
+      const isNetworkFailure =
+        /fetch|network|failed to fetch|something went wrong/i.test(raw);
+
       toast.error(
-        error.message || "Não foi possível enviar a imagem.",
+        isNetworkFailure
+          ? "Não foi possível enviar a imagem. Verifique sua conexão e tente novamente."
+          : raw || "Não foi possível enviar a imagem.",
       );
     },
   });

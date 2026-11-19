@@ -221,6 +221,7 @@ export function SongDetailHeaderActions({
           open={editOpen}
           onOpenChange={setEditOpen}
           songId={song.id}
+          canUpdate={canUpdate}
           initialData={{
             title: song.title,
             artist: song.artist ?? "",

@@ -5,6 +5,7 @@ import {
   Head,
   Hr,
   Html,
+  Img,
   Preview,
   Section,
   Text,
@@ -13,6 +14,7 @@ import {
 export type BaseEmailLayoutProps = {
   previewText?: string;
   churchName?: string;
+  churchLogo?: string | null;
   children: React.ReactNode;
   footerText?: string;
 };
@@ -20,10 +22,12 @@ export type BaseEmailLayoutProps = {
 export function BaseEmailLayout({
   previewText,
   churchName,
+  churchLogo,
   children,
   footerText,
 }: BaseEmailLayoutProps) {
   const brandTitle = churchName ? `${churchName} · OpenMinistry` : "OpenMinistry";
+  const logoUrl = churchLogo?.trim();
 
   return (
     <Html lang="pt-BR">
@@ -37,9 +41,17 @@ export function BaseEmailLayout({
               <tbody>
                 <tr>
                   <td>
-                    <div style={logoBadge}>
-                      <span style={logoBadgeText}>OM</span>
-                    </div>
+                    {logoUrl ? (
+                      <Img
+                        src={logoUrl}
+                        alt={churchName ? `Logo da ${churchName}` : "Logo da igreja"}
+                        style={churchLogoImage}
+                      />
+                    ) : (
+                      <div style={logoBadge}>
+                        <span style={logoBadgeText}>OM</span>
+                      </div>
+                    )}
                   </td>
                   <td style={{ textAlign: "right" as const }}>
                     <Text style={headerBrandText}>{brandTitle}</Text>
@@ -109,6 +121,14 @@ const logoBadgeText = {
   fontWeight: "bold" as const,
   fontSize: "14px",
   letterSpacing: "-0.5px",
+};
+
+const churchLogoImage = {
+  maxHeight: "36px",
+  maxWidth: "120px",
+  objectFit: "contain" as const,
+  borderRadius: "8px",
+  display: "block",
 };
 
 const headerBrandText = {

@@ -252,7 +252,7 @@ export async function dispatchNotification(
   // 2. Fetch Church Organization details
   const church = await db.query.organization.findFirst({
     where: eq(schema.organization.id, organizationId),
-    columns: { name: true },
+    columns: { name: true, logo: true },
   });
   const churchName = church?.name || metadata?.churchName || "Sua Igreja";
 
@@ -309,6 +309,7 @@ export async function dispatchNotification(
           data: {
             name: recipientName,
             churchName,
+            churchLogo: church?.logo ?? null,
             eventTitle: (metadata?.eventTitle as string) || title,
             functionName: (metadata?.functionName as string) || "",
             eventDate: (metadata?.eventDate as string) || "",
@@ -331,6 +332,7 @@ export async function dispatchNotification(
           data: {
             name: recipientName,
             churchName,
+            churchLogo: church?.logo ?? null,
             title,
             body: body || "",
             authorName: (metadata?.authorName as string) || undefined,
@@ -341,26 +343,14 @@ export async function dispatchNotification(
       } else if (type === "rehearsal_reminder") {
         const eventTitle = (metadata?.eventTitle as string) || title;
         const songs = Array.isArray(metadata?.songs)
-          ? (metadata.songs as string[]).filter(Boolean)
+          ? (metadata.songs as unknown[]).filter(
+              (song): song is string =>
+                typeof song === "string" && song.trim().length > 0,
+            )
           : [];
-        const details = [
-          body || "",
-          (metadata?.eventDate as string)
-            ? `Data: ${metadata?.eventDate}`
-            : "",
-          (metadata?.eventTime as string)
-            ? `Horário: ${metadata?.eventTime}`
-            : "",
-          (metadata?.location as string)
-            ? `Local: ${metadata?.location}`
-            : "",
-          songs.length > 0 ? `Repertório: ${songs.join(", ")}` : "",
-        ]
-          .filter(Boolean)
-          .join("\n");
 
         const res = await sendTransactionalEmail({
-          type: "announcement",
+          type: "rehearsal_reminder",
           to: { email: targetEmail, name: recipientName },
           organizationId,
           userId: userId ?? null,
@@ -371,9 +361,14 @@ export async function dispatchNotification(
           data: {
             name: recipientName,
             churchName,
-            title: eventTitle,
-            body: details,
-            announcementUrl: fullLink,
+            churchLogo: church?.logo ?? null,
+            eventTitle,
+            eventDate: (metadata?.eventDate as string) || undefined,
+            eventTime: (metadata?.eventTime as string) || undefined,
+            location: (metadata?.location as string) || undefined,
+            songs,
+            notes: (metadata?.notes as string) || undefined,
+            rehearsalUrl: fullLink,
           },
         });
         emailSent = res.ok;
@@ -387,6 +382,7 @@ export async function dispatchNotification(
           data: {
             name: recipientName,
             churchName,
+            churchLogo: church?.logo ?? null,
             dashboardUrl: fullLink,
           },
         });

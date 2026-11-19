@@ -14,8 +14,25 @@
  *   atuais.
  * - connect-src também inclui o origin do Better Auth Sentinel/KV (identify)
  *   quando configurado; http só é aceito fora de produção.
+ * - connect-src inclui os domínios do UploadThing (ingest, CDN e ufs.sh) porque
+ *   o upload é feito direto do navegador (HEAD/PUT no ingest e leitura do CDN);
+ *   sem eles o browser bloqueia a requisição e o upload falha com FetchError.
+ *   Não usamos 'https:' genérico aqui: apenas os hosts necessários.
  */
 export type SecurityHeader = { key: string; value: string };
+
+/**
+ * Hosts do UploadThing usados pelo upload direto do navegador:
+ * - `*.ingest.uploadthing.com`: HEAD/PUT do arquivo no ingest.
+ * - `*.uploadthing.com`: endpoints de callback/roteamento do serviço.
+ * - `*.ufs.sh` e `utfs.io`: entrega dos arquivos após o upload.
+ */
+export const UPLOADTHING_CONNECT_SOURCES = [
+  "https://*.ingest.uploadthing.com",
+  "https://*.uploadthing.com",
+  "https://*.ufs.sh",
+  "https://utfs.io",
+] as const;
 
 type BuildOptions = {
   nodeEnv: string;
@@ -47,7 +64,10 @@ function extractSecureOrigin(
 }
 
 function buildCsp(options: BuildOptions): string {
-  const connectSources = ["'self'"];
+  const connectSources: string[] = [
+    "'self'",
+    ...UPLOADTHING_CONNECT_SOURCES,
+  ];
 
   if (options.realtimeUrl) connectSources.push(options.realtimeUrl);
   if (options.sentinelUrl) connectSources.push(options.sentinelUrl);

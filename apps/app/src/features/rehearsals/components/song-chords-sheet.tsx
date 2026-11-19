@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { FileMusicIcon, FileTextIcon, Music2Icon, XIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -20,10 +21,13 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChordsViewer } from "@/features/songs/components/chords-viewer";
+import { DepartmentArrangementPicker } from "@/features/songs/components/department-arrangement-picker";
 import { SongLyricsViewer } from "@/features/songs/components/song-lyrics-viewer";
+import { useSongArrangements } from "@/features/songs/hooks/use-song-arrangements";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export type SongChordsSheetSong = {
+  id?: string;
   title: string;
   artist?: string | null;
   tone?: string | null;
@@ -122,11 +126,39 @@ export function SongChordsSheet({
   onOpenChange,
 }: SongChordsSheetProps) {
   const isMobile = useIsMobile();
+  const { departments } = useSongArrangements(song?.id ?? null);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
+  const selectedDepartment =
+    departments.find(
+      (department) => department.departmentId === selectedDepartmentId,
+    ) ??
+    departments[0] ??
+    null;
 
   if (!song) return null;
 
+  const sectionNotes = selectedDepartment?.notes;
   const hasChords = Boolean(song.chords?.trim());
   const hasLyrics = Boolean(song.lyrics?.trim());
+
+  const departmentPicker =
+    departments.length > 1 ? (
+      <div className="mb-3 flex items-center gap-2">
+        <span className="shrink-0 text-[11px] text-muted-foreground">
+          Departamento
+        </span>
+        <DepartmentArrangementPicker
+          id="rehearsal-sheet-department"
+          departments={departments.map((department) => ({
+            id: department.departmentId,
+            name: department.departmentName,
+          }))}
+          value={selectedDepartment?.departmentId ?? ""}
+          onChange={setSelectedDepartmentId}
+          className="min-w-0 flex-1"
+        />
+      </div>
+    ) : null;
 
   const content =
     hasChords || hasLyrics ? (
@@ -157,6 +189,8 @@ export function SongChordsSheet({
               songTitle={song.title}
               songArtist={song.artist ?? undefined}
               hideFullscreenButton
+              sectionNotes={sectionNotes}
+              canEditNotes={false}
             />
           ) : (
             <ViewerEmptyState
@@ -169,7 +203,10 @@ export function SongChordsSheet({
 
         <TabsContent value="letra" className="pt-1">
           {hasLyrics ? (
-            <SongLyricsViewer lyrics={song.lyrics ?? ""} />
+            <SongLyricsViewer
+              lyrics={song.lyrics ?? ""}
+              sectionNotes={sectionNotes}
+            />
           ) : (
             <ViewerEmptyState
               icon={FileTextIcon}
@@ -206,6 +243,7 @@ export function SongChordsSheet({
             data-vaul-no-drag=""
             className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain touch-pan-y px-4 py-4 [-webkit-overflow-scrolling:touch]"
           >
+            {departmentPicker}
             {content}
           </div>
         </DrawerContent>
@@ -229,6 +267,7 @@ export function SongChordsSheet({
         </SheetHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          {departmentPicker}
           {content}
         </div>
       </SheetContent>

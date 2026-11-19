@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   ExternalLinkIcon,
@@ -28,8 +29,10 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSongArrangements } from "@/features/songs/hooks/use-song-arrangements";
 import { isStreamingSearchUrl } from "@/lib/music/lyrics-service";
 import { ChordsViewer } from "./chords-viewer";
+import { DepartmentArrangementPicker } from "./department-arrangement-picker";
 import { getStreamingLinks, streamingLinkLabel } from "./song-streaming-links";
 import { SongLyricsViewer } from "./song-lyrics-viewer";
 
@@ -59,8 +62,18 @@ export function SongQuickDrawer({
   open,
   onOpenChange,
 }: SongQuickDrawerProps) {
+  const { departments } = useSongArrangements(song?.id ?? null);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
+  const selectedDepartment =
+    departments.find(
+      (department) => department.departmentId === selectedDepartmentId,
+    ) ??
+    departments[0] ??
+    null;
+
   if (!song) return null;
   const streamingLinks = getStreamingLinks(song);
+  const sectionNotes = selectedDepartment?.notes;
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -136,6 +149,24 @@ export function SongQuickDrawer({
               </DropdownMenu>
             ) : null}
           </div>
+
+          {departments.length > 1 ? (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="shrink-0 text-[11px] text-muted-foreground">
+                Departamento
+              </span>
+              <DepartmentArrangementPicker
+                id="quick-drawer-department"
+                departments={departments.map((department) => ({
+                  id: department.departmentId,
+                  name: department.departmentName,
+                }))}
+                value={selectedDepartment?.departmentId ?? ""}
+                onChange={setSelectedDepartmentId}
+                className="min-w-0 flex-1"
+              />
+            </div>
+          ) : null}
         </DrawerHeader>
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
@@ -165,6 +196,8 @@ export function SongQuickDrawer({
                   capo={song.capo}
                   songTitle={song.title}
                   songArtist={song.artist ?? undefined}
+                  sectionNotes={sectionNotes}
+                  canEditNotes={false}
                 />
               ) : (
                 <div className="rounded-xl border border-dashed p-6 text-center text-xs text-muted-foreground">
@@ -174,7 +207,10 @@ export function SongQuickDrawer({
             </TabsContent>
 
             <TabsContent value="letra" className="pt-1">
-              <SongLyricsViewer lyrics={song.lyrics ?? ""} />
+              <SongLyricsViewer
+                lyrics={song.lyrics ?? ""}
+                sectionNotes={sectionNotes}
+              />
             </TabsContent>
           </Tabs>
         </div>

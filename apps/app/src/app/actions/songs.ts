@@ -5,6 +5,12 @@ import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import {
+  getSongArrangements,
+  saveSongFormation,
+  saveSongSectionNotes,
+  type DepartmentArrangement,
+} from "@/features/songs/services/song-arrangements.service";
 import { cacheInvalidateTags } from "@/lib/cache";
 import {
   fetchLyricsDetails,
@@ -28,6 +34,8 @@ export type SongActionResult = {
   songId?: string;
   song?: SongRecord;
 };
+
+export type { DepartmentArrangement };
 
 export type AddSongToNextServiceResult = {
   ok: boolean;
@@ -424,5 +432,128 @@ export async function deleteSongAction(
   } catch (err) {
     console.error("[deleteSongAction] Erro ao excluir música:", err);
     return { ok: false, error: "Não foi possível excluir a música." };
+  }
+}
+
+function revalidateSongArrangementPaths(songId: string) {
+  revalidatePath("/dashboard/songs");
+  revalidatePath(`/dashboard/songs/${songId}`);
+  revalidatePath("/dashboard/rehearsals");
+  revalidatePath("/dashboard/events");
+}
+
+export async function getSongArrangementsAction(
+  songId: string,
+): Promise<
+  { ok: true; departments: DepartmentArrangement[] } | { ok: false; error: string }
+> {
+  const { organization, session, isAdmin } = await requireOrganizationContext();
+  const allowed = await can("music", "read");
+  if (!allowed) {
+    return {
+      ok: false,
+      error: "Você não tem permissão para acessar o repertório.",
+    };
+  }
+
+  if (typeof songId !== "string" || !songId.trim()) {
+    return { ok: false, error: "Música inválida." };
+  }
+
+  try {
+    const departments = await getSongArrangements(
+      organization.id,
+      session.user.id,
+      isAdmin,
+      songId,
+    );
+    return { ok: true, departments };
+  } catch (err) {
+    console.error("[getSongArrangementsAction] Erro ao carregar arranjos:", err);
+    return {
+      ok: false,
+      error:
+        err instanceof Error
+          ? err.message
+          : "Não foi possível carregar as notas e a formação.",
+    };
+  }
+}
+
+export async function saveSongSectionNotesAction(
+  songId: string,
+  departmentId: string,
+  notes: Record<string, string>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { organization, session, isAdmin } = await requireOrganizationContext();
+  const allowed = await can("music", "updateSong");
+  if (!allowed) {
+    return {
+      ok: false,
+      error: "Você não tem permissão para editar músicas.",
+    };
+  }
+
+  try {
+    await saveSongSectionNotes(
+      organization.id,
+      session.user.id,
+      isAdmin,
+      songId,
+      departmentId,
+      notes,
+    );
+    revalidateSongArrangementPaths(songId);
+    return { ok: true };
+  } catch (err) {
+    console.error(
+      "[saveSongSectionNotesAction] Erro ao salvar notas por seção:",
+      err,
+    );
+    return {
+      ok: false,
+      error:
+        err instanceof Error ? err.message : "Não foi possível salvar as notas.",
+    };
+  }
+}
+
+export async function saveSongFormationAction(
+  songId: string,
+  departmentId: string,
+  functionIds: string[],
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { organization, session, isAdmin } = await requireOrganizationContext();
+  const allowed = await can("music", "updateSong");
+  if (!allowed) {
+    return {
+      ok: false,
+      error: "Você não tem permissão para editar músicas.",
+    };
+  }
+
+  try {
+    await saveSongFormation(
+      organization.id,
+      session.user.id,
+      isAdmin,
+      songId,
+      departmentId,
+      functionIds,
+    );
+    revalidateSongArrangementPaths(songId);
+    return { ok: true };
+  } catch (err) {
+    console.error(
+      "[saveSongFormationAction] Erro ao salvar formação da banda:",
+      err,
+    );
+    return {
+      ok: false,
+      error:
+        err instanceof Error
+          ? err.message
+          : "Não foi possível salvar a formação da banda.",
+    };
   }
 }

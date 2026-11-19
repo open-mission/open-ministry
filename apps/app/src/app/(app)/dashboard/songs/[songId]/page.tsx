@@ -5,6 +5,10 @@ import { Suspense } from "react";
 
 import { SongDetailView } from "@/components/songs/song-detail-view";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  getSongArrangements,
+  type DepartmentArrangement,
+} from "@/features/songs/services/song-arrangements.service";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { can } from "@/lib/permissions/service";
 import { getSong } from "@/lib/songs";
@@ -33,7 +37,7 @@ async function SongDetailContent({
   await connection();
 
   const { songId } = await params;
-  const { organization } = await requireOrganizationContext();
+  const { organization, session, isAdmin } = await requireOrganizationContext();
 
   const [hasAccess, canUpdate, canDelete] = await Promise.all([
     can("music", "read"),
@@ -49,6 +53,20 @@ async function SongDetailContent({
     notFound();
   }
 
+  let initialArrangements: DepartmentArrangement[] = [];
+  try {
+    initialArrangements = await getSongArrangements(
+      organization.id,
+      session.user.id,
+      isAdmin,
+      songId,
+    );
+  } catch {
+    // Notas e formação são um complemento: a cifra/letra continua disponível
+    // mesmo se o carregamento dos arranjos falhar.
+    initialArrangements = [];
+  }
+
   return (
     <SongDetailView
       initialSong={song}
@@ -56,6 +74,7 @@ async function SongDetailContent({
       canUpdate={canUpdate}
       canDelete={canDelete}
       canAddToNextService={hasAccess}
+      initialArrangements={initialArrangements}
     />
   );
 }

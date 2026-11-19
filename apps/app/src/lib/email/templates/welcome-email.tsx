@@ -5,12 +5,14 @@ import { BaseEmailLayout } from "./base-layout";
 export type WelcomeEmailProps = {
   name: string;
   churchName?: string;
+  churchLogo?: string | null;
   dashboardUrl?: string;
 };
 
 export function WelcomeEmail({
   name,
   churchName,
+  churchLogo,
   dashboardUrl = "https://openministry.app/dashboard",
 }: WelcomeEmailProps) {
   const greeting = name ? `Olá, ${name}!` : "Olá!";
@@ -19,6 +21,7 @@ export function WelcomeEmail({
     <BaseEmailLayout
       previewText={`Seja bem-vindo(a) ao OpenMinistry${churchName ? ` · ${churchName}` : ""}`}
       churchName={churchName}
+      churchLogo={churchLogo}
     >
       <Heading style={heading}>Bem-vindo ao OpenMinistry 👋</Heading>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   CalendarDaysIcon,
@@ -10,6 +11,7 @@ import {
   Music2Icon,
   SearchIcon,
   UserRoundIcon,
+  UsersRoundIcon,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -22,13 +24,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { DepartmentArrangement } from "@/features/songs/lib/song-arrangements";
 import { useSongQuery } from "@/hooks/use-songs";
 import { formatDate } from "@/lib/format";
 import { isStreamingSearchUrl } from "@/lib/music/lyrics-service";
 import { EMPTY_SONG_USAGE } from "@/lib/song-usage";
 import type { SongWithDetails } from "@/lib/songs";
 import { ChordsViewer } from "./chords-viewer";
+import { DepartmentArrangementPicker } from "./department-arrangement-picker";
 import { SongDetailHeaderActions } from "./song-detail-header-actions";
+import { SongFormDialog } from "./song-form-dialog";
 import { SongLyricsViewer } from "./song-lyrics-viewer";
 import { getStreamingLinks, streamingLinkLabel } from "./song-streaming-links";
 import { SongTagsList } from "./song-tags-list";
@@ -39,6 +44,8 @@ type SongDetailViewProps = {
   canUpdate: boolean;
   canDelete: boolean;
   canAddToNextService: boolean;
+  /** Notas e formação por departamento, já filtradas pelo servidor. */
+  initialArrangements?: DepartmentArrangement[];
 };
 
 export function SongDetailView({
@@ -47,6 +54,7 @@ export function SongDetailView({
   canUpdate,
   canDelete,
   canAddToNextService,
+  initialArrangements = [],
 }: SongDetailViewProps) {
   const { data } = useSongQuery(songId, {
     initialData: { song: initialSong },
@@ -67,6 +75,22 @@ export function SongDetailView({
       : hasHistory
         ? "cultos"
         : "cifra";
+
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
+  const selectedDepartment =
+    initialArrangements.find(
+      (department) => department.departmentId === selectedDepartmentId,
+    ) ??
+    initialArrangements[0] ??
+    null;
+
+  const [noteEditorOpen, setNoteEditorOpen] = useState(false);
+  const handleEditNote = () => setNoteEditorOpen(true);
+
+  const sectionNotes = selectedDepartment?.notes;
+  const formationNames = (selectedDepartment?.functions ?? [])
+    .filter((fn) => selectedDepartment?.selectedFunctionIds.includes(fn.id))
+    .map((fn) => fn.name);
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 min-w-0">
@@ -212,6 +236,49 @@ export function SongDetailView({
         ) : null}
       </header>
 
+      {/* NOTAS E FORMAÇÃO POR DEPARTAMENTO */}
+      {selectedDepartment ? (
+        <div className="flex flex-col gap-2 rounded-xl border border-border/70 bg-card px-3 py-2.5 shadow-2xs sm:flex-row sm:items-center sm:justify-between sm:px-4">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <UsersRoundIcon className="size-3.5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-foreground sm:text-sm">
+                Notas &amp; Banda
+              </p>
+              {formationNames.length > 0 ? (
+                <p className="truncate text-[11px] text-muted-foreground sm:text-xs">
+                  Formação: {formationNames.join(", ")}
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          {initialArrangements.length > 1 ? (
+            <div className="flex items-center gap-2 sm:shrink-0">
+              <span className="text-[11px] text-muted-foreground sm:text-xs">
+                Departamento
+              </span>
+              <DepartmentArrangementPicker
+                id="song-viewer-department"
+                departments={initialArrangements.map((department) => ({
+                  id: department.departmentId,
+                  name: department.departmentName,
+                }))}
+                value={selectedDepartment.departmentId}
+                onChange={setSelectedDepartmentId}
+                className="sm:w-52"
+              />
+            </div>
+          ) : (
+            <Badge variant="secondary" className="w-fit shrink-0 text-[11px]">
+              {selectedDepartment.departmentName}
+            </Badge>
+          )}
+        </div>
+      ) : null}
+
       {/* ABAS DE CIFRA, LETRA E HISTÓRICO */}
       <Tabs defaultValue={defaultTab} className="w-full min-w-0">
         <TabsList className="h-10 w-full max-w-full justify-start overflow-x-auto scrollbar-none sm:w-fit">
@@ -250,6 +317,9 @@ export function SongDetailView({
               capo={song.capo}
               songTitle={song.title}
               songArtist={song.artist ?? undefined}
+              sectionNotes={sectionNotes}
+              canEditNotes={canUpdate}
+              onEditNote={canUpdate ? handleEditNote : undefined}
             />
           ) : (
             <Card className="p-8 text-center">
@@ -264,7 +334,10 @@ export function SongDetailView({
 
         {/* CONTEÚDO DA LETRA */}
         <TabsContent value="letra" className="pt-4">
-          <SongLyricsViewer lyrics={song.lyrics ?? ""} />
+          <SongLyricsViewer
+            lyrics={song.lyrics ?? ""}
+            sectionNotes={sectionNotes}
+          />
         </TabsContent>
 
         {/* CONTEÚDO DOS CULTOS RECENTES */}
@@ -311,6 +384,32 @@ export function SongDetailView({
           </TabsContent>
         ) : null}
       </Tabs>
+
+      {canUpdate && noteEditorOpen ? (
+        <SongFormDialog
+          open={noteEditorOpen}
+          onOpenChange={setNoteEditorOpen}
+          songId={song.id}
+          initialTab="notas-banda"
+          initialDepartmentId={selectedDepartment?.departmentId}
+          canUpdate={canUpdate}
+          initialData={{
+            title: song.title,
+            artist: song.artist ?? "",
+            tone: song.tone ?? "",
+            capo: song.capo,
+            bpm: song.bpm,
+            timeSignature: song.timeSignature ?? "4/4",
+            lyrics: song.lyrics ?? "",
+            chords: song.chords ?? "",
+            youtubeUrl: song.youtubeUrl ?? "",
+            youtubeMusicUrl: song.youtubeMusicUrl ?? "",
+            spotifyUrl: song.spotifyUrl ?? "",
+            collection: song.collection ?? "",
+            tags: song.tags ?? [],
+          }}
+        />
+      ) : null}
     </div>
   );
 }

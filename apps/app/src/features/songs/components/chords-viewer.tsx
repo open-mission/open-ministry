@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
@@ -40,7 +41,11 @@ import {
 } from "@/components/ui/dialog";
 import { Kbd } from "@/components/ui/kbd";
 import { NativeSelect } from "@/components/ui/native-select";
-import { getChordsViewerControlVisibility } from "@/features/songs/lib/chords-viewer-controls";
+import {
+  getChordsViewerControlVisibility,
+  isSectionNoteEditEnabled,
+} from "@/features/songs/lib/chords-viewer-controls";
+import type { SongSectionNoteMap } from "@/features/songs/lib/song-arrangements";
 import {
   getSemitoneDistance,
   getShapeTone,
@@ -64,6 +69,7 @@ import {
 } from "@/lib/music/viewer-preferences";
 import { cn } from "@/lib/utils";
 import { SectionBadge } from "./section-badge";
+import { SectionNoteStrip } from "./section-note-strip";
 
 type ChordsViewerProps = {
   chords: string;
@@ -76,6 +82,11 @@ type ChordsViewerProps = {
    * um Sheet/Drawer, para o modo palco em portal não conflitar com o foco.
    */
   hideFullscreenButton?: boolean;
+  /** Notas por seção, chaveadas por `SongSection.key` (ex.: `refrao#1`). */
+  sectionNotes?: SongSectionNoteMap;
+  /** Só habilita o botão "Editar nota" para quem pode editar a música. */
+  canEditNotes?: boolean;
+  onEditNote?: (sectionKey: string) => void;
 };
 
 type FontSize = ViewerFontSize;
@@ -143,6 +154,9 @@ export function ChordsViewer({
   songTitle,
   songArtist,
   hideFullscreenButton = false,
+  sectionNotes,
+  canEditNotes = false,
+  onEditNote,
 }: ChordsViewerProps) {
   const isClient = useSyncExternalStore(
     () => () => {},
@@ -207,6 +221,19 @@ export function ChordsViewer({
   const sections = useMemo(
     () => parseSongSections(transposedText),
     [transposedText],
+  );
+
+  const sectionKeys = useMemo(
+    () => new Set(sections.map((section) => section.key)),
+    [sections],
+  );
+
+  const orphanNotes = useMemo(
+    () =>
+      Object.entries(sectionNotes ?? {}).filter(
+        ([key, note]) => note.trim().length > 0 && !sectionKeys.has(key),
+      ),
+    [sectionNotes, sectionKeys],
   );
 
   const toneOptions = useMemo(
@@ -495,6 +522,8 @@ export function ChordsViewer({
     hideFullscreenButton,
   });
 
+  const noteEditEnabled = isSectionNoteEditEnabled(canEditNotes, isFullscreen);
+
   // Copiar, atalhos e tela cheia só fazem sentido fora do modo palco. No palco
   // a barra fica enxuta para liberar espaço vertical.
   const secondaryControls = (
@@ -677,6 +706,29 @@ export function ChordsViewer({
     </div>
   );
 
+  const orphanNotesCard =
+    orphanNotes.length > 0 ? (
+      <Card className="overflow-hidden border border-dashed border-border/80 bg-card shadow-2xs">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-border/50 bg-muted/15 px-3.5 py-1.5 sm:px-4 sm:py-2">
+          <Badge variant="outline" className="text-[11px] font-medium">
+            Sem seção
+          </Badge>
+        </CardHeader>
+        <CardContent className="space-y-2 px-3.5 py-3 sm:px-4 sm:py-3.5">
+          {orphanNotes.map(([key, note]) => (
+            <SectionNoteStrip
+              key={key}
+              note={note}
+              sectionKey={key}
+              canEdit={noteEditEnabled}
+              onEdit={onEditNote}
+              orphan
+            />
+          ))}
+        </CardContent>
+      </Card>
+    ) : null;
+
   const sectionsView = (
     <div className="space-y-3">
       {sections.map((section) => (
@@ -687,6 +739,17 @@ export function ChordsViewer({
           <CardHeader className="flex flex-row items-center justify-between border-b border-border/50 bg-muted/15 px-3.5 py-1.5 sm:px-4 sm:py-2">
             <SectionBadge type={section.type} name={section.name} />
           </CardHeader>
+          {sectionNotes?.[section.key] ? (
+            <div className="border-b border-border/50 bg-primary/[0.03] px-3.5 py-1.5 sm:px-4">
+              <SectionNoteStrip
+                note={sectionNotes[section.key]}
+                sectionKey={section.key}
+                sectionName={section.name}
+                canEdit={noteEditEnabled}
+                onEdit={onEditNote}
+              />
+            </div>
+          ) : null}
           <CardContent className="overflow-x-auto px-3.5 py-3 sm:px-4 sm:py-3.5">
             <div
               className={cn(
@@ -701,6 +764,7 @@ export function ChordsViewer({
           </CardContent>
         </Card>
       ))}
+      {orphanNotesCard}
     </div>
   );
 
@@ -714,6 +778,17 @@ export function ChordsViewer({
           <div className="flex shrink-0 items-center justify-between border-b border-border/50 bg-muted/20 px-4 py-2.5">
             <SectionBadge type={section.type} name={section.name} />
           </div>
+          {sectionNotes?.[section.key] ? (
+            <div className="border-b border-border/50 bg-primary/[0.03] px-4 py-1.5">
+              <SectionNoteStrip
+                note={sectionNotes[section.key]}
+                sectionKey={section.key}
+                sectionName={section.name}
+                canEdit={noteEditEnabled}
+                onEdit={onEditNote}
+              />
+            </div>
+          ) : null}
           <div className="max-h-[72vh] overflow-x-hidden overflow-y-auto px-4 py-3 sm:px-5 sm:py-3.5">
             <div
               className={cn(
@@ -752,6 +827,8 @@ export function ChordsViewer({
         : viewMode === "columns"
           ? columnsView
           : continuousView}
+
+      {viewMode === "continuous" ? orphanNotesCard : null}
 
       {isFullscreen && isClient
         ? createPortal(
@@ -813,6 +890,7 @@ export function ChordsViewer({
                     : viewMode === "columns"
                       ? columnsView
                       : continuousView}
+                  {viewMode === "continuous" ? orphanNotesCard : null}
                 </div>
               </div>
 

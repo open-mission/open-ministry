@@ -241,6 +241,7 @@ export function RehearsalPanel({
                           type="button"
                           onClick={() => {
                             setSelectedSong({
+                              id: entry.songId,
                               title,
                               artist: song?.artist ?? null,
                               tone: song?.tone ?? null,

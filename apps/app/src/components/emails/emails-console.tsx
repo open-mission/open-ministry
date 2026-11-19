@@ -10,6 +10,7 @@ import {
   LaptopIcon,
   MailIcon,
   MegaphoneIcon,
+  Music2Icon,
   RefreshCwIcon,
   SearchIcon,
   SendIcon,
@@ -110,6 +111,16 @@ const TEMPLATE_CARDS: TemplateCardInfo[] = [
       "Comunicado geral ou ministerial publicado pela liderança da igreja.",
     defaultSubject: "Comunicado oficial da igreja",
     icon: MegaphoneIcon,
+  },
+  {
+    key: "rehearsal_reminder",
+    name: "Lembrete de Ensaio",
+    category: "escala",
+    categoryLabel: "Ensaios",
+    description:
+      "Lembrete enviado aos integrantes com os detalhes e o repertório do próximo ensaio.",
+    defaultSubject: "Lembrete de Ensaio",
+    icon: Music2Icon,
   },
   {
     key: "reset_password",
@@ -469,6 +480,9 @@ export function EmailsConsole({
                     </NativeSelectOption>
                     <NativeSelectOption value="announcement">
                       Avisos da Igreja
+                    </NativeSelectOption>
+                    <NativeSelectOption value="rehearsal_reminder">
+                      Lembretes de Ensaio
                     </NativeSelectOption>
                     <NativeSelectOption value="welcome">
                       Boas-vindas
@@ -1031,6 +1045,8 @@ function formatTypeName(type: string): string {
       return "Escala de Culto";
     case "announcement":
       return "Aviso da Igreja";
+    case "rehearsal_reminder":
+      return "Lembrete de Ensaio";
     case "welcome":
       return "Boas-vindas";
     case "reset_password":
