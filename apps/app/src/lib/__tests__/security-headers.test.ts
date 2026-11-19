@@ -2,6 +2,43 @@ import { describe, expect, it } from "bun:test";
 
 const { buildSecurityHeaders } = await import("@/lib/security-headers");
 
+const UPLOADTHING_SOURCES = [
+  "https://*.ingest.uploadthing.com",
+  "https://*.uploadthing.com",
+  "https://*.ufs.sh",
+  "https://utfs.io",
+] as const;
+
+function getCspValue(options: Parameters<typeof buildSecurityHeaders>[0]): string {
+  const [csp] = buildSecurityHeaders(options).filter(
+    (h) => h.key === "Content-Security-Policy",
+  );
+  return csp?.value ?? "";
+}
+
+function getConnectDirective(csp: string): string {
+  return (
+    csp
+      .split("; ")
+      .find((directive) => directive.startsWith("connect-src")) ?? ""
+  );
+}
+
+function expectConnectSources(csp: string, extraSources: string[] = []): void {
+  const directive = getConnectDirective(csp);
+  const sources = directive.replace("connect-src ", "").split(" ");
+
+  expect(sources).toContain("'self'");
+  for (const source of UPLOADTHING_SOURCES) {
+    expect(sources).toContain(source);
+  }
+  for (const extra of extraSources) {
+    expect(sources).toContain(extra);
+  }
+  // Sem curinga genérico: connect-src não deve liberar todo o https.
+  expect(sources).not.toContain("https:");
+}
+
 describe("buildSecurityHeaders", () => {
   it("CSP restritivo em produção, sem unsafe-eval", () => {
     const [csp] = buildSecurityHeaders({
@@ -27,68 +64,78 @@ describe("buildSecurityHeaders", () => {
   });
 
   it("inclui o origin do realtime no connect-src quando configurado", () => {
-    const [csp] = buildSecurityHeaders({
+    const value = getCspValue({
       nodeEnv: "production",
       realtimeUrl: "wss://ep-cool-darkness-a1b2.neon-realtime.tech",
-    }).filter((h) => h.key === "Content-Security-Policy");
+    });
 
-    expect(csp?.value).toContain("connect-src 'self' wss://ep-cool-darkness-a1b2.neon-realtime.tech");
+    expectConnectSources(value, [
+      "wss://ep-cool-darkness-a1b2.neon-realtime.tech",
+    ]);
+    expect(getConnectDirective(value)).toBe(
+      `connect-src 'self' ${UPLOADTHING_SOURCES.join(" ")} wss://ep-cool-darkness-a1b2.neon-realtime.tech`,
+    );
   });
 
-  it("sem realtime, connect-src fica só no self", () => {
-    const [csp] = buildSecurityHeaders({
+  it("sem realtime, connect-src mantém self e os domínios do UploadThing", () => {
+    const value = getCspValue({
       nodeEnv: "production",
-    }).filter((h) => h.key === "Content-Security-Policy");
+    });
 
-    expect(csp?.value).toContain("connect-src 'self';");
+    expectConnectSources(value);
+    expect(getConnectDirective(value)).toBe(
+      `connect-src 'self' ${UPLOADTHING_SOURCES.join(" ")}`,
+    );
   });
 
   it("inclui o origin do Sentinel no connect-src quando configurado", () => {
-    const [csp] = buildSecurityHeaders({
+    const value = getCspValue({
       nodeEnv: "production",
       sentinelUrl: "https://kv.better-auth.com/identify",
-    }).filter((h) => h.key === "Content-Security-Policy");
+    });
 
-    expect(csp?.value).toContain(
-      "connect-src 'self' https://kv.better-auth.com;",
+    expectConnectSources(value, ["https://kv.better-auth.com"]);
+    expect(getConnectDirective(value)).toBe(
+      `connect-src 'self' ${UPLOADTHING_SOURCES.join(" ")} https://kv.better-auth.com`,
     );
   });
 
   it("não duplica origins repetidos no connect-src", () => {
-    const [csp] = buildSecurityHeaders({
+    const value = getCspValue({
       nodeEnv: "production",
       realtimeUrl: "https://kv.better-auth.com/ws",
       sentinelUrl: "https://kv.better-auth.com/identify",
-    }).filter((h) => h.key === "Content-Security-Policy");
-    const value = csp?.value ?? "";
-    const connectDirective = value
-      .split("; ")
-      .find((directive) => directive.startsWith("connect-src"));
+    });
 
-    expect(connectDirective).toBe("connect-src 'self' https://kv.better-auth.com");
+    expect(getConnectDirective(value)).toBe(
+      `connect-src 'self' ${UPLOADTHING_SOURCES.join(" ")} https://kv.better-auth.com`,
+    );
   });
 
   it("aceita Sentinel em http apenas fora de produção", () => {
-    const [devCsp] = buildSecurityHeaders({
+    const devCsp = getCspValue({
       nodeEnv: "development",
       sentinelUrl: "http://localhost:8787",
-    }).filter((h) => h.key === "Content-Security-Policy");
-    expect(devCsp?.value).toContain("http://localhost:8787");
+    });
+    expect(devCsp).toContain("http://localhost:8787");
 
-    const [prodCsp] = buildSecurityHeaders({
+    const prodCsp = getCspValue({
       nodeEnv: "production",
       sentinelUrl: "http://localhost:8787",
-    }).filter((h) => h.key === "Content-Security-Policy");
-    expect(prodCsp?.value).not.toContain("http://localhost:8787");
+    });
+    expect(prodCsp).not.toContain("http://localhost:8787");
   });
 
   it("ignora sentinelUrl inválido sem quebrar a CSP", () => {
-    const [csp] = buildSecurityHeaders({
+    const value = getCspValue({
       nodeEnv: "production",
       sentinelUrl: "not a url",
-    }).filter((h) => h.key === "Content-Security-Policy");
+    });
 
-    expect(csp?.value).toContain("connect-src 'self';");
+    expectConnectSources(value);
+    expect(getConnectDirective(value)).toBe(
+      `connect-src 'self' ${UPLOADTHING_SOURCES.join(" ")}`,
+    );
   });
 
   it("emite os headers de segurança clássicos", () => {
