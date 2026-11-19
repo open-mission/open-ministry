@@ -31,16 +31,52 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.5.0";
+export const CURRENT_APP_VERSION = "1.6.0";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.6.0",
+    title: "Sua agenda no seu calendário",
+    subtitle:
+      "Assine cultos, ensaios, eventos e escalas com um link que atualiza sozinho no Apple Calendário, Google Agenda ou Outlook.",
+    releaseDate: "19 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Agenda & Calendário",
+        badge: "Novidade",
+        features: [
+          {
+            title: "Sincronizar com meu calendário",
+            description:
+              "Em Configurações, gere um link de assinatura e cole no seu aplicativo de calendário. Você escolhe o que entra: cultos, ensaios do seu departamento, eventos e escalas.",
+            iconName: "CalendarDaysIcon",
+            badge: "Assinatura",
+          },
+          {
+            title: "Atualização automática, sem tempo real",
+            description:
+              "O calendário consulta o link periodicamente e traz as alterações na próxima consulta. O link pode ser rotacionado ou revogado quando quiser.",
+            iconName: "ShieldCheckIcon",
+            badge: "Controle",
+          },
+          {
+            title: "Atalho na página da agenda",
+            description:
+              "O novo grupo de ações reúne criar culto ou evento, criar ensaio, conectar seu calendário e exportar um arquivo .ics.",
+            iconName: "SparklesIcon",
+            badge: "Agenda",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.5.0",
     title: "Notas por Seção, Formação da Banda e E-mail de Ensaio Repaginado",
     subtitle:
       "Anote cada trecho da música por departamento, monte a formação da banda e receba lembretes de ensaio com o repertório organizado e o logo da sua igreja.",
     releaseDate: "19 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Músicas & Repertório",
