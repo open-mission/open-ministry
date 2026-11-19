@@ -82,4 +82,11 @@ Sempre que uma nova release for preparada ou publicada:
   - No Desktop, o modal exibe layout horizontal de 2 colunas se houver múltiplos módulos/itens, e no Mobile mantém o Drawer fluido com bottom-sheet.
 - **Atualize a versão** no `package.json` da raiz e no `apps/app/package.json`.
 
+## ui-sdk
+
+Antes de usar `ui-sdk`, siga a skill `ui-sdk` se ela estiver instalada e leia
+`node_modules/@ui-sdk/react/docs/llms.txt`. Para criar um novo componente,
+pesquise em `node_modules/@ui-sdk/react/docs/core.md` por título (heading) e
+leia também `rendering.md`, que fica ao lado dele.
+
 
