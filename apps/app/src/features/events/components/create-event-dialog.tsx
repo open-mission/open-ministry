@@ -67,12 +67,14 @@ import type { DepartmentOption } from "@/lib/departments";
 export function CreateEventDialog({
   departments,
   defaultDate,
+  defaultKind = "service",
   trigger,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
 }: {
   departments: DepartmentOption[];
   defaultDate: string;
+  defaultKind?: "service" | "event";
   trigger?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -110,6 +112,7 @@ export function CreateEventDialog({
             <CreateEventForm
               departments={departments}
               defaultDate={defaultDate}
+              defaultKind={defaultKind}
             />
           </div>
         </DrawerContent>
@@ -142,6 +145,7 @@ export function CreateEventDialog({
         <CreateEventForm
           departments={departments}
           defaultDate={defaultDate}
+          defaultKind={defaultKind}
         />
       </DialogContent>
     </Dialog>
@@ -151,9 +155,11 @@ export function CreateEventDialog({
 function CreateEventForm({
   departments,
   defaultDate,
+  defaultKind,
 }: {
   departments: DepartmentOption[];
   defaultDate: string;
+  defaultKind: "service" | "event";
 }) {
   const isMobile = useIsMobile();
   const [state, formAction] = useActionState<EventFormState, FormData>(
@@ -325,7 +331,7 @@ function CreateEventForm({
             <NativeSelect
               id="event-kind"
               name="kind"
-              defaultValue="service"
+              defaultValue={defaultKind}
               className="w-full [&_select]:h-10"
               aria-invalid={Boolean(state?.fieldErrors?.kind)}
             >

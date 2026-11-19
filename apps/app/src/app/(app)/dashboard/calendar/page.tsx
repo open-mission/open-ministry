@@ -57,13 +57,14 @@ async function CalendarContent() {
 
   // The create action is delegable per department, so an admin check is not
   // enough: a department leader with the grant must see the button too.
+  const departmentIds = departments.map((department) => department.id);
+
   const canCreateEvent =
+    isAdmin || (await canAnyDepartment("agenda", "createEvent", departmentIds));
+
+  const canCreateRehearsal =
     isAdmin ||
-    (await canAnyDepartment(
-      "agenda",
-      "createEvent",
-      departments.map((department) => department.id),
-    ));
+    (await canAnyDepartment("rehearsals", "createRehearsal", departmentIds));
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
@@ -71,6 +72,7 @@ async function CalendarContent() {
         initialItems={data.items}
         initialPreferences={data.preferences}
         canCreateEvent={canCreateEvent}
+        canCreateRehearsal={canCreateRehearsal}
         canViewTeamAvailability={data.canViewTeamAvailability}
         departments={departmentOptions}
       />

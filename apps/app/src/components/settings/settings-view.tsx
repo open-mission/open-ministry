@@ -28,6 +28,7 @@ import { AccountProfileCard } from "@/components/settings/account-profile-card";
 import { ActiveSessionsCard } from "@/components/settings/active-sessions-card";
 import { AdminEvolutionApiCard } from "@/components/settings/admin-evolution-api-card";
 import { CalendarPreferencesCard } from "@/components/settings/calendar-preferences-card";
+import { CalendarSyncCard } from "@/components/settings/calendar-sync-card";
 import { ChangePasswordCard } from "@/components/settings/change-password-card";
 import { ChurchInfoCard } from "@/components/settings/church-info-card";
 import { ChurchNomenclatureCard } from "@/components/settings/church-nomenclature-card";
@@ -49,6 +50,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { CalendarPreferences } from "@/lib/calendar";
+import type { CalendarFeedView } from "@/lib/calendar-feed-data";
 import { getDepartmentTerminology, parseChurchMetadata } from "@/lib/church";
 import { getInitials, roleLabel } from "@/lib/format";
 import type { ResolvedTemplate } from "@/lib/message-templates";
@@ -75,6 +77,7 @@ export type SettingsViewProps = {
     image: string | null;
   };
   calendarPreferences: CalendarPreferences;
+  calendarFeeds: CalendarFeedView[];
   initialSessions: SessionItem[];
   initialPasskeys: PasskeyViewItem[];
   peopleCount: number;
@@ -121,6 +124,7 @@ export function SettingsView({
   isAdmin,
   userData,
   calendarPreferences,
+  calendarFeeds,
   initialSessions,
   initialPasskeys,
   peopleCount,
@@ -155,7 +159,7 @@ export function SettingsView({
         {
           id: "calendar" as const,
           label: "Agenda & Calendário",
-          subtitle: "Início da semana e fuso",
+          subtitle: "Fuso e sincronização de agenda",
           icon: CalendarIcon,
           color: "bg-amber-500 text-white",
         },
@@ -285,7 +289,10 @@ export function SettingsView({
         return <AccountProfileCard initialData={userData} />;
       case "calendar":
         return (
-          <CalendarPreferencesCard initialPreferences={calendarPreferences} />
+          <div className="space-y-6">
+            <CalendarPreferencesCard initialPreferences={calendarPreferences} />
+            <CalendarSyncCard feeds={calendarFeeds} />
+          </div>
         );
       case "theme":
         return <ThemePreferenceCard />;

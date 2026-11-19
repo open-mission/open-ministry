@@ -14,6 +14,7 @@ import {
   sendEvolutionTextMessage,
 } from "@/lib/evolution-api";
 import { getAppBaseUrl } from "@/lib/app-url";
+import { loadCalendarFeedViews } from "@/lib/calendar-feed-data";
 import {
   listEvolutionMessageLogs,
   retryWhatsAppMessage,
@@ -734,12 +735,13 @@ export async function getSettingsDialogDataAction() {
     where: eq(schema.user.id, session.user.id),
   });
 
-  const [initialSessions, initialPasskeys, people, departments] =
+  const [initialSessions, initialPasskeys, people, departments, calendarFeeds] =
     await Promise.all([
       getUserSessionsAction(),
       getUserPasskeysAction(),
       listPeople(organization.id),
       listDepartments(organization.id),
+      loadCalendarFeedViews(),
     ]);
 
   const [evolutionSettings, messageTemplates, permissionSettingsResult] = isAdmin
@@ -778,6 +780,7 @@ export async function getSettingsDialogDataAction() {
       weekStartsOn: (userRecord?.weekStartsOn === 1 ? 1 : 0) as 0 | 1,
       timezone: userRecord?.timezone || "America/Sao_Paulo",
     },
+    calendarFeeds,
     initialSessions,
     initialPasskeys,
     peopleCount: people.length,

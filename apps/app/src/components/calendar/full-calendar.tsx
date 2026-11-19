@@ -36,6 +36,7 @@ type FullCalendarProps = {
   initialItems: CalendarItem[];
   initialPreferences: CalendarPreferences;
   canCreateEvent?: boolean;
+  canCreateRehearsal?: boolean;
   canViewTeamAvailability?: boolean;
   departments?: { id: string; name: string }[];
 };
@@ -60,6 +61,7 @@ export function FullCalendar({
   initialItems,
   initialPreferences,
   canCreateEvent,
+  canCreateRehearsal,
   canViewTeamAvailability,
   departments,
 }: FullCalendarProps) {
@@ -250,6 +252,7 @@ export function FullCalendar({
         onExport={handleExport}
         itemsCount={itemsCount}
         canCreateEvent={canCreateEvent}
+        canCreateRehearsal={canCreateRehearsal}
         canViewTeamAvailability={canViewTeamAvailability}
         departments={departments}
       />
