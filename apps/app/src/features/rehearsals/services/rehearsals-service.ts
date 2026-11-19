@@ -660,6 +660,7 @@ type RehearsalNotificationEvent = {
   id: string;
   organizationId: string;
   title: string;
+  description?: string | null;
   location: string | null;
   startsAt: Date;
   endsAt: Date;
@@ -722,7 +723,9 @@ async function dispatchRehearsalToMembers(
           eventDate,
           eventTime,
           location: event.location,
+          departmentName: department.name,
           songs,
+          notes: event.description?.trim() || undefined,
           link: href,
         },
       });
@@ -802,6 +805,7 @@ export async function createRehearsal(
         id: eventId,
         organizationId,
         title: parsed.title,
+        description: parsed.description ?? null,
         location: parsed.location ?? null,
         startsAt,
         endsAt,
@@ -930,6 +934,10 @@ export async function updateRehearsal(
         id: eventId,
         organizationId,
         title: parsed.title ?? current.title,
+        description:
+          parsed.description !== undefined
+            ? (parsed.description ?? null)
+            : current.description,
         location: parsed.location ?? current.location,
         startsAt,
         endsAt,
@@ -1040,6 +1048,7 @@ export async function dispatchRehearsalReminder(
         id: event.id,
         organizationId: event.organizationId,
         title: event.title,
+        description: event.description,
         location: event.location,
         startsAt: event.startsAt,
         endsAt: event.endsAt,

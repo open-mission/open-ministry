@@ -5,6 +5,7 @@ import { BaseEmailLayout } from "./base-layout";
 export type AnnouncementEmailProps = {
   name?: string;
   churchName: string;
+  churchLogo?: string | null;
   title: string;
   body: string;
   authorName?: string;
@@ -14,6 +15,7 @@ export type AnnouncementEmailProps = {
 export function AnnouncementEmail({
   name,
   churchName,
+  churchLogo,
   title,
   body,
   authorName,
@@ -25,6 +27,7 @@ export function AnnouncementEmail({
     <BaseEmailLayout
       previewText={`${title} · ${churchName}`}
       churchName={churchName}
+      churchLogo={churchLogo}
       footerText={`Comunicado oficial da igreja ${churchName}.`}
     >
       <Heading style={heading}>📢 Comunicado da Igreja</Heading>

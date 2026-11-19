@@ -19,6 +19,7 @@ import {
   type BrevoContact,
   type SendBrevoEmailResult,
 } from "./brevo";
+import { getAppBaseUrl } from "@/lib/app-url";
 import {
   EMAIL_TEMPLATES,
   renderTemplateHtml,
@@ -47,6 +48,48 @@ export type SendTransactionalEmailResult = {
 };
 
 /**
+ * Normaliza URLs de imagens usadas em e-mails transacionais.
+ *
+ * Aceita apenas caminhos relativos (`/brand/logo.png`) e URLs absolutas
+ * `http:`/`https:`. Qualquer outro protocolo ou valor inválido vira `null`,
+ * evitando `javascript:`, `data:` e afins em atributos `src`.
+ */
+export function normalizeEmailAssetUrl(
+  url: string | null | undefined,
+  baseUrl: string = getAppBaseUrl(),
+): string | null {
+  const trimmed = url?.trim();
+  if (!trimmed) return null;
+
+  const candidate =
+    trimmed.startsWith("/") && !trimmed.startsWith("//")
+      ? `${baseUrl.replace(/\/+$/, "")}${trimmed}`
+      : trimmed;
+
+  try {
+    const parsed = new URL(candidate);
+    return parsed.protocol === "http:" || parsed.protocol === "https:"
+      ? parsed.toString()
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Assets da marca OpenMinistry usados no cabeçalho/rodapé dos e-mails.
+ */
+export function buildAppEmailBrandAssets(
+  baseUrl: string = getAppBaseUrl(),
+): { appLogoUrl: string; appWordmarkUrl: string } {
+  const base = baseUrl.replace(/\/+$/, "");
+  return {
+    appLogoUrl: `${base}/brand/openministry-app-icon-dark.png`,
+    appWordmarkUrl: `${base}/brand/openministry-logo-full-black.png`,
+  };
+}
+
+/**
  * Envia um email transacional utilizando React Email e o provedor Brevo,
  * registrando o log completo na tabela email_message_log.
  */
@@ -59,11 +102,61 @@ export async function sendTransactionalEmail(
   let subject = options.subject || "";
 
   try {
-    const rendered = await renderTemplateHtml(options.type, {
-      ...options.data,
-      ...(options.to.name ? { name: options.to.name } : {}),
-      ...(options.subject ? { subject: options.subject } : {}),
-    });
+    const baseUrl = getAppBaseUrl();
+    const brandAssets = buildAppEmailBrandAssets(baseUrl);
+    const data: Record<string, unknown> = { ...options.data };
+
+    const normalizedChurchLogo = normalizeEmailAssetUrl(
+      typeof data.churchLogo === "string" ? data.churchLogo : null,
+      baseUrl,
+    );
+
+    let churchName =
+      typeof data.churchName === "string" && data.churchName.trim()
+        ? data.churchName
+        : undefined;
+    let churchLogo = normalizedChurchLogo;
+
+    if (
+      options.organizationId &&
+      (!churchName || data.churchLogo === undefined)
+    ) {
+      try {
+        const organization = await db.query?.organization?.findFirst?.({
+          where: eq(schema.organization.id, options.organizationId),
+          columns: { name: true, logo: true },
+        });
+
+        if (organization) {
+          if (!churchName && organization.name) {
+            churchName = organization.name;
+          }
+
+          if (data.churchLogo === undefined) {
+            churchLogo = normalizeEmailAssetUrl(organization.logo, baseUrl);
+          }
+        }
+      } catch (organizationError) {
+        // Nunca impede o envio por causa da hidratação da organização.
+        console.error(
+          "[EmailService] Erro ao buscar dados da organização:",
+          organizationError,
+        );
+      }
+    }
+
+    const rendered = await renderTemplateHtml(
+      options.type,
+      {
+        ...brandAssets,
+        ...data,
+        ...(options.to.name ? { name: options.to.name } : {}),
+        ...(options.subject ? { subject: options.subject } : {}),
+        ...(churchName ? { churchName } : {}),
+        churchLogo,
+      },
+      { useSampleData: false },
+    );
     html = rendered.html;
     if (!subject) {
       subject = rendered.subject;
@@ -334,13 +427,17 @@ export async function sendTestEmail(
     return { ok: false, error: "Modelo de email não encontrado." };
   }
 
+  const data: Record<string, unknown> = { ...meta.sampleData, ...customData };
+  // Sem `churchLogo` explícito no customData, deixamos a chave ausente para
+  // que o envio hidrate a logo da organização quando houver organizationId.
+  if (data.churchLogo === undefined) {
+    delete data.churchLogo;
+  }
+
   return await sendTransactionalEmail({
     type,
     to: { email: targetEmail, name: "Usuário de Teste" },
     organizationId,
-    data: {
-      ...meta.sampleData,
-      ...customData,
-    },
+    data,
   });
 }

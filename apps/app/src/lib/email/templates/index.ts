@@ -19,6 +19,10 @@ import {
   AnnouncementEmail,
   type AnnouncementEmailProps,
 } from "./announcement-email";
+import {
+  RehearsalReminderEmail,
+  type RehearsalReminderEmailProps,
+} from "./rehearsal-reminder-email";
 
 export * from "./base-layout";
 export * from "./welcome-email";
@@ -27,6 +31,7 @@ export * from "./magic-link-email";
 export * from "./email-verification-email";
 export * from "./schedule-assigned-email";
 export * from "./announcement-email";
+export * from "./rehearsal-reminder-email";
 
 export type EmailTemplateKey =
   | "welcome"
@@ -34,7 +39,8 @@ export type EmailTemplateKey =
   | "magic_link"
   | "email_verification"
   | "assignment"
-  | "announcement";
+  | "announcement"
+  | "rehearsal_reminder";
 
 export type EmailTemplateMeta = {
   key: EmailTemplateKey;
@@ -160,6 +166,63 @@ export const EMAIL_TEMPLATES: Record<EmailTemplateKey, EmailTemplateMeta> = {
         props as unknown as AnnouncementEmailProps,
       ),
   },
+  rehearsal_reminder: {
+    key: "rehearsal_reminder",
+    name: "Lembrete de Ensaio",
+    category: "escala",
+    description:
+      "Enviado automaticamente aos membros escalados com os detalhes e o repertório do próximo ensaio.",
+    defaultSubject: "Lembrete de Ensaio",
+    sampleData: {
+      name: "Gabriel Santos",
+      churchName: "Igreja Central",
+      eventTitle: "Ensaio Geral de Louvor",
+      eventDate: "Sexta-feira, 20 de Novembro de 2026",
+      eventTime: "19:30",
+      location: "Templo principal",
+      songs: ["Grande é o Senhor", "Teu Sangue", "Nada Além do Sangue"],
+      notes: "Chegar 15 minutos antes para a passagem de som.",
+      rehearsalUrl: "https://openministry.app/dashboard/rehearsals",
+    },
+    renderComponent: (props) =>
+      React.createElement(
+        RehearsalReminderEmail,
+        props as unknown as RehearsalReminderEmailProps,
+      ),
+  },
+};
+
+/**
+ * Item serializável do catálogo de modelos, seguro para atravessar a
+ * fronteira servidor → cliente (sem componentes React nem dados fictícios).
+ */
+export type EmailTemplateCatalogItem = Pick<
+  EmailTemplateMeta,
+  "key" | "name" | "category" | "description" | "defaultSubject"
+>;
+
+/**
+ * Lista os modelos disponíveis com apenas metadados serializáveis, para que
+ * o catálogo não dependa de listas duplicadas no cliente.
+ */
+export function listEmailTemplateCatalog(): EmailTemplateCatalogItem[] {
+  return Object.values(EMAIL_TEMPLATES).map(
+    ({ key, name, category, description, defaultSubject }) => ({
+      key,
+      name,
+      category,
+      description,
+      defaultSubject,
+    }),
+  );
+}
+
+export type RenderTemplateOptions = {
+  /**
+   * Quando `false`, não faz fallback nos dados fictícios do modelo. Use em
+   * envios reais para não vazar nomes, notas ou músicas de exemplo.
+   */
+  useSampleData?: boolean;
 };
 
 /**
@@ -168,13 +231,17 @@ export const EMAIL_TEMPLATES: Record<EmailTemplateKey, EmailTemplateMeta> = {
 export async function renderTemplateHtml(
   key: EmailTemplateKey,
   props: Record<string, unknown>,
+  options?: RenderTemplateOptions,
 ): Promise<{ html: string; subject: string }> {
   const meta = EMAIL_TEMPLATES[key];
   if (!meta) {
     throw new Error(`Template de email desconhecido: ${key}`);
   }
 
-  const mergedProps = { ...meta.sampleData, ...props };
+  const mergedProps =
+    options?.useSampleData === false
+      ? { ...props }
+      : { ...meta.sampleData, ...props };
   const element = meta.renderComponent(mergedProps);
   const html = await render(element);
 
@@ -193,6 +260,12 @@ export async function renderTemplateHtml(
     mergedProps.title
   ) {
     subject = mergedProps.title;
+  } else if (
+    key === "rehearsal_reminder" &&
+    typeof mergedProps.eventTitle === "string" &&
+    mergedProps.eventTitle
+  ) {
+    subject = `Lembrete de Ensaio - ${mergedProps.eventTitle}`;
   }
 
   return { html, subject };
