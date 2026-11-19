@@ -11,11 +11,17 @@ import {
   listUserLeaderDepartments,
 } from "@/lib/departments";
 import {
+  buildAppEmailBrandAssets,
   listEmailMessageLogs,
+  normalizeEmailAssetUrl,
   resendLoggedEmail,
   sendTestEmail,
 } from "@/lib/email/service";
-import type { EmailTemplateKey } from "@/lib/email/templates";
+import {
+  listEmailTemplateCatalog,
+  type EmailTemplateCatalogItem,
+  type EmailTemplateKey,
+} from "@/lib/email/templates";
 import { getOrganizationContext } from "@/lib/organizations";
 
 export type EmailLogItem = {
@@ -233,9 +239,46 @@ const testEmailSchema = z.object({
     "email_verification",
     "assignment",
     "announcement",
+    "rehearsal_reminder",
   ]),
   targetEmail: z.string().email("Informe um email válido para o teste."),
 });
+
+/**
+ * Lista o catálogo de modelos de email disponíveis, com metadados
+ * serializáveis para a interface (sem componentes nem dados fictícios).
+ */
+export async function listEmailTemplatesAction(): Promise<{
+  ok: boolean;
+  templates: EmailTemplateCatalogItem[];
+  error?: string;
+}> {
+  const context = await getOrganizationContext();
+  if (!context) {
+    return {
+      ok: false,
+      templates: [],
+      error: "Sessão inválida ou sem organização ativa.",
+    };
+  }
+
+  const isLeader = !context.isAdmin
+    ? await isUserLeaderInAnyDepartment(
+        context.organization.id,
+        context.session.user.id,
+      )
+    : true;
+
+  if (!context.isAdmin && !isLeader) {
+    return {
+      ok: false,
+      templates: [],
+      error: "Você não tem permissão para visualizar os modelos de email.",
+    };
+  }
+
+  return { ok: true, templates: listEmailTemplateCatalog() };
+}
 
 /**
  * Obtém o HTML renderizado de um modelo específico para visualização prévia.
@@ -246,7 +289,48 @@ export async function getTemplatePreviewAction(
 ): Promise<{ ok: boolean; html: string; subject: string; error?: string }> {
   try {
     const { renderTemplateHtml } = await import("@/lib/email/templates");
-    const rendered = await renderTemplateHtml(templateKey, customData ?? {});
+    const brandAssets = buildAppEmailBrandAssets();
+    const data: Record<string, unknown> = { ...customData };
+
+    let churchName =
+      typeof data.churchName === "string" && data.churchName.trim()
+        ? data.churchName
+        : undefined;
+    let churchLogo =
+      data.churchLogo === undefined
+        ? undefined
+        : normalizeEmailAssetUrl(
+            typeof data.churchLogo === "string" ? data.churchLogo : null,
+          );
+
+    // Hidrata o branding da organização ativa quando a prévia não recebeu
+    // nome/logo explícitos. Falhas aqui nunca impedem a prévia.
+    if (!churchName || data.churchLogo === undefined) {
+      try {
+        const context = await getOrganizationContext();
+        if (context) {
+          if (!churchName && context.organization.name) {
+            churchName = context.organization.name;
+          }
+
+          if (data.churchLogo === undefined) {
+            churchLogo = normalizeEmailAssetUrl(context.organization.logo);
+          }
+        }
+      } catch (contextError) {
+        console.error(
+          "[EmailsAction] Erro ao carregar branding da organização:",
+          contextError,
+        );
+      }
+    }
+
+    const rendered = await renderTemplateHtml(templateKey, {
+      ...brandAssets,
+      ...data,
+      ...(churchName ? { churchName } : {}),
+      ...(churchLogo !== undefined ? { churchLogo } : {}),
+    });
     return { ok: true, html: rendered.html, subject: rendered.subject };
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Erro desconhecido";
@@ -292,6 +376,7 @@ export async function sendTestEmailAction(
     context.organization.id,
     {
       churchName: context.organization.name,
+      churchLogo: context.organization.logo ?? null,
       authorName: context.session.user.name,
     },
   );
