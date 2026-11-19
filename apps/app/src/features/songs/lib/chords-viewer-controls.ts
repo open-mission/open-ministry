@@ -27,3 +27,14 @@ export function getChordsViewerControlVisibility({
 
   return { copy: true, help: true, fullscreen: !hideFullscreenButton };
 }
+
+/**
+ * Editar uma nota abre o formulário, que fica atrás do portal do modo palco.
+ * No palco a cifra é somente leitura; os controles voltam ao sair da tela cheia.
+ */
+export function isSectionNoteEditEnabled(
+  canEditNotes: boolean,
+  isFullscreen: boolean,
+): boolean {
+  return canEditNotes && !isFullscreen;
+}

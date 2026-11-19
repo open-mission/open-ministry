@@ -331,10 +331,44 @@ export type SongSectionType =
 
 export type SongSection = {
   id: string;
+  /** Chave estável baseada no nome + ocorrência (ex.: `refrao#1`). */
+  key: string;
   name: string;
   type: SongSectionType;
   content: string;
 };
+
+/**
+ * Normaliza o nome de uma seção para uma chave estável: sem acentos, minúscula,
+ * caracteres não alfanuméricos viram `-`. Usada pelo parser e pelos arranjos.
+ */
+export function normalizeSectionKey(name: string): string {
+  const normalized = name
+    .trim()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return normalized || "secao";
+}
+
+/**
+ * Atribui a cada seção a chave normalizada com contador de ocorrência do nome
+ * base (`intro#1`, `refrao#1`, `refrao#2`). Mantém o `id` original intacto.
+ */
+export function withSectionKeys(sections: SongSection[]): SongSection[] {
+  const occurrences = new Map<string, number>();
+
+  return sections.map((section) => {
+    const base = normalizeSectionKey(section.name);
+    const occurrence = (occurrences.get(base) ?? 0) + 1;
+    occurrences.set(base, occurrence);
+
+    return { ...section, key: `${base}#${occurrence}` };
+  });
+}
 
 /**
  * Classifica semanticamente o tipo da seção musical com base no nome.
@@ -365,39 +399,44 @@ export function parseSongSections(text: string): SongSection[] {
   if (parts.length === 1 && !parts[0].trim().startsWith("[")) {
     const paragraphs = text.split(/\n\s*\n/).filter((p) => p.trim());
     if (paragraphs.length > 1) {
-      return paragraphs.map((p, idx) => {
-        const firstLine = p.split("\n")[0].trim();
-        const headerMatch = firstLine.match(
-          /^(Verso\s*\d*|Primeira\s*Parte|Segunda\s*Parte|Refr[aã]o|Ponte|Intro|Coro|Final):?\s*$/i,
-        );
-        if (headerMatch) {
-          const sectionName = headerMatch[1].replace(/:$/, "").trim();
-          const rest = p.split("\n").slice(1).join("\n").trim();
+      return withSectionKeys(
+        paragraphs.map((p, idx) => {
+          const firstLine = p.split("\n")[0].trim();
+          const headerMatch = firstLine.match(
+            /^(Verso\s*\d*|Primeira\s*Parte|Segunda\s*Parte|Refr[aã]o|Ponte|Intro|Coro|Final):?\s*$/i,
+          );
+          if (headerMatch) {
+            const sectionName = headerMatch[1].replace(/:$/, "").trim();
+            const rest = p.split("\n").slice(1).join("\n").trim();
+            return {
+              id: `section-${idx}`,
+              key: "",
+              name: sectionName,
+              type: classifySectionType(sectionName),
+              content: rest,
+            };
+          }
+
           return {
             id: `section-${idx}`,
-            name: sectionName,
-            type: classifySectionType(sectionName),
-            content: rest,
+            key: "",
+            name: `Estrofe ${idx + 1}`,
+            type: "verse" as const,
+            content: p.trim(),
           };
-        }
-
-        return {
-          id: `section-${idx}`,
-          name: `Estrofe ${idx + 1}`,
-          type: "verse" as const,
-          content: p.trim(),
-        };
-      });
+        }),
+      );
     }
 
-    return [
+    return withSectionKeys([
       {
         id: "section-0",
+        key: "",
         name: "Música Completa",
         type: "generic",
         content: text.trim(),
       },
-    ];
+    ]);
   }
 
   const sections: SongSection[] = [];
@@ -411,6 +450,7 @@ export function parseSongSections(text: string): SongSection[] {
       const content = match[2].trim();
       sections.push({
         id: `section-${idx}-${rawName.toLowerCase().replace(/\s+/g, "-")}`,
+        key: "",
         name: rawName,
         type: classifySectionType(rawName),
         content,
@@ -418,6 +458,7 @@ export function parseSongSections(text: string): SongSection[] {
     } else {
       sections.push({
         id: `section-${idx}`,
+        key: "",
         name: idx === 0 ? "Introdução" : `Seção ${idx + 1}`,
         type: "generic",
         content: part,
@@ -425,7 +466,7 @@ export function parseSongSections(text: string): SongSection[] {
     }
   }
 
-  return sections;
+  return withSectionKeys(sections);
 }
 
 /**

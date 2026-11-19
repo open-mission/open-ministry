@@ -4,6 +4,7 @@ import {
   classifySectionType,
   extractLyricsFromChords,
   isChordLine,
+  normalizeSectionKey,
   parseCifraClubTxt,
   parseSongSections,
   STANDARD_TONES,
@@ -229,6 +230,39 @@ Vem me incendiar`;
       expect(parsed.lyrics).toContain("[Primeira Parte]");
       expect(parsed.lyrics).toContain("Cê é bem-vindo aqui");
       expect(parsed.lyrics).not.toContain("C#m7");
+    });
+  });
+
+  describe("Song Section Keys", () => {
+    it("normaliza nome de seção com acentos e ocorrência", () => {
+      expect(normalizeSectionKey("Refrão")).toBe("refrao");
+      expect(normalizeSectionKey("Primeira Parte")).toBe("primeira-parte");
+    });
+
+    it("gera chaves estáveis com ocorrência para seções repetidas", () => {
+      const sections = parseSongSections("[Refrão]A\n[Verso]B\n[Refrão]C");
+      expect(sections.map((s) => s.key)).toEqual([
+        "refrao#1",
+        "verso#1",
+        "refrao#2",
+      ]);
+    });
+
+    it("mantém a chave estável ao transpor e reordenar o texto", () => {
+      const before = parseSongSections("[Intro]A\n[Refrão]B");
+      const after = parseSongSections("[Intro]C\n[Refrão]D");
+      expect(before.map((s) => s.key)).toEqual(after.map((s) => s.key));
+    });
+
+    it("atribui chave às seções sem tags e ao fallback de texto único", () => {
+      const stanzas = parseSongSections(
+        "Primeira estrofe da música\n\nSegunda estrofe da canção",
+      );
+      expect(stanzas.map((s) => s.key)).toEqual(["estrofe-1#1", "estrofe-2#1"]);
+
+      const single = parseSongSections("Só uma linha de letra");
+      expect(single).toHaveLength(1);
+      expect(single[0].key).toBe("musica-completa#1");
     });
   });
 });

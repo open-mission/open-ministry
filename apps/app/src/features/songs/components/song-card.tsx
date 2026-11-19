@@ -479,6 +479,7 @@ export function SongCard({
           open={editOpen}
           onOpenChange={setEditOpen}
           songId={song.id}
+          canUpdate={Boolean(canManage)}
           existingCollections={existingCollections}
           initialData={{
             title: song.title,

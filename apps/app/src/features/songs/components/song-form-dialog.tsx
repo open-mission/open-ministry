@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   AlertTriangleIcon,
+  ClipboardListIcon,
   ExternalLinkIcon,
   FileMusicIcon,
   FileTextIcon,
@@ -13,6 +14,7 @@ import {
   Minimize2Icon,
   Music2Icon,
   SparklesIcon,
+  SaveIcon,
   XIcon,
 } from "lucide-react";
 
@@ -32,7 +34,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -55,13 +59,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   extractLyricsFromChords,
+  parseSongSections,
   STANDARD_TIME_SIGNATURES,
   STANDARD_TONES,
 } from "@/lib/music/chords-utils";
 import { generateStreamingSearchLinks } from "@/lib/music/lyrics-service";
 import type { SongRecord } from "@/lib/songs";
 import { cn } from "@/lib/utils";
+import { useSongArrangements } from "../hooks/use-song-arrangements";
 import { CollectionCombobox } from "./collection-combobox";
+import { DepartmentArrangementPicker } from "./department-arrangement-picker";
 
 type SongFormDialogProps = {
   open: boolean;
@@ -85,6 +92,12 @@ type SongFormDialogProps = {
   existingCollections?: string[];
   onSongCreated?: (song: SongRecord) => void;
   onSongUpdated?: (song: SongRecord) => void;
+  /** Aba inicial do formulário (ex.: `notas-banda` ao editar uma nota). */
+  initialTab?: string;
+  /** Departamento pré-selecionado na aba "Notas & Banda". */
+  initialDepartmentId?: string;
+  /** Edição de notas/formação exige `can("music", "updateSong")`. */
+  canUpdate?: boolean;
 };
 
 export function SongFormDialog({
@@ -95,6 +108,9 @@ export function SongFormDialog({
   existingCollections = [],
   onSongCreated,
   onSongUpdated,
+  initialTab = "dados",
+  initialDepartmentId,
+  canUpdate = false,
 }: SongFormDialogProps) {
   const isEditing = Boolean(songId);
   const isMobile = useIsMobile();
@@ -161,6 +177,109 @@ export function SongFormDialog({
     initialData?.tags?.join(", ") ?? "",
   );
 
+  // Notas por seção e formação da banda (por departamento)
+  const {
+    departments: arrangementDepartments,
+    isLoading: arrangementsLoading,
+    error: arrangementsError,
+    savingKey: arrangementsSavingKey,
+    setNotes: saveNotes,
+    setFormation: saveFormation,
+  } = useSongArrangements(songId);
+
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
+  const selectedDepartment = useMemo(
+    () =>
+      arrangementDepartments.find(
+        (department) => department.departmentId === selectedDepartmentId,
+      ) ??
+      arrangementDepartments.find(
+        (department) => department.departmentId === initialDepartmentId,
+      ) ??
+      arrangementDepartments[0] ??
+      null,
+    [arrangementDepartments, initialDepartmentId, selectedDepartmentId],
+  );
+
+  const [notesEdits, setNotesEdits] = useState<Record<string, string>>({});
+  const [formationEdits, setFormationEdits] = useState<string[] | null>(null);
+
+  const effectiveNotes = useMemo(
+    () => ({ ...(selectedDepartment?.notes ?? {}), ...notesEdits }),
+    [selectedDepartment, notesEdits],
+  );
+
+  const formationDraft =
+    formationEdits ?? selectedDepartment?.selectedFunctionIds ?? [];
+
+  const handleDepartmentChange = (departmentId: string) => {
+    // Ao trocar de departamento, descarta edições locais e volta aos dados salvos.
+    setSelectedDepartmentId(departmentId);
+    setNotesEdits({});
+    setFormationEdits(null);
+  };
+
+  const arrangementSections = useMemo(() => {
+    const merged = [...parseSongSections(chords), ...parseSongSections(lyrics)];
+    const seen = new Set<string>();
+
+    return merged.filter((section) => {
+      if (seen.has(section.key)) return false;
+      seen.add(section.key);
+      return true;
+    });
+  }, [chords, lyrics]);
+
+  const arrangementSectionKeys = useMemo(
+    () => new Set(arrangementSections.map((section) => section.key)),
+    [arrangementSections],
+  );
+
+  const orphanNoteKeys = useMemo(
+    () =>
+      Object.keys(effectiveNotes).filter(
+        (key) =>
+          !arrangementSectionKeys.has(key) && (effectiveNotes[key] ?? "").trim(),
+      ),
+    [arrangementSectionKeys, effectiveNotes],
+  );
+
+  const arrangementFunctions = selectedDepartment?.functions ?? [];
+
+  const handleSaveNotes = async () => {
+    if (!selectedDepartment) return;
+    const saved = await saveNotes(
+      selectedDepartment.departmentId,
+      effectiveNotes,
+    );
+    if (saved) setNotesEdits({});
+  };
+
+  const handleSaveFormation = async () => {
+    if (!selectedDepartment) return;
+    const saved = await saveFormation(
+      selectedDepartment.departmentId,
+      formationDraft,
+    );
+    if (saved) setFormationEdits(null);
+  };
+
+  const toggleFormationFunction = (functionId: string) => {
+    const current = formationDraft;
+    setFormationEdits(
+      current.includes(functionId)
+        ? current.filter((id) => id !== functionId)
+        : [...current, functionId],
+    );
+  };
+
+  const arrangementDepartmentOptions = arrangementDepartments.map(
+    (department) => ({
+      id: department.departmentId,
+      name: department.departmentName,
+    }),
+  );
+
   // Sincroniza os campos quando initialData mudar
   const [prevInitialData, setPrevInitialData] = useState(initialData);
   if (initialData !== prevInitialData) {
@@ -214,11 +333,17 @@ export function SongFormDialog({
     initialData,
   ]);
 
+  const resetArrangementEdits = () => {
+    setNotesEdits({});
+    setFormationEdits(null);
+  };
+
   const handleRequestClose = (nextOpen: boolean) => {
     if (!nextOpen) {
       if (isDirty) {
         setShowDiscardAlert(true);
       } else {
+        resetArrangementEdits();
         setIsMaximized(false);
         onOpenChange(false);
       }
@@ -242,6 +367,7 @@ export function SongFormDialog({
     setSpotifyUrl(initialData?.spotifyUrl ?? "");
     setCollection(initialData?.collection ?? "");
     setTagsInput(initialData?.tags?.join(", ") ?? "");
+    resetArrangementEdits();
 
     setShowDiscardAlert(false);
     setIsMaximized(false);
@@ -404,13 +530,13 @@ export function SongFormDialog({
 
       {/* 2. TABS CONTAINER FIXO COM SCROLL DENTRO DOS CAMPOS */}
       <Tabs
-        defaultValue="dados"
+        defaultValue={initialTab}
         className="flex flex-1 min-h-0 flex-col overflow-hidden"
       >
         {/* TABS LIST FIXO NO TOPO COM SUPORTE A ROLAGEM HORIZONTAL NO MOBILE */}
         <div className="shrink-0 border-b border-border/70 bg-muted/20 px-3 py-2 sm:px-6">
           <div className="w-full overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <TabsList className="inline-flex h-9.5 w-max min-w-full items-center justify-start gap-1 rounded-lg bg-muted/80 p-1 sm:grid sm:h-10 sm:w-full sm:grid-cols-3">
+            <TabsList className="inline-flex h-9.5 w-max min-w-full items-center justify-start gap-1 rounded-lg bg-muted/80 p-1 sm:grid sm:h-10 sm:w-full sm:grid-cols-4">
               <TabsTrigger
                 value="dados"
                 className="shrink-0 gap-1.5 px-3 py-1.5 text-xs font-medium sm:text-sm"
@@ -431,6 +557,13 @@ export function SongFormDialog({
               >
                 <ExternalLinkIcon className="size-3.5" />
                 <span>Plataformas & Links</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="notas-banda"
+                className="shrink-0 gap-1.5 px-3 py-1.5 text-xs font-medium sm:text-sm"
+              >
+                <ClipboardListIcon className="size-3.5" />
+                <span>Notas &amp; Banda</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -815,6 +948,235 @@ export function SongFormDialog({
                 </div>
               </div>
             </div>
+          </TabsContent>
+
+          {/* ABA 4: NOTAS POR SEÇÃO & FORMAÇÃO DA BANDA */}
+          <TabsContent
+            value="notas-banda"
+            className="mt-0 flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 data-[state=inactive]:hidden"
+          >
+            {!songId ? (
+              <p className="text-xs text-muted-foreground sm:text-sm">
+                Salve a música primeiro para registrar notas por seção e a
+                formação da banda.
+              </p>
+            ) : arrangementsLoading ? (
+              <p className="flex items-center gap-2 text-xs text-muted-foreground sm:text-sm">
+                <Loader2Icon className="size-4 animate-spin" aria-hidden="true" />
+                Carregando notas e formação...
+              </p>
+            ) : arrangementsError ? (
+              <p className="text-xs text-destructive sm:text-sm" role="alert">
+                {arrangementsError}
+              </p>
+            ) : arrangementDepartments.length === 0 ? (
+              <p className="text-xs text-muted-foreground sm:text-sm">
+                Nenhum departamento com o módulo de música está disponível para
+                você.
+              </p>
+            ) : (
+              <div className="space-y-5">
+                <div className="space-y-1.5 sm:max-w-xs">
+                  <Label htmlFor="arrangement-department">Departamento</Label>
+                  <DepartmentArrangementPicker
+                    id="arrangement-department"
+                    departments={arrangementDepartmentOptions}
+                    value={selectedDepartment?.departmentId ?? ""}
+                    onChange={handleDepartmentChange}
+                  />
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    Notas e formação são específicas de cada departamento.
+                  </p>
+                </div>
+
+                {canUpdate ? (
+                  <>
+                    <section className="space-y-2.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="font-heading text-sm font-semibold text-foreground">
+                          Notas por seção
+                        </h3>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleSaveNotes}
+                          disabled={arrangementsSavingKey !== null}
+                          className="min-h-9 gap-1.5 text-xs"
+                        >
+                          {arrangementsSavingKey?.startsWith("notes:") ? (
+                            <Loader2Icon className="size-3.5 animate-spin" />
+                          ) : (
+                            <SaveIcon className="size-3.5" />
+                          )}
+                          Salvar notas
+                        </Button>
+                      </div>
+
+                      {arrangementSections.length === 0 &&
+                      orphanNoteKeys.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          Adicione a cifra ou a letra para detectar as seções da
+                          música.
+                        </p>
+                      ) : null}
+
+                      <div className="space-y-3">
+                        {arrangementSections.map((section) => (
+                          <div key={section.key} className="space-y-1.5">
+                            <Label
+                              htmlFor={`section-note-${section.key}`}
+                              className="text-xs font-medium"
+                            >
+                              {section.name}
+                            </Label>
+                            <Textarea
+                              id={`section-note-${section.key}`}
+                              data-section-key={section.key}
+                              value={effectiveNotes[section.key] ?? ""}
+                              onChange={(event) =>
+                                setNotesEdits((current) => ({
+                                  ...current,
+                                  [section.key]: event.target.value,
+                                }))
+                              }
+                              placeholder="Ex.: só guitarra e violão, entrar em 2..."
+                              className="min-h-16 resize-y text-xs sm:text-sm"
+                            />
+                          </div>
+                        ))}
+
+                        {orphanNoteKeys.map((key) => (
+                          <div key={key} className="space-y-1.5">
+                            <Label
+                              htmlFor={`section-note-${key}`}
+                              className="flex items-center gap-1.5 text-xs font-medium"
+                            >
+                              <Badge
+                                variant="outline"
+                                className="text-[11px] font-medium"
+                              >
+                                Sem seção
+                              </Badge>
+                              <span className="text-muted-foreground">{key}</span>
+                            </Label>
+                            <Textarea
+                              id={`section-note-${key}`}
+                              data-section-key={key}
+                              value={effectiveNotes[key] ?? ""}
+                              onChange={(event) =>
+                                setNotesEdits((current) => ({
+                                  ...current,
+                                  [key]: event.target.value,
+                                }))
+                              }
+                              placeholder="Nota de uma seção que não existe mais na cifra."
+                              className="min-h-16 resize-y text-xs sm:text-sm"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
+                    <section className="space-y-2.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="font-heading text-sm font-semibold text-foreground">
+                          Formação da banda
+                        </h3>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleSaveFormation}
+                          disabled={arrangementsSavingKey !== null}
+                          className="min-h-9 gap-1.5 text-xs"
+                        >
+                          {arrangementsSavingKey?.startsWith("formation:") ? (
+                            <Loader2Icon className="size-3.5 animate-spin" />
+                          ) : (
+                            <SaveIcon className="size-3.5" />
+                          )}
+                          Salvar formação
+                        </Button>
+                      </div>
+
+                      {arrangementFunctions.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          Este departamento ainda não tem funções cadastradas.
+                        </p>
+                      ) : (
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          {arrangementFunctions.map((fn) => (
+                            <label
+                              key={fn.id}
+                              htmlFor={`formation-${fn.id}`}
+                              className="flex min-h-11 items-center gap-2.5 rounded-lg border border-border/70 bg-card px-3 text-sm text-foreground"
+                            >
+                              <Checkbox
+                                id={`formation-${fn.id}`}
+                                checked={formationDraft.includes(fn.id)}
+                                onCheckedChange={() =>
+                                  toggleFormationFunction(fn.id)
+                                }
+                              />
+                              <span>{fn.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                  </>
+                ) : (
+                  <div className="space-y-4">
+                    <section className="space-y-2">
+                      <h3 className="font-heading text-sm font-semibold text-foreground">
+                        Notas por seção
+                      </h3>
+                      {Object.entries(effectiveNotes).filter(
+                        ([, note]) => note.trim().length > 0,
+                      ).length === 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          Nenhuma nota registrada para este departamento.
+                        </p>
+                      ) : (
+                        <ul className="space-y-1.5">
+                          {Object.entries(effectiveNotes)
+                            .filter(([, note]) => note.trim().length > 0)
+                            .map(([key, note]) => (
+                              <li
+                                key={key}
+                                className="border-l-2 border-primary/30 pl-2 text-xs text-muted-foreground"
+                              >
+                                <span className="font-medium text-foreground">
+                                  {arrangementSections.find(
+                                    (section) => section.key === key,
+                                  )?.name ?? key}
+                                  :
+                                </span>{" "}
+                                <span className="whitespace-pre-line">
+                                  {note}
+                                </span>
+                              </li>
+                            ))}
+                        </ul>
+                      )}
+                    </section>
+
+                    <section className="space-y-2">
+                      <h3 className="font-heading text-sm font-semibold text-foreground">
+                        Formação da banda
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {formationDraft.length === 0
+                          ? "Nenhuma função definida para este departamento."
+                          : arrangementFunctions
+                              .filter((fn) => formationDraft.includes(fn.id))
+                              .map((fn) => fn.name)
+                              .join(", ")}
+                      </p>
+                    </section>
+                  </div>
+                )}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
 

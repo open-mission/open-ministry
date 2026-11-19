@@ -26,6 +26,17 @@ mock.module("@/components/ui/dropdown-menu", () => ({
   DropdownMenuItem: passthrough,
   DropdownMenuTrigger: passthrough,
 }));
+// O drawer agora busca notas/formação por departamento (hook com router/toast).
+mock.module("next/navigation", () => ({
+  useRouter: () => ({ push: () => undefined, refresh: () => undefined }),
+  redirect: () => undefined,
+  notFound: () => undefined,
+  usePathname: () => "/dashboard/songs/song-1",
+  useSearchParams: () => new URLSearchParams(),
+}));
+mock.module("sonner", () => ({
+  toast: { success: () => {}, error: () => {}, info: () => {} },
+}));
 
 import { SongQuickDrawer } from "@/features/songs/components/song-quick-drawer";
 
