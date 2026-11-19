@@ -29,6 +29,12 @@ export type CalendarItem = {
   color: "primary" | "emerald" | "amber" | "purple" | "blue" | "rose";
   location?: string | null;
   href?: string | null;
+  /** ICS: incrementa quando o evento muda de forma significativa. */
+  sequence?: number;
+  /** ICS: data da última alteração do evento (ISO). */
+  lastModified?: string | null;
+  /** ICS: `CONFIRMED` por padrão; `CANCELLED` mantém o evento como cancelado. */
+  status?: "CONFIRMED" | "CANCELLED";
   metadata?: {
     eventId?: string;
     departmentId?: string;
@@ -210,18 +216,42 @@ export function dedupeCalendarItems(items: CalendarItem[]): CalendarItem[] {
 function escapeIcsText(value: string): string {
   return value
     .replace(/\\/g, "\\\\")
-    .replace(/\n/g, "\\n")
+    .replace(/\r\n|\r|\n/g, "\\n")
     .replace(/,/g, "\\,")
     .replace(/;/g, "\\;");
 }
 
+/**
+ * Dobra a linha a cada 75 octetos (RFC 5545), contando bytes UTF-8 para não
+ * cortar um caractere acentuado no meio. A continuação começa com um espaço,
+ * que também conta no limite.
+ */
 function foldIcsLine(line: string): string {
-  if (line.length <= 74) return line;
-  const chunks: string[] = [];
-  for (let index = 0; index < line.length; index += 74) {
-    chunks.push(`${index === 0 ? "" : " "}${line.slice(index, index + 74)}`);
+  const encoder = new TextEncoder();
+  if (encoder.encode(line).length <= 75) return line;
+
+  const parts: string[] = [];
+  let current = "";
+  let currentBytes = 0;
+  let limit = 75;
+
+  for (const char of line) {
+    const charBytes = encoder.encode(char).length;
+    if (currentBytes + charBytes > limit) {
+      parts.push(current);
+      current = char;
+      currentBytes = charBytes;
+      limit = 74; // 75 octetos menos o espaço da continuação
+    } else {
+      current += char;
+      currentBytes += charBytes;
+    }
   }
-  return chunks.join("\r\n");
+
+  parts.push(current);
+  return parts
+    .map((part, index) => (index === 0 ? part : ` ${part}`))
+    .join("\r\n");
 }
 
 function icsUtcStamp(date: Date): string {
@@ -255,6 +285,16 @@ export function buildCalendarIcs(
     lines.push("BEGIN:VEVENT");
     lines.push(`UID:${item.id}@openministry`);
     lines.push(`DTSTAMP:${icsUtcStamp(new Date())}`);
+    if (item.lastModified) {
+      const modified = parseISO(item.lastModified);
+      if (!Number.isNaN(modified.getTime())) {
+        lines.push(`LAST-MODIFIED:${icsUtcStamp(modified)}`);
+      }
+    }
+    if (typeof item.sequence === "number" && Number.isFinite(item.sequence)) {
+      lines.push(`SEQUENCE:${Math.max(0, Math.trunc(item.sequence))}`);
+    }
+    lines.push(`STATUS:${item.status ?? "CONFIRMED"}`);
 
     if (item.allDay) {
       const startKey = calendarDateKey(item.startsAt, timeZone);

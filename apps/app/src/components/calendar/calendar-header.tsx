@@ -6,25 +6,17 @@ import {
   CakeIcon,
   CalendarDaysIcon,
   CalendarIcon,
-  CalendarPlusIcon,
   CalendarRangeIcon,
   CalendarX2Icon,
   CheckCircle2Icon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  DownloadIcon,
   FilterIcon,
   ListIcon,
 } from "lucide-react";
 
-import { CreateEventDialog } from "@/components/events/create-event-dialog";
+import { CalendarActions } from "@/components/calendar/calendar-actions";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import {
   NativeSelect,
@@ -72,6 +64,7 @@ type CalendarHeaderProps = {
     birthdays?: number;
   };
   canCreateEvent?: boolean;
+  canCreateRehearsal?: boolean;
   canViewTeamAvailability?: boolean;
   departments?: { id: string; name: string }[];
 };
@@ -105,6 +98,7 @@ export function CalendarHeader({
   onExport,
   itemsCount,
   canCreateEvent,
+  canCreateRehearsal,
   canViewTeamAvailability,
   departments,
 }: CalendarHeaderProps) {
@@ -277,26 +271,19 @@ export function CalendarHeader({
     </NativeSelect>
   ) : null;
 
-  const exportMenu = (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-9 gap-1.5 text-xs"
-          aria-label="Exportar agenda"
-        >
-          <DownloadIcon className="size-4" aria-hidden="true" />
-          <span className="hidden sm:inline">Exportar</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onSelect={onExport} className="gap-2">
-          <DownloadIcon className="size-4" aria-hidden="true" />
-          Exportar .ics
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+  const currentDateLabel = formatCalendarDate(currentDate, "yyyy-MM-dd", {
+    timeZone,
+  });
+
+  const actions = (variant: "mobile" | "desktop") => (
+    <CalendarActions
+      departments={departments ?? []}
+      defaultDate={currentDateLabel}
+      canCreateEvent={Boolean(canCreateEvent)}
+      canCreateRehearsal={Boolean(canCreateRehearsal)}
+      onExport={onExport}
+      variant={variant}
+    />
   );
 
   return (
@@ -313,24 +300,7 @@ export function CalendarHeader({
         </div>
 
         <div className="flex shrink-0 items-center gap-2 sm:hidden">
-          {exportMenu}
-          {canCreateEvent ? (
-            <CreateEventDialog
-              departments={departments ?? []}
-              defaultDate={formatCalendarDate(currentDate, "yyyy-MM-dd", {
-                timeZone,
-              })}
-              trigger={
-                <Button
-                  size="icon"
-                  className="size-11 rounded-xl shadow-xs"
-                  aria-label="Novo culto ou evento"
-                >
-                  <CalendarPlusIcon className="size-5" />
-                </Button>
-              }
-            />
-          ) : null}
+          {actions("mobile")}
         </div>
       </div>
 
@@ -424,24 +394,7 @@ export function CalendarHeader({
         </div>
 
         <div className="hidden items-center gap-2 sm:flex">
-          {exportMenu}
-          {canCreateEvent ? (
-            <CreateEventDialog
-              departments={departments ?? []}
-              defaultDate={formatCalendarDate(currentDate, "yyyy-MM-dd", {
-                timeZone,
-              })}
-              trigger={
-                <Button
-                  size="sm"
-                  className="h-9 shrink-0 gap-1.5 rounded-xl px-3 text-xs font-semibold shadow-xs sm:text-sm"
-                >
-                  <CalendarPlusIcon className="size-4" />
-                  <span>Novo culto ou evento</span>
-                </Button>
-              }
-            />
-          ) : null}
+          {actions("desktop")}
         </div>
       </div>
 

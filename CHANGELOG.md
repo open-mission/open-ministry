@@ -6,6 +6,17 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.6.0] - 2026-11-19
+
+### Adicionado e Melhorado
+- **Sincronização da Agenda Pessoal (`Sincronizar com meu calendário`):** cada membro pode gerar um link de assinatura ICS em Configurações → Agenda & Calendário e colá-lo no Apple Calendário, Google Agenda ou Outlook. Quatro opções controlam o conteúdo: cultos, ensaios dos departamentos do membro, eventos dos departamentos e itens em que está escalado. A atualização é feita pelo aplicativo de calendário ao consultar o link — não é em tempo real.
+- **Controle do Link de Assinatura:** o token é exibido uma única vez, armazenado apenas como hash SHA-256 e pode ser rotacionado ou revogado. A listagem nunca devolve o link em texto.
+- **Novo Grupo de Ações na Agenda:** botões para criar culto/evento, criar ensaio, conectar meu calendário e exportar um `.ics`, com variações para desktop e celular.
+- **Feed ICS mais confiável:** os eventos passam a incluir `SEQUENCE`, `LAST-MODIFIED` e `STATUS`, e as linhas são dobradas por octeto, reduzindo duplicatas e problemas de codificação nos aplicativos de calendário.
+
+### Nota de operação
+- A tabela `calendar_feed` (migration `0037_funny_firelord.sql`) precisa existir antes do deploy; sem ela, a rota do feed responde 500.
+
 ## [1.5.0] - 2026-11-19
 
 ### Adicionado e Melhorado

@@ -10,6 +10,7 @@ import {
 import { getOrganizationPermissionSettingsAction } from "@/app/actions/permissions";
 import { SettingsView } from "@/components/settings/settings-view";
 import { Skeleton } from "@/components/ui/skeleton";
+import { loadCalendarFeedViews } from "@/lib/calendar-feed-data";
 import { listDepartments } from "@/lib/departments";
 import { getOrganizationMessageTemplates } from "@/lib/message-templates-server";
 import { requireOrganizationContext } from "@/lib/organizations";
@@ -34,14 +35,21 @@ async function SettingsContent() {
   const { organization, session, role, isAdmin } =
     await requireOrganizationContext();
 
-  const [userRecord, initialSessions, initialPasskeys, people, departments] =
-    await Promise.all([
-      getUserRecord(session.user.id),
-      getUserSessionsAction(),
-      getUserPasskeysAction(),
-      listPeople(organization.id),
-      listDepartments(organization.id),
-    ]);
+  const [
+    userRecord,
+    initialSessions,
+    initialPasskeys,
+    people,
+    departments,
+    calendarFeeds,
+  ] = await Promise.all([
+    getUserRecord(session.user.id),
+    getUserSessionsAction(),
+    getUserPasskeysAction(),
+    listPeople(organization.id),
+    listDepartments(organization.id),
+    loadCalendarFeedViews(),
+  ]);
 
   const [evolutionSettings, messageTemplates, permissionSettingsResult] = isAdmin
     ? await Promise.all([
@@ -77,6 +85,7 @@ async function SettingsContent() {
       isAdmin={isAdmin}
       userData={userData}
       calendarPreferences={calendarPreferences}
+      calendarFeeds={calendarFeeds}
       initialSessions={initialSessions}
       initialPasskeys={initialPasskeys}
       peopleCount={people.length}

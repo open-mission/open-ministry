@@ -260,6 +260,13 @@
       "when": 1795041854185,
       "tag": "0036_fearless_scarecrow",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1795102005740,
+      "tag": "0037_funny_firelord",
+      "breakpoints": true
     }
   ]
 }
