@@ -3,13 +3,17 @@
   "workspaces": {
     "": {
       "name": "open-ministry-tmp",
+      "dependencies": {
+        "@ui-sdk/core": "^0.1.0-beta.13",
+        "@ui-sdk/react": "^0.1.0-beta.13",
+      },
       "devDependencies": {
         "turbo": "^2.10.7",
       },
     },
     "apps/app": {
       "name": "@openministry/app",
-      "version": "0.9.10",
+      "version": "1.6.0",
       "dependencies": {
         "@base-ui/react": "^1.9.0",
         "@better-auth/infra": "^0.4.28",
@@ -83,7 +87,7 @@
     },
     "apps/docs": {
       "name": "@openministry/docs",
-      "version": "0.9.10",
+      "version": "1.0.3",
       "dependencies": {
         "@openministry/ui": "workspace:*",
         "@tabler/icons-react": "^3.50.0",
@@ -112,7 +116,7 @@
     },
     "apps/site": {
       "name": "@openministry/site",
-      "version": "0.9.10",
+      "version": "1.0.3",
       "dependencies": {
         "@openministry/ui": "workspace:*",
         "@tabler/icons-react": "^3.50.0",
@@ -1085,6 +1089,10 @@
     "@typescript-eslint/utils": ["@typescript-eslint/utils@8.72.1", "", { "dependencies": { "@eslint-community/eslint-utils": "^4.9.1", "@typescript-eslint/scope-manager": "8.72.1", "@typescript-eslint/types": "8.72.1", "@typescript-eslint/typescript-estree": "8.72.1" }, "peerDependencies": { "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0", "typescript": ">=4.8.4 <6.1.0" } }, "sha512-5v5liypurJBFHCBNqh/RjsymAD+VWcE0djuGY/BUqp5fC3Qn+luWDEksjuTtWjPn6i5zQlUtkZCRG/CYG0yCkA=="],
 
     "@typescript-eslint/visitor-keys": ["@typescript-eslint/visitor-keys@8.72.1", "", { "dependencies": { "@typescript-eslint/types": "8.72.1", "eslint-visitor-keys": "^5.0.0" } }, "sha512-SB8xqipSzZHUePCCLNeYxqnxq83X61/qzNhjQGbTfjxGZIeOEP7tBgWYX05Tcd6CgE02WdTJnh5b8kMZJ/+bnQ=="],
+
+    "@ui-sdk/core": ["@ui-sdk/core@0.1.0-beta.13", "", {}, "sha512-URjk9hqdc/cZKDtw6Gb9NqjY48U8l0EgoP4d5ghlooa3av+GrR0iSmsav133UU4oelcuKIO1ZPJ4j7gIPMr1Vg=="],
+
+    "@ui-sdk/react": ["@ui-sdk/react@0.1.0-beta.13", "", { "peerDependencies": { "@types/react": ">=19.2.10", "@ui-sdk/core": "^0.1.0-beta.13", "react": ">=19", "react-dom": ">=19" }, "optionalPeers": ["@types/react"] }, "sha512-Gz85tAcPJHwnv90WMIAtED3fDamqVD3F3FF3uKsA/TsL+KbaeHSgX1gGdIpNcnzkmDO8YZk9aZBKgCFgpaCcHA=="],
 
     "@ungap/structured-clone": ["@ungap/structured-clone@1.4.0", "", {}, "sha512-1mEZtMKPM09vDmQt5y7YvmN2+DFTP7Tg0EWXdic8/C6VRnpb33e4ghisCIE3WZjsE2N8mf+QV1Zqh7ZFYLWInQ=="],
 
