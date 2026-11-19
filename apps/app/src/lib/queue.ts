@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { Redis } from "@upstash/redis";
 import { Client as QStashClient, Receiver } from "@upstash/qstash";
 
@@ -186,18 +188,44 @@ function resolveAppBaseUrl(): string | null {
 }
 
 /**
+ * Converte a chave de deduplicação interna em um id aceito pelo QStash.
+ *
+ * O header `Upstash-Deduplication-Id` não aceita caracteres como `:`, `-` ou
+ * `.` — e a chave de dedupe usa o formato
+ * `rehearsal:eventId:ruleId:isoTimestamp`. Por isso enviamos o SHA-256 em hex
+ * (64 caracteres [a-f0-9]), que é determinístico e não perde unicidade: a
+ * mesma chave sempre gera o mesmo id e chaves diferentes geram ids diferentes.
+ */
+export function toQStashDeduplicationId(dedupeKey: string): string {
+  return createHash("sha256").update(dedupeKey).digest("hex");
+}
+
+type ScheduleRehearsalReminderDeps = {
+  qstash?: Pick<QStashClient, "publishJSON"> | null;
+  appBaseUrl?: string | null;
+};
+
+/**
  * Agenda um lembrete de ensaio no QStash. Retorna o messageId quando o
  * agendamento foi aceito; `null` quando o QStash não está configurado, o
  * lembrete está distante demais ou houve falha (o job de varredura cobre).
+ *
+ * `deps` é opcional e existe para testes: quando omitido, o cliente e a URL
+ * são resolvidos do ambiente, exatamente como antes.
  */
-export async function scheduleRehearsalReminderJob(input: {
-  reminderId: string;
-  organizationId: string;
-  deliverAt: Date;
-  dedupeKey: string;
-}): Promise<string | null> {
-  const qstash = getQStashClient();
-  const appBaseUrl = resolveAppBaseUrl();
+export async function scheduleRehearsalReminderJob(
+  input: {
+    reminderId: string;
+    organizationId: string;
+    deliverAt: Date;
+    dedupeKey: string;
+  },
+  deps?: ScheduleRehearsalReminderDeps,
+): Promise<string | null> {
+  const qstash =
+    deps?.qstash !== undefined ? deps.qstash : getQStashClient();
+  const appBaseUrl =
+    deps?.appBaseUrl !== undefined ? deps.appBaseUrl : resolveAppBaseUrl();
 
   if (!qstash || !appBaseUrl) {
     return null;
@@ -216,7 +244,8 @@ export async function scheduleRehearsalReminderJob(input: {
         organizationId: input.organizationId,
       },
       notBefore: Math.floor(input.deliverAt.getTime() / 1000),
-      deduplicationId: input.dedupeKey,
+      // Hash obrigatório: a chave contém ":" e o QStash rejeita o header.
+      deduplicationId: toQStashDeduplicationId(input.dedupeKey),
       retries: 3,
     });
 
