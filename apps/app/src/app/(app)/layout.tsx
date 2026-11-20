@@ -8,6 +8,8 @@ import {
 import {
   HeaderCenterSlot,
   HeaderUserSlot,
+  HomeAwareHeader,
+  HomeAwareHeaderFallback,
 } from "@/components/app/home-header-slot";
 import { HomeTabProvider } from "@/components/home/home-tab-context";
 import { DashboardOnboardingLoader } from "@/components/onboarding/dashboard-onboarding-loader";
@@ -47,6 +49,36 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const headerContent = (
+    <>
+      <SidebarTrigger className="hidden md:inline-flex" />
+      <Suspense fallback={<MobileHeaderLeadingFallback />}>
+        <MobileHeaderLeadingLoader />
+      </Suspense>
+      <Separator
+        orientation="vertical"
+        className="mr-1 hidden h-4 self-center md:block"
+      />
+      <Suspense fallback={<DashboardBreadcrumbFallback />}>
+        <HeaderCenterSlot>
+          <DashboardBreadcrumb />
+        </HeaderCenterSlot>
+      </Suspense>
+      <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+        <Suspense fallback={<NotificationBellFallback />}>
+          <NotificationBellLoader />
+        </Suspense>
+        <Suspense fallback={null}>
+          <HeaderUserSlot>
+            <Suspense fallback={<UserMenuFallback />}>
+              <UserMenuLoader />
+            </Suspense>
+          </HeaderUserSlot>
+        </Suspense>
+      </div>
+    </>
+  );
+
   return (
     <OpenMinistryRealtimeProvider>
       <SidebarProvider>
@@ -57,33 +89,15 @@ export default function DashboardLayout({
                 <AppSidebarLoader />
               </Suspense>
               <SidebarInset>
-                <header className="sticky top-0 z-20 flex min-h-[calc(3.5rem+env(safe-area-inset-top))] shrink-0 items-center gap-2 border-b bg-background/85 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-xl sm:gap-3 sm:px-6">
-                  <SidebarTrigger className="hidden md:inline-flex" />
-                  <Suspense fallback={<MobileHeaderLeadingFallback />}>
-                    <MobileHeaderLeadingLoader />
-                  </Suspense>
-                  <Separator
-                    orientation="vertical"
-                    className="mr-1 hidden h-4 self-center md:block"
-                  />
-                  <Suspense fallback={<DashboardBreadcrumbFallback />}>
-                    <HeaderCenterSlot>
-                      <DashboardBreadcrumb />
-                    </HeaderCenterSlot>
-                  </Suspense>
-                  <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
-                    <Suspense fallback={<NotificationBellFallback />}>
-                      <NotificationBellLoader />
-                    </Suspense>
-                    <Suspense fallback={null}>
-                      <HeaderUserSlot>
-                        <Suspense fallback={<UserMenuFallback />}>
-                          <UserMenuLoader />
-                        </Suspense>
-                      </HeaderUserSlot>
-                    </Suspense>
-                  </div>
-                </header>
+                <Suspense
+                  fallback={
+                    <HomeAwareHeaderFallback>
+                      {headerContent}
+                    </HomeAwareHeaderFallback>
+                  }
+                >
+                  <HomeAwareHeader>{headerContent}</HomeAwareHeader>
+                </Suspense>
                 <OfflineBanner />
                 <Suspense fallback={null}>
                   <SentryUserLoader />

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { afterAll, describe, expect, it, mock } from "bun:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -14,6 +14,27 @@ import { NotificationsCard } from "@/components/home/notifications-card";
 import { TasksCard } from "@/components/home/tasks-card";
 import { UpcomingEventsCard } from "@/components/home/upcoming-events-card";
 import { VerseCard } from "@/components/home/verse-card";
+
+// O caminho é controlado pelo roteador do Next; o mock permite renderizar o
+// header integrado na home e em rotas comuns sem montar um App Router.
+const actualNavigation = await import("next/navigation");
+
+let currentPathname = "/";
+
+mock.module("next/navigation", () => ({
+  ...actualNavigation,
+  usePathname: () => currentPathname,
+}));
+
+const {
+  HomeAwareHeader,
+  getHeaderClassName,
+  isHeaderScrolled,
+} = await import("@/components/app/home-header-slot");
+
+afterAll(() => {
+  mock.module("next/navigation", () => ({ ...actualNavigation }));
+});
 
 const verse = {
   dayOfYear: 1,
@@ -54,7 +75,7 @@ const person = (name: string) => ({
 });
 
 describe("layout da nova home", () => {
-  it("HomeHeaderTabs expõe tablist, abas Hoje/Minha Igreja e indicador verde compacto", () => {
+  it("HomeHeaderTabs afasta a aba Hoje do logo e usa indicador que preenche a aba", () => {
     const markup = renderToStaticMarkup(createElement(HomeHeaderTabs));
 
     expect(markup).toContain('role="tablist"');
@@ -68,9 +89,13 @@ describe("layout da nova home", () => {
     expect(markup).toContain('aria-selected="false"');
     expect(markup).toContain("h-14");
     expect(markup).toContain("min-h-[44px]");
-    expect(markup).toContain("gap-7");
+    expect(markup).toContain("gap-6 sm:gap-7");
+    expect(markup).toContain("ml-3");
+    expect(markup).toContain("md:ml-1");
     expect(markup).toContain("after:h-[3px]");
-    expect(markup).toContain("after:w-9");
+    expect(markup).toContain("after:w-full");
+    expect(markup).not.toContain("after:w-9");
+    expect(markup).not.toContain("after:mx-auto");
     expect(markup).toContain("after:bg-primary");
     expect(markup).toContain("after:rounded-full");
     expect(markup).toContain("font-semibold text-foreground");
@@ -125,6 +150,84 @@ describe("layout da nova home", () => {
       createElement(HomeGrid, null, "conteúdo"),
     );
     expect(grid).toContain("grid-cols-1 gap-6 lg:grid-cols-12");
+  });
+});
+
+describe("header integrado da home", () => {
+  it("isHeaderScrolled usa o limite de 4px de rolagem", () => {
+    expect(isHeaderScrolled(0)).toBe(false);
+    expect(isHeaderScrolled(4)).toBe(false);
+    expect(isHeaderScrolled(5)).toBe(true);
+  });
+
+  it("mantém mt-2 e borda transparente na home antes de rolar", () => {
+    const className = getHeaderClassName(true, false);
+
+    expect(className).toContain("sticky");
+    expect(className).toContain("top-0");
+    expect(className).toContain("z-20");
+    expect(className).toContain("border-b");
+    expect(className).toContain("mt-2");
+    expect(className).toContain("transition-colors");
+    expect(className).toContain("duration-200");
+    expect(className).toContain("border-transparent");
+    expect(className).not.toContain("border-border");
+  });
+
+  it("troca a borda da home para border-border ao rolar, sem perder mt-2", () => {
+    const className = getHeaderClassName(true, true);
+
+    expect(className).toContain("mt-2");
+    expect(className).toContain("border-b");
+    expect(className).toContain("transition-colors");
+    expect(className).toContain("border-border");
+    expect(className).not.toContain("border-transparent");
+  });
+
+  it("preserva o header original sem mt-2 nas demais rotas", () => {
+    const className = getHeaderClassName(false, true);
+
+    expect(className).toContain("border-b");
+    expect(className).toContain("border-border");
+    expect(className).not.toContain("mt-2");
+    expect(className).not.toContain("border-transparent");
+    expect(className).not.toContain("transition-colors");
+  });
+
+  it("HomeAwareHeader renderiza o header da home com margem e borda transparente", () => {
+    currentPathname = "/";
+
+    const markup = renderToStaticMarkup(
+      createElement(
+        HomeAwareHeader,
+        null,
+        createElement("span", null, "CONTEUDO_HEADER"),
+      ),
+    );
+
+    expect(markup).toContain("<header");
+    expect(markup).toContain("mt-2");
+    expect(markup).toContain("border-transparent");
+    expect(markup).toContain("sticky");
+    expect(markup).toContain("CONTEUDO_HEADER");
+  });
+
+  it("HomeAwareHeader mantém borda visível e sem margem extra fora da home", () => {
+    currentPathname = "/dashboard";
+
+    const markup = renderToStaticMarkup(
+      createElement(
+        HomeAwareHeader,
+        null,
+        createElement("span", null, "CONTEUDO_HEADER"),
+      ),
+    );
+
+    expect(markup).toContain("<header");
+    expect(markup).toContain("border-border");
+    expect(markup).not.toContain("mt-2");
+    expect(markup).not.toContain("border-transparent");
+    expect(markup).toContain("CONTEUDO_HEADER");
   });
 });
 
