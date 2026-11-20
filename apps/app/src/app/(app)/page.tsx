@@ -17,7 +17,6 @@ import {
   VerseCardSkeleton,
   type ServedDepartment,
 } from "@/components/home";
-import { InviteDialog } from "@/components/members/invite-dialog";
 import { listTasks } from "@/features/tasks";
 import {
   getDepartmentAgenda,
@@ -32,6 +31,7 @@ import {
   ensurePersonForUser,
   findPersonByUserId,
   listPeopleSummary,
+  personDisplayName,
 } from "@/lib/people";
 import {
   getCachedVerseOfTheDay,
@@ -54,7 +54,6 @@ async function HomeContent() {
   await connection();
 
   const { organization, session, isAdmin } = await requireOrganizationContext();
-  const firstName = session.user.name.trim().split(/\s+/)[0] ?? "líder";
   const churchMeta = parseChurchMetadata(organization.metadata);
   const terminology = getDepartmentTerminology(churchMeta);
   const today = getTodayInSaoPaulo();
@@ -170,6 +169,22 @@ async function HomeContent() {
     },
   );
 
+  const taskDepartments = servedDepartments.map(({ id, name }) => ({
+    id,
+    name,
+  }));
+  const taskMembers = visiblePeople
+    .filter((personRecord) =>
+      Boolean(personRecord.userId || personRecord.user?.id),
+    )
+    .map((personRecord) => ({
+      id: personRecord.id,
+      userId: personRecord.userId ?? personRecord.user?.id ?? "",
+      personId: personRecord.id,
+      name: personDisplayName(personRecord),
+      email: personRecord.email ?? personRecord.user?.email ?? null,
+    }));
+
   const { upcoming } = splitEvents(events);
   const featuredEvent = upcoming[0] ?? null;
 
@@ -200,7 +215,15 @@ async function HomeContent() {
         <NotificationsCard announcements={unreadAnnouncements} />
       </div>
       <div className="flex flex-col gap-6 lg:col-span-5">
-        <TasksCard tasks={tasks} />
+        <TasksCard
+          tasks={tasks}
+          currentUserId={session.user.id}
+          isAdmin={isAdmin}
+          ledDepartmentIds={ledDepartmentIds}
+          memberDepartmentIds={memberDepartmentIds}
+          departments={taskDepartments}
+          members={taskMembers}
+        />
         <BirthdaysCard
           entries={birthdayEntries}
           today={today}
@@ -260,23 +283,6 @@ async function HomeContent() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 pb-4">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-2">
-          <h1 className="font-heading text-[2.15rem] leading-none tracking-tight text-balance sm:text-4xl">
-            Olá, {firstName}.
-          </h1>
-          <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-            Aqui está o panorama de{" "}
-            <span className="font-medium text-foreground">{organization.name}</span>{" "}
-            hoje.
-          </p>
-        </div>
-        {isAdmin ? (
-          <div className="flex items-center gap-2">
-            <InviteDialog />
-          </div>
-        ) : null}
-      </header>
       <HomeTabs today={todayContent} church={churchContent} />
     </div>
   );

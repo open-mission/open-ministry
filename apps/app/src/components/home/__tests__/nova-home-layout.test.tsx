@@ -5,6 +5,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { ChurchInfoCard } from "@/components/home/church-info-card";
 import { DepartmentsCard } from "@/components/home/departments-card";
 import { HomeGrid } from "@/components/home/home-grid";
+import { HomeHeaderTabs } from "@/components/home/home-header-tabs";
+import { HomeTabProvider } from "@/components/home/home-tab-context";
 import { HomeSkeleton } from "@/components/home/home-skeleton";
 import { HomeTabs } from "@/components/home/home-tabs";
 import { NextServiceCard } from "@/components/home/next-service-card";
@@ -52,32 +54,69 @@ const person = (name: string) => ({
 });
 
 describe("layout da nova home", () => {
-  it("HomeTabs usa rótulos grandes, indicador verde compacto e borda sutil", () => {
-    const markup = renderToStaticMarkup(
-      createElement(HomeTabs, { today: "Hoje", church: "Igreja" }),
-    );
+  it("HomeHeaderTabs expõe tablist, abas Hoje/Minha Igreja e indicador verde compacto", () => {
+    const markup = renderToStaticMarkup(createElement(HomeHeaderTabs));
 
+    expect(markup).toContain('role="tablist"');
+    expect(markup).toContain('aria-label="Visões da página inicial"');
+    expect(markup).toContain('role="tab"');
+    expect(markup).toContain(">Hoje<");
+    expect(markup).toContain(">Minha Igreja<");
+    expect(markup).toContain('id="home-tab-hoje"');
+    expect(markup).toContain('id="home-tab-igreja"');
+    expect(markup).toContain('aria-selected="true"');
+    expect(markup).toContain('aria-selected="false"');
+    expect(markup).toContain("h-14");
+    expect(markup).toContain("min-h-[44px]");
     expect(markup).toContain("gap-7");
-    expect(markup).toContain("border-b border-border/50");
-    expect(markup).toContain("text-lg");
-    expect(markup).toContain("sm:text-xl");
     expect(markup).toContain("after:h-[3px]");
-    expect(markup).toContain("group-data-horizontal/tabs:after:bottom-0");
-    expect(markup).toContain("group-data-horizontal/tabs:after:h-[3px]");
     expect(markup).toContain("after:w-9");
     expect(markup).toContain("after:bg-primary");
     expect(markup).toContain("after:rounded-full");
-    expect(markup).toContain("min-h-[44px]");
-    expect(markup).toContain("Minha Igreja");
+    expect(markup).toContain("font-semibold text-foreground");
+    expect(markup).toContain("text-muted-foreground hover:text-foreground");
   });
 
-  it("HomeSkeleton e HomeGrid refletem o container, o skeleton do header e o grid de 12 colunas", () => {
+  it("HomeTabs renderiza apenas o painel ativo compartilhado pelo HomeTabProvider", () => {
+    const markup = renderToStaticMarkup(
+      createElement(
+        HomeTabProvider,
+        null,
+        createElement(HomeTabs, {
+          today: "CONTEUDO_HOJE",
+          church: "CONTEUDO_IGREJA",
+        }),
+      ),
+    );
+
+    expect(markup).toContain('role="tabpanel"');
+    expect(markup).toContain('id="home-panel-hoje"');
+    expect(markup).toContain('aria-labelledby="home-tab-hoje"');
+    expect(markup).toContain("CONTEUDO_HOJE");
+    expect(markup).not.toContain("CONTEUDO_IGREJA");
+    expect(markup).not.toContain('role="tablist"');
+  });
+
+  it("HomeTabs fora do provider usa Hoje como fallback", () => {
+    const markup = renderToStaticMarkup(
+      createElement(HomeTabs, {
+        today: "CONTEUDO_HOJE",
+        church: "CONTEUDO_IGREJA",
+      }),
+    );
+
+    expect(markup).toContain('id="home-panel-hoje"');
+    expect(markup).toContain("CONTEUDO_HOJE");
+    expect(markup).not.toContain("CONTEUDO_IGREJA");
+  });
+
+  it("HomeSkeleton e HomeGrid não duplicam header/abas e mantêm o grid de 12 colunas", () => {
     const skeleton = renderToStaticMarkup(createElement(HomeSkeleton));
     expect(skeleton).toContain("max-w-6xl");
     expect(skeleton).toContain("gap-8");
-    expect(skeleton).toContain("h-10 w-56");
-    expect(skeleton).toContain("h-4 w-80");
-    expect(skeleton).toContain("gap-7");
+    expect(skeleton).not.toContain("h-10 w-56");
+    expect(skeleton).not.toContain("h-4 w-80");
+    expect(skeleton).not.toContain("gap-7");
     expect(skeleton).toContain("lg:grid-cols-12");
     expect(skeleton).toContain("lg:col-span-7");
     expect(skeleton).toContain("lg:col-span-5");
@@ -170,6 +209,26 @@ describe("cards da aba Hoje", () => {
     expect(markup).toContain("border-accent-foreground");
     expect(markup).toContain("bg-accent text-accent-foreground");
     expect(markup).toContain("Ver todas");
+  });
+
+  it("TasksCard expõe botão clicável para abrir os detalhes da tarefa", () => {
+    const task = {
+      id: "task-1",
+      title: "Preparar a escala",
+      status: "todo",
+      deadline: null,
+    } as unknown as Parameters<typeof TasksCard>[0]["tasks"][number];
+
+    const markup = renderToStaticMarkup(
+      createElement(TasksCard, { tasks: [task] }),
+    );
+
+    expect(markup).toContain(
+      'aria-label="Abrir detalhes da tarefa: Preparar a escala"',
+    );
+    expect(markup).toContain("hover:bg-muted/50");
+    expect(markup).toContain("focus-visible:ring-2");
+    expect(markup).toContain("Preparar a escala");
   });
 });
 

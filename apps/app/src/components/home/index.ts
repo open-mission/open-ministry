@@ -9,6 +9,8 @@ export { HomeCard, HomeCardContent, HomeCardHeader } from "./home-card";
 export { HomeDateBadge, HomeListItem } from "./home-list-item";
 export { HomeGrid } from "./home-grid";
 export { HomeTabs } from "./home-tabs";
+export { HomeHeaderTabs } from "./home-header-tabs";
+export { HomeTabProvider, useHomeTab, type HomeTab } from "./home-tab-context";
 export { HomeSkeleton, VerseCardSkeleton } from "./home-skeleton";
 export { VerseCard } from "./verse-card";
 export { NextServiceCard } from "./next-service-card";

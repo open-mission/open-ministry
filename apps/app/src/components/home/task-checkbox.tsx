@@ -13,11 +13,13 @@ export function TaskCheckbox({
   initialStatus,
   label,
   className,
+  onStatusChange,
 }: {
   taskId: string;
   initialStatus: TaskStatus;
   label: string;
   className?: string;
+  onStatusChange?: (nextStatus: TaskStatus) => void;
 }) {
   const [status, setStatus] = useState<TaskStatus>(initialStatus);
   const [, startTransition] = useTransition();
@@ -27,11 +29,15 @@ export function TaskCheckbox({
   const handleCheckedChange = (nextChecked: boolean) => {
     const nextStatus: TaskStatus = nextChecked ? "completed" : "todo";
     setStatus(nextStatus);
+    onStatusChange?.(nextStatus);
 
     startTransition(async () => {
       const result = await updateTaskStatusAction(taskId, nextStatus);
       if (!result.ok) {
         setStatus(status);
+        // O card pode ter removido a tarefa da lista durante a atualização
+        // otimista; restaura o status anterior para que ela volte a aparecer.
+        onStatusChange?.(status);
         toast.error(result.error ?? "Não foi possível atualizar a tarefa.");
         return;
       }

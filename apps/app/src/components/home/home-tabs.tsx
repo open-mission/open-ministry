@@ -2,11 +2,11 @@
 
 import type { ReactNode } from "react";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useHomeTab } from "./home-tab-context";
 
 /**
- * Alterna as duas visões da home. O conteúdo é montado no servidor e recebido
- * como slot, mantendo os widgets como Server Components.
+ * Corpo da home. As abas vivem no header do layout; aqui apenas o painel ativo
+ * é montado, evitando uma segunda barra de abas dentro da página.
  */
 export function HomeTabs({
   today,
@@ -15,32 +15,30 @@ export function HomeTabs({
   today: ReactNode;
   church: ReactNode;
 }) {
-  return (
-    <Tabs defaultValue="hoje" className="gap-6">
-      <TabsList
-        variant="line"
-        className="w-full justify-start gap-7 rounded-none border-b border-border/50 bg-transparent p-0"
-      >
-        <TabsTrigger
-          value="hoje"
-          className="min-h-[44px] flex-none rounded-none px-0.5 text-lg font-medium tracking-tight text-muted-foreground group-data-horizontal/tabs:after:bottom-0 after:mx-auto group-data-horizontal/tabs:after:h-[3px] after:w-9 after:rounded-full after:bg-primary data-active:text-foreground data-active:font-semibold sm:text-xl"
-        >
-          Hoje
-        </TabsTrigger>
-        <TabsTrigger
-          value="igreja"
-          className="min-h-[44px] flex-none rounded-none px-0.5 text-lg font-medium tracking-tight text-muted-foreground group-data-horizontal/tabs:after:bottom-0 after:mx-auto group-data-horizontal/tabs:after:h-[3px] after:w-9 after:rounded-full after:bg-primary data-active:text-foreground data-active:font-semibold sm:text-xl"
-        >
-          Minha Igreja
-        </TabsTrigger>
-      </TabsList>
+  const homeTab = useHomeTab();
+  const activeTab = homeTab?.activeTab ?? "hoje";
 
-      <TabsContent value="hoje" className="mt-0 flex flex-col gap-6">
+  if (activeTab === "hoje") {
+    return (
+      <div
+        role="tabpanel"
+        id="home-panel-hoje"
+        aria-labelledby="home-tab-hoje"
+        className="flex flex-col gap-6"
+      >
         {today}
-      </TabsContent>
-      <TabsContent value="igreja" className="mt-0 flex flex-col gap-6">
-        {church}
-      </TabsContent>
-    </Tabs>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      role="tabpanel"
+      id="home-panel-igreja"
+      aria-labelledby="home-tab-igreja"
+      className="flex flex-col gap-6"
+    >
+      {church}
+    </div>
   );
 }
