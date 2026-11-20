@@ -6,15 +6,18 @@ import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { updateTaskStatusAction } from "@/features/tasks/actions/tasks.actions";
 import type { TaskStatus } from "@/features/tasks/services/tasks-service";
+import { cn } from "@/lib/utils";
 
 export function TaskCheckbox({
   taskId,
   initialStatus,
   label,
+  className,
 }: {
   taskId: string;
   initialStatus: TaskStatus;
   label: string;
+  className?: string;
 }) {
   const [status, setStatus] = useState<TaskStatus>(initialStatus);
   const [, startTransition] = useTransition();
@@ -43,7 +46,10 @@ export function TaskCheckbox({
       checked={checked}
       onCheckedChange={(value) => handleCheckedChange(value === true)}
       aria-label={`${checked ? "Reabrir" : "Concluir"} tarefa: ${label}`}
-      className="size-5 shrink-0"
+      className={cn(
+        "relative size-5 shrink-0 after:absolute after:-inset-1.5 after:content-['']",
+        className,
+      )}
     />
   );
 }

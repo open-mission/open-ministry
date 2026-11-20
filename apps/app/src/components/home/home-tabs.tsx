@@ -16,29 +16,29 @@ export function HomeTabs({
   church: ReactNode;
 }) {
   return (
-    <Tabs defaultValue="hoje" className="gap-5">
+    <Tabs defaultValue="hoje" className="gap-6">
       <TabsList
         variant="line"
-        className="w-full justify-start gap-6 rounded-none border-b bg-transparent p-0"
+        className="w-full justify-start gap-7 rounded-none border-b border-border/50 bg-transparent p-0"
       >
         <TabsTrigger
           value="hoje"
-          className="min-h-[44px] rounded-none px-0.5 text-sm text-muted-foreground after:bg-primary data-active:text-primary"
+          className="min-h-[44px] flex-none rounded-none px-0.5 text-lg font-medium tracking-tight text-muted-foreground group-data-horizontal/tabs:after:bottom-0 after:mx-auto group-data-horizontal/tabs:after:h-[3px] after:w-9 after:rounded-full after:bg-primary data-active:text-foreground data-active:font-semibold sm:text-xl"
         >
           Hoje
         </TabsTrigger>
         <TabsTrigger
           value="igreja"
-          className="min-h-[44px] rounded-none px-0.5 text-sm text-muted-foreground after:bg-primary data-active:text-primary"
+          className="min-h-[44px] flex-none rounded-none px-0.5 text-lg font-medium tracking-tight text-muted-foreground group-data-horizontal/tabs:after:bottom-0 after:mx-auto group-data-horizontal/tabs:after:h-[3px] after:w-9 after:rounded-full after:bg-primary data-active:text-foreground data-active:font-semibold sm:text-xl"
         >
           Minha Igreja
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="hoje" className="mt-0 flex flex-col gap-8">
+      <TabsContent value="hoje" className="mt-0 flex flex-col gap-6">
         {today}
       </TabsContent>
-      <TabsContent value="igreja" className="mt-0 flex flex-col gap-8">
+      <TabsContent value="igreja" className="mt-0 flex flex-col gap-6">
         {church}
       </TabsContent>
     </Tabs>

@@ -71,6 +71,20 @@ describe("BirthdaysCard", () => {
     expect(markup).toBe("");
   });
 
+  it("separa os itens quando há mais de um aniversariante no mês", () => {
+    const markup = renderToStaticMarkup(
+      createElement(BirthdaysCard, {
+        entries: [
+          entry({ personId: "early", name: "Ana", day: 3 }),
+          entry({ personId: "late", name: "Bia", day: 20 }),
+        ],
+        today,
+      }),
+    );
+
+    expect(markup.match(/data-slot="separator"/g) ?? []).toHaveLength(1);
+  });
+
   it("renderiza a seção e os dados quando há aniversariantes no mês", () => {
     const markup = renderToStaticMarkup(
       createElement(BirthdaysCard, {

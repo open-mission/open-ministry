@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { ArrowRightIcon } from "lucide-react";
+import { BellIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { markNotificationReadAction } from "@/app/actions/notifications";
@@ -10,16 +9,9 @@ import {
   NotificationDetailDialog,
   type NotificationDetailItem,
 } from "@/components/notifications/notification-detail-dialog";
-import {
-  HomeSection,
-  HomeSectionAction,
-  HomeSectionHeader,
-  HomeSectionTitle,
-} from "@/components/home/home-section";
 import { HomeCard, HomeCardContent } from "@/components/home/home-card";
 import { HomeListItem } from "@/components/home/home-list-item";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useNotificationStore } from "@/lib/notification-store";
 
 export type NotificationItem = {
@@ -34,7 +26,7 @@ export type NotificationItem = {
 
 const dotByType: Record<string, string> = {
   announcement: "bg-primary",
-  schedule: "bg-secondary",
+  schedule: "bg-chart-2",
   task: "bg-accent-foreground",
 };
 
@@ -76,83 +68,56 @@ export function NotificationsCard({
     setDetailOpen(true);
   };
 
-  const handleMarkRead = async (id: string) => {
-    markAsRead(id);
-    setItems((prev) => prev.filter((item) => item.id !== id));
-    try {
-      await markNotificationReadAction(id);
-    } catch {
-      toast.error("Não foi possível marcar o aviso como lido.");
-    }
-  };
-
   return (
-    <HomeSection aria-labelledby="home-notifications-title">
-      <HomeSectionHeader>
-        <div className="flex items-center gap-2">
-          <HomeSectionTitle id="home-notifications-title">
-            Avisos e notificações
-          </HomeSectionTitle>
-          <Badge variant="secondary" className="text-[11px] tabular-nums">
-            {items.length} novos
-          </Badge>
-        </div>
-        <HomeSectionAction>
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="h-9 min-h-[44px] px-2 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <Link href="/dashboard/notifications">
-              Ver todos
-              <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
-            </Link>
-          </Button>
-        </HomeSectionAction>
-      </HomeSectionHeader>
-
-      <HomeCard>
-        <HomeCardContent className="space-y-1">
-          {items.map((item) => (
-            <div key={item.id} className="group flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => handleOpen(item)}
-                className="min-w-0 flex-1 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label={`Abrir aviso: ${item.title}`}
+    <>
+      <section aria-labelledby="home-notifications-title">
+        <HomeCard>
+          <HomeCardContent className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <BellIcon className="size-4 text-primary" aria-hidden="true" />
+              <h2
+                id="home-notifications-title"
+                className="font-heading text-base font-semibold tracking-tight text-foreground sm:text-lg"
               >
-                <HomeListItem
-                  leading={
-                    <span
-                      className={`size-2 rounded-full ${
-                        dotByType[item.type] ?? "bg-primary"
-                      }`}
-                      aria-hidden="true"
-                    />
-                  }
-                  title={item.title}
-                  meta={item.body ?? "Comunicado da igreja"}
-                  trailing={
-                    <span className="text-[11px] text-muted-foreground tabular-nums">
-                      {formatTime(item.createdAt)}
-                    </span>
-                  }
-                />
-              </button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-9 min-h-[44px] shrink-0 px-2 text-[11px] text-muted-foreground hover:text-foreground"
-                onClick={() => handleMarkRead(item.id)}
-              >
-                Marcar como lido
-              </Button>
+                Avisos e notificações
+              </h2>
+              <Badge className="border-0 bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground tabular-nums">
+                {items.length} {items.length === 1 ? "novo" : "novos"}
+              </Badge>
             </div>
-          ))}
-        </HomeCardContent>
-      </HomeCard>
+
+            <div className="flex flex-col">
+              {items.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleOpen(item)}
+                  className="flex min-h-[44px] w-full items-center rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label={`Abrir aviso: ${item.title}`}
+                >
+                  <HomeListItem
+                    leading={
+                      <span
+                        className={`block size-2 rounded-full ${
+                          dotByType[item.type] ?? "bg-primary"
+                        }`}
+                        aria-hidden="true"
+                      />
+                    }
+                    title={item.title}
+                    meta={item.body ?? "Comunicado da igreja"}
+                    trailing={
+                      <span className="text-[11px] text-muted-foreground tabular-nums">
+                        {formatTime(item.createdAt)}
+                      </span>
+                    }
+                  />
+                </button>
+              ))}
+            </div>
+          </HomeCardContent>
+        </HomeCard>
+      </section>
 
       <NotificationDetailDialog
         notification={selected}
@@ -166,8 +131,11 @@ export function NotificationsCard({
         onMarkAsRead={(id) => {
           markAsRead(id);
           setItems((prev) => prev.filter((item) => item.id !== id));
+          void markNotificationReadAction(id).catch(() => {
+            toast.error("Não foi possível marcar o aviso como lido.");
+          });
         }}
       />
-    </HomeSection>
+    </>
   );
 }

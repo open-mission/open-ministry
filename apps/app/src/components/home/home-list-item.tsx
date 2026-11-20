@@ -61,7 +61,7 @@ export function HomeDateBadge({
       <span className="font-heading text-xl leading-none font-semibold tabular-nums">
         {day}
       </span>
-      <span className="mt-0.5 text-[10px] font-semibold tracking-[0.12em] uppercase">
+      <span className="mt-0.5 text-[11px] font-semibold tracking-[0.12em] uppercase">
         {month}
       </span>
     </span>

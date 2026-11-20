@@ -1,18 +1,4 @@
-import {
-  CameraIcon,
-  GlobeIcon,
-  MapPinIcon,
-  MessageCircleIcon,
-  PhoneIcon,
-  PlayIcon,
-} from "lucide-react";
-
 import { HomeCard, HomeCardContent } from "@/components/home/home-card";
-import {
-  HomeSection,
-  HomeSectionTitle,
-} from "@/components/home/home-section";
-import { HomeListItem } from "@/components/home/home-list-item";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   formatFacebookUrl,
@@ -40,81 +26,52 @@ export function ChurchInfoCard({
   organization: ChurchIdentity;
   churchMeta: ChurchPublicMetadata;
 }) {
-  const contacts: {
-    key: string;
-    label: string;
-    href?: string;
-    icon: typeof GlobeIcon;
-  }[] = [];
-
-  if (churchMeta.address) {
-    contacts.push({
-      key: "address",
-      label: churchMeta.address,
-      icon: MapPinIcon,
-    });
-  }
-
-  if (churchMeta.website) {
-    contacts.push({
-      key: "website",
-      label: churchMeta.website,
-      href: normalizeWebsite(churchMeta.website),
-      icon: GlobeIcon,
-    });
-  }
+  const socialLinks: { key: string; label: string; href: string }[] = [];
 
   if (churchMeta.phone) {
-    contacts.push({
+    socialLinks.push({
       key: "phone",
       label: churchMeta.phone,
       href: `tel:${churchMeta.phone.replace(/[^\d+]/g, "")}`,
-      icon: PhoneIcon,
     });
   }
-
   if (churchMeta.instagram) {
-    contacts.push({
+    socialLinks.push({
       key: "instagram",
       label: formatInstagramHandle(churchMeta.instagram),
       href: formatInstagramUrl(churchMeta.instagram),
-      icon: CameraIcon,
     });
   }
-
   if (churchMeta.youtube) {
-    contacts.push({
+    socialLinks.push({
       key: "youtube",
       label: "YouTube",
       href: formatYoutubeUrl(churchMeta.youtube),
-      icon: PlayIcon,
     });
   }
-
   if (churchMeta.facebook) {
-    contacts.push({
+    socialLinks.push({
       key: "facebook",
       label: "Facebook",
       href: formatFacebookUrl(churchMeta.facebook),
-      icon: MessageCircleIcon,
     });
   }
 
   return (
-    <HomeSection aria-labelledby="home-church-title">
-      <HomeSectionTitle id="home-church-title">
-        Informações da igreja
-      </HomeSectionTitle>
-
-      <HomeCard>
-        <HomeCardContent className="flex flex-col gap-4">
+    <section aria-label="Informações da igreja">
+      <HomeCard className="relative overflow-hidden border-border/70 bg-gradient-to-br from-amber-500/[0.04] via-card to-primary/[0.02]">
+        <div
+          className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-amber-500/10 blur-3xl"
+          aria-hidden="true"
+        />
+        <HomeCardContent className="relative flex flex-col gap-4">
           <div className="flex items-center gap-3">
-            <Avatar className="size-12 shrink-0 rounded-xl">
+            <Avatar className="size-12 shrink-0 rounded-2xl">
               <AvatarImage
                 src={organization.logo ?? undefined}
                 alt={`Logo de ${organization.name}`}
               />
-              <AvatarFallback className="rounded-xl bg-primary/10 font-heading text-base font-semibold text-primary">
+              <AvatarFallback className="rounded-2xl border-amber-500/30 bg-amber-500/10 font-heading text-base font-semibold text-amber-600 dark:text-amber-400">
                 {getInitials(organization.name)}
               </AvatarFallback>
             </Avatar>
@@ -122,7 +79,9 @@ export function ChurchInfoCard({
               <p className="truncate font-heading text-lg font-medium tracking-tight text-foreground">
                 {organization.name}
               </p>
-              <p className="text-xs text-muted-foreground">Igreja</p>
+              <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                Igreja
+              </p>
             </div>
           </div>
 
@@ -132,35 +91,52 @@ export function ChurchInfoCard({
             </p>
           ) : null}
 
-          {contacts.length > 0 ? (
-            <div className="flex flex-col gap-0.5 border-t border-border/60 pt-2">
-              {contacts.map(({ key, label, href, icon: Icon }) => {
-                const content = (
-                  <HomeListItem
-                    leading={<Icon className="size-4 text-primary" aria-hidden="true" />}
-                    title={label}
-                    className="px-0 hover:bg-transparent"
-                  />
-                );
+          {churchMeta.address ? (
+            <div className="flex flex-col gap-1 border-t border-border/50 pt-3">
+              <span className="text-[11px] font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400">
+                Endereço
+              </span>
+              <span className="text-sm leading-relaxed text-foreground/80">
+                {churchMeta.address}
+              </span>
+            </div>
+          ) : null}
 
-                return href ? (
+          {churchMeta.website ? (
+            <a
+              href={normalizeWebsite(churchMeta.website)}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-[44px] items-center gap-1 text-sm text-amber-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-amber-400"
+            >
+              <span aria-hidden="true">↗</span>
+              <span className="truncate">{churchMeta.website}</span>
+            </a>
+          ) : null}
+
+          {socialLinks.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-x-2 border-t border-border/50 pt-3">
+              {socialLinks.map((link, index) => (
+                <span key={link.key} className="inline-flex items-center">
+                  {index > 0 ? (
+                    <span className="text-muted-foreground" aria-hidden="true">
+                      {" · "}
+                    </span>
+                  ) : null}
                   <a
-                    key={key}
-                    href={href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    href={link.href}
+                    target={link.key === "phone" ? undefined : "_blank"}
+                    rel={link.key === "phone" ? undefined : "noreferrer"}
+                    className="inline-flex min-h-[44px] items-center px-0.5 text-xs text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    {content}
+                    {link.label}
                   </a>
-                ) : (
-                  <div key={key}>{content}</div>
-                );
-              })}
+                </span>
+              ))}
             </div>
           ) : null}
         </HomeCardContent>
       </HomeCard>
-    </HomeSection>
+    </section>
   );
 }

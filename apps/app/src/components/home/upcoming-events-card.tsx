@@ -1,18 +1,10 @@
 import Link from "next/link";
-import { ArrowRightIcon } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 
 import { HomeCard, HomeCardContent } from "@/components/home/home-card";
-import { HomeDateBadge } from "@/components/home/home-list-item";
+import { HomeListItem } from "@/components/home/home-list-item";
+import { Badge } from "@/components/ui/badge";
 import {
-  HomeSection,
-  HomeSectionAction,
-  HomeSectionHeader,
-  HomeSectionTitle,
-} from "@/components/home/home-section";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import {
-  eventDateParts,
   formatEventFullDate,
   formatEventTimeRange,
 } from "@/lib/events";
@@ -34,63 +26,58 @@ export function UpcomingEventsCard({
   }
 
   return (
-    <HomeSection aria-labelledby="home-upcoming-events-title">
-      <HomeSectionHeader>
-        <HomeSectionTitle id="home-upcoming-events-title">
-          Próximos eventos
-        </HomeSectionTitle>
-        <HomeSectionAction>
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="h-9 min-h-[44px] px-2 text-xs text-primary hover:text-primary"
-          >
-            <Link href="/dashboard/events">
-              Ver agenda
-              <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
-            </Link>
-          </Button>
-        </HomeSectionAction>
-      </HomeSectionHeader>
-
+    <section aria-labelledby="home-upcoming-events-title">
       <HomeCard>
-        <HomeCardContent className="space-y-0">
-          {events.map((event, index) => {
-            const parts = eventDateParts(event.startsAt);
+        <HomeCardContent className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <CalendarIcon className="size-4 text-primary" aria-hidden="true" />
+            <h2
+              id="home-upcoming-events-title"
+              className="font-heading text-base font-semibold tracking-tight text-foreground sm:text-lg"
+            >
+              Próximos eventos
+            </h2>
+            <Badge className="border-0 bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground tabular-nums">
+              {events.length} {events.length === 1 ? "próximo" : "próximos"}
+            </Badge>
+          </div>
 
-            return (
-              <div key={event.id}>
-                {index > 0 ? <Separator className="my-1" /> : null}
-                <div className="flex items-center gap-3 py-2">
-                  <HomeDateBadge
-                    day={parts.day}
-                    month={parts.monthShort}
-                    className="size-12"
-                  />
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {event.title}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
+          <div className="flex flex-col">
+            {events.map((event, index) => (
+              <div
+                key={event.id}
+                className={index > 0 ? "border-t border-border/50" : undefined}
+              >
+                <HomeListItem
+                  leading={
+                    <span
+                      className={`block size-2 rounded-full ${
+                        index % 2 === 0 ? "bg-primary" : "bg-chart-2"
+                      }`}
+                      aria-hidden="true"
+                    />
+                  }
+                  title={event.title}
+                  meta={
+                    <>
                       {formatEventFullDate(event.startsAt)} ·{" "}
                       {formatEventTimeRange(event.startsAt, event.endsAt)}
-                    </p>
-                  </div>
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="sm"
-                    className="h-9 min-h-[44px] shrink-0 px-2.5 text-xs"
-                  >
-                    <Link href={`/dashboard/events/${event.id}`}>Detalhes</Link>
-                  </Button>
-                </div>
+                    </>
+                  }
+                  trailing={
+                    <Link
+                      href={`/dashboard/events/${event.id}`}
+                      className="inline-flex min-h-[44px] items-center gap-1 text-xs text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      Detalhes <span aria-hidden="true">→</span>
+                    </Link>
+                  }
+                />
               </div>
-            );
-          })}
+            ))}
+          </div>
         </HomeCardContent>
       </HomeCard>
-    </HomeSection>
+    </section>
   );
 }

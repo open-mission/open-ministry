@@ -10,6 +10,7 @@ import {
 } from "@/components/home/home-section";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import {
   relativeBirthdayLabel,
   shortMonthLabel,
@@ -71,33 +72,36 @@ export function BirthdaysCard({
 
       <HomeCard>
         <HomeCardContent className="space-y-0">
-          {monthEntries.map((entry) => (
-            <div key={entry.personId} className="flex items-center gap-3 py-2">
-              <Avatar className="size-10 shrink-0">
-                <AvatarImage src={entry.image ?? undefined} alt={entry.name} />
-                <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
-                  {getInitials(entry.name)}
-                </AvatarFallback>
-              </Avatar>
+          {monthEntries.map((entry, index) => (
+            <div key={entry.personId}>
+              {index > 0 ? <Separator className="my-1" /> : null}
+              <div className="flex min-h-[44px] items-center gap-3 py-2">
+                <Avatar className="size-10 shrink-0">
+                  <AvatarImage src={entry.image ?? undefined} alt={entry.name} />
+                  <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
+                    {getInitials(entry.name)}
+                  </AvatarFallback>
+                </Avatar>
 
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">
-                  {entry.name}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {leaders.has(entry.personId) ? "Líder" : "Membro"} ·{" "}
-                  {relativeBirthdayLabel(entry)}
-                </p>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {entry.name}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {leaders.has(entry.personId) ? "Líder" : "Membro"} ·{" "}
+                    {relativeBirthdayLabel(entry)}
+                  </p>
+                </div>
+
+                <span className="flex shrink-0 flex-col items-center text-primary">
+                  <span className="font-heading text-lg leading-none font-semibold tabular-nums">
+                    {entry.day}
+                  </span>
+                  <span className="text-[11px] font-semibold tracking-[0.12em]">
+                    {shortMonthLabel(entry.month)}
+                  </span>
+                </span>
               </div>
-
-              <span className="flex shrink-0 flex-col items-center text-primary">
-                <span className="font-heading text-lg leading-none font-semibold tabular-nums">
-                  {entry.day}
-                </span>
-                <span className="text-[10px] font-semibold tracking-[0.12em]">
-                  {shortMonthLabel(entry.month)}
-                </span>
-              </span>
             </div>
           ))}
         </HomeCardContent>

@@ -18,16 +18,28 @@ function SectionSkeleton({ rows = 3 }: { rows?: number }) {
 
 export function HomeSkeleton() {
   return (
-    <div className="flex w-full flex-col gap-6" aria-hidden="true">
-      <div className="flex gap-6 border-b pb-3">
-        <Skeleton className="h-6 w-16" />
-        <Skeleton className="h-6 w-28" />
+    <div
+      className="mx-auto flex w-full max-w-6xl flex-col gap-8 pb-4"
+      aria-hidden="true"
+    >
+      <div className="space-y-2">
+        <Skeleton className="h-10 w-56" />
+        <Skeleton className="h-4 w-80" />
       </div>
-      <Skeleton className="h-48 w-full rounded-xl" />
-      <SectionSkeleton rows={2} />
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <SectionSkeleton rows={3} />
-        <SectionSkeleton rows={3} />
+      <div className="flex gap-7 border-b border-border/50 pb-3">
+        <Skeleton className="h-7 w-20" />
+        <Skeleton className="h-7 w-32" />
+      </div>
+      <Skeleton className="h-52 w-full rounded-xl" />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start">
+        <div className="flex flex-col gap-6 lg:col-span-7">
+          <SectionSkeleton rows={2} />
+          <SectionSkeleton rows={3} />
+        </div>
+        <div className="flex flex-col gap-6 lg:col-span-5">
+          <SectionSkeleton rows={3} />
+          <SectionSkeleton rows={2} />
+        </div>
       </div>
     </div>
   );
@@ -35,7 +47,10 @@ export function HomeSkeleton() {
 
 export function VerseCardSkeleton() {
   return (
-    <div className="flex flex-col gap-4 rounded-xl border bg-card p-4 sm:p-5" aria-hidden="true">
+    <div
+      className="flex flex-col gap-4 rounded-xl border bg-card p-4 sm:p-5"
+      aria-hidden="true"
+    >
       <div className="flex items-center justify-between gap-2">
         <Skeleton className="h-5 w-40" />
         <Skeleton className="h-6 w-28" />

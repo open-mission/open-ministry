@@ -4,9 +4,9 @@ import { Suspense } from "react";
 
 import {
   BirthdaysCard,
+  birthdaysForCurrentMonth,
   ChurchInfoCard,
   DepartmentsCard,
-  HomeGrid,
   HomeSkeleton,
   HomeTabs,
   NextServiceCard,
@@ -17,6 +17,7 @@ import {
   VerseCardSkeleton,
   type ServedDepartment,
 } from "@/components/home";
+import { InviteDialog } from "@/components/members/invite-dialog";
 import { listTasks } from "@/features/tasks";
 import {
   getDepartmentAgenda,
@@ -31,8 +32,6 @@ import {
   ensurePersonForUser,
   findPersonByUserId,
   listPeopleSummary,
-  personDisplayName,
-  personDisplayImage,
 } from "@/lib/people";
 import {
   getCachedVerseOfTheDay,
@@ -55,6 +54,7 @@ async function HomeContent() {
   await connection();
 
   const { organization, session, isAdmin } = await requireOrganizationContext();
+  const firstName = session.user.name.trim().split(/\s+/)[0] ?? "líder";
   const churchMeta = parseChurchMetadata(organization.metadata);
   const terminology = getDepartmentTerminology(churchMeta);
   const today = getTodayInSaoPaulo();
@@ -139,24 +139,33 @@ async function HomeContent() {
         ),
       );
       const functions = Array.from(
-        new Set(
+        new Map(
           membership.assignments
-            .map((assignment) => assignment.function?.name)
-            .filter((name): name is string => Boolean(name)),
-        ),
+            .filter((assignment) => Boolean(assignment.function))
+            .map((assignment) => {
+              const departmentFunction = assignment.function!;
+              return [
+                departmentFunction.id,
+                { id: departmentFunction.id, name: departmentFunction.name },
+              ] as const;
+            }),
+        ).values(),
       );
+      const members = departmentPeople.map((personRecord) => ({
+        id: personRecord.id,
+        isLeader: personRecord.memberships.some(
+          (item) =>
+            item.isLeader && item.departmentId === membership.departmentId,
+        ),
+        person: personRecord,
+      }));
 
       return {
         id: membership.departmentId,
         name: membership.department.name,
         description: membership.department.description,
         functions,
-        memberCount: departmentPeople.length,
-        memberAvatars: departmentPeople.slice(0, 4).map((personRecord) => ({
-          id: personRecord.id,
-          name: personDisplayName(personRecord),
-          image: personDisplayImage(personRecord),
-        })),
+        members,
       };
     },
   );
@@ -170,46 +179,107 @@ async function HomeContent() {
       ? departmentEvents.slice(0, 5)
       : upcoming.slice(1, 5);
 
-  const todayContent = (
-    <div className="flex flex-col gap-8">
-      <Suspense fallback={<VerseCardSkeleton />}>
-        <VerseSection votdPromise={votdPromise} />
-      </Suspense>
+  const hasActiveTasks = tasks.some(
+    (task) => task.status === "todo" || task.status === "in_progress",
+  );
+  const hasBirthdays =
+    birthdaysForCurrentMonth(birthdayEntries, today).length > 0;
+  const hasSideColumn = hasActiveTasks || hasBirthdays;
 
-      <HomeGrid>
+  const verseSection = (
+    <Suspense fallback={<VerseCardSkeleton />}>
+      <VerseSection votdPromise={votdPromise} />
+    </Suspense>
+  );
+
+  const todayContent = hasSideColumn ? (
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start">
+      <div className="flex flex-col gap-6 lg:col-span-7">
+        {verseSection}
         <NextServiceCard event={featuredEvent} />
         <NotificationsCard announcements={unreadAnnouncements} />
-      </HomeGrid>
-
-      <HomeGrid>
+      </div>
+      <div className="flex flex-col gap-6 lg:col-span-5">
         <TasksCard tasks={tasks} />
         <BirthdaysCard
           entries={birthdayEntries}
           today={today}
           leaderIds={leaderIds}
         />
-      </HomeGrid>
+      </div>
+    </div>
+  ) : (
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+      <div className="mx-auto w-full max-w-4xl">{verseSection}</div>
+      <div
+        className={
+          featuredEvent && unreadAnnouncements.length > 0
+            ? "grid grid-cols-1 gap-6 md:grid-cols-2"
+            : "flex flex-col gap-6"
+        }
+      >
+        <NextServiceCard event={featuredEvent} />
+        <NotificationsCard announcements={unreadAnnouncements} />
+      </div>
     </div>
   );
 
-  const churchContent = (
-    <div className="flex flex-col gap-8">
-      <DepartmentsCard
-        departments={servedDepartments}
-        pluralLabel={terminology.plural}
-      />
-
-      <HomeGrid>
-        <ChurchInfoCard
-          organization={{ name: organization.name, logo: organization.logo }}
-          churchMeta={churchMeta}
+  const churchContent =
+    upcomingEvents.length > 0 ? (
+      <div className="flex flex-col gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start">
+          <div className="lg:col-span-5">
+            <ChurchInfoCard
+              organization={{ name: organization.name, logo: organization.logo }}
+              churchMeta={churchMeta}
+            />
+          </div>
+          <div className="lg:col-span-7">
+            <UpcomingEventsCard events={upcomingEvents} />
+          </div>
+        </div>
+        <DepartmentsCard
+          departments={servedDepartments}
+          pluralLabel={terminology.plural}
         />
-        <UpcomingEventsCard events={upcomingEvents} />
-      </HomeGrid>
+      </div>
+    ) : (
+      <div className="flex flex-col gap-6">
+        <div className="w-full max-w-3xl">
+          <ChurchInfoCard
+            organization={{ name: organization.name, logo: organization.logo }}
+            churchMeta={churchMeta}
+          />
+        </div>
+        <DepartmentsCard
+          departments={servedDepartments}
+          pluralLabel={terminology.plural}
+        />
+      </div>
+    );
+
+  return (
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 pb-4">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-2">
+          <h1 className="font-heading text-[2.15rem] leading-none tracking-tight text-balance sm:text-4xl">
+            Olá, {firstName}.
+          </h1>
+          <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
+            Aqui está o panorama de{" "}
+            <span className="font-medium text-foreground">{organization.name}</span>{" "}
+            hoje.
+          </p>
+        </div>
+        {isAdmin ? (
+          <div className="flex items-center gap-2">
+            <InviteDialog />
+          </div>
+        ) : null}
+      </header>
+      <HomeTabs today={todayContent} church={churchContent} />
     </div>
   );
-
-  return <HomeTabs today={todayContent} church={churchContent} />;
 }
 
 async function VerseSection({
