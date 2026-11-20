@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
   ArrowRightIcon,
@@ -32,6 +32,12 @@ type OnlineSearchDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
+type ForwardItem = {
+  title: string;
+  artist?: string;
+  lyrics?: string;
+};
+
 export function OnlineSearchDialog({
   open,
   onOpenChange,
@@ -42,22 +48,81 @@ export function OnlineSearchDialog({
   const [isSearching, startSearching] = useTransition();
   const [isFetchingLyrics, startFetchingLyrics] = useTransition();
 
-  // Selected item to forward to form dialog
-  const [selectedItem, setSelectedItem] = useState<{
-    title: string;
-    artist?: string;
-    lyrics?: string;
-  } | null>(null);
+  // Item em trânsito: preenchido ao selecionar, transferido depois que a
+  // busca termina de fechar (evita dois modais disputando o lock do body).
+  const [pendingItem, setPendingItem] = useState<ForwardItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<ForwardItem | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const handoffTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearSelectedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (handoffTimer.current !== null) clearTimeout(handoffTimer.current);
+      if (clearSelectedTimer.current !== null) clearTimeout(clearSelectedTimer.current);
+    };
+  }, []);
 
   const handleOpenChange = (nextOpen: boolean) => {
-    onOpenChange(nextOpen);
-    if (!nextOpen) {
+    if (nextOpen) {
+      setPendingItem(null);
+      if (handoffTimer.current !== null) {
+        clearTimeout(handoffTimer.current);
+        handoffTimer.current = null;
+      }
+    } else {
       setQuery("");
       setResults([]);
       setHasSearched(false);
     }
+    onOpenChange(nextOpen);
   };
+
+  const handleFormOpenChange = (isOpen: boolean) => {
+    setFormOpen(isOpen);
+    if (clearSelectedTimer.current !== null) {
+      clearTimeout(clearSelectedTimer.current);
+      clearSelectedTimer.current = null;
+    }
+    if (!isOpen) {
+      // Mantém o item montado para o Sheet/Dialog animar e limpar o body.
+      clearSelectedTimer.current = setTimeout(() => {
+        clearSelectedTimer.current = null;
+        setSelectedItem(null);
+      }, 200);
+    }
+  };
+
+  // Só abre o formulário depois que o Dialog de busca já fechou.
+  useEffect(() => {
+    if (open || !pendingItem) return;
+
+    handoffTimer.current = setTimeout(() => {
+      handoffTimer.current = null;
+      setSelectedItem(pendingItem);
+      setPendingItem(null);
+      setFormOpen(true);
+    }, 180);
+
+    return () => {
+      if (handoffTimer.current !== null) {
+        clearTimeout(handoffTimer.current);
+        handoffTimer.current = null;
+      }
+    };
+  }, [open, pendingItem]);
+
+  const formInitialData = useMemo(
+    () =>
+      selectedItem
+        ? {
+            title: selectedItem.title,
+            artist: selectedItem.artist ?? "",
+            lyrics: selectedItem.lyrics ?? "",
+          }
+        : undefined,
+    [selectedItem],
+  );
 
   const handleSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -80,13 +145,13 @@ export function OnlineSearchDialog({
     startFetchingLyrics(async () => {
       try {
         const lyrics = await fetchLyricsDetailsAction(item);
-        setSelectedItem({
+        setPendingItem({
           title: item.title,
           artist: item.artist,
           lyrics,
         });
+        // Fecha a busca primeiro; o efeito acima transfere o item depois.
         handleOpenChange(false);
-        setFormOpen(true);
       } catch (err) {
         toast.error("Não foi possível carregar a letra completa.");
         console.error(err);
@@ -213,15 +278,8 @@ export function OnlineSearchDialog({
       {selectedItem ? (
         <SongFormDialog
           open={formOpen}
-          onOpenChange={(isOpen) => {
-            setFormOpen(isOpen);
-            if (!isOpen) setSelectedItem(null);
-          }}
-          initialData={{
-            title: selectedItem.title,
-            artist: selectedItem.artist ?? "",
-            lyrics: selectedItem.lyrics ?? "",
-          }}
+          onOpenChange={handleFormOpenChange}
+          initialData={formInitialData}
         />
       ) : null}
     </>

@@ -40,7 +40,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useStableIsMobile } from "@/hooks/use-stable-is-mobile";
 import { parseCifraClubTxt, type ParsedCifraTxt } from "@/lib/music/chords-utils";
 import { cn } from "@/lib/utils";
 import { CollectionCombobox } from "./collection-combobox";
@@ -60,7 +60,7 @@ export function ImportSongDialog({
 }: ImportSongDialogProps) {
   const fileInputId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const isMobile = useIsMobile();
+  const isMobile = useStableIsMobile(open);
 
   const [rawText, setRawText] = useState("");
   const [parsed, setParsed] = useState<ParsedCifraTxt | null>(null);

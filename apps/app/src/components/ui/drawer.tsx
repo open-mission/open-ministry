@@ -4,9 +4,22 @@ import * as React from "react"
 import { cn } from "cn"
 import { Drawer as DrawerPrimitive } from "vaul"
 
+/**
+ * Sinaliza que um Drawer já está montado na árvore. Um Drawer renderizado
+ * dentro do conteúdo de outro deve usar `NestedRoot` para não desmontar o
+ * pai (o que restauraria scroll e pointer-events no meio da interação).
+ */
+const DrawerNestedContext = React.createContext(false)
+
 function Drawer({
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) {
+  const isNested = React.useContext(DrawerNestedContext)
+
+  if (isNested) {
+    return <DrawerPrimitive.NestedRoot data-slot="drawer-nested-root" {...props} />
+  }
+
   return <DrawerPrimitive.Root data-slot="drawer" {...props} />
 }
 
@@ -67,7 +80,9 @@ function DrawerContent({
         {...props}
       >
         <div className="mx-auto mt-4 hidden h-1 w-[100px] shrink-0 rounded-full bg-muted group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
-        {children}
+        <DrawerNestedContext.Provider value={true}>
+          {children}
+        </DrawerNestedContext.Provider>
       </DrawerPrimitive.Content>
     </DrawerPortal>
   )

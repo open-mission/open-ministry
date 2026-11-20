@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition, useState } from "react";
+import { useEffect, useRef, useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -170,6 +170,13 @@ export function PlanEditor({
   const [selectedSongForDrawer, setSelectedSongForDrawer] =
     useState<QuickDrawerSong | null>(null);
   const [quickDrawerOpen, setQuickDrawerOpen] = useState(false);
+  const editCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (editCloseTimer.current !== null) clearTimeout(editCloseTimer.current);
+    };
+  }, []);
 
   function handleItemSaved(savedItem: {
     id?: string;
@@ -207,6 +214,15 @@ export function PlanEditor({
         ),
       );
     }
+  }
+
+  function openEditDialog(item: RawPlanItem) {
+    if (editCloseTimer.current !== null) {
+      clearTimeout(editCloseTimer.current);
+      editCloseTimer.current = null;
+    }
+    setEditingItem(item);
+    setEditDialogOpen(true);
   }
 
   const handleOpenSong = (song: QuickDrawerSong) => {
@@ -623,10 +639,7 @@ export function PlanEditor({
                     isPending={isPending}
                     deletingId={deletingId}
                     onMove={handleMove}
-                    onEdit={(raw) => {
-                      setEditingItem(raw);
-                      setEditDialogOpen(true);
-                    }}
+                    onEdit={openEditDialog}
                     onDelete={handleDelete}
                     onOpenSong={handleOpenSong}
                   />
@@ -818,10 +831,7 @@ export function PlanEditor({
                       isPending={isPending}
                       deletingId={deletingId}
                       onMove={handleMove}
-                      onEdit={(raw) => {
-                        setEditingItem(raw);
-                        setEditDialogOpen(true);
-                      }}
+                      onEdit={openEditDialog}
                       onDelete={handleDelete}
                       onOpenSong={handleOpenSong}
                     />
@@ -944,7 +954,19 @@ export function PlanEditor({
           open={editDialogOpen}
           onOpenChange={(open) => {
             setEditDialogOpen(open);
-            if (!open) setEditingItem(null);
+            if (open) {
+              if (editCloseTimer.current !== null) {
+                clearTimeout(editCloseTimer.current);
+                editCloseTimer.current = null;
+              }
+            } else {
+              // Mantém o item montado até o Drawer/Dialog terminar de fechar.
+              if (editCloseTimer.current !== null) clearTimeout(editCloseTimer.current);
+              editCloseTimer.current = setTimeout(() => {
+                editCloseTimer.current = null;
+                setEditingItem(null);
+              }, 200);
+            }
           }}
           onItemSaved={handleItemSaved}
         />

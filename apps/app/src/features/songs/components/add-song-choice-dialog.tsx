@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ChevronDownIcon,
   FileUpIcon,
@@ -64,6 +64,30 @@ export function AddSongChoiceDialog({
       }
     | undefined
   >(undefined);
+  const handoffTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (handoffTimer.current !== null) clearTimeout(handoffTimer.current);
+    };
+  }, []);
+
+  // Abre o próximo modal só depois que o anterior terminate de fechar, para
+  // não sobrepor dois locks de pointer-events no mesmo tick.
+  const scheduleAfterClose = (openNext: () => void) => {
+    if (handoffTimer.current !== null) clearTimeout(handoffTimer.current);
+    handoffTimer.current = setTimeout(() => {
+      handoffTimer.current = null;
+      openNext();
+    }, 180);
+  };
+
+  // No mobile, fecha o Drawer primeiro e só abre o próximo modal depois da
+  // animação de saída.
+  const openAfterDrawerClose = (openNext: () => void) => {
+    setMobileDrawerOpen(false);
+    scheduleAfterClose(openNext);
+  };
 
   const handleOpenManual = () => {
     setManualInitialData(undefined);
@@ -84,7 +108,9 @@ export function AddSongChoiceDialog({
       collection: data.collection,
     });
     setManualFormKey((current) => current + 1);
-    setManualOpen(true);
+    // handleConfirmImport chama onImportReady ANTES de fechar o diálogo;
+    // esperar o fechamento evita dois diálogos disputando o lock do body.
+    scheduleAfterClose(() => setManualOpen(true));
   };
 
   return (
@@ -120,10 +146,7 @@ export function AddSongChoiceDialog({
               {/* OPÇÃO 1: NOVA MÚSICA (MANUAL) */}
               <button
                 type="button"
-                onClick={() => {
-                  setMobileDrawerOpen(false);
-                  handleOpenManual();
-                }}
+                onClick={() => openAfterDrawerClose(handleOpenManual)}
                 className="group flex items-start gap-3.5 rounded-2xl border border-border/80 bg-card p-4 text-left shadow-2xs transition-all hover:border-primary/50 hover:bg-muted/40 active:scale-[0.99]"
               >
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
@@ -142,10 +165,7 @@ export function AddSongChoiceDialog({
               {/* OPÇÃO 2: IMPORTAR .TXT DO CIFRA CLUB */}
               <button
                 type="button"
-                onClick={() => {
-                  setMobileDrawerOpen(false);
-                  setImportOpen(true);
-                }}
+                onClick={() => openAfterDrawerClose(() => setImportOpen(true))}
                 className="group flex items-start gap-3.5 rounded-2xl border border-border/80 bg-card p-4 text-left shadow-2xs transition-all hover:border-primary/50 hover:bg-muted/40 active:scale-[0.99]"
               >
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 transition-colors group-hover:bg-amber-600 group-hover:text-white dark:text-amber-400">
@@ -164,10 +184,7 @@ export function AddSongChoiceDialog({
               {/* OPÇÃO 3: BUSCAR ONLINE */}
               <button
                 type="button"
-                onClick={() => {
-                  setMobileDrawerOpen(false);
-                  setOnlineOpen(true);
-                }}
+                onClick={() => openAfterDrawerClose(() => setOnlineOpen(true))}
                 className="group flex items-start gap-3.5 rounded-2xl border border-border/80 bg-card p-4 text-left shadow-2xs transition-all hover:border-primary/50 hover:bg-muted/40 active:scale-[0.99]"
               >
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 transition-colors group-hover:bg-sky-600 group-hover:text-white dark:text-sky-400">
@@ -194,7 +211,7 @@ export function AddSongChoiceDialog({
           </DrawerContent>
         </Drawer>
       ) : (
-        <DropdownMenu>
+        <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             {trigger ?? (
               <Button className="h-10 gap-1.5 font-semibold shadow-xs">
