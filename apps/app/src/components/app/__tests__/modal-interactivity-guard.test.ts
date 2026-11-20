@@ -27,12 +27,54 @@ class FakeClassList implements Iterable<string> {
   }
 }
 
-function makeDocument(openSelectors: string[] = []) {
+const ARIA_HIDDEN_SELECTOR = "[data-aria-hidden][aria-hidden]";
+const INERT_SELECTOR = "[data-inert-ed][inert]";
+const LOCKED_NODES_SELECTOR = `${ARIA_HIDDEN_SELECTOR}, ${INERT_SELECTOR}`;
+
+type FakeNode = {
+  inert: boolean;
+  attrs: Map<string, string>;
+  hasAttribute: (name: string) => boolean;
+  removeAttribute: (name: string) => void;
+};
+
+function makeNode(attrs: Record<string, string>, inert = false): FakeNode {
+  const map = new Map(Object.entries(attrs));
+  return {
+    inert,
+    attrs: map,
+    hasAttribute: (name: string) => map.has(name),
+    removeAttribute(name: string) {
+      map.delete(name);
+      if (name === "inert") this.inert = false;
+    },
+  };
+}
+
+function nodeMatches(node: FakeNode, selector: string): boolean {
+  if (selector === ARIA_HIDDEN_SELECTOR) {
+    return node.hasAttribute("data-aria-hidden") && node.hasAttribute("aria-hidden");
+  }
+  if (selector === INERT_SELECTOR) {
+    return node.hasAttribute("data-inert-ed") && node.hasAttribute("inert");
+  }
+  return false;
+}
+
+function makeDocument(openSelectors: string[] = [], withMarkedNodes = false) {
   const attributes = new Set<string>();
   if (openSelectors.includes("LOCK_ATTRIBUTE")) attributes.add("data-scroll-locked");
 
   const body = {
-    style: { pointerEvents: "none" },
+    style: {
+      pointerEvents: "none",
+      position: "",
+      top: "",
+      left: "",
+      right: "",
+      height: "",
+      overflow: "",
+    },
     classList: new FakeClassList(),
     hasAttribute: (name: string) => attributes.has(name),
     removeAttribute: (name: string) => attributes.delete(name),
@@ -40,13 +82,52 @@ function makeDocument(openSelectors: string[] = []) {
   body.classList.add("block-interactivity-dialog");
   body.classList.add("app-shell");
 
+  const root = { style: { overflow: "" } };
+
+  // Um ícone decorativo comum (sem marcador), um nó aria-hidden marcado e um
+  // nó inert marcado — só os dois últimos devem ser limpos.
+  const plainIcon = makeNode({ "aria-hidden": "true" });
+  const markedAriaNode = makeNode({
+    "aria-hidden": "true",
+    "data-aria-hidden": "true",
+  });
+  const markedInertNode = makeNode(
+    { inert: "", "data-inert-ed": "true" },
+    true,
+  );
+  const nodes = withMarkedNodes
+    ? [plainIcon, markedAriaNode, markedInertNode]
+    : [];
+
   const doc = {
     body,
-    querySelector: (selector: string) =>
-      openSelectors.includes(selector) ? ({ selector }) : null,
+    documentElement: root,
+    querySelector: (selector: string) => {
+      if (openSelectors.includes(selector)) return { selector };
+      if (selector === LOCKED_NODES_SELECTOR) {
+        return (
+          nodes.find(
+            (node) =>
+              nodeMatches(node, ARIA_HIDDEN_SELECTOR) ||
+              nodeMatches(node, INERT_SELECTOR),
+          ) ?? null
+        );
+      }
+      return null;
+    },
+    querySelectorAll: (selector: string) =>
+      nodes.filter((node) => nodeMatches(node, selector)),
   };
 
-  return { doc: doc as unknown as Document, body, attributes };
+  return {
+    doc: doc as unknown as Document,
+    body,
+    root,
+    attributes,
+    plainIcon,
+    markedAriaNode,
+    markedInertNode,
+  };
 }
 
 describe("modal-interactivity-guard helpers", () => {
@@ -119,6 +200,92 @@ describe("modal-interactivity-guard helpers", () => {
     expect(cleanupOrphanedBodyLock(doc)).toBe(true);
     expect(cleanupOrphanedBodyLock(doc)).toBe(false);
   });
+
+  it("hasBodyLock detecta position:fixed e overflow:hidden no body e no root", () => {
+    const { doc, body, root } = makeDocument();
+    body.style.pointerEvents = "";
+    body.classList.remove("block-interactivity-dialog");
+    expect(hasBodyLock(doc)).toBe(false);
+
+    body.style.position = "fixed";
+    expect(hasBodyLock(doc)).toBe(true);
+    body.style.position = "";
+
+    body.style.overflow = "hidden";
+    expect(hasBodyLock(doc)).toBe(true);
+    body.style.overflow = "";
+
+    root.style.overflow = "hidden";
+    expect(hasBodyLock(doc)).toBe(true);
+  });
+
+  it("hasBodyLock detecta nós marcados por data-aria-hidden / data-inert-ed", () => {
+    expect(hasBodyLock(makeDocument([], true).doc)).toBe(true);
+
+    const { doc, body } = makeDocument();
+    body.style.pointerEvents = "";
+    body.classList.remove("block-interactivity-dialog");
+    expect(hasBodyLock(doc)).toBe(false);
+  });
+
+  it("cleanupOrphanedBodyLock restaura position:fixed e overflow:hidden do body e do root", () => {
+    const { doc, body, root, attributes } = makeDocument(["LOCK_ATTRIBUTE"]);
+    body.style.position = "fixed";
+    body.style.top = "12px";
+    body.style.left = "0px";
+    body.style.right = "0px";
+    body.style.height = "100%";
+    body.style.overflow = "hidden";
+    root.style.overflow = "hidden";
+
+    expect(cleanupOrphanedBodyLock(doc)).toBe(true);
+    expect(body.style.position).toBe("");
+    expect(body.style.top).toBe("");
+    expect(body.style.left).toBe("");
+    expect(body.style.right).toBe("");
+    expect(body.style.height).toBe("");
+    expect(body.style.overflow).toBe("");
+    expect(root.style.overflow).toBe("");
+    expect(attributes.has("data-scroll-locked")).toBe(false);
+  });
+
+  it("cleanupOrphanedBodyLock remove só os nós marcados e preserva ícones aria-hidden comuns", () => {
+    const { doc, plainIcon, markedAriaNode, markedInertNode } = makeDocument(
+      [],
+      true,
+    );
+
+    expect(cleanupOrphanedBodyLock(doc)).toBe(true);
+    expect(plainIcon.hasAttribute("aria-hidden")).toBe(true);
+    expect(markedAriaNode.hasAttribute("aria-hidden")).toBe(false);
+    expect(markedAriaNode.hasAttribute("data-aria-hidden")).toBe(false);
+    expect(markedInertNode.hasAttribute("inert")).toBe(false);
+    expect(markedInertNode.hasAttribute("data-inert-ed")).toBe(false);
+    expect(markedInertNode.inert).toBe(false);
+  });
+
+  it("cleanupOrphanedBodyLock não limpa nada quando um Drawer do Vaul está aberto", () => {
+    const { doc, body, root, attributes, markedAriaNode } = makeDocument(
+      ['[data-vaul-drawer][data-state="open"]', "LOCK_ATTRIBUTE"],
+      true,
+    );
+    body.style.position = "fixed";
+    body.style.top = "12px";
+    body.style.overflow = "hidden";
+    root.style.overflow = "hidden";
+
+    expect(MODAL_OPEN_SELECTORS).toContain(
+      '[data-vaul-drawer][data-state="open"]',
+    );
+    expect(cleanupOrphanedBodyLock(doc)).toBe(false);
+    expect(body.style.pointerEvents).toBe("none");
+    expect(body.style.position).toBe("fixed");
+    expect(body.style.top).toBe("12px");
+    expect(body.style.overflow).toBe("hidden");
+    expect(root.style.overflow).toBe("hidden");
+    expect(markedAriaNode.hasAttribute("aria-hidden")).toBe(true);
+    expect(attributes.has("data-scroll-locked")).toBe(true);
+  });
 });
 
 describe("ModalInteractivityGuard observação e fallback", () => {
@@ -155,5 +322,17 @@ describe("ModalInteractivityGuard observação e fallback", () => {
     const handlerBody = code.slice(handlerStart, handlerStart + 220);
     expect(handlerBody).toContain("hasBodyLock(document)");
     expect(handlerBody).toContain("cleanupOrphanedBodyLock(document)");
+  });
+
+  it("usa o mesmo fallback no touchstart em capture/passive para iOS/PWA", async () => {
+    const code = await source();
+
+    expect(code).toMatch(
+      /window\.addEventListener\(\s*"touchstart"[\s\S]{0,200}?passive:\s*true/,
+    );
+    expect(code).toMatch(
+      /window\.removeEventListener\(\s*"touchstart"[\s\S]{0,120}?capture:\s*true/,
+    );
+    expect(code).toMatch(/capture:\s*true,\s*passive:\s*true/);
   });
 });

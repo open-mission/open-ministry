@@ -6,6 +6,13 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.7.2] - 2026-11-20
+
+### Corrigido
+- **Lentidão após a nova Home:** removida a duplicação dos loaders do cabeçalho no fallback do Suspense. O header deixou de executar sessão, notificações e menu do usuário duas vezes a cada navegação ou atualização, reduzindo consultas e renderizações.
+- **Travamento de cliques em Escalas e Músicas:** unificada a camada de modais nos fluxos de escalar pessoa, adicionar música e adicionar item de cronograma, eliminando o conflito entre as cópias de `Drawer` (Vaul) e `Dialog` (Radix) que deixava a tela inclicável. Os tempos de transição agora respeitam a animação de fechamento.
+- **PWA/iOS:** o guarda de interatividade também limpa atributos `aria-hidden`/`inert` e travas de rolagem órfãs, restaurando o toque depois de fechar janelas.
+
 ## [1.7.1] - 2026-11-20
 
 ### Corrigido

@@ -28,6 +28,7 @@ mock.module("next/navigation", () => ({
 
 const {
   HomeAwareHeader,
+  HomeAwareHeaderFallback,
   getHeaderClassName,
   isHeaderScrolled,
 } = await import("@/components/app/home-header-slot");
@@ -228,6 +229,52 @@ describe("header integrado da home", () => {
     expect(markup).not.toContain("mt-2");
     expect(markup).not.toContain("border-transparent");
     expect(markup).toContain("CONTEUDO_HEADER");
+  });
+
+  it("HomeAwareHeaderFallback é um header estático, sem pathname e sem conteúdo de loaders", () => {
+    currentPathname = "/";
+    const onHome = renderToStaticMarkup(createElement(HomeAwareHeaderFallback));
+    currentPathname = "/dashboard";
+    const onDashboard = renderToStaticMarkup(
+      createElement(HomeAwareHeaderFallback),
+    );
+
+    // O fallback não consulta o pathname: o markup é idêntico em qualquer rota.
+    expect(onDashboard).toBe(onHome);
+    expect(onHome).toContain("<header");
+    expect(onHome).toContain("sticky");
+    expect(onHome).toContain("border-border");
+    expect(onHome).not.toContain("mt-2");
+
+    // Esqueletos leves no lugar dos loaders reais.
+    expect(onHome).toContain("animate-pulse");
+    expect(onHome).toContain("bg-muted");
+    expect(onHome).toContain("ml-auto");
+
+    // Não duplica abas, breadcrumb, sino nem avatar vindos dos loaders.
+    expect(onHome).not.toContain('role="tablist"');
+    expect(onHome).not.toContain(">Hoje<");
+    expect(onHome).not.toContain(">Minha Igreja<");
+    expect(onHome).not.toContain("CONTEUDO_HEADER");
+    expect(onHome).not.toContain("HomeHeaderTabs");
+    expect(onHome).not.toContain("DashboardBreadcrumb");
+    expect(onHome).not.toContain("NotificationBell");
+    expect(onHome).not.toContain("UserMenu");
+  });
+
+  it("o layout passa HomeAwareHeaderFallback sem filhos e não duplica headerContent", async () => {
+    const layout = await Bun.file(
+      new URL("../../../app/(app)/layout.tsx", import.meta.url),
+    ).text();
+
+    expect(layout).toContain("fallback={<HomeAwareHeaderFallback />}");
+    expect(layout).not.toMatch(
+      /<HomeAwareHeaderFallback>[\s\S]*?<\/HomeAwareHeaderFallback>/,
+    );
+    expect(layout).toMatch(
+      /<HomeAwareHeader>\{headerContent\}<\/HomeAwareHeader>/,
+    );
+    expect(layout.match(/\{headerContent\}/g) ?? []).toHaveLength(1);
   });
 });
 

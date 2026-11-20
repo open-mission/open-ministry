@@ -12,15 +12,15 @@ import {
 
 import { Button } from "@/components/ui/button";
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,7 +28,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useStableIsMobile } from "@/hooks/use-stable-is-mobile";
 import type { ParsedCifraTxt } from "@/lib/music/chords-utils";
 import type { SongRecord } from "@/lib/songs";
 import { ImportSongDialog } from "./import-song-dialog";
@@ -46,11 +46,13 @@ export function AddSongChoiceDialog({
   existingCollections = [],
   onSongCreated,
 }: AddSongChoiceDialogProps) {
-  const isMobile = useIsMobile();
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [onlineOpen, setOnlineOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
+  const isMobile = useStableIsMobile(
+    mobileSheetOpen || importOpen || onlineOpen || manualOpen,
+  );
   const [manualFormKey, setManualFormKey] = useState(0);
   const [manualInitialData, setManualInitialData] = useState<
     | {
@@ -79,13 +81,13 @@ export function AddSongChoiceDialog({
     handoffTimer.current = setTimeout(() => {
       handoffTimer.current = null;
       openNext();
-    }, 180);
+    }, 220);
   };
 
-  // No mobile, fecha o Drawer primeiro e só abre o próximo modal depois da
-  // animação de saída.
-  const openAfterDrawerClose = (openNext: () => void) => {
-    setMobileDrawerOpen(false);
+  // No mobile, fecha o Sheet primeiro e só abre o próximo modal depois da
+  // animação de saída (200ms) do radix-ui.
+  const openAfterSheetClose = (openNext: () => void) => {
+    setMobileSheetOpen(false);
     scheduleAfterClose(openNext);
   };
 
@@ -116,37 +118,38 @@ export function AddSongChoiceDialog({
   return (
     <>
       {isMobile ? (
-        <Drawer
-          open={mobileDrawerOpen}
-          onOpenChange={setMobileDrawerOpen}
-        >
-          <DrawerTrigger asChild>
+        <Sheet open={mobileSheetOpen} onOpenChange={setMobileSheetOpen}>
+          <SheetTrigger asChild>
             {trigger ?? (
               <Button className="h-10 gap-1.5 font-semibold shadow-xs">
                 <PlusIcon className="size-4" />
                 <span>Adicionar</span>
               </Button>
             )}
-          </DrawerTrigger>
+          </SheetTrigger>
 
-          <DrawerContent className="max-h-[85dvh] flex flex-col p-0">
-            <DrawerHeader className="border-b border-border/70 px-5 py-4 text-left">
-              <DrawerTitle className="flex items-center gap-2 text-base font-bold font-heading">
+          <SheetContent
+            side="bottom"
+            showCloseButton={false}
+            className="flex max-h-[85dvh] flex-col gap-0 rounded-t-2xl p-0"
+          >
+            <SheetHeader className="border-b border-border/70 px-5 py-4 text-left">
+              <SheetTitle className="flex items-center gap-2 text-base font-bold font-heading">
                 <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Music2Icon className="size-4" />
                 </span>
                 <span>Adicionar ao Repertório</span>
-              </DrawerTitle>
-              <DrawerDescription className="text-xs text-muted-foreground">
+              </SheetTitle>
+              <SheetDescription className="text-xs text-muted-foreground">
                 Escolha como deseja adicionar uma música ao acervo da igreja.
-              </DrawerDescription>
-            </DrawerHeader>
+              </SheetDescription>
+            </SheetHeader>
 
-            <div className="flex flex-col gap-2.5 p-4">
+            <div className="flex flex-col gap-2.5 overflow-y-auto p-4">
               {/* OPÇÃO 1: NOVA MÚSICA (MANUAL) */}
               <button
                 type="button"
-                onClick={() => openAfterDrawerClose(handleOpenManual)}
+                onClick={() => openAfterSheetClose(handleOpenManual)}
                 className="group flex items-start gap-3.5 rounded-2xl border border-border/80 bg-card p-4 text-left shadow-2xs transition-all hover:border-primary/50 hover:bg-muted/40 active:scale-[0.99]"
               >
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
@@ -165,7 +168,7 @@ export function AddSongChoiceDialog({
               {/* OPÇÃO 2: IMPORTAR .TXT DO CIFRA CLUB */}
               <button
                 type="button"
-                onClick={() => openAfterDrawerClose(() => setImportOpen(true))}
+                onClick={() => openAfterSheetClose(() => setImportOpen(true))}
                 className="group flex items-start gap-3.5 rounded-2xl border border-border/80 bg-card p-4 text-left shadow-2xs transition-all hover:border-primary/50 hover:bg-muted/40 active:scale-[0.99]"
               >
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 transition-colors group-hover:bg-amber-600 group-hover:text-white dark:text-amber-400">
@@ -184,7 +187,7 @@ export function AddSongChoiceDialog({
               {/* OPÇÃO 3: BUSCAR ONLINE */}
               <button
                 type="button"
-                onClick={() => openAfterDrawerClose(() => setOnlineOpen(true))}
+                onClick={() => openAfterSheetClose(() => setOnlineOpen(true))}
                 className="group flex items-start gap-3.5 rounded-2xl border border-border/80 bg-card p-4 text-left shadow-2xs transition-all hover:border-primary/50 hover:bg-muted/40 active:scale-[0.99]"
               >
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 transition-colors group-hover:bg-sky-600 group-hover:text-white dark:text-sky-400">
@@ -201,15 +204,15 @@ export function AddSongChoiceDialog({
               </button>
             </div>
 
-            <DrawerFooter className="border-t border-border/70 px-4 py-3 bg-muted/20">
-              <DrawerClose asChild>
+            <SheetFooter className="mt-0 border-t border-border/70 bg-muted/20 px-4 py-3">
+              <SheetClose asChild>
                 <Button variant="outline" className="w-full">
                   Cancelar
                 </Button>
-              </DrawerClose>
-            </DrawerFooter>
-          </DrawerContent>
-        </Drawer>
+              </SheetClose>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
       ) : (
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>

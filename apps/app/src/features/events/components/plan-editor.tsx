@@ -105,7 +105,7 @@ import {
 } from "@/lib/plan-utils";
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useStableIsMobile } from "@/hooks/use-stable-is-mobile";
 
 type PersonOption = {
   id: string;
@@ -156,7 +156,6 @@ export function PlanEditor({
   canManage,
 }: PlanEditorProps) {
   const router = useRouter();
-  const isMobile = useIsMobile();
   const [isPending, startTransition] = useTransition();
   const [items, setItems] = useState<RawPlanItem[]>(planItems);
   const [prevPlanItems, setPrevPlanItems] = useState(planItems);
@@ -170,6 +169,12 @@ export function PlanEditor({
   const [selectedSongForDrawer, setSelectedSongForDrawer] =
     useState<QuickDrawerSong | null>(null);
   const [quickDrawerOpen, setQuickDrawerOpen] = useState(false);
+  const isMobile = useStableIsMobile(
+    mobileEditDrawerOpen ||
+      showDiscardAlert ||
+      editDialogOpen ||
+      Boolean(deletingId),
+  );
   const editCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -965,7 +970,7 @@ export function PlanEditor({
               editCloseTimer.current = setTimeout(() => {
                 editCloseTimer.current = null;
                 setEditingItem(null);
-              }, 200);
+              }, isMobile ? 550 : 220);
             }
           }}
           onItemSaved={handleItemSaved}
@@ -1143,8 +1148,8 @@ function SortablePlanRow({
   onDelete,
   onOpenSong,
 }: SortablePlanRowProps) {
-  const isMobile = useIsMobile();
   const [removeOpen, setRemoveOpen] = useState(false);
+  const isMobile = useStableIsMobile(removeOpen);
   const {
     attributes,
     listeners,

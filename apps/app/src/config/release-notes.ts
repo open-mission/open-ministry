@@ -31,16 +31,45 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.7.1";
+export const CURRENT_APP_VERSION = "1.7.2";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.7.2",
+    title: "Navegação Mais Ágil e Cliques Confiáveis",
+    subtitle:
+      "Corrigimos a lentidão ao navegar e o travamento de cliques em escalas, músicas e cronogramas, inclusive no app instalado.",
+    releaseDate: "20 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Correções",
+        badge: "Hotfix",
+        features: [
+          {
+            title: "Navegação mais rápida",
+            description:
+              "O cabeçalho não executa mais consultas e loaders duplicados a cada navegação. A troca de páginas e as atualizações ficam mais leves.",
+            iconName: "SparklesIcon",
+            badge: "Performance",
+          },
+          {
+            title: "Cliques confiáveis em escalas e músicas",
+            description:
+              "Abrir e fechar janelas de escala, música ou cronograma não deixa mais a tela travada — os modais agora usam a mesma camada e respeitam a animação de fechamento.",
+            iconName: "CheckSquare2Icon",
+            badge: "Interatividade",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.7.1",
     title: "Correção de Interatividade",
     subtitle:
       "Corrigimos o travamento dos cliques depois de fechar janelas e a troca de abas no formulário de músicas.",
     releaseDate: "20 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Correções",

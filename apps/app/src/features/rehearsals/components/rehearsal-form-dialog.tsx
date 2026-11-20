@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { BellRingIcon, CalendarClockIcon, Loader2Icon } from "lucide-react";
 import { toast } from "sonner";
@@ -38,7 +38,7 @@ import {
   type RehearsalFormValues,
   type RehearsalSongOption,
 } from "@/features/rehearsals/lib/rehearsal-ui";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useStableIsMobile } from "@/hooks/use-stable-is-mobile";
 
 export type RehearsalFormRehearsal = {
   id: string;
@@ -74,9 +74,16 @@ export function RehearsalFormDialog({
   canEditSongs = true,
 }: RehearsalFormDialogProps) {
   const router = useRouter();
-  const isMobile = useIsMobile();
+  const isMobile = useStableIsMobile(open);
   const [, startTransition] = useTransition();
   const isEditing = Boolean(rehearsal);
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (refreshTimer.current !== null) clearTimeout(refreshTimer.current);
+    };
+  }, []);
 
   const [values, setValues] = useState<RehearsalFormValues>(
     getDefaultRehearsalFormValues,
@@ -144,9 +151,15 @@ export function RehearsalFormDialog({
             ? "Ensaio criado e aviso enviado à equipe."
             : "Ensaio criado.",
       );
-      startTransition(() => router.refresh());
+      // Fecha e notifica primeiro; o refresh espera o Drawer (Vaul, 500ms)
+      // terminar de limpar o lock do body para não disputar a interação.
       onOpenChange(false);
       onSaved?.();
+      if (refreshTimer.current !== null) clearTimeout(refreshTimer.current);
+      refreshTimer.current = setTimeout(() => {
+        refreshTimer.current = null;
+        startTransition(() => router.refresh());
+      }, isMobile ? 550 : 220);
     } catch {
       const message = "Não foi possível salvar o ensaio. Tente novamente.";
       setSubmitError(message);

@@ -60,12 +60,34 @@ export function HomeAwareHeader({ children }: { children: ReactNode }) {
 }
 
 /**
- * Fallback usado pelo Suspense durante o prerender das rotas cujo pathname não
- * pode ser resolvido. Mantém o header original e os mesmos filhos.
+ * Fallback leve usado pelo Suspense durante o prerender. Não recebe filhos,
+ * não consulta o pathname e não monta loaders: apenas esqueletos visuais que
+ * ocupam o mesmo espaço do header real, evitando duplicar conteúdo (e locks)
+ * no momento da hidratação.
  */
-export function HomeAwareHeaderFallback({ children }: { children: ReactNode }) {
+export function HomeAwareHeaderFallback() {
   return (
-    <header className={getHeaderClassName(false, false)}>{children}</header>
+    <header className={getHeaderClassName(false, false)}>
+      <div
+        aria-hidden
+        className="hidden size-8 animate-pulse rounded-md bg-muted md:block"
+      />
+      <div
+        aria-hidden
+        className="h-7 w-28 animate-pulse rounded-md bg-muted md:hidden"
+      />
+      <div aria-hidden className="h-4 w-40 animate-pulse rounded bg-muted" />
+      <div className="ml-auto flex items-center gap-2">
+        <div
+          aria-hidden
+          className="size-8 animate-pulse rounded-full bg-muted"
+        />
+        <div
+          aria-hidden
+          className="size-8 animate-pulse rounded-full bg-muted"
+        />
+      </div>
+    </header>
   );
 }
 

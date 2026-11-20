@@ -11,6 +11,7 @@ export const MODAL_OPEN_SELECTORS = [
   '[data-slot="sheet-content"][data-state="open"]',
   '[data-slot="alert-dialog-content"][data-state="open"]',
   '[data-slot="drawer-content"][data-state="open"]',
+  '[data-vaul-drawer][data-state="open"]',
   '[data-slot="dropdown-menu-content"][data-state="open"]',
   '[data-slot="select-content"][data-state="open"]',
   '[data-slot="popover-content"][data-state="open"]',
@@ -25,10 +26,19 @@ export function hasBodyLock(doc: Document): boolean {
   const body = doc.body;
   if (!body) return false;
 
+  const hasMarkedInertNodes = Boolean(
+    doc.querySelector?.("[data-aria-hidden][aria-hidden], [data-inert-ed][inert]"),
+  );
+
   return (
     body.style.pointerEvents === "none" ||
     body.hasAttribute("data-scroll-locked") ||
-    Array.from(body.classList).some((name) => name.startsWith("block-interactivity-"))
+    Array.from(body.classList).some((name) => name.startsWith("block-interactivity-")) ||
+    // Vaul fixa o body com position/overflow durante o Drawer.
+    body.style.position === "fixed" ||
+    body.style.overflow === "hidden" ||
+    doc.documentElement?.style?.overflow === "hidden" ||
+    hasMarkedInertNodes
   );
 }
 
@@ -58,6 +68,49 @@ export function cleanupOrphanedBodyLock(doc: Document): boolean {
 
   if (body.hasAttribute("data-scroll-locked")) {
     body.removeAttribute("data-scroll-locked");
+    cleaned = true;
+  }
+
+  // O Vaul fixa o body e compensa a largura da barra de rolagem. Restaurar
+  // todas as propriedades que ele altera, senão a página fica "travada".
+  if (body.style.position === "fixed") {
+    body.style.position = "";
+    body.style.top = "";
+    body.style.left = "";
+    body.style.right = "";
+    body.style.height = "";
+    cleaned = true;
+  }
+
+  if (body.style.overflow === "hidden") {
+    body.style.overflow = "";
+    cleaned = true;
+  }
+
+  const root = doc.documentElement;
+  if (root?.style?.overflow === "hidden") {
+    root.style.overflow = "";
+    cleaned = true;
+  }
+
+  // Remove apenas os nós que nós mesmos marcamos. Nunca tocar em ícones
+  // decorativos que usam aria-hidden sem o marcador data-aria-hidden.
+  for (const node of Array.from(
+    doc.querySelectorAll?.("[data-aria-hidden][aria-hidden]") ?? [],
+  )) {
+    node.removeAttribute("aria-hidden");
+    node.removeAttribute("data-aria-hidden");
+    cleaned = true;
+  }
+
+  for (const node of Array.from(
+    doc.querySelectorAll?.("[data-inert-ed][inert]") ?? [],
+  )) {
+    node.removeAttribute("inert");
+    node.removeAttribute("data-inert-ed");
+    if ("inert" in node) {
+      (node as Element & { inert: boolean }).inert = false;
+    }
     cleaned = true;
   }
 
@@ -105,12 +158,21 @@ export function ModalInteractivityGuard() {
     document.addEventListener("pointerdown", handlePointerDown, {
       capture: true,
     });
+    // iOS/PWA não dispara pointerdown para toques em alguns elementos; o
+    // touchstart usa o mesmo fallback, em capture e passivo.
+    window.addEventListener("touchstart", handlePointerDown, {
+      capture: true,
+      passive: true,
+    });
 
     if (hasBodyLock(document)) scheduleCleanup();
 
     return () => {
       observer.disconnect();
       document.removeEventListener("pointerdown", handlePointerDown, {
+        capture: true,
+      });
+      window.removeEventListener("touchstart", handlePointerDown, {
         capture: true,
       });
       if (timer !== null) clearTimeout(timer);

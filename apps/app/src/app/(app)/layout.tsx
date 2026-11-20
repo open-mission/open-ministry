@@ -90,13 +90,7 @@ export default function DashboardLayout({
                 <AppSidebarLoader />
               </Suspense>
               <SidebarInset>
-                <Suspense
-                  fallback={
-                    <HomeAwareHeaderFallback>
-                      {headerContent}
-                    </HomeAwareHeaderFallback>
-                  }
-                >
+                <Suspense fallback={<HomeAwareHeaderFallback />}>
                   <HomeAwareHeader>{headerContent}</HomeAwareHeader>
                 </Suspense>
                 <OfflineBanner />

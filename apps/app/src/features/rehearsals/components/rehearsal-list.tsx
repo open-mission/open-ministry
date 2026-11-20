@@ -49,7 +49,7 @@ import {
   rehearsalSongCountLabel,
   splitRehearsals,
 } from "@/features/rehearsals/lib/rehearsal-ui";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useStableIsMobile } from "@/hooks/use-stable-is-mobile";
 
 export type RehearsalListItem = {
   id: string;
@@ -336,7 +336,8 @@ export function RehearsalDeleteDialog({
   onDeleted?: () => void;
 }) {
   const router = useRouter();
-  const isMobile = useIsMobile();
+  // `rehearsal` é o item em exclusão (estado `deleting` do RehearsalList).
+  const isMobile = useStableIsMobile(Boolean(rehearsal));
   const [, startTransition] = useTransition();
   const [pending, setPending] = useState(false);
   const open = Boolean(rehearsal);
