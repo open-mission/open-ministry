@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useStableIsMobile } from "@/hooks/use-stable-is-mobile";
 import type { RehearsalSongOption } from "@/features/rehearsals/lib/rehearsal-ui";
 import { cn } from "@/lib/utils";
 
@@ -41,7 +41,7 @@ export function RehearsalSongPicker({
   onOpenChange,
   onConfirm,
 }: RehearsalSongPickerProps) {
-  const isMobile = useIsMobile();
+  const isMobile = useStableIsMobile(open);
   const [draft, setDraft] = useState<string[]>(selectedIds);
   const [search, setSearch] = useState("");
   const [collectionFilter, setCollectionFilter] = useState("");

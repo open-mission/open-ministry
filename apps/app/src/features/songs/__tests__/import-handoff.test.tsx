@@ -11,12 +11,12 @@ const importSource = () =>
   ).text();
 
 describe("ImportSongDialog -> SongFormDialog handoff", () => {
-  it("abre o formulário depois do fechamento com o timer de 180ms", async () => {
+  it("abre o formulário depois do fechamento com o timer de 220ms", async () => {
     const code = await choiceSource();
 
     expect(code).toMatch(/const\s+scheduleAfterClose\s*=/);
-    expect(code).toMatch(/setTimeout\([\s\S]{0,220}180\)/);
-    expect(code).toMatch(/openAfterDrawerClose[\s\S]{0,200}scheduleAfterClose/);
+    expect(code).toMatch(/setTimeout\([\s\S]{0,220}220\)/);
+    expect(code).toMatch(/openAfterSheetClose[\s\S]{0,200}scheduleAfterClose/);
 
     const handlerStart = code.indexOf("const handleImportReady");
     const handlerBody = code.slice(
@@ -27,6 +27,19 @@ describe("ImportSongDialog -> SongFormDialog handoff", () => {
       /scheduleAfterClose\(\(\)\s*=>\s*setManualOpen\(true\)\)/,
     );
     expect(handlerBody).not.toMatch(/^\s*setManualOpen\(true\);/m);
+  });
+
+  it("usa Sheet do radix no mobile com modo congelado enquanto qualquer camada está aberta", async () => {
+    const code = await choiceSource();
+
+    expect(code).toContain('from "@/components/ui/sheet"');
+    expect(code).not.toContain('from "@/components/ui/drawer"');
+    expect(code).toMatch(/side="bottom"/);
+    expect(code).toContain('from "@/hooks/use-stable-is-mobile"');
+    expect(code).not.toContain('from "@/hooks/use-mobile"');
+    expect(code).toMatch(
+      /useStableIsMobile\(\s*mobileSheetOpen \|\| importOpen \|\| onlineOpen \|\| manualOpen\s*,?\s*\)/,
+    );
   });
 
   it("congela o modo mobile enquanto o diálogo de importação está aberto", async () => {

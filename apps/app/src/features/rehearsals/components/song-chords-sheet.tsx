@@ -24,7 +24,7 @@ import { ChordsViewer } from "@/features/songs/components/chords-viewer";
 import { DepartmentArrangementPicker } from "@/features/songs/components/department-arrangement-picker";
 import { SongLyricsViewer } from "@/features/songs/components/song-lyrics-viewer";
 import { useSongArrangements } from "@/features/songs/hooks/use-song-arrangements";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useStableIsMobile } from "@/hooks/use-stable-is-mobile";
 
 export type SongChordsSheetSong = {
   id?: string;
@@ -125,7 +125,7 @@ export function SongChordsSheet({
   open,
   onOpenChange,
 }: SongChordsSheetProps) {
-  const isMobile = useIsMobile();
+  const isMobile = useStableIsMobile(open);
   const { departments } = useSongArrangements(song?.id ?? null);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
   const selectedDepartment =

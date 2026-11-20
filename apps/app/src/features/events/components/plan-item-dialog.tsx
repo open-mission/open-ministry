@@ -208,7 +208,7 @@ export function PlanItemDialog({
       refreshTimer.current = setTimeout(() => {
         refreshTimer.current = null;
         router.refresh();
-      }, 180);
+      }, isMobile ? 550 : 220);
     } else if (res?.error) {
       toast.error(res.error);
     }

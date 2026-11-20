@@ -89,7 +89,7 @@ export function OnlineSearchDialog({
       clearSelectedTimer.current = setTimeout(() => {
         clearSelectedTimer.current = null;
         setSelectedItem(null);
-      }, 200);
+      }, 240);
     }
   };
 
@@ -102,7 +102,7 @@ export function OnlineSearchDialog({
       setSelectedItem(pendingItem);
       setPendingItem(null);
       setFormOpen(true);
-    }, 180);
+    }, 220);
 
     return () => {
       if (handoffTimer.current !== null) {

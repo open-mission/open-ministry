@@ -26,14 +26,14 @@ describe("OnlineSearchDialog -> SongFormDialog handoff", () => {
     );
     expect(effectBody).toMatch(/if\s*\(\s*open\s*\|\|\s*!pendingItem\s*\)\s*return/);
     expect(effectBody).toContain("setFormOpen(true)");
-    expect(effectBody).toMatch(/setTimeout\([\s\S]{0,300}180\)/);
+    expect(effectBody).toMatch(/setTimeout\([\s\S]{0,300}220\)/);
   });
 
   it("não limpa selectedItem no mesmo tick em que o formulário fecha", async () => {
     const code = await source();
 
     expect(code).not.toMatch(/if\s*\(\s*!isOpen\s*\)\s*setSelectedItem\(null\)/);
-    expect(code).toMatch(/setTimeout\([\s\S]{0,300}200\)/);
+    expect(code).toMatch(/setTimeout\([\s\S]{0,300}240\)/);
   });
 
   it("memoiza o initialData enviado ao SongFormDialog", async () => {

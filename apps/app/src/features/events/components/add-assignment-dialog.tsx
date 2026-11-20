@@ -21,13 +21,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import {
   Field,
   FieldError,
@@ -38,7 +38,7 @@ import {
   NativeSelect,
   NativeSelectOption,
 } from "@/components/ui/native-select";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useStableIsMobile } from "@/hooks/use-stable-is-mobile";
 import type { PersonLike } from "@/lib/person-format";
 
 type DepartmentFunction = {
@@ -88,7 +88,7 @@ export function AddAssignmentDialog({
   onAssignmentRollback?: (tempId: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const isMobile = useIsMobile();
+  const isMobile = useStableIsMobile(open);
 
   const triggerButton = (
     <Button
@@ -123,23 +123,27 @@ export function AddAssignmentDialog({
 
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={setOpen}>
-        <DrawerTrigger asChild>{triggerButton}</DrawerTrigger>
-        <DrawerContent className="p-0">
-          <DrawerHeader className="border-b px-5 pt-4 pb-3 !text-left text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
-            <DrawerTitle className="font-heading text-xl tracking-tight">
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>{triggerButton}</SheetTrigger>
+        <SheetContent
+          side="bottom"
+          showCloseButton={false}
+          className="flex max-h-[85dvh] flex-col gap-0 overflow-y-auto rounded-t-2xl p-0"
+        >
+          <SheetHeader className="border-b px-5 py-4 text-left">
+            <SheetTitle className="font-heading text-xl tracking-tight">
               Escalar em {departmentName}
-            </DrawerTitle>
-            <DrawerDescription className="text-xs text-muted-foreground text-left">
+            </SheetTitle>
+            <SheetDescription className="text-xs text-muted-foreground">
               Escolha a função e quem vai atuar nesta ocorrência. A escala é
               salva na hora.
-            </DrawerDescription>
-          </DrawerHeader>
-          <div className="max-h-[85vh] overflow-y-auto px-5 py-4 pb-8 [-webkit-overflow-scrolling:touch]">
+            </SheetDescription>
+          </SheetHeader>
+          <div className="px-5 py-4 pb-8 [-webkit-overflow-scrolling:touch]">
             {assignmentForm}
           </div>
-        </DrawerContent>
-      </Drawer>
+        </SheetContent>
+      </Sheet>
     );
   }
 
