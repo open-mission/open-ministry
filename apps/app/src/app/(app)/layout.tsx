@@ -19,6 +19,7 @@ import {
   MobileHeaderLeadingFallback,
   MobileHeaderLeadingLoader,
 } from "@/components/app/mobile-header-leading-loader";
+import { ModalInteractivityGuard } from "@/components/app/modal-interactivity-guard";
 import { MobileMenuLoader } from "@/components/app/mobile-menu-loader";
 import { MobileMenuProvider } from "@/components/app/mobile-menu";
 import { SettingsModalProvider } from "@/components/settings/settings-modal-provider";
@@ -125,6 +126,9 @@ export default function DashboardLayout({
                 </Suspense>
                 <Suspense fallback={null}>
                   <DashboardOnboardingLoader />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <ModalInteractivityGuard />
                 </Suspense>
                 <ReleaseNotesModal />
               </SidebarInset>

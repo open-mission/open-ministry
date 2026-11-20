@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ClockIcon, FolderPlusIcon, Music2Icon, PlusIcon, UserIcon } from "lucide-react";
@@ -47,7 +47,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useStableIsMobile } from "@/hooks/use-stable-is-mobile";
 import { formatDurationSeconds, parseDurationToSeconds } from "@/lib/plan-utils";
 import { getInitials } from "@/lib/format";
 import { PlanSongPicker } from "./plan-song-picker";
@@ -116,10 +116,17 @@ export function PlanItemDialog({
   onItemSaved,
 }: PlanItemDialogProps) {
   const router = useRouter();
-  const isMobile = useIsMobile();
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = controlledOpen ?? internalOpen;
   const setOpen = setControlledOpen ?? setInternalOpen;
+  const isMobile = useStableIsMobile(isOpen);
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (refreshTimer.current !== null) clearTimeout(refreshTimer.current);
+    };
+  }, []);
 
   const isHeader =
     mode === "create-header" || (mode === "edit" && initialItem?.type === "header");
@@ -196,7 +203,12 @@ export function PlanItemDialog({
         });
       }
       setOpen(false);
-      router.refresh();
+      // Não concorra com a animação/limpeza de fechamento do modal.
+      if (refreshTimer.current !== null) clearTimeout(refreshTimer.current);
+      refreshTimer.current = setTimeout(() => {
+        refreshTimer.current = null;
+        router.refresh();
+      }, 180);
     } else if (res?.error) {
       toast.error(res.error);
     }

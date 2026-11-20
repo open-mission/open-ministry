@@ -41,7 +41,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useStableIsMobile } from "@/hooks/use-stable-is-mobile";
 import { describeSongUsageRecency } from "@/lib/song-usage";
 import { cn } from "@/lib/utils";
 import type { SongOption } from "./plan-item-dialog";
@@ -59,8 +59,8 @@ export function PlanSongPicker({
   onChange,
   disabled = false,
 }: PlanSongPickerProps) {
-  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
+  const isMobile = useStableIsMobile(open);
   const [search, setSearch] = useState("");
   const [collectionFilter, setCollectionFilter] = useState("");
   const [toneFilter, setToneFilter] = useState("");
@@ -187,7 +187,7 @@ export function PlanSongPicker({
         <div className="flex flex-wrap items-center gap-1.5">
           {/* FILTRO POR GRUPO/COLEÇÃO */}
           {availableCollections.length > 0 ? (
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button
                   type="button"
@@ -236,7 +236,7 @@ export function PlanSongPicker({
 
           {/* FILTRO POR TOM */}
           {availableTones.length > 0 ? (
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button
                   type="button"
@@ -282,7 +282,7 @@ export function PlanSongPicker({
 
           {/* FILTRO POR TAG */}
           {availableTags.length > 0 ? (
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button
                   type="button"

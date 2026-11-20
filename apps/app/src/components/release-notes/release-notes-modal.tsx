@@ -33,7 +33,8 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useMounted } from "@/hooks/use-mounted";
+import { useStableIsMobile } from "@/hooks/use-stable-is-mobile";
 import {
   releaseNotesStore,
   useReleaseNotesStore,
@@ -42,7 +43,8 @@ import type { ReleaseModuleGroup } from "@/config/release-notes";
 
 export function ReleaseNotesModal() {
   const { isOpen, activeRelease } = useReleaseNotesStore();
-  const isMobile = useIsMobile();
+  const mounted = useMounted();
+  const isMobile = useStableIsMobile(isOpen);
 
   // Verifica na primeira renderização se há uma nova versão que ainda não foi exibida
   useEffect(() => {
@@ -55,7 +57,9 @@ export function ReleaseNotesModal() {
     }
   };
 
-  if (!isOpen) return null;
+  // O modal permanece montado mesmo fechado para que Radix/Vaul executem
+  // a animação de saída e a limpeza completa do lock de interatividade.
+  if (!mounted) return null;
 
   if (isMobile) {
     return (

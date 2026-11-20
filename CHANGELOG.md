@@ -6,6 +6,13 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.7.1] - 2026-11-20
+
+### Corrigido
+- **Cliques que paravam de responder após fechar janelas:** corrigido o bloqueio de interação deixado por modais, drawers e menus (propriedade `pointer-events: none` e travas de scroll no `body` quando a camada modal era desmontada). Agora a limpeza acontece corretamente ao fechar as janelas de notas de versão, cronograma de eventos e músicas.
+- **Cronograma de Evento:** drawers aninhados usam a raiz correta e o fechamento/atualização do item é sequenciado, evitando que o próximo clique seja engolido.
+- **Música vinda da internet:** a busca fecha antes de abrir o formulário de configuração, e as abas do formulário voltam a responder a clique e teclado.
+
 ## [1.7.0] - 2026-11-19
 
 ### Adicionado e Melhorado

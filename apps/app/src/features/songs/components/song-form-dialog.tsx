@@ -56,7 +56,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useStableIsMobile } from "@/hooks/use-stable-is-mobile";
 import {
   extractLyricsFromChords,
   parseSongSections,
@@ -113,7 +113,7 @@ export function SongFormDialog({
   canUpdate = false,
 }: SongFormDialogProps) {
   const isEditing = Boolean(songId);
-  const isMobile = useIsMobile();
+  const isMobile = useStableIsMobile(open);
 
   const createMutation = useCreateSongMutation();
   const updateMutation = useUpdateSongMutation();
@@ -149,6 +149,14 @@ export function SongFormDialog({
   const [mobileMusicTab, setMobileMusicTab] = useState<"chords" | "lyrics">(
     "chords",
   );
+
+  // Aba controlada: volta para `initialTab` sempre que o formulário reabre.
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const [wasOpen, setWasOpen] = useState(open);
+  if (wasOpen !== open) {
+    setWasOpen(open);
+    if (open) setActiveTab(initialTab);
+  }
 
   // Campos do formulário
   const [title, setTitle] = useState(initialData?.title ?? "");
@@ -530,7 +538,8 @@ export function SongFormDialog({
 
       {/* 2. TABS CONTAINER FIXO COM SCROLL DENTRO DOS CAMPOS */}
       <Tabs
-        defaultValue={initialTab}
+        value={activeTab}
+        onValueChange={setActiveTab}
         className="flex flex-1 min-h-0 flex-col overflow-hidden"
       >
         {/* TABS LIST FIXO NO TOPO COM SUPORTE A ROLAGEM HORIZONTAL NO MOBILE */}
@@ -841,7 +850,10 @@ export function SongFormDialog({
         </TabsContent>
 
           {/* ABA 3: PLATAFORMAS & LINKS */}
-          <TabsContent value="links" className="space-y-4 pt-1">
+          <TabsContent
+            value="links"
+            className="mt-0 flex-1 min-h-0 space-y-4 overflow-y-auto p-4 sm:p-6 data-[state=inactive]:hidden"
+          >
             <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-foreground sm:p-4">
               <span className="flex items-center gap-2">
                 <SparklesIcon className="size-4 text-primary" />

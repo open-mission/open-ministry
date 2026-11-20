@@ -31,16 +31,45 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.7.0";
+export const CURRENT_APP_VERSION = "1.7.1";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.7.1",
+    title: "Correção de Interatividade",
+    subtitle:
+      "Corrigimos o travamento dos cliques depois de fechar janelas e a troca de abas no formulário de músicas.",
+    releaseDate: "20 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Correções",
+        badge: "Hotfix",
+        features: [
+          {
+            title: "Cliques voltam a responder",
+            description:
+              "Ao fechar janelas de avisos, cronograma ou músicas, a tela volta a aceitar cliques na hora — sem precisar recarregar a página.",
+            iconName: "CheckSquare2Icon",
+            badge: "Interatividade",
+          },
+          {
+            title: "Abas de música funcionando",
+            description:
+              "Depois de adicionar uma música vinda da internet, as abas de configuração voltam a responder a clique e teclado.",
+            iconName: "MusicIcon",
+            badge: "Músicas",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.7.0",
     title: "Uma Home Mais Focada no Seu Dia",
     subtitle:
       "A página inicial agora se organiza em Hoje e Minha Igreja, com o essencial à mão e um header que acompanha você sem roubar espaço.",
     releaseDate: "19 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Início",
