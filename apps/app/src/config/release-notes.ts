@@ -31,16 +31,72 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.6.0";
+export const CURRENT_APP_VERSION = "1.7.0";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.7.0",
+    title: "Uma Home Mais Focada no Seu Dia",
+    subtitle:
+      "A página inicial agora se organiza em Hoje e Minha Igreja, com o essencial à mão e um header que acompanha você sem roubar espaço.",
+    releaseDate: "19 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Início",
+        badge: "Novidade",
+        features: [
+          {
+            title: "Abas Hoje e Minha Igreja",
+            description:
+              "Separe o que precisa de atenção agora do que é da igreja: versículo, próximo evento, avisos, tarefas e aniversariantes de um lado; dados da congregação, eventos e departamentos do outro. Seções sem conteúdo simplesmente não aparecem.",
+            iconName: "LayoutDashboardIcon",
+            badge: "Home",
+          },
+          {
+            title: "Header que acompanha",
+            description:
+              "As abas ficam junto das notificações e do avatar no cabeçalho fixo. O indicador preenche a aba ativa e a borda inferior só aparece quando você rola a página.",
+            iconName: "BellIcon",
+            badge: "Navegação",
+          },
+          {
+            title: "Detalhes da tarefa a um clique",
+            description:
+              "Clique em uma tarefa na Home para abrir os detalhes, editar, mudar o status ou excluir — sempre de acordo com a sua permissão.",
+            iconName: "CheckSquare2Icon",
+            badge: "Tarefas",
+          },
+        ],
+      },
+      {
+        moduleName: "Minha Igreja",
+        badge: "Melhorias",
+        features: [
+          {
+            title: "Versículo e avisos em destaque",
+            description:
+              "O versículo do dia voltou com o gradiente colorido e traz copiar, compartilhar e abrir na Bíblia. Os avisos ficam logo abaixo do próximo evento.",
+            iconName: "SparklesIcon",
+            badge: "Hoje",
+          },
+          {
+            title: "Departamentos que você serve",
+            description:
+              "Os cards recuperaram o desenho original, com funções, avatares, contagem de pessoas e líderes. Aniversariantes do mês aparecem apenas quando existe alguém com aniversário no período.",
+            iconName: "UsersIcon",
+            badge: "Comunidade",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.6.0",
     title: "Sua agenda no seu calendário",
     subtitle:
       "Assine cultos, ensaios, eventos e escalas com um link que atualiza sozinho no Apple Calendário, Google Agenda ou Outlook.",
     releaseDate: "19 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Agenda & Calendário",

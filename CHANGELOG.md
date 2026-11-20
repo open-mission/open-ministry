@@ -6,6 +6,15 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.7.0] - 2026-11-19
+
+### Adicionado e Melhorado
+- **Nova Home com Abas (`Hoje` / `Minha Igreja`):** a página inicial passa a separar o que é urgente no dia (versículo, próximo evento, avisos, tarefas e aniversariantes) das informações da igreja (dados da congregação, próximos eventos e departamentos que a pessoa serve). Os widgets aparecem somente quando há conteúdo — sem seções vazias, como aniversariantes fora do mês.
+- **Header Integrado da Home:** as abas ficam dentro do cabeçalho fixo, ao lado das notificações e do avatar, com indicador cobrindo toda a largura da aba ativa, espaço entre logo e abas e borda inferior visível somente após rolagem. Nas demais páginas o breadcrumb e o header originais permanecem intactos.
+- **Tarefas com Detalhes na Home:** ao clicar em uma tarefa, abre o painel de detalhes com edição, mudança de status e exclusão, respeitando as permissões do membro. O checkbox continua independente, com rollback em caso de erro.
+- **Cards Restaurados:** versículo e informações da igreja voltaram ao gradiente com blur colorido, e os cards de departamentos ao desenho original (pills de funções, avatares empilhados, contagem e líderes).
+- **Layout Responsivo:** grade no desktop sem colunas vazias nem esticamento, mantendo a ordem do mobile e o container centralizado.
+
 ## [1.6.0] - 2026-11-19
 
 ### Adicionado e Melhorado
