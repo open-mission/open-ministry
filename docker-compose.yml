@@ -1,0 +1,34 @@
+# Neon Local: proxy HTTP para um branch efêmero/persistente do Neon na nuvem.
+# O branch pai é sempre `development` (nunca o branch default `production`).
+# Documentação: https://neon.com/docs/local/neon-local
+services:
+  db:
+    image: neondatabase/neon_local:latest
+    container_name: openministry-neon-local
+    ports:
+      - "5432:5432"
+    environment:
+      NEON_API_KEY: ${NEON_API_KEY}
+      NEON_PROJECT_ID: ${NEON_PROJECT_ID}
+      # br-holy-truth-bb9hmcnq = branch `development`. Nunca usar o de produção.
+      # Com NEON_LOCAL_BRANCH_ID definido, conecta a um branch existente
+      # (BRANCH_ID) em vez de criar um novo a partir do parent.
+      BRANCH_ID: ${NEON_LOCAL_BRANCH_ID:-}
+      PARENT_BRANCH_ID: ${NEON_LOCAL_PARENT_BRANCH_ID:-br-holy-truth-bb9hmcnq}
+      # Mantém o branch entre `down`/`up` (com os volumes abaixo ele vira
+      # branch persistente por branch Git).
+      DELETE_BRANCH: "false"
+    volumes:
+      - ./.neon_local/:/tmp/.neon_local
+      - ./.git/HEAD:/tmp/.git/HEAD:ro,consistent
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h 127.0.0.1 -p 5432 -U neon -d neon >/dev/null 2>&1 || exit 1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
