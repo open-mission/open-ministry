@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MenuIcon } from "lucide-react";
 
 import {
+  isMobileNavRoute,
   isNavItemActive,
   mobileNavItems,
   type NavItem,
@@ -19,6 +20,8 @@ export function MobileNavShell({
   isMenuOpen?: boolean;
   items?: NavItem[];
 }) {
+  const isMenuActive =
+    isMenuOpen || (activeHref ? !isMobileNavRoute(activeHref) : false);
   const colCount = items.length + 1; // +1 para o botão Menu
   const gridColsClass =
     colCount <= 2
@@ -47,7 +50,7 @@ export function MobileNavShell({
               prefetch={true}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "group flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[0.62rem] font-medium transition-[color,transform] duration-200 select-none active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100",
+                "group flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] leading-tight font-medium transition-colors duration-200 select-none active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100",
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground",
@@ -55,27 +58,15 @@ export function MobileNavShell({
             >
               <span
                 className={cn(
-                  "flex h-7 w-12 items-center justify-center rounded-full transition-[background-color,color,transform] duration-200 motion-reduce:transition-none",
+                  "flex h-7 w-12 items-center justify-center rounded-full transition-colors duration-200 motion-reduce:transition-none",
                   isActive
                     ? "bg-primary/10 text-primary"
                     : "bg-transparent group-hover:bg-muted/70",
                 )}
               >
-                <item.icon
-                  className={cn(
-                    "size-5 transition-transform duration-200 motion-reduce:transition-none",
-                    isActive && "-translate-y-px",
-                  )}
-                />
+                <item.icon className="size-5" />
               </span>
-              <span
-                className={cn(
-                  "max-w-full truncate",
-                  isActive && "font-semibold",
-                )}
-              >
-                {item.label}
-              </span>
+              <span className="max-w-full truncate">{item.label}</span>
             </Link>
           );
         })}
@@ -85,29 +76,25 @@ export function MobileNavShell({
           onClick={onMenuClick}
           aria-label="Abrir menu completo de navegação"
           aria-expanded={isMenuOpen}
+          aria-current={isMenuActive && !isMenuOpen ? "page" : undefined}
           className={cn(
-            "group flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[0.62rem] font-medium transition-[color,transform] duration-200 select-none active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100",
-            isMenuOpen
+            "group flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] leading-tight font-medium transition-colors duration-200 select-none active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100",
+            isMenuActive
               ? "text-primary"
               : "text-muted-foreground hover:text-foreground",
           )}
         >
           <span
             className={cn(
-              "flex h-7 w-12 items-center justify-center rounded-full transition-[background-color,color,transform] duration-200 motion-reduce:transition-none",
-              isMenuOpen
+              "flex h-7 w-12 items-center justify-center rounded-full transition-colors duration-200 motion-reduce:transition-none",
+              isMenuActive
                 ? "bg-primary/10 text-primary"
                 : "bg-transparent group-hover:bg-muted/70",
             )}
           >
-            <MenuIcon
-              className={cn(
-                "size-5 transition-transform duration-200 motion-reduce:transition-none",
-                isMenuOpen && "-translate-y-px",
-              )}
-            />
+            <MenuIcon className="size-5" />
           </span>
-          <span className={cn(isMenuOpen && "font-semibold")}>Menu</span>
+          <span>Menu</span>
         </button>
       </div>
     </nav>
