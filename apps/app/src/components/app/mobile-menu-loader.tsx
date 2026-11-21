@@ -1,7 +1,9 @@
 import { connection } from "next/server";
 
 import { MobileMenu } from "@/components/app/mobile-menu";
+import { toSerializableExploreDomains } from "@/components/app/domain-subtabs-data";
 import { isUserLeaderInAnyDepartment } from "@/lib/departments";
+import { buildDesktopSidebarNavigation } from "@/lib/modules/nav";
 import { getUserAccessibleModuleKeys } from "@/lib/modules/service";
 import { requireOrganizationContext } from "@/lib/organizations";
 
@@ -23,14 +25,20 @@ export async function MobileMenuLoader() {
   ]);
 
   const isAdminOrLeader = isAdmin || isLeader;
+  const options = {
+    canManageJobs: isAdminOrLeader,
+    canAccessWhatsApp: isAdminOrLeader,
+    canAccessEmails: isAdminOrLeader,
+  };
+  const navigation = buildDesktopSidebarNavigation(activeModuleKeys, options);
 
   return (
     <MobileMenu
       organizationName={organization.name}
       activeModuleKeys={activeModuleKeys}
-      canManageJobs={isAdminOrLeader}
-      canAccessWhatsApp={isAdminOrLeader}
-      canAccessEmails={isAdminOrLeader}
+      {...options}
+      exploreDomains={toSerializableExploreDomains(navigation.primary)}
+      exploreSecondary={toSerializableExploreDomains(navigation.secondary)}
     />
   );
 }

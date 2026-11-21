@@ -11,6 +11,8 @@ import {
   buildAccessibleMobileMenuGroups,
   buildAccessibleMobileNavItems,
   buildAccessibleNavGroups,
+  buildMobileExploreQuickLinks,
+  filterMobileExploreRoutes,
 } from "@/lib/modules/nav";
 
 describe("Modules System Foundation", () => {
@@ -193,5 +195,95 @@ describe("Modules System Foundation", () => {
     for (const group of groups) {
       expect(group.items.length).toBeGreaterThanOrEqual(3);
     }
+  });
+});
+
+describe("Menu Explorar (variante A+C)", () => {
+  const ALL_MODULES = [
+    "agenda",
+    "schedules",
+    "music",
+    "announcements",
+    "tasks",
+    "rehearsals",
+  ] as const;
+  const FULL_OPTIONS = {
+    canManageJobs: true,
+    canAccessWhatsApp: true,
+    canAccessEmails: true,
+  };
+
+  it("prioriza atalhos úteis no mobile e nunca inclui WhatsApp ou Emails", () => {
+    const links = buildMobileExploreQuickLinks([...ALL_MODULES], FULL_OPTIONS);
+
+    expect(links.map((link) => link.href)).toEqual([
+      "/schedules",
+      "/availability",
+      "/announcements",
+      "/calendar",
+      "/songs",
+    ]);
+    expect(
+      links.some(
+        (link) => link.href === "/whatsapp" || link.href === "/emails",
+      ),
+    ).toBe(false);
+  });
+
+  it("filtra atalhos por módulos desativados", () => {
+    const links = buildMobileExploreQuickLinks(["agenda"]);
+
+    expect(links.map((link) => link.href)).toEqual(["/calendar"]);
+  });
+
+  it("normaliza acentos e caixa na busca", () => {
+    const routes = filterMobileExploreRoutes(
+      "musicas",
+      [...ALL_MODULES],
+      FULL_OPTIONS,
+    );
+    expect(routes.map((route) => route.href)).toContain("/songs");
+    expect(
+      filterMobileExploreRoutes("DISPONIBILIDADE", [...ALL_MODULES]).map(
+        (route) => route.href,
+      ),
+    ).toContain("/availability");
+    expect(
+      filterMobileExploreRoutes("cultos", [...ALL_MODULES]).map(
+        (route) => route.href,
+      ),
+    ).toContain("/events");
+  });
+
+  it("não vaza rotas bloqueadas por módulo ou permissão", () => {
+    expect(
+      filterMobileExploreRoutes("whatsapp", ["announcements"], {
+        canAccessWhatsApp: false,
+        canAccessEmails: false,
+      }),
+    ).toEqual([]);
+
+    expect(
+      filterMobileExploreRoutes("whatsapp", ["announcements"], FULL_OPTIONS).map(
+        (route) => route.href,
+      ),
+    ).toEqual(["/whatsapp"]);
+
+    expect(
+      filterMobileExploreRoutes("emails", ["announcements"], {
+        canAccessWhatsApp: true,
+        canAccessEmails: false,
+      }),
+    ).toEqual([]);
+  });
+
+  it("inclui Início, Bíblia e ações secundárias sem funções RSC", () => {
+    const routes = filterMobileExploreRoutes("", [...ALL_MODULES], FULL_OPTIONS);
+
+    expect(routes.map((route) => route.href)).toEqual(
+      expect.arrayContaining(["/", "/bible", "/tasks", "/jobs"]),
+    );
+    expect(routes.every((route) => !("icon" in route))).toBe(true);
+    expect(JSON.parse(JSON.stringify(routes))).toEqual(routes);
   });
 });

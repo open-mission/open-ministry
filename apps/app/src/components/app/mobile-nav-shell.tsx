@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MenuIcon } from "lucide-react";
+import { CompassIcon } from "lucide-react";
 
 import {
   isMobileNavRoute,
@@ -22,7 +22,7 @@ export function MobileNavShell({
 }) {
   const isMenuActive =
     isMenuOpen || (activeHref ? !isMobileNavRoute(activeHref) : false);
-  const colCount = items.length + 1; // +1 para o botão Menu
+  const colCount = items.length + 1; // +1 para o botão Explorar
   const gridColsClass =
     colCount <= 2
       ? "grid-cols-2"
@@ -74,7 +74,7 @@ export function MobileNavShell({
         <button
           type="button"
           onClick={onMenuClick}
-          aria-label="Abrir menu completo de navegação"
+          aria-label="Abrir menu Explorar"
           aria-expanded={isMenuOpen}
           aria-current={isMenuActive && !isMenuOpen ? "page" : undefined}
           className={cn(
@@ -92,9 +92,9 @@ export function MobileNavShell({
                 : "bg-transparent group-hover:bg-muted/70",
             )}
           >
-            <MenuIcon className="size-5" />
+            <CompassIcon className="size-5" />
           </span>
-          <span>Menu</span>
+          <span>Explorar</span>
         </button>
       </div>
     </nav>

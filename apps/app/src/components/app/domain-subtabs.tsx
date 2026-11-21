@@ -51,7 +51,7 @@ export function DomainSubtabsNav({
   return (
     <nav
       aria-label={`Sub-abas de ${domainLabel}`}
-      className="hidden md:flex w-fit max-w-full items-center gap-1 overflow-x-auto scrollbar-none rounded-xl bg-muted/70 p-1"
+      className="flex w-full md:w-fit max-w-full items-center gap-1 overflow-x-auto scrollbar-none rounded-xl bg-muted/70 p-1"
     >
       {tabs.map((tab) => {
         const isActive = isNavItemActive(tab, pathname);
@@ -64,7 +64,7 @@ export function DomainSubtabsNav({
             prefetch={true}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "flex min-h-9 shrink-0 items-center gap-2 rounded-lg border px-3 text-sm font-medium whitespace-nowrap transition-colors",
+              "flex min-h-11 md:min-h-9 shrink-0 items-center gap-2 rounded-lg border px-3 text-sm font-medium whitespace-nowrap transition-colors",
               isActive
                 ? "border-border/70 bg-card text-foreground shadow-2xs"
                 : "border-transparent text-muted-foreground hover:text-foreground",

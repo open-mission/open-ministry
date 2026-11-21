@@ -228,6 +228,22 @@ describe("DomainSubtabsNav", () => {
     expect(markup).toContain("shadow-2xs");
   });
 
+  it("é visível no mobile com rolagem horizontal e alvos de 44px", () => {
+    const markup = renderToStaticMarkup(
+      createElement(DomainSubtabsNav, {
+        domainLabel: "Cultos & Escalas",
+        tabs: cultosTabs,
+      }),
+    );
+
+    expect(markup).not.toContain("hidden md:flex");
+    expect(markup).toContain(
+      "flex w-full md:w-fit max-w-full items-center gap-1 overflow-x-auto scrollbar-none",
+    );
+    expect(markup).toContain("min-h-11 md:min-h-9");
+    expect(markup).toContain('aria-label="Sub-abas de Cultos &amp; Escalas"');
+  });
+
   it("renders nothing when there is a single tab", () => {
     currentPathname = "/calendar";
 
