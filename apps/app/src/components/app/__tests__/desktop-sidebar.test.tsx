@@ -262,4 +262,14 @@ describe("desktop sidebar configuration", () => {
     expect(source).toContain('collapsible="icon"');
     expect(source).not.toContain("SidebarSettingsButton");
   });
+
+  it("scans @openministry/ui in Tailwind CSS and keeps @ui-sdk below Tailwind layers", async () => {
+    const globalsCss = await Bun.file(
+      new URL("../../../app/globals.css", import.meta.url),
+    ).text();
+
+    expect(globalsCss).toContain('@source "../../../../packages/ui/src";');
+    expect(globalsCss).toContain('@import "@ui-sdk/core/web.css";');
+    expect(globalsCss).not.toContain('layer(components)');
+  });
 });
