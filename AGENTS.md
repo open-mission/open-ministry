@@ -66,10 +66,12 @@ Regras:
 
 ## Padrão de Diálogos e Formulários (Desktop vs Mobile)
 
-Todo modal de formulário (criação/edição), confirmação ou visualização de detalhes deve ser responsivo:
+Todo modal de formulário (criação/edição), confirmação ou visualização de detalhes deve ser responsivo, seguindo o **Padrão Híbrido com visual unificado**:
 - **No Desktop (`>= 768px`)**: renderize `Dialog` / `DialogContent` centralizado com largura proporcional (`sm:max-w-lg` ou `sm:max-w-2xl`) e overflow vertical contido (`max-h-[85vh] overflow-y-auto`).
-- **No Mobile (`< 768px`)**: renderize `Drawer` / `DrawerContent` (bottom-sheet via `vaul`) ancorado na parte inferior com área de toque mínima de 44px (`min-h-[44px]`), header com `!text-left`, e container de rolagem suave (`max-h-[85vh] overflow-y-auto [-webkit-overflow-scrolling:touch]`).
-- **Detecção de Dispositivo**: utilize o hook `useIsMobile()` de `@/hooks/use-mobile`.
+- **No Mobile (`< 768px`)**: o padrão é `Drawer` / `DrawerContent` (bottom-sheet via `vaul`) ancorado na parte inferior, com área de toque mínima de 44px (`min-h-[44px]`), header com `!text-left` e container de rolagem suave (`max-h-[85vh] overflow-y-auto [-webkit-overflow-scrolling:touch]`). Drawers aninhados são suportados de forma limpa: um `Drawer` renderizado dentro de outro `DrawerContent` vira automaticamente um `NestedRoot`, sem desmontar o pai.
+- **Exceção — handoffs encadeados**: quando um modal abre outro modal em sequência (ex.: `ImportSongDialog` -> `SongFormDialog`), use `Sheet` com `side="bottom"` em vez de `Drawer`. O `Sheet` compartilha o mesmo visual de bottom-sheet (`rounded-t-xl` e `max-h-[85dvh]`, definidos em `@openministry/ui`) e oferece transições de foco/desmontagem do Radix sem gesto de arrastar, evitando conflitos entre o swipe do `vaul` e a troca de foco entre os dois modais.
+- **Fonte dos componentes**: `@/components/ui/*` são apenas re-exports finos de `@openministry/ui`; a implementação (e a fonte da verdade visual) vive em `packages/ui`.
+- **Detecção de Dispositivo**: utilize o hook `useIsMobile()` de `@/hooks/use-mobile` (re-export de `@openministry/ui/hooks/use-mobile`).
 
 ## Notas de Versão e Modal de Novidades (Changelog)
 
