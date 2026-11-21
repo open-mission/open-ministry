@@ -467,8 +467,14 @@
     },
     "drawer": {
       "path": "packages/ui/src/components/drawer.tsx",
-      "status": "in code only",
-      "note": "Open question: padrão híbrido Sheet/Drawer em aberto"
+      "status": "drawn",
+      "role": "Padrão mobile (<768px) para modais e sheets independentes",
+      "visual": [
+        "handle 100x4px",
+        "rounded-t-xl",
+        "max-h-[85dvh]",
+        "DrawerNestedContext"
+      ]
     },
     "dropdown-menu": {
       "path": "packages/ui/src/components/dropdown-menu.tsx",
@@ -580,8 +586,12 @@
     },
     "sheet": {
       "path": "packages/ui/src/components/sheet.tsx",
-      "status": "in code only",
-      "note": "Open question: padrão híbrido Sheet/Drawer em aberto"
+      "status": "drawn",
+      "sides": [
+        "right",
+        "bottom"
+      ],
+      "role": "Fluxos encadeados mobile (side=bottom com visual unificado rounded-t-xl / max-h-[85dvh]) e painéis laterais"
     },
     "sidebar": {
       "path": "packages/ui/src/components/sidebar.tsx",
