@@ -26,11 +26,14 @@ mock.module("vaul", () => {
   };
 });
 
-// Cache-buster: outros arquivos de teste podem já ter carregado o módulo real.
-const drawerModulePath = "@/components/ui/drawer?nesting-regression";
+// Cache-buster no módulo de origem: outros arquivos de teste podem já ter carregado @openministry/ui/components/drawer com a vaul real.
+const drawerModulePath = "@openministry/ui/components/drawer?nesting-regression";
 const { Drawer, DrawerContent } = await import(drawerModulePath);
 
-const sourceFile = new URL("../drawer.tsx", import.meta.url);
+const sourceFile = new URL(
+  "../../../../../../packages/ui/src/components/drawer.tsx",
+  import.meta.url,
+);
 
 describe("drawer aninhado automático", () => {
   it("usa NestedRoot para um Drawer renderizado dentro de DrawerContent", () => {
