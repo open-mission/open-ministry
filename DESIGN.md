@@ -17,14 +17,14 @@ Words: **calmo, pastoral e organizado** *(definido com Robsom; aguardando confir
 Never like: **planilha pesada, rede social barulhenta ou dashboard genérico** *(definido com Robsom; aguardando confirmação final do membro)*.
 
 ## Brand
-- **Design system source:** `packages/ui/src/components` (`63` componentes exportados via `@openministry/ui`; ver conflito com `apps/app/src/components/ui` em *Open questions*).
+- **Design system source:** `packages/ui/src/components` (`63` componentes exportados via `@openministry/ui`; the `OpenMinistry.pen` guide mirrors it; ver conflito com `apps/app/src/components/ui` em *Open questions*).
 - **Paleta e tokens (`apps/app/src/app/globals.css`, `apps/app/src/app/brand/page.tsx`):**
-  - Primária: verde-floresta profundo (`#264A3A` / `--primary: oklch(0.36 0.062 156)` no claro; `oklch(0.78 0.07 150)` no escuro).
-  - Fundo e superfícies: papel creme quente (`#FBF7EF` / `--background: oklch(0.982 0.008 85)`) e cartões brancos (`#FFFFFF` / `--card: oklch(0.995 0.004 85)`) no claro; grafite/floresta noturno (`#0A0A0A` / `--background: oklch(0.18 0.018 155)`, `--card: oklch(0.22 0.02 155)`) no escuro.
+  - Primária: verde-floresta profundo (`--primary: oklch(0.36 0.062 156)` = `#1e472f` no claro; `oklch(0.78 0.07 150)` = `#98c5a0` no escuro; hex `#264A3A` em `brand/page.tsx` é apenas descritivo).
+  - Fundo e superfícies: papel creme quente (`--background: oklch(0.982 0.008 85)` = `#fcf9f3`; `#FBF7EF` descritivo) e cartões brancos (`--card: oklch(0.995 0.004 85)` = `#fffdfa`; `#FFFFFF` descritivo) no claro; floresta noturno (`--background: oklch(0.18 0.018 155)` = `#0b140e`, `--card: oklch(0.22 0.02 155)` = `#131d17`; `#0A0A0A` descritivo) no escuro.
   - Secundária e acentos: verde sálvia (`#3D735A`), acento dourado quente (`--accent: oklch(0.915 0.035 70)` / `--chart-2: oklch(0.62 0.11 55)`), cinza zinco para textos secundários e bordas (`#71717A`), raio base `--radius: 0.75rem`.
 - **Tipografia (`apps/app/src/app/layout.tsx`, `globals.css`):** títulos em **Fraunces** (`--font-display` / `--font-heading`); corpo e controles em **Geist** (`--font-sans`).
 - **Logo e identidade da igreja (`apps/app/public/brand/`, `brand/page.tsx`, `PRODUCT.md`):** símbolo do livro sagrado com cruz central, variações minimal e completa (*"ORGANIZE. PLANEJE. SIRVA."*), além do nome e logo da própria igreja no topo do painel quando configurados.
-- **Arquivo de design (`pen.dev`):** `OpenMinistry.pen` (já contém 22+ frames e ~80 componentes; sincronização via `craft-sync` pendente de aprovação deste arquivo).
+- **Arquivo de design (`pen.dev`):** `OpenMinistry.pen` (`DS OpenMinistry — Fundamentos`, `DS OpenMinistry — Componentes`, `DS OpenMinistry — Padrões`; sincronizado em `2026-11-21` com `globals.css` + 5 componentes iniciais em `design-sync.json`).
 
 ## References
 - **Planning Center** (`PRODUCT.md`) — aproveitar: o modelo de culto recorrente com escala por função e a leitura rápida de "quem serve quando"; evitar: densidade de tabelas, jargão de ERP e cara de painel corporativo.
@@ -41,10 +41,11 @@ Never like: **planilha pesada, rede social barulhenta ou dashboard genérico** *
 ## Decisions log
 - `2026-11-21` — Definido `packages/ui/src/components` como `Design system source` oficial do projeto (resposta à pergunta 1 do `craft-setup`).
 - `2026-11-21` — Rascunho inicial de `DESIGN.md` redigido a partir de `PRODUCT.md`, `globals.css`, `brand/page.tsx`, `AGENTS.md` e do alinhamento de clima, referências e trabalho principal da Home com Robsom (sem rodar `craft-sync` até aprovação do membro).
+- `2026-11-21` — `craft-sync` (importação `code → OpenMinistry.pen`) concluído com decisões do Robsom: (1) `globals.css` OKLCH é canônico em Light e Dark (`#1e472f`/`#fcf9f3` vencem os hex descritivos de `brand/page.tsx`); `om-*` atuam como aliases (`om-danger` espelha `--destructive`); `h:--*` seguem como variáveis read-only do kit `shadcn.lib.pen` sobrescritas por instância; `om-amber` (`#fe9a00`) e `om-info` (`#2b7fff`) ficam registrados como **legado** (proibido uso em componentes novos). (2) Reconciliados os 3 frames `DS OpenMinistry — *` existentes com Light/Dark, SVGs oficiais da marca, `rounded-lg` (`12px`) em botões, `destructive` tonal e variante `link`. (3) Desenhados os 5 componentes iniciais (`Button`, `Card`, `Badge`, `Input`, `Tabs`); `Sheet` e `Drawer` seguem fora até fechamento em *Open questions*. (4) Registrado `design-sync.json` na raiz (`docs/design-md`).
 
 ## Open questions
 - **Divergência entre código e fonte oficial de UI:** `packages/ui/src/components` (`63` arquivos) foi escolhido como fonte oficial do Design System, mas `apps/app` hoje importa `268` vezes de `apps/app/src/components/ui` (`63` arquivos, incluindo correções recentes como `DrawerNestedContext` em `drawer.tsx`). Definir quando e como convergir os overrides locais de `apps/app/src/components/ui` de volta para `packages/ui`.
 - **Aprovação final do membro:** validar Mood (*calmo, pastoral e organizado* / never like *planilha pesada, rede social barulhenta ou dashboard genérico*), trabalho nº 1 da Home (*"o que eu preciso fazer agora?"*), Referências (incluindo manter ou remover `Google / Apple Calendar (assumed)`) e formatos de data/hora `(assumed)`.
 - **Padrão mobile `Sheet` vs `Drawer` (`AGENTS.md` vs `v1.7.2`):** `AGENTS.md` cita Vaul `Drawer` para modais mobile, enquanto os hotfixes recentes adotaram `Sheet side="bottom"` em fluxos encadeados para evitar travamentos com `vaul`. Alinhar a redação no `AGENTS.md` caso o padrão híbrido seja definitivo.
 - **Padronização de ícones `(assumed)`:** substituir 1 uso restante de `@tabler/icons-react` em `apps/app/src` por `lucide-react`.
-- **Sincronização com `OpenMinistry.pen` (`craft-sync`):** após aprovação deste `DESIGN.md`, decidir se `packages/ui/src/components` e `globals.css` serão importados/reconciliados no `OpenMinistry.pen` (e alinhar os frames mobile antigos ao estilo minimal).
+- **Sincronização restante com `OpenMinistry.pen` (`craft-sync`):** tokens e 5 componentes base sincronizados em `2026-11-21`; restam `58` componentes `in code only` (incluindo `Sheet`/`Drawer`) e o alinhamento dos frames mobile antigos ao estilo minimal.
