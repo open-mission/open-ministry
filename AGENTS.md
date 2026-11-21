@@ -39,6 +39,31 @@ Este projeto segue o Git Flow. Respeite estas regras em qualquer alteração:
 - **Para publicar uma release:** faça merge da `develop` na `main` com `--no-ff`
   e, se possível, crie uma tag de versão (`vX.Y.Z`).
 
+## Skills de Design (craft)
+
+O projeto usa o pacote de skills `diego3g/craft`, instalado em `.agents/skills/` na raiz do repositório. `.agents/` e `skills-lock.json` estão no `.gitignore`: as skills são locais da máquina, não entram em commit e não aparecem em `git status`.
+
+| Skill | Quando usar |
+| :--- | :--- |
+| `craft` | Criar, desenhar ou redesenhar página, tela, fluxo ou elemento de UI. É a porta de entrada — aciona as demais nos pontos certos. |
+| `craft-setup` | Projeto sem `DESIGN.md` na raiz: definir marca, estilo e diretrizes antes de desenhar. |
+| `craft-explore` | Quando a direção está aberta: gerar 2+ opções de layout/abordagem para escolha. |
+| `craft-critique` | Revisar e polir uma tela existente ("parece carregada", "não está bom ainda") antes de mostrar ou entregar para código. |
+| `craft-states` | Garantir todos os estados: loading, erro, vazio, dados longos, mobile, permissões diferentes. |
+| `craft-system` | Design system, tokens e componentes — criar, alterar ou auditar consistência. |
+| `craft-sync` | Sincronizar o design system que já existe em código (`packages/ui`, tokens) com a ferramenta de design. |
+| `using-craft` | Orquestrador: consultar no início de qualquer tarefa que mexa em UI. |
+
+Regras:
+- **Antes de desenhar uma tela nova**, verifique se existe `DESIGN.md` na raiz; se não houver, use `craft-setup` em vez de inventar estilo.
+- **Sempre cobrir estados** com `craft-states` antes de considerar a tela pronta — o padrão de diálogos responsivos desta seção continua valendo.
+- **Respeite o design system existente**: componentes de `packages/ui` e tokens são a fonte da verdade; `craft-sync` é o caminho para trazê-los, não recriar estilos soltos.
+- **Worktrees novas não herdam `.agents/skills/`** (é gitignored). Antes de trabalhar em UI numa worktree, rode na raiz dela:
+  ```bash
+  npx skills add diego3g/craft
+  ```
+- **Skills rodam com permissões totais do agente.** Leia o `SKILL.md` da skill antes de usá-la em tarefa que escreva ou apague arquivos — o scanner da CLI já sinalizou `craft-system` como risco médio.
+
 ## Padrão de Diálogos e Formulários (Desktop vs Mobile)
 
 Todo modal de formulário (criação/edição), confirmação ou visualização de detalhes deve ser responsivo:
