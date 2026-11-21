@@ -218,7 +218,7 @@ export function MobileMenu({
 
   return (
     <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerContent className="z-[60] h-[85dvh] max-h-[85dvh] gap-0 overflow-hidden border-x-0 border-b-0 p-0">
+      <DrawerContent className="z-[60] h-[95dvh] max-h-[95dvh] data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[95dvh] gap-0 overflow-hidden border-x-0 border-b-0 p-0">
         <DrawerHeader className="relative z-10 shrink-0 border-b border-border/60 bg-popover px-4 pt-3 pb-3 !text-left">
           <DrawerTitle className="font-heading text-lg">Explorar</DrawerTitle>
           <DrawerDescription className="text-xs">

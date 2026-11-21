@@ -206,7 +206,7 @@ describe("MobileMenu — variante A+C (Explorar)", () => {
     const markup = renderMenu();
 
     expect(markup).toContain(
-      "z-[60] h-[85dvh] max-h-[85dvh] gap-0 overflow-hidden border-x-0 border-b-0 p-0",
+      "z-[60] h-[95dvh] max-h-[95dvh] data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[95dvh] gap-0 overflow-hidden border-x-0 border-b-0 p-0",
     );
     expect(markup).toContain(
       'data-drawer-header="true" class="relative z-10 shrink-0 border-b border-border/60 bg-popover',
