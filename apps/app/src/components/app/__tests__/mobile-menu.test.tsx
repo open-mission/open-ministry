@@ -202,6 +202,42 @@ describe("MobileMenu — variante A+C (Explorar)", () => {
     expect(markup).toContain("text-[11px]");
   });
 
+  it("mantém altura concreta, scroll interno e empilhamento acima da página", async () => {
+    const markup = renderMenu();
+
+    expect(markup).toContain(
+      "z-[60] h-[85dvh] max-h-[85dvh] gap-0 overflow-hidden border-x-0 border-b-0 p-0",
+    );
+    expect(markup).toContain(
+      'data-drawer-header="true" class="relative z-10 shrink-0 border-b border-border/60 bg-popover',
+    );
+    expect(markup).toContain(
+      "relative z-10 shrink-0 border-t border-border/60 bg-popover",
+    );
+
+    expect(markup).toContain(
+      'class="relative flex min-h-0 flex-1 flex-col overflow-hidden"',
+    );
+    expect(markup).toContain(
+      'data-vaul-no-drag="" class="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain',
+    );
+    expect(markup).not.toContain('class="h-full overflow-y-auto');
+
+    expect(markup).toContain(
+      "pointer-events-none absolute inset-x-0 bottom-0 z-10 h-5",
+    );
+    expect(markup).toContain(
+      "pointer-events-none absolute top-1/2 left-3 z-10",
+    );
+
+    const source = await Bun.file(
+      new URL("../mobile-menu.tsx", import.meta.url),
+    ).text();
+    expect(source).toContain(
+      'className="absolute top-1/2 right-1 z-10 flex size-11',
+    );
+  });
+
   it("renderiza atalhos rápidos com pílulas de 44px e destaca o atalho ativo", () => {
     actualPathname.value = "/calendar";
     const markup = renderMenu();

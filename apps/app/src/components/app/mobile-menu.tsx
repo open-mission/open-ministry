@@ -218,8 +218,8 @@ export function MobileMenu({
 
   return (
     <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerContent className="gap-0 border-x-0 border-b-0 p-0">
-        <DrawerHeader className="border-b border-border/60 px-4 pt-3 pb-3 !text-left">
+      <DrawerContent className="z-[60] h-[85dvh] max-h-[85dvh] gap-0 overflow-hidden border-x-0 border-b-0 p-0">
+        <DrawerHeader className="relative z-10 shrink-0 border-b border-border/60 bg-popover px-4 pt-3 pb-3 !text-left">
           <DrawerTitle className="font-heading text-lg">Explorar</DrawerTitle>
           <DrawerDescription className="text-xs">
             {organizationName ?? "Acesse as áreas do painel."}
@@ -227,7 +227,7 @@ export function MobileMenu({
 
           {isCustomGroups ? null : (
             <div className="relative mt-3">
-              <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <SearchIcon className="pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
                 value={query}
@@ -241,7 +241,7 @@ export function MobileMenu({
                   type="button"
                   onClick={() => setQuery("")}
                   aria-label="Limpar busca"
-                  className="absolute top-1/2 right-1 flex size-11 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 active:bg-muted"
+                  className="absolute top-1/2 right-1 z-10 flex size-11 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 active:bg-muted"
                 >
                   <XIcon className="size-4" />
                 </button>
@@ -250,8 +250,11 @@ export function MobileMenu({
           )}
         </DrawerHeader>
 
-        <div className="relative min-h-0 flex-1">
-          <div className="h-full overflow-y-auto overscroll-contain px-4 pt-3 pb-6 [-webkit-overflow-scrolling:touch]">
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div
+            data-vaul-no-drag=""
+            className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-4 pt-3 pb-6 [-webkit-overflow-scrolling:touch]"
+          >
             {isCustomGroups ? (
               <nav aria-label="Menu principal" className="space-y-4">
                 {groups.map((group) => (
@@ -515,12 +518,12 @@ export function MobileMenu({
           </div>
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-gradient-to-t from-popover to-transparent"
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-5 bg-gradient-to-t from-popover to-transparent"
           />
         </div>
 
         {settingsModal ? (
-          <div className="border-t border-border/60 bg-popover px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="relative z-10 shrink-0 border-t border-border/60 bg-popover px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <button
               type="button"
               onClick={() => {
