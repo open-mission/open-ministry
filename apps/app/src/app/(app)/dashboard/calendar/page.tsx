@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
+
+import { DomainSubtabs } from "@/components/app/domain-subtabs-server";
 import { ShieldAlertIcon } from "lucide-react";
 
 import { getCalendarDataAction } from "@/app/actions/calendar";
@@ -68,6 +70,7 @@ async function CalendarContent() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+      <DomainSubtabs domain="cultos" />
       <FullCalendar
         initialItems={data.items}
         initialPreferences={data.preferences}

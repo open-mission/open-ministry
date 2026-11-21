@@ -171,7 +171,10 @@ export const mobileNavItems: NavItem[] = [
   },
 ];
 
-export function isNavItemActive(item: NavItem, pathname: string) {
+export function isNavItemActive(
+  item: Pick<NavItem, "href" | "exact">,
+  pathname: string,
+) {
   if (item.href === "/") {
     return pathname === "/" || pathname === "/dashboard";
   }

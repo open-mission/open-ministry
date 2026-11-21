@@ -30,7 +30,11 @@ const routeLabels: Record<string, string> = {
   notifications: "Notificações",
   songs: "Músicas",
   announcements: "Avisos",
-  calendar: "Calendário",
+  calendar: "Agenda",
+  bible: "Bíblia",
+  rehearsals: "Ensaios",
+  whatsapp: "WhatsApp",
+  emails: "Emails",
   jobs: "Processos em segundo plano",
 };
 

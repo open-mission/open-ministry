@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
+
+import { DomainSubtabs } from "@/components/app/domain-subtabs-server";
 import { BellIcon, MegaphoneIcon, ShieldAlertIcon } from "lucide-react";
 
 import { PageInfo } from "@/components/app/page-info";
@@ -112,6 +114,7 @@ async function AnnouncementsContent() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 sm:gap-8">
+      <DomainSubtabs domain="comunicacao" />
       {/* Header */}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between border-b pb-4">
         <div className="flex flex-wrap items-center gap-2">
