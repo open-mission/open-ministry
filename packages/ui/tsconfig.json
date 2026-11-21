@@ -4,7 +4,6 @@
     "outDir": "dist",
     "paths": {
       "@/components/ui/*": ["./src/components/*"],
-      "@/hooks/*": ["../../apps/app/src/hooks/*"],
       "@/lib/utils": ["./src/lib/utils"]
     }
   },

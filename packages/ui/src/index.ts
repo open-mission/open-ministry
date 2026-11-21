@@ -1,4 +1,5 @@
 export * from "./lib/utils";
+export * from "./hooks/use-mobile";
 export * from "./components/accordion";
 export * from "./components/alert";
 export * from "./components/alert-dialog";
