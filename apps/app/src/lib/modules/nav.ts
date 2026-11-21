@@ -387,3 +387,104 @@ export function buildDesktopSidebarNavigation(
 
   return { primary, secondary };
 }
+
+/** Rota plana usada pela busca e pelos atalhos do menu Explorar (mobile). */
+export type MobileExploreRoute = {
+  href: string;
+  label: string;
+  domainLabel: string;
+  exact: boolean;
+};
+
+/** Prioridade dos atalhos rápidos exibidos no topo do menu Explorar. */
+const mobileExploreQuickLinkHrefs = [
+  "/schedules",
+  "/availability",
+  "/announcements",
+  "/calendar",
+  "/songs",
+];
+
+function normalizeExploreText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+/** Achata domínios e ações secundários em rotas serializáveis e sem ícones. */
+function flattenExploreRoutes(
+  navigation: DesktopSidebarNavigation,
+): MobileExploreRoute[] {
+  const routes: MobileExploreRoute[] = [];
+
+  for (const item of navigation.primary) {
+    if (item.tabs && item.tabs.length > 0) {
+      for (const tab of item.tabs) {
+        routes.push({
+          href: tab.href,
+          label: tab.label,
+          domainLabel: item.label,
+          exact: tab.exact,
+        });
+      }
+      continue;
+    }
+
+    routes.push({
+      href: item.href,
+      label: item.label,
+      domainLabel: item.label,
+      exact: item.exact,
+    });
+  }
+
+  for (const item of navigation.secondary) {
+    routes.push({
+      href: item.href,
+      label: item.label,
+      domainLabel: item.label,
+      exact: item.exact,
+    });
+  }
+
+  return routes;
+}
+
+/** Atalhos rápidos acessíveis, ordenados por utilidade no mobile. */
+export function buildMobileExploreQuickLinks(
+  activeModuleKeys: ModuleKey[] = [],
+  options?: DesktopSidebarOptions,
+): MobileExploreRoute[] {
+  const byHref = new Map(
+    flattenExploreRoutes(
+      buildDesktopSidebarNavigation(activeModuleKeys, options),
+    ).map((route) => [route.href, route]),
+  );
+
+  return mobileExploreQuickLinkHrefs.flatMap((href) => {
+    const route = byHref.get(href);
+    return route ? [route] : [];
+  });
+}
+
+/** Busca por label, domínio ou href, normalizando acentos e caixa. */
+export function filterMobileExploreRoutes(
+  query: string,
+  activeModuleKeys: ModuleKey[] = [],
+  options?: DesktopSidebarOptions,
+): MobileExploreRoute[] {
+  const routes = flattenExploreRoutes(
+    buildDesktopSidebarNavigation(activeModuleKeys, options),
+  );
+  const term = normalizeExploreText(query);
+
+  if (!term) return routes;
+
+  return routes.filter((route) =>
+    [route.label, route.domainLabel, route.href].some((value) =>
+      normalizeExploreText(value).includes(term),
+    ),
+  );
+}
