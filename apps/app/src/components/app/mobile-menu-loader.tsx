@@ -26,6 +26,7 @@ export async function MobileMenuLoader() {
 
   return (
     <MobileMenu
+      organizationName={organization.name}
       activeModuleKeys={activeModuleKeys}
       canManageJobs={isAdminOrLeader}
       canAccessWhatsApp={isAdminOrLeader}

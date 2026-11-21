@@ -1,9 +1,7 @@
 "use client";
 
 import {
-  createContext,
   useCallback,
-  useContext,
   useMemo,
   useState,
   useTransition,
@@ -12,6 +10,11 @@ import {
 import { Loader2Icon, SettingsIcon } from "lucide-react";
 
 import { getSettingsDialogDataAction } from "@/app/actions/settings";
+import {
+  SettingsModalContext,
+  useOptionalSettingsModal,
+  useSettingsModal,
+} from "@/components/settings/settings-modal-context";
 import {
   SettingsView,
   type SettingsViewProps,
@@ -33,25 +36,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-type SettingsModalContextValue = {
-  open: boolean;
-  openSettings: () => void;
-  closeSettings: () => void;
-};
-
-const SettingsModalContext = createContext<SettingsModalContextValue | null>(
-  null,
-);
-
-export function useSettingsModal() {
-  const context = useContext(SettingsModalContext);
-  if (!context) {
-    throw new Error(
-      "useSettingsModal deve ser utilizado dentro de SettingsModalProvider",
-    );
-  }
-  return context;
-}
+export { useOptionalSettingsModal, useSettingsModal };
 
 export function SettingsModalProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);

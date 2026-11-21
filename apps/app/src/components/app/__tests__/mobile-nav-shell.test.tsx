@@ -67,4 +67,27 @@ describe("MobileNavShell", () => {
     expect(markup).toContain("Menu");
     expect(markup).toContain("grid-cols-5");
   });
+
+  it("respeita piso tipográfico de 11px e mantém peso estável sem deslocamento no item ativo", () => {
+    const markup = renderNav();
+
+    expect(markup).toContain("text-[11px]");
+    expect(markup).not.toContain("text-[0.62rem]");
+    expect(markup).not.toContain("font-semibold");
+    expect(markup).not.toContain("-translate-y-px");
+  });
+
+  it("marca o botão Menu como ativo em rotas secundárias fora da barra inferior", () => {
+    const secondaryMarkup = renderToStaticMarkup(
+      createElement(MobileNavShell, { activeHref: "/members" }),
+    );
+    const primaryMarkup = renderNav();
+
+    expect(secondaryMarkup).toContain(
+      'aria-label="Abrir menu completo de navegação" aria-expanded="false" aria-current="page"',
+    );
+    expect(primaryMarkup).not.toContain(
+      'aria-label="Abrir menu completo de navegação" aria-expanded="false" aria-current="page"',
+    );
+  });
 });

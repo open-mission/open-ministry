@@ -5,21 +5,13 @@ import {
   useContext,
   useMemo,
   useState,
-  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  ChevronRightIcon,
-  LogOutIcon,
-  MenuIcon,
-  MoonIcon,
-  SunIcon,
-} from "lucide-react";
-import { useTheme } from "next-themes";
+import { ChevronRightIcon, MenuIcon, SettingsIcon } from "lucide-react";
 
-import { SignOutConfirmDialog } from "@/components/app/sign-out-confirm-dialog";
+import { useOptionalSettingsModal } from "@/components/settings/settings-modal-context";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -29,7 +21,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { isNavItemActive, type NavGroup } from "@/components/app/nav-config";
-import { buildAccessibleNavGroups } from "@/lib/modules/nav";
+import { buildAccessibleMobileMenuGroups } from "@/lib/modules/nav";
 import type { ModuleKey } from "@/lib/modules/types";
 import { cn } from "@/lib/utils";
 
@@ -39,10 +31,6 @@ type MobileMenuContextValue = {
 };
 
 const MobileMenuContext = createContext<MobileMenuContextValue | null>(null);
-
-const subscribe = () => () => {};
-const getClientSnapshot = () => true;
-const getServerSnapshot = () => false;
 
 export function MobileMenuProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -73,9 +61,9 @@ export function MobileMenuTrigger({ className }: { className?: string }) {
     <Button
       type="button"
       variant="ghost"
-      size="icon-sm"
+      size="icon"
       aria-label="Abrir menu de navegação"
-      className={cn("md:hidden", className)}
+      className={cn("size-11 md:hidden", className)}
       onClick={() => setOpen(true)}
     >
       <MenuIcon />
@@ -85,12 +73,14 @@ export function MobileMenuTrigger({ className }: { className?: string }) {
 
 export function MobileMenu({
   groups: customGroups,
+  organizationName,
   activeModuleKeys = [],
   canManageJobs,
   canAccessWhatsApp,
   canAccessEmails,
 }: {
   groups?: NavGroup[];
+  organizationName?: string;
   activeModuleKeys?: ModuleKey[];
   canManageJobs?: boolean;
   canAccessWhatsApp?: boolean;
@@ -98,17 +88,11 @@ export function MobileMenu({
 } = {}) {
   const pathname = usePathname();
   const { open, setOpen } = useMobileMenu();
-  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
-  const { resolvedTheme, setTheme } = useTheme();
-  const mounted = useSyncExternalStore(
-    subscribe,
-    getClientSnapshot,
-    getServerSnapshot,
-  );
+  const settingsModal = useOptionalSettingsModal();
   const groups = useMemo(
     () =>
       customGroups ??
-      buildAccessibleNavGroups(activeModuleKeys, {
+      buildAccessibleMobileMenuGroups(activeModuleKeys, {
         canManageJobs,
         canAccessWhatsApp,
         canAccessEmails,
@@ -121,33 +105,29 @@ export function MobileMenu({
       canAccessEmails,
     ],
   );
-  const isDark = mounted && resolvedTheme === "dark";
-  const themeValue = isDark ? "Escuro" : "Claro";
-  const themeAction = isDark ? "Ativar tema claro" : "Ativar tema escuro";
 
   return (
-    <>
-      <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerContent className="h-[90dvh] gap-0 rounded-t-[28px] border-x-0 border-b-0 bg-background p-0 data-[vaul-drawer-direction=bottom]:max-h-[90dvh]">
-        <DrawerHeader className="sr-only">
-          <DrawerTitle>Menu de navegação</DrawerTitle>
-          <DrawerDescription>
-            Acesse as áreas do painel, seu perfil e as preferências da conta.
+    <Drawer open={open} onOpenChange={setOpen}>
+      <DrawerContent className="gap-0 border-x-0 border-b-0 p-0">
+        <DrawerHeader className="border-b border-border/60 px-4 pt-3 pb-3 !text-left">
+          <DrawerTitle className="font-heading text-lg">Navegação</DrawerTitle>
+          <DrawerDescription className="text-xs">
+            {organizationName ?? "Acesse as áreas e módulos do painel."}
           </DrawerDescription>
         </DrawerHeader>
 
         <div className="relative min-h-0 flex-1">
-          <div className="h-full overflow-y-auto overscroll-contain px-4 pt-3 pb-6">
-            <nav aria-label="Menu principal" className="space-y-5">
+          <div className="h-full overflow-y-auto overscroll-contain px-4 pt-3 pb-6 [-webkit-overflow-scrolling:touch]">
+            <nav aria-label="Menu principal" className="space-y-4">
               {groups.map((group) => (
                 <section key={group.title} className="space-y-2">
-                  <h2 className="px-1 text-[0.68rem] font-semibold tracking-[0.14em] text-muted-foreground/70 uppercase">
+                  <h2 className="px-1 text-[11px] font-semibold tracking-[0.08em] text-muted-foreground/80 uppercase">
                     {group.title}
                   </h2>
                   <div className="overflow-hidden rounded-2xl border border-border/70 bg-card">
                     {group.items.map((item, index) => {
                       const isActive = isNavItemActive(item, pathname);
-  
+
                       return (
                         <Link
                           key={item.href}
@@ -173,10 +153,8 @@ export function MobileMenu({
                           </span>
                           <span
                             className={cn(
-                              "flex-1 text-sm",
-                              isActive
-                                ? "font-semibold text-primary"
-                                : "font-medium text-foreground",
+                              "flex-1 text-sm font-medium",
+                              isActive ? "text-primary" : "text-foreground",
                             )}
                           >
                             {item.label}
@@ -199,49 +177,29 @@ export function MobileMenu({
           </div>
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-gradient-to-t from-background to-transparent"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-gradient-to-t from-popover to-transparent"
           />
         </div>
 
-        <div className="border-t border-border/60 bg-background px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <button
-            type="button"
-            onClick={() => setTheme(isDark ? "light" : "dark")}
-            aria-label={themeAction}
-            className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors hover:bg-muted/60 active:bg-muted"
-          >
-            <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-              {isDark ? (
-                <SunIcon className="size-4" />
-              ) : (
-                <MoonIcon className="size-4" />
-              )}
-            </span>
-            <span className="flex-1 text-left">Tema</span>
-            <span className="text-xs text-muted-foreground">{themeValue}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              setTimeout(() => setShowSignOutConfirm(true), 150);
-            }}
-            className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10 active:bg-destructive/15 cursor-pointer"
-          >
-            <span className="flex size-8 items-center justify-center rounded-lg bg-destructive/10">
-              <LogOutIcon className="size-4" />
-            </span>
-            <span className="flex-1 text-left">Sair da conta</span>
-          </button>
-        </div>
+        {settingsModal ? (
+          <div className="border-t border-border/60 bg-popover px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setTimeout(() => settingsModal.openSettings(), 180);
+              }}
+              className="flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/60 active:bg-muted"
+            >
+              <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                <SettingsIcon className="size-4" />
+              </span>
+              <span className="flex-1 text-left">Configurações</span>
+              <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40" />
+            </button>
+          </div>
+        ) : null}
       </DrawerContent>
     </Drawer>
-
-    <SignOutConfirmDialog
-      open={showSignOutConfirm}
-      onOpenChange={setShowSignOutConfirm}
-    />
-    </>
   );
 }

@@ -127,6 +127,62 @@ export function buildAccessibleNavGroups(
 }
 
 /**
+ * Consolida os grupos acessíveis para o menu mobile em até 4 seções,
+ * evitando grupos de 1 único item e excesso de rolagem na gaveta.
+ */
+export function buildAccessibleMobileMenuGroups(
+  activeModuleKeys: ModuleKey[] = [],
+  options?: {
+    canManageJobs?: boolean;
+    canAccessWhatsApp?: boolean;
+    canAccessEmails?: boolean;
+  },
+): NavGroup[] {
+  const rawGroups = buildAccessibleNavGroups(activeModuleKeys, options);
+  const groupOrder: Array<{
+    title: string;
+    match: Set<string>;
+  }> = [
+    { title: "Principal", match: new Set(["Principal"]) },
+    {
+      title: "Cultos & Louvor",
+      match: new Set(["Cultos & Escalas", "Repertório", "Ensaios"]),
+    },
+    {
+      title: "Pessoas & Equipes",
+      match: new Set(["Pessoas & Equipes"]),
+    },
+    {
+      title: "Comunicação & Gestão",
+      match: new Set(["Comunicação", "Operações"]),
+    },
+  ];
+
+  const consolidated: NavGroup[] = [];
+  const consumed = new Set<string>();
+
+  for (const bucket of groupOrder) {
+    const items = rawGroups
+      .filter((group) => bucket.match.has(group.title))
+      .flatMap((group) => {
+        consumed.add(group.title);
+        return group.items;
+      });
+    if (items.length > 0) {
+      consolidated.push({ title: bucket.title, items });
+    }
+  }
+
+  for (const group of rawGroups) {
+    if (!consumed.has(group.title) && group.items.length > 0) {
+      consolidated.push({ title: group.title, items: [...group.items] });
+    }
+  }
+
+  return consolidated;
+}
+
+/**
  * Constrói a lista de itens da barra de navegação móvel inferior,
  * filtrando rotas cujos módulos não estejam liberados.
  */

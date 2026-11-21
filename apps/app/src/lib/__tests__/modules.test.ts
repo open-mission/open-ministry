@@ -8,6 +8,7 @@ import {
   SYSTEM_MODULES,
 } from "@/lib/modules";
 import {
+  buildAccessibleMobileMenuGroups,
   buildAccessibleMobileNavItems,
   buildAccessibleNavGroups,
 } from "@/lib/modules/nav";
@@ -171,5 +172,26 @@ describe("Modules System Foundation", () => {
     expect(hrefs).toContain("/");
     expect(hrefs).toContain("/calendar");
     expect(hrefs).not.toContain("/schedules");
+  });
+
+  it("consolida grupos no menu mobile em até 4 seções sem grupos de 1 item", () => {
+    const groups = buildAccessibleMobileMenuGroups(
+      ["agenda", "schedules", "music", "announcements", "tasks", "rehearsals"],
+      {
+        canManageJobs: true,
+        canAccessWhatsApp: true,
+        canAccessEmails: true,
+      },
+    );
+
+    expect(groups.map((g) => g.title)).toEqual([
+      "Principal",
+      "Cultos & Louvor",
+      "Pessoas & Equipes",
+      "Comunicação & Gestão",
+    ]);
+    for (const group of groups) {
+      expect(group.items.length).toBeGreaterThanOrEqual(3);
+    }
   });
 });
