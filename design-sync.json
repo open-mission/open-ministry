@@ -49,37 +49,192 @@
   },
   "tokens": {
     "colors": {
-      "--background": { "light": "#fcf9f3", "dark": "#0b140e", "oklchLight": "oklch(0.982 0.008 85)", "oklchDark": "oklch(0.18 0.018 155)" },
-      "--foreground": { "light": "#16231a", "dark": "#eeebe2", "oklchLight": "oklch(0.24 0.025 155)", "oklchDark": "oklch(0.94 0.012 90)" },
-      "--card": { "light": "#fffdfa", "dark": "#131d17", "oklchLight": "oklch(0.995 0.004 85)", "oklchDark": "oklch(0.22 0.02 155)" },
-      "--card-foreground": { "light": "#16231a", "dark": "#eeebe2", "oklchLight": "oklch(0.24 0.025 155)", "oklchDark": "oklch(0.94 0.012 90)" },
-      "--popover": { "light": "#fffdfa", "dark": "#131d17", "oklchLight": "oklch(0.995 0.004 85)", "oklchDark": "oklch(0.22 0.02 155)" },
-      "--popover-foreground": { "light": "#16231a", "dark": "#eeebe2", "oklchLight": "oklch(0.24 0.025 155)", "oklchDark": "oklch(0.94 0.012 90)" },
-      "--primary": { "light": "#1e472f", "dark": "#98c5a0", "oklchLight": "oklch(0.36 0.062 156)", "oklchDark": "oklch(0.78 0.07 150)" },
-      "--primary-foreground": { "light": "#faf7ee", "dark": "#0a1a10", "oklchLight": "oklch(0.975 0.012 90)", "oklchDark": "oklch(0.2 0.03 155)" },
-      "--secondary": { "light": "#f1eade", "dark": "#202921", "oklchLight": "oklch(0.94 0.018 84)", "oklchDark": "oklch(0.27 0.02 150)" },
-      "--secondary-foreground": { "light": "#223227", "dark": "#eeebe2", "oklchLight": "oklch(0.3 0.03 155)", "oklchDark": "oklch(0.94 0.012 90)" },
-      "--muted": { "light": "#f4f0e7", "dark": "#1e271f", "oklchLight": "oklch(0.955 0.012 85)", "oklchDark": "oklch(0.26 0.018 150)" },
-      "--muted-foreground": { "light": "#5b675d", "dark": "#a8a597", "oklchLight": "oklch(0.5 0.022 150)", "oklchDark": "oklch(0.72 0.02 95)" },
-      "--accent": { "light": "#f3dfca", "dark": "#3c2a18", "oklchLight": "oklch(0.915 0.035 70)", "oklchDark": "oklch(0.3 0.04 65)" },
-      "--accent-foreground": { "light": "#4b2d18", "dark": "#efe3cf", "oklchLight": "oklch(0.33 0.055 55)", "oklchDark": "oklch(0.92 0.03 80)" },
-      "--destructive": { "light": "#e7000b", "dark": "#ff6467", "oklchLight": "oklch(0.577 0.245 27.325)", "oklchDark": "oklch(0.704 0.191 22.216)" },
-      "--border": { "light": "#e2ddd4", "dark": "#ffffff1f", "oklchLight": "oklch(0.9 0.014 85)", "oklchDark": "oklch(1 0 0 / 12%)" },
-      "--input": { "light": "#e2ddd4", "dark": "#ffffff26", "oklchLight": "oklch(0.9 0.014 85)", "oklchDark": "oklch(1 0 0 / 15%)" },
-      "--ring": { "light": "#4f7e60", "dark": "#759a7c", "oklchLight": "oklch(0.55 0.07 155)", "oklchDark": "oklch(0.65 0.06 150)" },
-      "--chart-1": { "light": "#2c6c47", "dark": "#98c5a0", "oklchLight": "oklch(0.48 0.09 155)", "oklchDark": "oklch(0.78 0.07 150)" },
-      "--chart-2": { "light": "#b97340", "dark": "#de8f57", "oklchLight": "oklch(0.62 0.11 55)", "oklchDark": "oklch(0.72 0.12 55)" },
-      "--chart-3": { "light": "#85a27f", "dark": "#85a27f", "oklchLight": "oklch(0.68 0.06 140)", "oklchDark": "oklch(0.68 0.06 140)" },
-      "--chart-4": { "light": "#c49f4d", "dark": "#dbb970", "oklchLight": "oklch(0.72 0.11 85)", "oklchDark": "oklch(0.8 0.1 85)" },
-      "--chart-5": { "light": "#5b403b", "dark": "#a1736b", "oklchLight": "oklch(0.4 0.04 30)", "oklchDark": "oklch(0.6 0.06 30)" },
-      "--sidebar": { "light": "#f7f3eb", "dark": "#0f1912", "oklchLight": "oklch(0.965 0.012 84)", "oklchDark": "oklch(0.2 0.02 155)" },
-      "--sidebar-foreground": { "light": "#16231a", "dark": "#eeebe2", "oklchLight": "oklch(0.24 0.025 155)", "oklchDark": "oklch(0.94 0.012 90)" },
-      "--sidebar-primary": { "light": "#1e472f", "dark": "#98c5a0", "oklchLight": "oklch(0.36 0.062 156)", "oklchDark": "oklch(0.78 0.07 150)" },
-      "--sidebar-primary-foreground": { "light": "#faf7ee", "dark": "#0a1a10", "oklchLight": "oklch(0.975 0.012 90)", "oklchDark": "oklch(0.2 0.03 155)" },
-      "--sidebar-accent": { "light": "#eee7d9", "dark": "#222c24", "oklchLight": "oklch(0.93 0.02 84)", "oklchDark": "oklch(0.28 0.02 150)" },
-      "--sidebar-accent-foreground": { "light": "#223227", "dark": "#eeebe2", "oklchLight": "oklch(0.3 0.03 155)", "oklchDark": "oklch(0.94 0.012 90)" },
-      "--sidebar-border": { "light": "#e2ddd4", "dark": "#ffffff1f", "oklchLight": "oklch(0.9 0.014 85)", "oklchDark": "oklch(1 0 0 / 12%)" },
-      "--sidebar-ring": { "light": "#4f7e60", "dark": "#759a7c", "oklchLight": "oklch(0.55 0.07 155)", "oklchDark": "oklch(0.65 0.06 150)" }
+      "--background": {
+        "light": "#fcf9f3",
+        "dark": "#0b140e",
+        "oklchLight": "oklch(0.982 0.008 85)",
+        "oklchDark": "oklch(0.18 0.018 155)"
+      },
+      "--foreground": {
+        "light": "#16231a",
+        "dark": "#eeebe2",
+        "oklchLight": "oklch(0.24 0.025 155)",
+        "oklchDark": "oklch(0.94 0.012 90)"
+      },
+      "--card": {
+        "light": "#fffdfa",
+        "dark": "#131d17",
+        "oklchLight": "oklch(0.995 0.004 85)",
+        "oklchDark": "oklch(0.22 0.02 155)"
+      },
+      "--card-foreground": {
+        "light": "#16231a",
+        "dark": "#eeebe2",
+        "oklchLight": "oklch(0.24 0.025 155)",
+        "oklchDark": "oklch(0.94 0.012 90)"
+      },
+      "--popover": {
+        "light": "#fffdfa",
+        "dark": "#131d17",
+        "oklchLight": "oklch(0.995 0.004 85)",
+        "oklchDark": "oklch(0.22 0.02 155)"
+      },
+      "--popover-foreground": {
+        "light": "#16231a",
+        "dark": "#eeebe2",
+        "oklchLight": "oklch(0.24 0.025 155)",
+        "oklchDark": "oklch(0.94 0.012 90)"
+      },
+      "--primary": {
+        "light": "#1e472f",
+        "dark": "#98c5a0",
+        "oklchLight": "oklch(0.36 0.062 156)",
+        "oklchDark": "oklch(0.78 0.07 150)"
+      },
+      "--primary-foreground": {
+        "light": "#faf7ee",
+        "dark": "#0a1a10",
+        "oklchLight": "oklch(0.975 0.012 90)",
+        "oklchDark": "oklch(0.2 0.03 155)"
+      },
+      "--secondary": {
+        "light": "#f1eade",
+        "dark": "#202921",
+        "oklchLight": "oklch(0.94 0.018 84)",
+        "oklchDark": "oklch(0.27 0.02 150)"
+      },
+      "--secondary-foreground": {
+        "light": "#223227",
+        "dark": "#eeebe2",
+        "oklchLight": "oklch(0.3 0.03 155)",
+        "oklchDark": "oklch(0.94 0.012 90)"
+      },
+      "--muted": {
+        "light": "#f4f0e7",
+        "dark": "#1e271f",
+        "oklchLight": "oklch(0.955 0.012 85)",
+        "oklchDark": "oklch(0.26 0.018 150)"
+      },
+      "--muted-foreground": {
+        "light": "#5b675d",
+        "dark": "#a8a597",
+        "oklchLight": "oklch(0.5 0.022 150)",
+        "oklchDark": "oklch(0.72 0.02 95)"
+      },
+      "--accent": {
+        "light": "#f3dfca",
+        "dark": "#3c2a18",
+        "oklchLight": "oklch(0.915 0.035 70)",
+        "oklchDark": "oklch(0.3 0.04 65)"
+      },
+      "--accent-foreground": {
+        "light": "#4b2d18",
+        "dark": "#efe3cf",
+        "oklchLight": "oklch(0.33 0.055 55)",
+        "oklchDark": "oklch(0.92 0.03 80)"
+      },
+      "--destructive": {
+        "light": "#e7000b",
+        "dark": "#ff6467",
+        "oklchLight": "oklch(0.577 0.245 27.325)",
+        "oklchDark": "oklch(0.704 0.191 22.216)"
+      },
+      "--border": {
+        "light": "#e2ddd4",
+        "dark": "#ffffff1f",
+        "oklchLight": "oklch(0.9 0.014 85)",
+        "oklchDark": "oklch(1 0 0 / 12%)"
+      },
+      "--input": {
+        "light": "#e2ddd4",
+        "dark": "#ffffff26",
+        "oklchLight": "oklch(0.9 0.014 85)",
+        "oklchDark": "oklch(1 0 0 / 15%)"
+      },
+      "--ring": {
+        "light": "#4f7e60",
+        "dark": "#759a7c",
+        "oklchLight": "oklch(0.55 0.07 155)",
+        "oklchDark": "oklch(0.65 0.06 150)"
+      },
+      "--chart-1": {
+        "light": "#2c6c47",
+        "dark": "#98c5a0",
+        "oklchLight": "oklch(0.48 0.09 155)",
+        "oklchDark": "oklch(0.78 0.07 150)"
+      },
+      "--chart-2": {
+        "light": "#b97340",
+        "dark": "#de8f57",
+        "oklchLight": "oklch(0.62 0.11 55)",
+        "oklchDark": "oklch(0.72 0.12 55)"
+      },
+      "--chart-3": {
+        "light": "#85a27f",
+        "dark": "#85a27f",
+        "oklchLight": "oklch(0.68 0.06 140)",
+        "oklchDark": "oklch(0.68 0.06 140)"
+      },
+      "--chart-4": {
+        "light": "#c49f4d",
+        "dark": "#dbb970",
+        "oklchLight": "oklch(0.72 0.11 85)",
+        "oklchDark": "oklch(0.8 0.1 85)"
+      },
+      "--chart-5": {
+        "light": "#5b403b",
+        "dark": "#a1736b",
+        "oklchLight": "oklch(0.4 0.04 30)",
+        "oklchDark": "oklch(0.6 0.06 30)"
+      },
+      "--sidebar": {
+        "light": "#f7f3eb",
+        "dark": "#0f1912",
+        "oklchLight": "oklch(0.965 0.012 84)",
+        "oklchDark": "oklch(0.2 0.02 155)"
+      },
+      "--sidebar-foreground": {
+        "light": "#16231a",
+        "dark": "#eeebe2",
+        "oklchLight": "oklch(0.24 0.025 155)",
+        "oklchDark": "oklch(0.94 0.012 90)"
+      },
+      "--sidebar-primary": {
+        "light": "#1e472f",
+        "dark": "#98c5a0",
+        "oklchLight": "oklch(0.36 0.062 156)",
+        "oklchDark": "oklch(0.78 0.07 150)"
+      },
+      "--sidebar-primary-foreground": {
+        "light": "#faf7ee",
+        "dark": "#0a1a10",
+        "oklchLight": "oklch(0.975 0.012 90)",
+        "oklchDark": "oklch(0.2 0.03 155)"
+      },
+      "--sidebar-accent": {
+        "light": "#eee7d9",
+        "dark": "#222c24",
+        "oklchLight": "oklch(0.93 0.02 84)",
+        "oklchDark": "oklch(0.28 0.02 150)"
+      },
+      "--sidebar-accent-foreground": {
+        "light": "#223227",
+        "dark": "#eeebe2",
+        "oklchLight": "oklch(0.3 0.03 155)",
+        "oklchDark": "oklch(0.94 0.012 90)"
+      },
+      "--sidebar-border": {
+        "light": "#e2ddd4",
+        "dark": "#ffffff1f",
+        "oklchLight": "oklch(0.9 0.014 85)",
+        "oklchDark": "oklch(1 0 0 / 12%)"
+      },
+      "--sidebar-ring": {
+        "light": "#4f7e60",
+        "dark": "#759a7c",
+        "oklchLight": "oklch(0.55 0.07 155)",
+        "oklchDark": "oklch(0.65 0.06 150)"
+      }
     },
     "typography": {
       "--font-display": "Fraunces",
@@ -98,68 +253,394 @@
     }
   },
   "components": {
-    "button": { "path": "packages/ui/src/components/button.tsx", "status": "drawn", "variants": ["default", "secondary", "outline", "ghost", "destructive", "link"], "sizes": ["xs", "sm", "default", "lg", "icon", "icon-xs", "icon-sm", "icon-lg"] },
-    "card": { "path": "packages/ui/src/components/card.tsx", "status": "drawn", "sizes": ["default", "sm"], "slots": ["CardHeader", "CardTitle", "CardDescription", "CardAction", "CardContent", "CardFooter"] },
-    "avatar": { "path": "packages/ui/src/components/avatar.tsx", "status": "drawn", "sizes": ["sm", "default", "lg"], "slots": ["AvatarImage", "AvatarFallback", "AvatarBadge", "AvatarGroup", "AvatarGroupCount"] },
-    "badge": { "path": "packages/ui/src/components/badge.tsx", "status": "drawn", "variants": ["default", "secondary", "destructive", "outline", "ghost", "link"] },
-    "input": { "path": "packages/ui/src/components/input.tsx", "status": "drawn", "states": ["default", "focus", "invalid", "disabled"] },
-    "tabs": { "path": "packages/ui/src/components/tabs.tsx", "status": "drawn", "variants": ["default", "line"] },
-    "select": { "path": "packages/ui/src/components/select.tsx", "status": "drawn", "sizes": ["default", "sm"], "states": ["default", "invalid", "disabled"], "slots": ["SelectTrigger", "SelectContent", "SelectLabel", "SelectItem"] },
-    "dialog": { "path": "packages/ui/src/components/dialog.tsx", "status": "drawn", "slots": ["DialogHeader", "DialogTitle", "DialogDescription", "DialogFooter", "DialogClose"] },
-    "alert": { "path": "packages/ui/src/components/alert.tsx", "status": "drawn", "variants": ["default", "destructive"], "slots": ["AlertTitle", "AlertDescription", "AlertAction"] },
-    "calendar": { "path": "packages/ui/src/components/calendar.tsx", "status": "drawn", "states": ["default", "today", "selected", "outside", "disabled"] },
-    "skeleton": { "path": "packages/ui/src/components/skeleton.tsx", "status": "drawn" },
-    "accordion": { "path": "packages/ui/src/components/accordion.tsx", "status": "in code only" },
-    "alert-dialog": { "path": "packages/ui/src/components/alert-dialog.tsx", "status": "in code only" },
-    "aspect-ratio": { "path": "packages/ui/src/components/aspect-ratio.tsx", "status": "in code only" },
-    "attachment": { "path": "packages/ui/src/components/attachment.tsx", "status": "in code only" },
-    "breadcrumb": { "path": "packages/ui/src/components/breadcrumb.tsx", "status": "in code only" },
-    "bubble": { "path": "packages/ui/src/components/bubble.tsx", "status": "in code only" },
-    "button-group": { "path": "packages/ui/src/components/button-group.tsx", "status": "in code only" },
-    "carousel": { "path": "packages/ui/src/components/carousel.tsx", "status": "in code only" },
-    "chart": { "path": "packages/ui/src/components/chart.tsx", "status": "in code only" },
-    "checkbox": { "path": "packages/ui/src/components/checkbox.tsx", "status": "drawn", "states": ["unchecked", "checked", "invalid", "disabled"] },
-    "code-block": { "path": "packages/ui/src/components/code-block.tsx", "status": "in code only" },
-    "collapsible": { "path": "packages/ui/src/components/collapsible.tsx", "status": "in code only" },
-    "combobox": { "path": "packages/ui/src/components/combobox.tsx", "status": "in code only" },
-    "command": { "path": "packages/ui/src/components/command.tsx", "status": "in code only" },
-    "context-menu": { "path": "packages/ui/src/components/context-menu.tsx", "status": "in code only" },
-    "direction": { "path": "packages/ui/src/components/direction.tsx", "status": "in code only" },
-    "drawer": { "path": "packages/ui/src/components/drawer.tsx", "status": "in code only", "note": "Open question: padrão híbrido Sheet/Drawer em aberto" },
-    "dropdown-menu": { "path": "packages/ui/src/components/dropdown-menu.tsx", "status": "drawn", "slots": ["DropdownMenuLabel", "DropdownMenuItem", "DropdownMenuCheckboxItem", "DropdownMenuSeparator"], "variants": ["default", "destructive"] },
-    "empty": { "path": "packages/ui/src/components/empty.tsx", "status": "in code only" },
-    "field": { "path": "packages/ui/src/components/field.tsx", "status": "in code only" },
-    "hover-card": { "path": "packages/ui/src/components/hover-card.tsx", "status": "in code only" },
-    "input-group": { "path": "packages/ui/src/components/input-group.tsx", "status": "in code only" },
-    "input-otp": { "path": "packages/ui/src/components/input-otp.tsx", "status": "in code only" },
-    "item": { "path": "packages/ui/src/components/item.tsx", "status": "in code only" },
-    "kbd": { "path": "packages/ui/src/components/kbd.tsx", "status": "in code only" },
-    "label": { "path": "packages/ui/src/components/label.tsx", "status": "in code only" },
-    "marker": { "path": "packages/ui/src/components/marker.tsx", "status": "in code only" },
-    "menubar": { "path": "packages/ui/src/components/menubar.tsx", "status": "in code only" },
-    "message": { "path": "packages/ui/src/components/message.tsx", "status": "in code only" },
-    "message-scroller": { "path": "packages/ui/src/components/message-scroller.tsx", "status": "in code only" },
-    "native-select": { "path": "packages/ui/src/components/native-select.tsx", "status": "in code only" },
-    "navigation-menu": { "path": "packages/ui/src/components/navigation-menu.tsx", "status": "in code only" },
-    "pagination": { "path": "packages/ui/src/components/pagination.tsx", "status": "in code only" },
-    "popover": { "path": "packages/ui/src/components/popover.tsx", "status": "in code only" },
-    "progress": { "path": "packages/ui/src/components/progress.tsx", "status": "in code only" },
-    "questionnaire": { "path": "packages/ui/src/components/questionnaire.tsx", "status": "in code only" },
-    "radio-group": { "path": "packages/ui/src/components/radio-group.tsx", "status": "drawn", "states": ["unselected", "selected", "invalid", "disabled"] },
-    "resizable": { "path": "packages/ui/src/components/resizable.tsx", "status": "in code only" },
-    "scroll-area": { "path": "packages/ui/src/components/scroll-area.tsx", "status": "in code only" },
-    "separator": { "path": "packages/ui/src/components/separator.tsx", "status": "in code only" },
-    "sheet": { "path": "packages/ui/src/components/sheet.tsx", "status": "in code only", "note": "Open question: padrão híbrido Sheet/Drawer em aberto" },
-    "sidebar": { "path": "packages/ui/src/components/sidebar.tsx", "status": "in code only" },
-    "slider": { "path": "packages/ui/src/components/slider.tsx", "status": "in code only" },
-    "sonner": { "path": "packages/ui/src/components/sonner.tsx", "status": "in code only" },
-    "spinner": { "path": "packages/ui/src/components/spinner.tsx", "status": "in code only" },
-    "switch": { "path": "packages/ui/src/components/switch.tsx", "status": "drawn", "sizes": ["default", "sm"], "states": ["checked", "unchecked", "disabled"] },
-    "table": { "path": "packages/ui/src/components/table.tsx", "status": "in code only" },
-    "textarea": { "path": "packages/ui/src/components/textarea.tsx", "status": "drawn", "states": ["default", "focus", "invalid", "disabled"] },
-    "toggle": { "path": "packages/ui/src/components/toggle.tsx", "status": "in code only" },
-    "toggle-group": { "path": "packages/ui/src/components/toggle-group.tsx", "status": "in code only" },
-    "tooltip": { "path": "packages/ui/src/components/tooltip.tsx", "status": "drawn" },
-    "trace": { "path": "packages/ui/src/components/trace.tsx", "status": "in code only" }
+    "button": {
+      "path": "packages/ui/src/components/button.tsx",
+      "status": "drawn",
+      "variants": [
+        "default",
+        "secondary",
+        "outline",
+        "ghost",
+        "destructive",
+        "link"
+      ],
+      "sizes": [
+        "xs",
+        "sm",
+        "default",
+        "lg",
+        "icon",
+        "icon-xs",
+        "icon-sm",
+        "icon-lg"
+      ]
+    },
+    "card": {
+      "path": "packages/ui/src/components/card.tsx",
+      "status": "drawn",
+      "sizes": [
+        "default",
+        "sm"
+      ],
+      "slots": [
+        "CardHeader",
+        "CardTitle",
+        "CardDescription",
+        "CardAction",
+        "CardContent",
+        "CardFooter"
+      ]
+    },
+    "avatar": {
+      "path": "packages/ui/src/components/avatar.tsx",
+      "status": "drawn",
+      "sizes": [
+        "sm",
+        "default",
+        "lg"
+      ],
+      "slots": [
+        "AvatarImage",
+        "AvatarFallback",
+        "AvatarBadge",
+        "AvatarGroup",
+        "AvatarGroupCount"
+      ]
+    },
+    "badge": {
+      "path": "packages/ui/src/components/badge.tsx",
+      "status": "drawn",
+      "variants": [
+        "default",
+        "secondary",
+        "destructive",
+        "outline",
+        "ghost",
+        "link"
+      ]
+    },
+    "input": {
+      "path": "packages/ui/src/components/input.tsx",
+      "status": "drawn",
+      "states": [
+        "default",
+        "focus",
+        "invalid",
+        "disabled"
+      ]
+    },
+    "tabs": {
+      "path": "packages/ui/src/components/tabs.tsx",
+      "status": "drawn",
+      "variants": [
+        "default",
+        "line"
+      ]
+    },
+    "select": {
+      "path": "packages/ui/src/components/select.tsx",
+      "status": "drawn",
+      "sizes": [
+        "default",
+        "sm"
+      ],
+      "states": [
+        "default",
+        "invalid",
+        "disabled"
+      ],
+      "slots": [
+        "SelectTrigger",
+        "SelectContent",
+        "SelectLabel",
+        "SelectItem"
+      ]
+    },
+    "dialog": {
+      "path": "packages/ui/src/components/dialog.tsx",
+      "status": "drawn",
+      "slots": [
+        "DialogHeader",
+        "DialogTitle",
+        "DialogDescription",
+        "DialogFooter",
+        "DialogClose"
+      ]
+    },
+    "alert": {
+      "path": "packages/ui/src/components/alert.tsx",
+      "status": "drawn",
+      "variants": [
+        "default",
+        "destructive"
+      ],
+      "slots": [
+        "AlertTitle",
+        "AlertDescription",
+        "AlertAction"
+      ]
+    },
+    "calendar": {
+      "path": "packages/ui/src/components/calendar.tsx",
+      "status": "drawn",
+      "states": [
+        "default",
+        "today",
+        "selected",
+        "outside",
+        "disabled"
+      ]
+    },
+    "skeleton": {
+      "path": "packages/ui/src/components/skeleton.tsx",
+      "status": "drawn"
+    },
+    "accordion": {
+      "path": "packages/ui/src/components/accordion.tsx",
+      "status": "drawn"
+    },
+    "alert-dialog": {
+      "path": "packages/ui/src/components/alert-dialog.tsx",
+      "status": "drawn"
+    },
+    "aspect-ratio": {
+      "path": "packages/ui/src/components/aspect-ratio.tsx",
+      "status": "drawn"
+    },
+    "attachment": {
+      "path": "packages/ui/src/components/attachment.tsx",
+      "status": "drawn"
+    },
+    "breadcrumb": {
+      "path": "packages/ui/src/components/breadcrumb.tsx",
+      "status": "drawn"
+    },
+    "bubble": {
+      "path": "packages/ui/src/components/bubble.tsx",
+      "status": "drawn"
+    },
+    "button-group": {
+      "path": "packages/ui/src/components/button-group.tsx",
+      "status": "drawn"
+    },
+    "carousel": {
+      "path": "packages/ui/src/components/carousel.tsx",
+      "status": "drawn"
+    },
+    "chart": {
+      "path": "packages/ui/src/components/chart.tsx",
+      "status": "drawn"
+    },
+    "checkbox": {
+      "path": "packages/ui/src/components/checkbox.tsx",
+      "status": "drawn",
+      "states": [
+        "unchecked",
+        "checked",
+        "invalid",
+        "disabled"
+      ]
+    },
+    "code-block": {
+      "path": "packages/ui/src/components/code-block.tsx",
+      "status": "drawn"
+    },
+    "collapsible": {
+      "path": "packages/ui/src/components/collapsible.tsx",
+      "status": "drawn"
+    },
+    "combobox": {
+      "path": "packages/ui/src/components/combobox.tsx",
+      "status": "drawn"
+    },
+    "command": {
+      "path": "packages/ui/src/components/command.tsx",
+      "status": "drawn"
+    },
+    "context-menu": {
+      "path": "packages/ui/src/components/context-menu.tsx",
+      "status": "drawn"
+    },
+    "direction": {
+      "path": "packages/ui/src/components/direction.tsx",
+      "status": "drawn"
+    },
+    "drawer": {
+      "path": "packages/ui/src/components/drawer.tsx",
+      "status": "in code only",
+      "note": "Open question: padrão híbrido Sheet/Drawer em aberto"
+    },
+    "dropdown-menu": {
+      "path": "packages/ui/src/components/dropdown-menu.tsx",
+      "status": "drawn",
+      "slots": [
+        "DropdownMenuLabel",
+        "DropdownMenuItem",
+        "DropdownMenuCheckboxItem",
+        "DropdownMenuSeparator"
+      ],
+      "variants": [
+        "default",
+        "destructive"
+      ]
+    },
+    "empty": {
+      "path": "packages/ui/src/components/empty.tsx",
+      "status": "drawn"
+    },
+    "field": {
+      "path": "packages/ui/src/components/field.tsx",
+      "status": "drawn"
+    },
+    "hover-card": {
+      "path": "packages/ui/src/components/hover-card.tsx",
+      "status": "drawn"
+    },
+    "input-group": {
+      "path": "packages/ui/src/components/input-group.tsx",
+      "status": "drawn"
+    },
+    "input-otp": {
+      "path": "packages/ui/src/components/input-otp.tsx",
+      "status": "drawn"
+    },
+    "item": {
+      "path": "packages/ui/src/components/item.tsx",
+      "status": "drawn"
+    },
+    "kbd": {
+      "path": "packages/ui/src/components/kbd.tsx",
+      "status": "drawn"
+    },
+    "label": {
+      "path": "packages/ui/src/components/label.tsx",
+      "status": "drawn"
+    },
+    "marker": {
+      "path": "packages/ui/src/components/marker.tsx",
+      "status": "drawn"
+    },
+    "menubar": {
+      "path": "packages/ui/src/components/menubar.tsx",
+      "status": "drawn"
+    },
+    "message": {
+      "path": "packages/ui/src/components/message.tsx",
+      "status": "drawn"
+    },
+    "message-scroller": {
+      "path": "packages/ui/src/components/message-scroller.tsx",
+      "status": "drawn"
+    },
+    "native-select": {
+      "path": "packages/ui/src/components/native-select.tsx",
+      "status": "drawn"
+    },
+    "navigation-menu": {
+      "path": "packages/ui/src/components/navigation-menu.tsx",
+      "status": "drawn"
+    },
+    "pagination": {
+      "path": "packages/ui/src/components/pagination.tsx",
+      "status": "drawn"
+    },
+    "popover": {
+      "path": "packages/ui/src/components/popover.tsx",
+      "status": "drawn"
+    },
+    "progress": {
+      "path": "packages/ui/src/components/progress.tsx",
+      "status": "drawn"
+    },
+    "questionnaire": {
+      "path": "packages/ui/src/components/questionnaire.tsx",
+      "status": "drawn"
+    },
+    "radio-group": {
+      "path": "packages/ui/src/components/radio-group.tsx",
+      "status": "drawn",
+      "states": [
+        "unselected",
+        "selected",
+        "invalid",
+        "disabled"
+      ]
+    },
+    "resizable": {
+      "path": "packages/ui/src/components/resizable.tsx",
+      "status": "drawn"
+    },
+    "scroll-area": {
+      "path": "packages/ui/src/components/scroll-area.tsx",
+      "status": "drawn"
+    },
+    "separator": {
+      "path": "packages/ui/src/components/separator.tsx",
+      "status": "drawn"
+    },
+    "sheet": {
+      "path": "packages/ui/src/components/sheet.tsx",
+      "status": "in code only",
+      "note": "Open question: padrão híbrido Sheet/Drawer em aberto"
+    },
+    "sidebar": {
+      "path": "packages/ui/src/components/sidebar.tsx",
+      "status": "drawn"
+    },
+    "slider": {
+      "path": "packages/ui/src/components/slider.tsx",
+      "status": "drawn"
+    },
+    "sonner": {
+      "path": "packages/ui/src/components/sonner.tsx",
+      "status": "drawn"
+    },
+    "spinner": {
+      "path": "packages/ui/src/components/spinner.tsx",
+      "status": "drawn"
+    },
+    "switch": {
+      "path": "packages/ui/src/components/switch.tsx",
+      "status": "drawn",
+      "sizes": [
+        "default",
+        "sm"
+      ],
+      "states": [
+        "checked",
+        "unchecked",
+        "disabled"
+      ]
+    },
+    "table": {
+      "path": "packages/ui/src/components/table.tsx",
+      "status": "drawn"
+    },
+    "textarea": {
+      "path": "packages/ui/src/components/textarea.tsx",
+      "status": "drawn",
+      "states": [
+        "default",
+        "focus",
+        "invalid",
+        "disabled"
+      ]
+    },
+    "toggle": {
+      "path": "packages/ui/src/components/toggle.tsx",
+      "status": "drawn"
+    },
+    "toggle-group": {
+      "path": "packages/ui/src/components/toggle-group.tsx",
+      "status": "drawn"
+    },
+    "tooltip": {
+      "path": "packages/ui/src/components/tooltip.tsx",
+      "status": "drawn"
+    },
+    "trace": {
+      "path": "packages/ui/src/components/trace.tsx",
+      "status": "drawn"
+    }
   }
 }
