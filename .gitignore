@@ -37,6 +37,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# Neon Local (metadados do branch efêmero/persistente)
+.neon_local/
+
 # vercel
 .vercel
 

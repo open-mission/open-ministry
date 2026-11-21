@@ -3,7 +3,10 @@ import "server-only";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 
+import { configureNeonLocal } from "./neon-config";
 import * as schema from "./schema";
+
+configureNeonLocal();
 
 const connectionString =
   process.env.DATABASE_URL ||

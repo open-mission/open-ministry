@@ -7,11 +7,18 @@ import { createLocalJWKSet, jwtVerify, type JWK } from "jose";
 import { cache } from "react";
 import { headers } from "next/headers";
 
+import {
+  configureNeonLocal,
+  isNeonLocal,
+} from "@openministry/db/neon-config";
+
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { getAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { getSession, type AuthSession } from "@/lib/session";
+
+configureNeonLocal();
 
 const JWT_AUDIENCE = "openministry";
 
@@ -20,10 +27,18 @@ const globalForTenant = globalThis as unknown as {
 };
 
 export function isTenantDbEnabled(): boolean {
+  // Neon Local é HTTP-only: uma transação interativa (`Pool.connect()` +
+  // `set_config('request.jwt.claims', ..., true)`) cai no WebSocket e falha.
+  // No dev local desabilitamos a leitura com RLS; em produção nada muda.
+  if (isNeonLocal()) return false;
   return Boolean(process.env.DATABASE_AUTHENTICATED_URL);
 }
 
 function getPool(): Pool | null {
+  if (!isTenantDbEnabled()) {
+    return null;
+  }
+
   const connectionString = process.env.DATABASE_AUTHENTICATED_URL;
 
   if (!connectionString) {

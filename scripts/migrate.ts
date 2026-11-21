@@ -3,6 +3,10 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { migrate } from "drizzle-orm/neon-http/migrator";
 import path from "node:path";
 
+import { configureNeonLocal } from "@openministry/db/neon-config";
+
+configureNeonLocal();
+
 const connectionString =
   process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
 

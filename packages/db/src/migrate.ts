@@ -4,12 +4,16 @@ import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { migrate } from "drizzle-orm/neon-http/migrator";
 
+import { configureNeonLocal } from "./neon-config";
+
 config({ path: path.resolve(process.cwd(), ".env.local") });
 config({ path: path.resolve(process.cwd(), ".env") });
 config({ path: path.resolve(process.cwd(), "../../.env.local") });
 config({ path: path.resolve(process.cwd(), "../../.env") });
 config({ path: path.resolve(process.cwd(), "../app/.env") });
 config({ path: path.resolve(process.cwd(), "../../apps/app/.env") });
+
+configureNeonLocal();
 
 const connectionString =
   process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
