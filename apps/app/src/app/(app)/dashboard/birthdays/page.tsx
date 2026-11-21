@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
+
+import { DomainSubtabs } from "@/components/app/domain-subtabs-server";
 import { CakeIcon } from "lucide-react";
 
 import { OwnBirthdayCard } from "@/components/birthdays/own-birthday-card";
@@ -127,6 +129,7 @@ async function BirthdaysContent() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+      <DomainSubtabs domain="pessoas" />
       <header className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="font-heading text-4xl leading-none tracking-tight">

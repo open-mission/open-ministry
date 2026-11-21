@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
+import { DomainSubtabs } from "@/components/app/domain-subtabs-server";
+
 import { PageInfo } from "@/components/app/page-info";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WhatsAppMessageLogsCard } from "@/components/whatsapp/whatsapp-message-logs";
@@ -37,6 +39,7 @@ async function WhatsAppContent() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+      <DomainSubtabs domain="comunicacao" />
       <header className="space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">

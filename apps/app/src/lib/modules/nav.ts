@@ -1,4 +1,23 @@
 import {
+  BookOpenIcon,
+  CakeIcon,
+  CalendarCheckIcon,
+  CalendarDaysIcon,
+  CheckSquare2Icon,
+  ClipboardListIcon,
+  HandHeartIcon,
+  LayersIcon,
+  LayoutDashboardIcon,
+  MailIcon,
+  MegaphoneIcon,
+  MessageSquareIcon,
+  Music2Icon,
+  Music4Icon,
+  UsersIcon,
+  type LucideIcon,
+} from "lucide-react";
+
+import {
   emailsNavItem,
   jobsNavGroup,
   mobileNavItems,
@@ -192,4 +211,179 @@ export function buildAccessibleMobileNavItems(
   return mobileNavItems.filter((item) =>
     isItemAllowed(item.href, activeModuleKeys),
   );
+}
+
+/** Domínios exibidos como item único na navegação desktop. */
+export type DesktopDomainKey = "cultos" | "louvor" | "pessoas" | "comunicacao";
+
+export type DesktopSidebarItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  exact: boolean;
+  domain?: DesktopDomainKey;
+  tabs?: NavItem[];
+  matchPrefixes?: string[];
+  badge?: string;
+};
+
+export type DesktopSidebarNavigation = {
+  primary: DesktopSidebarItem[];
+  secondary: DesktopSidebarItem[];
+};
+
+export type DesktopSidebarOptions = {
+  canManageJobs?: boolean;
+  canAccessWhatsApp?: boolean;
+  canAccessEmails?: boolean;
+};
+
+const desktopDomainTabs: Record<DesktopDomainKey, NavItem[]> = {
+  cultos: [
+    {
+      href: "/calendar",
+      label: "Agenda",
+      icon: CalendarDaysIcon,
+      exact: false,
+    },
+    {
+      href: "/events",
+      label: "Cultos e eventos",
+      icon: CalendarDaysIcon,
+      exact: false,
+    },
+    {
+      href: "/schedules",
+      label: "Escalas",
+      icon: ClipboardListIcon,
+      exact: false,
+    },
+    {
+      href: "/availability",
+      label: "Disponibilidade",
+      icon: CalendarCheckIcon,
+      exact: false,
+    },
+  ],
+  louvor: [
+    { href: "/songs", label: "Músicas", icon: Music2Icon, exact: false },
+    {
+      href: "/rehearsals",
+      label: "Ensaios",
+      icon: Music4Icon,
+      exact: false,
+    },
+  ],
+  pessoas: [
+    { href: "/members", label: "Pessoas", icon: UsersIcon, exact: false },
+    {
+      href: "/departments",
+      label: "Departamentos",
+      icon: HandHeartIcon,
+      exact: false,
+    },
+    {
+      href: "/birthdays",
+      label: "Aniversariantes",
+      icon: CakeIcon,
+      exact: false,
+    },
+  ],
+  comunicacao: [
+    {
+      href: "/announcements",
+      label: "Avisos",
+      icon: MegaphoneIcon,
+      exact: false,
+    },
+    {
+      href: "/whatsapp",
+      label: "WhatsApp",
+      icon: MessageSquareIcon,
+      exact: false,
+    },
+    { href: "/emails", label: "Emails", icon: MailIcon, exact: false },
+  ],
+};
+
+const desktopDomainConfig: {
+  key: DesktopDomainKey;
+  label: string;
+  icon: LucideIcon;
+}[] = [
+  { key: "cultos", label: "Cultos & Escalas", icon: CalendarDaysIcon },
+  { key: "louvor", label: "Louvor", icon: Music2Icon },
+  { key: "pessoas", label: "Pessoas", icon: UsersIcon },
+  { key: "comunicacao", label: "Comunicação", icon: MegaphoneIcon },
+];
+
+/**
+ * Abas acessíveis de um domínio desktop. WhatsApp e Emails não são módulos do
+ * sistema: são liberados por permissão e, por isso, dependem das options.
+ */
+export function getAccessibleDomainTabs(
+  domain: DesktopDomainKey,
+  activeModuleKeys: ModuleKey[] = [],
+  options?: DesktopSidebarOptions,
+): NavItem[] {
+  return desktopDomainTabs[domain].filter((item) => {
+    if (item.href === "/whatsapp") return options?.canAccessWhatsApp === true;
+    if (item.href === "/emails") return options?.canAccessEmails === true;
+    return isItemAllowed(item.href, activeModuleKeys);
+  });
+}
+
+/** Navegação desktop em dois níveis: itens primários e ações secundárias. */
+export function buildDesktopSidebarNavigation(
+  activeModuleKeys: ModuleKey[] = [],
+  options?: DesktopSidebarOptions,
+): DesktopSidebarNavigation {
+  const domains: DesktopSidebarItem[] = [];
+
+  for (const config of desktopDomainConfig) {
+    const tabs = getAccessibleDomainTabs(
+      config.key,
+      activeModuleKeys,
+      options,
+    );
+    if (tabs.length === 0) continue;
+
+    domains.push({
+      href: tabs[0]!.href,
+      label: config.label,
+      icon: config.icon,
+      exact: false,
+      domain: config.key,
+      tabs,
+      matchPrefixes: tabs.map((tab) => tab.href),
+      ...(tabs.length > 1 ? { badge: String(tabs.length) } : {}),
+    });
+  }
+
+  const primary: DesktopSidebarItem[] = [
+    { href: "/", label: "Início", icon: LayoutDashboardIcon, exact: true },
+    ...domains,
+    { href: "/bible", label: "Bíblia", icon: BookOpenIcon, exact: false },
+  ];
+
+  const secondary: DesktopSidebarItem[] = [];
+  if (activeModuleKeys.includes("tasks")) {
+    secondary.push({
+      href: "/tasks",
+      label: "Minhas tarefas",
+      icon: CheckSquare2Icon,
+      exact: false,
+    });
+  }
+  if (options?.canManageJobs) {
+    secondary.push({
+      href: "/jobs",
+      label: "Operações",
+      icon: LayersIcon,
+      exact: false,
+      badge: "Admin",
+    });
+  }
+
+  return { primary, secondary };
 }

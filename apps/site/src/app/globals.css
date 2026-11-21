@@ -1,6 +1,7 @@
 @layer ui-sdk;
 @import "tailwindcss";
-@import "@ui-sdk/core/web.css" layer(components);
+@source "../../../../packages/ui/src";
+@import "@ui-sdk/core/web.css";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 

@@ -5,7 +5,6 @@ import type { NavGroup } from "@/components/app/nav-config";
 import type { ModuleKey } from "@/lib/modules/types";
 import { NavUser } from "@/components/app/nav-user";
 import { SidebarNav } from "@/components/app/sidebar-nav";
-import { SidebarSettingsButton } from "@/components/app/sidebar-settings-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Sidebar,
@@ -46,7 +45,7 @@ export function AppSidebar({
   canAccessEmails,
 }: AppSidebarProps) {
   return (
-    <Sidebar collapsible="offcanvas">
+    <Sidebar collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -67,12 +66,12 @@ export function AppSidebar({
                     <OpenMinistrySymbol className="size-4" />
                   </span>
                 )}
-                <span className="flex min-w-0 flex-col">
-                  <span className="truncate font-heading text-base leading-tight tracking-tight">
-                    OpenMinistry
-                  </span>
-                  <span className="truncate text-xs text-muted-foreground">
+                <span className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
+                  <span className="truncate text-[13px] font-semibold leading-tight text-sidebar-foreground">
                     {organizationName}
+                  </span>
+                  <span className="truncate text-[11px] text-muted-foreground">
+                    OpenMinistry
                   </span>
                 </span>
               </Link>
@@ -92,7 +91,6 @@ export function AppSidebar({
       </SidebarContent>
 
       <SidebarFooter>
-        <SidebarSettingsButton />
         <NavUser user={user} role={role} />
       </SidebarFooter>
 

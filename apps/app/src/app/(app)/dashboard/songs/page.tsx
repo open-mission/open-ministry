@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
+
+import { DomainSubtabs } from "@/components/app/domain-subtabs-server";
 import { ShieldAlertIcon } from "lucide-react";
 
 import { SongsListView } from "@/components/songs/songs-list-view";
@@ -58,6 +60,7 @@ async function SongsContent() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 min-w-0">
+      <DomainSubtabs domain="louvor" />
       <SongsListView
         songs={songs}
         existingCollections={collections}

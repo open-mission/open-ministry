@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
+
+import { DomainSubtabs } from "@/components/app/domain-subtabs-server";
 import { ClipboardListIcon } from "lucide-react";
 
 import { MemberSchedules } from "@/components/app/member-schedules";
@@ -121,6 +123,7 @@ async function SchedulesContent({
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 min-w-0">
+      <DomainSubtabs domain="cultos" />
       <header className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="font-heading text-4xl leading-none tracking-tight">
