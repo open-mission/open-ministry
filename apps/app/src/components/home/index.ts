@@ -14,6 +14,13 @@ export { HomeTabProvider, useHomeTab, type HomeTab } from "./home-tab-context";
 export { HomeSkeleton, VerseCardSkeleton } from "./home-skeleton";
 export { VerseCard } from "./verse-card";
 export { NextServiceCard } from "./next-service-card";
+export { NextAssignmentCard } from "./next-assignment-card";
+export {
+  WeekAttentionCard,
+  buildWeekAttentionItems,
+  type WeekAttentionItem,
+} from "./week-attention-card";
+export { TodayHomeLayout } from "./today-home-layout";
 export { NotificationsCard, type NotificationItem } from "./notifications-card";
 export { TasksCard } from "./tasks-card";
 export { BirthdaysCard, birthdaysForCurrentMonth } from "./birthdays-card";
