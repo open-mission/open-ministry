@@ -72,10 +72,11 @@ export type SettingsScope = "account" | "church";
 
 export type AccountTabId =
   | "profile"
-  | "theme"
-  | "notifications"
   | "calendar"
-  | "security";
+  | "notifications"
+  | "theme"
+  | "security"
+  | "app";
 
 export type ChurchTabId = "church" | "whatsapp" | "templates" | "permissions";
 
@@ -222,10 +223,11 @@ export function SettingsView({
       : "account";
 
   const resolvedInitialAccountTab: AccountTabId =
-    initialTab === "theme" ||
-    initialTab === "notifications" ||
     initialTab === "calendar" ||
-    initialTab === "security"
+    initialTab === "notifications" ||
+    initialTab === "theme" ||
+    initialTab === "security" ||
+    initialTab === "app"
       ? initialTab
       : "profile";
 
@@ -249,34 +251,34 @@ export function SettingsView({
 
   const isWhatsappConnected = Boolean(evolutionSettings?.isActive);
   const feedsBadge =
-    calendarFeeds.length > 0
-      ? `${calendarFeeds.length} ${calendarFeeds.length === 1 ? "feed" : "feeds"}`
-      : undefined;
+    calendarFeeds.length > 0 ? `${calendarFeeds.length}` : undefined;
   const passkeysBadge =
-    initialPasskeys.length > 0
-      ? `${initialPasskeys.length} ${initialPasskeys.length === 1 ? "passkey" : "passkeys"}`
-      : undefined;
+    initialPasskeys.length > 0 ? `${initialPasskeys.length}` : undefined;
 
   const accountTabs: DesktopTabItem<AccountTabId>[] = [
     { id: "profile", label: "Perfil", icon: UserIcon },
     {
-      id: "theme",
-      label: "Aparência & Tema",
-      icon: PaletteIcon,
-      badge: mounted ? currentThemeLabel : undefined,
+      id: "calendar",
+      label: "Agenda",
+      icon: CalendarIcon,
+      badge: feedsBadge,
     },
     { id: "notifications", label: "Notificações", icon: BellIcon },
     {
-      id: "calendar",
-      label: "Agenda & Offline",
-      icon: CalendarIcon,
-      badge: feedsBadge,
+      id: "theme",
+      label: "Aparência",
+      icon: PaletteIcon,
     },
     {
       id: "security",
       label: "Segurança",
       icon: ShieldCheckIcon,
       badge: passkeysBadge,
+    },
+    {
+      id: "app",
+      label: "App & Sistema",
+      icon: SmartphoneIcon,
     },
   ];
 
@@ -297,25 +299,13 @@ export function SettingsView({
         },
         {
           id: "permissions",
-          label: "Nomenclatura & Permissões",
+          label: "Equipes & Permissões",
           icon: SlidersHorizontalIcon,
         },
       ]
     : [{ id: "church", label: "Dados da Igreja", icon: Building2Icon }];
 
   const mobilePreferenceRows: MobileRowItem[] = [
-    {
-      id: "theme",
-      label: "Aparência & Tema",
-      status: currentThemeLabel,
-      icon: PaletteIcon,
-    },
-    {
-      id: "notifications",
-      label: "Notificações",
-      status: "Escalas e ensaios",
-      icon: BellIcon,
-    },
     {
       id: "calendar",
       label: "Agenda & Calendário",
@@ -324,6 +314,18 @@ export function SettingsView({
           ? `${calendarFeeds.length} ${calendarFeeds.length === 1 ? "link ativo" : "links ativos"}`
           : "Sincronizar",
       icon: CalendarIcon,
+    },
+    {
+      id: "notifications",
+      label: "Notificações",
+      status: "Escalas e ensaios",
+      icon: BellIcon,
+    },
+    {
+      id: "theme",
+      label: "Aparência",
+      status: currentThemeLabel,
+      icon: PaletteIcon,
     },
     {
       id: "pwa_offline",
@@ -554,7 +556,7 @@ export function SettingsView({
                     onClick={() => setAccountTab("theme")}
                     className="h-8 w-full justify-between px-2 text-xs text-muted-foreground hover:text-foreground"
                   >
-                    <span>Mais detalhes em Aparência & Tema</span>
+                    <span>Mais detalhes em Aparência</span>
                     <ChevronRightIcon className="size-3.5" />
                   </Button>
                 </CardContent>
@@ -624,10 +626,11 @@ export function SettingsView({
             </aside>
           </div>
         );
-      case "theme":
+      case "calendar":
         return (
-          <div className="max-w-3xl">
-            <ThemePreferenceCard />
+          <div className="max-w-3xl space-y-6">
+            <CalendarPreferencesCard initialPreferences={calendarPreferences} />
+            <CalendarSyncCard feeds={calendarFeeds} />
           </div>
         );
       case "notifications":
@@ -636,18 +639,10 @@ export function SettingsView({
             <NotificationPreferencesCard />
           </div>
         );
-      case "calendar":
+      case "theme":
         return (
-          <div className="grid items-start gap-6 lg:grid-cols-2">
-            <div className="space-y-6">
-              <CalendarPreferencesCard initialPreferences={calendarPreferences} />
-              <CalendarSyncCard feeds={calendarFeeds} />
-            </div>
-            <div className="space-y-6">
-              <PwaInstallCard />
-              <OfflineCacheCard />
-              <AboutCard />
-            </div>
+          <div className="max-w-3xl">
+            <ThemePreferenceCard />
           </div>
         );
       case "security":
@@ -656,6 +651,16 @@ export function SettingsView({
             <PasskeysCard initialPasskeys={initialPasskeys} />
             <ChangePasswordCard />
             <ActiveSessionsCard initialSessions={initialSessions} />
+          </div>
+        );
+      case "app":
+        return (
+          <div className="grid items-start gap-6 lg:grid-cols-2">
+            <div className="space-y-6">
+              <PwaInstallCard />
+              <OfflineCacheCard />
+            </div>
+            <AboutCard />
           </div>
         );
     }
@@ -847,7 +852,7 @@ export function SettingsView({
                     )
                   }
                   className={cn(
-                    "flex min-h-9 shrink-0 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                    "flex min-h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 lg:px-3 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                     isSelected
                       ? "border-border/70 bg-card text-foreground shadow-2xs"
                       : "border-transparent text-muted-foreground hover:text-foreground",
@@ -897,7 +902,7 @@ export function SettingsView({
                     )
                   }
                   className={cn(
-                    "flex min-h-9 shrink-0 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                    "flex min-h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 lg:px-3 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                     isSelected
                       ? "border-border/70 bg-card text-foreground shadow-2xs"
                       : "border-transparent text-muted-foreground hover:text-foreground",

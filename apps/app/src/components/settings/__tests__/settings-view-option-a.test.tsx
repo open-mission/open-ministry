@@ -115,7 +115,7 @@ function buildProps(overrides: Partial<SettingsViewProps> = {}): SettingsViewPro
 }
 
 describe("SettingsView — Opção A (Faixa Superior + Minha Conta / Igreja)", () => {
-  it("renderiza escopo Minha Conta vs Igreja (Admin), 5 abas horizontais e cards laterais sem dupla sidebar", () => {
+  it("renderiza escopo Minha Conta vs Igreja (Admin), 6 abas organizadas e cards laterais sem dupla sidebar", () => {
     const markup = renderToStaticMarkup(
       createElement(SettingsView, buildProps()),
     );
@@ -123,12 +123,14 @@ describe("SettingsView — Opção A (Faixa Superior + Minha Conta / Igreja)", (
     expect(markup).toContain("Minha Conta");
     expect(markup).toContain("Igreja (Admin)");
     expect(markup).toContain("Perfil");
-    expect(markup).toContain("Aparência &amp; Tema");
+    expect(markup).toContain("Agenda");
     expect(markup).toContain("Notificações");
-    expect(markup).toContain("Agenda &amp; Offline");
+    expect(markup).toContain("Aparência");
     expect(markup).toContain("Segurança");
-    expect(markup).toContain("1 feed");
-    expect(markup).toContain("2 passkeys");
+    expect(markup).toContain("App &amp; Sistema");
+    expect(markup).toContain(">1<");
+    expect(markup).toContain(">2<");
+    expect(markup).not.toContain("Agenda &amp; Offline");
 
     expect(markup).toContain("Aparência rápida");
     expect(markup).toContain("Acesso &amp; Passkeys");
@@ -150,12 +152,19 @@ describe("SettingsView — Opção A (Faixa Superior + Minha Conta / Igreja)", (
     expect(markup).toContain("min-h-[54px]");
     expect(markup).toContain("Preferências");
     expect(markup).toContain("Segurança &amp; Sistema");
-    expect(markup).toContain("2 links".replace("2 links", "1 link ativo"));
+    expect(markup).toContain("1 link ativo");
     expect(markup).toContain("2 ativas");
     expect(markup).toContain("PWA e cache");
   });
 
-  it("respeita initialScope=church e omite abas administrativas para membros comuns", () => {
+  it("respeita initialScope=church e initialTab=app, omitindo abas admin para membros", () => {
+    const appTabMarkup = renderToStaticMarkup(
+      createElement(SettingsView, buildProps({ initialTab: "app" })),
+    );
+    expect(appTabMarkup).toContain("Aplicativo no Celular (PWA)");
+    expect(appTabMarkup).toContain("Modo Offline &amp; Cache Local");
+    expect(appTabMarkup).toContain("Estável");
+
     const adminChurchMarkup = renderToStaticMarkup(
       createElement(
         SettingsView,
@@ -166,7 +175,7 @@ describe("SettingsView — Opção A (Faixa Superior + Minha Conta / Igreja)", (
     expect(adminChurchMarkup).toContain("WhatsApp");
     expect(adminChurchMarkup).toContain("Conectado");
     expect(adminChurchMarkup).toContain("Modelos");
-    expect(adminChurchMarkup).toContain("Nomenclatura &amp; Permissões");
+    expect(adminChurchMarkup).toContain("Equipes &amp; Permissões");
 
     const memberMarkup = renderToStaticMarkup(
       createElement(
