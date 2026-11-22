@@ -34,7 +34,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { useOptionalSettingsModal } from "@/components/settings/settings-modal-context";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -148,7 +147,6 @@ export function MobileMenu({
 } = {}) {
   const pathname = usePathname();
   const { open, setOpen } = useMobileMenu();
-  const settingsModal = useOptionalSettingsModal();
   const [query, setQuery] = useState("");
 
   const groups = useMemo(
@@ -522,24 +520,20 @@ export function MobileMenu({
           />
         </div>
 
-        {settingsModal ? (
-          <div className="relative z-10 shrink-0 border-t border-border/60 bg-popover px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                setTimeout(() => settingsModal.openSettings(), 180);
-              }}
-              className="flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/60 active:bg-muted"
-            >
-              <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                <SettingsIcon className="size-4" />
-              </span>
-              <span className="flex-1 text-left">Configurações</span>
-              <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40" />
-            </button>
-          </div>
-        ) : null}
+        <div className="relative z-10 shrink-0 border-t border-border/60 bg-popover px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <Link
+            href="/dashboard/settings"
+            prefetch={true}
+            onClick={() => setOpen(false)}
+            className="flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/60 active:bg-muted"
+          >
+            <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+              <SettingsIcon className="size-4" />
+            </span>
+            <span className="flex-1 text-left">Configurações</span>
+            <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40" />
+          </Link>
+        </div>
       </DrawerContent>
     </Drawer>
   );

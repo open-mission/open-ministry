@@ -21,7 +21,6 @@ import { useTheme } from "next-themes";
 import { toast } from "sonner";
 
 import { SignOutConfirmDialog } from "@/components/app/sign-out-confirm-dialog";
-import { useSettingsModal } from "@/components/settings/settings-modal-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -80,7 +79,6 @@ export function UserMenuDrawer({
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [switching, setSwitching] = useState(false);
   const router = useRouter();
-  const { openSettings } = useSettingsModal();
   const { theme, setTheme } = useTheme();
 
   const { sessions: deviceSessions } = useDeviceSessions();
@@ -93,11 +91,6 @@ export function UserMenuDrawer({
     getClientSnapshot,
     getServerSnapshot,
   );
-
-  function handleOpenSettings() {
-    setOpen(false);
-    openSettings();
-  }
 
   const handleSwitchSession = async (
     sessionToken: string,
@@ -249,10 +242,11 @@ export function UserMenuDrawer({
 
           {/* Main Navigation Options */}
           <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xs">
-            <button
-              type="button"
-              onClick={handleOpenSettings}
-              className="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-muted/50 active:bg-muted/70 cursor-pointer"
+            <Link
+              href="/dashboard/settings"
+              prefetch={true}
+              onClick={() => setOpen(false)}
+              className="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-muted/50 active:bg-muted/70"
             >
               <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <SettingsIcon className="size-4.5" />
@@ -266,7 +260,7 @@ export function UserMenuDrawer({
                 </p>
               </div>
               <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40" />
-            </button>
+            </Link>
 
             <Link
               href="/dashboard/notifications"
