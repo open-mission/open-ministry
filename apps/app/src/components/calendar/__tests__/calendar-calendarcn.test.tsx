@@ -130,14 +130,43 @@ describe("CalendarCN integration", () => {
     );
 
     expect(html).toContain("Sua semana: 2 escalas");
-    expect(html).toContain("Minhas escalas");
-    expect(html).toContain("Todos os departamentos");
+    expect(html).toContain("Filtrar");
     expect(html).toContain("Agenda");
     expect(html).toContain("Semana");
     expect(html).toContain("Mês");
     expect(html).toContain("Dia");
     expect(html).toContain("Ano");
-    expect(html).not.toContain("Filtrar compromissos");
+
+    const filteredHtml = renderToStaticMarkup(
+      createElement(CalendarHeader, {
+        currentDate: new Date("2026-11-22T15:00:00.000Z"),
+        viewMode: "agenda",
+        filterType: "assignments",
+        selectedDepartmentId: "dept-louvor",
+        departments: [{ id: "dept-louvor", name: "Louvor" }],
+        weekStartsOn: 0,
+        timeZone: "America/Sao_Paulo",
+        totalCount: 3,
+        eventsCount: 1,
+        assignmentsCount: 1,
+        unavailabilitiesCount: 1,
+        birthdaysCount: 0,
+        weekAssignmentsCount: 2,
+        canViewTeamAvailability: true,
+        canCreateEvent: true,
+        canCreateRehearsal: true,
+        onViewChange: () => {},
+        onFilterChange: () => {},
+        onDepartmentChange: () => {},
+        onPrev: () => {},
+        onNext: () => {},
+        onToday: () => {},
+        onExport: () => {},
+      }),
+    );
+
+    expect(filteredHtml).toContain("Minhas escalas");
+    expect(filteredHtml).toContain("Louvor");
   });
 
   it("renders FullCalendar cleanly on server without hydration crashes", () => {
@@ -155,8 +184,7 @@ describe("CalendarCN integration", () => {
       }),
     );
 
-    expect(html).toContain("Cultos e eventos");
-    expect(html).toContain("Minhas escalas");
+    expect(html).toContain("Filtrar");
     expect(html).toContain("Novo");
   });
 });
