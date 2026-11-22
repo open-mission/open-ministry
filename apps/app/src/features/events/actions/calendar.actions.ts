@@ -6,12 +6,16 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { getPersonMembershipsForUser } from "@/lib/agenda";
-import type { CalendarItem, CalendarPreferences } from "@/lib/calendar";
-import { listCalendarEvents } from "@/lib/events";
+import type {
+  CalendarEventPreview,
+  CalendarItem,
+  CalendarPreferences,
+} from "@/lib/calendar";
+import { getEvent, listCalendarEvents, scheduleProgress } from "@/lib/events";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { ensurePersonForUser, listPeopleSummary } from "@/lib/people";
 import { personDisplayBirthday, personDisplayName } from "@/lib/person-format";
-import { requirePermission } from "@/lib/permissions/service";
+import { can, canAnyDepartment, requirePermission } from "@/lib/permissions/service";
 import { getUserRecord } from "@/lib/user-record";
 
 export async function getCalendarDataAction(): Promise<{
@@ -326,4 +330,124 @@ export async function saveCalendarPreferencesAction(payload: {
       error: "Não foi possível salvar as preferências do calendário.",
     };
   }
+}
+
+export async function getCalendarEventPreviewAction(
+  eventId: string,
+): Promise<CalendarEventPreview | null> {
+  if (!eventId?.trim()) return null;
+
+  const context = await requireOrganizationContext();
+  if (!context) return null;
+
+  const event = await getEvent(context.organization.id, eventId);
+  if (!event) return null;
+
+  const departmentIds = event.departments.map((item) => item.departmentId);
+  const isRehearsal = event.kind === "rehearsal";
+  const hasAccess = isRehearsal
+    ? await canAnyDepartment("rehearsals", "read", departmentIds)
+    : await can("agenda", "read");
+
+  if (!hasAccess) return null;
+
+  const progress = scheduleProgress(event);
+  const deptNameById = new Map(
+    event.departments.map((item) => [item.departmentId, item.department.name]),
+  );
+
+  const rawAssignments = event.schedule?.assignments ?? [];
+  const departmentCoverage: NonNullable<
+    CalendarEventPreview["departmentCoverage"]
+  > = event.departments.map((item) => {
+    const deptId = item.departmentId;
+    const configuredFunctions = event.functions?.filter(
+      (fn) => fn.departmentId === deptId,
+    );
+    const total =
+      configuredFunctions && configuredFunctions.length > 0
+        ? configuredFunctions.length
+        : item.department.functions.length;
+    const deptAssignments = rawAssignments.filter(
+      (assignment) => assignment.departmentId === deptId,
+    );
+    const assigned = new Set(
+      deptAssignments.map((assignment) => assignment.functionId),
+    ).size;
+
+    return {
+      departmentId: deptId,
+      departmentName: item.department.name,
+      assigned,
+      total,
+    };
+  });
+
+  const assignments = rawAssignments.map((assignment) => ({
+    id: assignment.id,
+    personName: assignment.person
+      ? personDisplayName(assignment.person)
+      : "Membro",
+    functionName: assignment.function?.name ?? "Função",
+    departmentId: assignment.departmentId,
+    departmentName: deptNameById.get(assignment.departmentId) ?? "",
+    isMine: Boolean(
+      assignment.person?.userId &&
+        assignment.person.userId === context.session.user.id,
+    ),
+  }));
+
+  const seenSongs = new Set<string>();
+  const songs: CalendarEventPreview["songs"] = [];
+
+  const planItems = (event.planItems ?? []).map((item) => {
+    const song = item.song
+      ? {
+          id: item.song.id,
+          title: item.song.title,
+          artist: item.song.artist ?? null,
+          tone: item.song.tone ?? null,
+          bpm: item.song.bpm ?? null,
+        }
+      : null;
+
+    if (song && !seenSongs.has(song.id)) {
+      seenSongs.add(song.id);
+      songs.push(song);
+    }
+
+    const leaderName = item.person
+      ? personDisplayName(item.person)
+      : item.customResponsible?.trim() || null;
+
+    return {
+      id: item.id,
+      order: item.order,
+      type: item.type === "header" ? ("header" as const) : ("item" as const),
+      title: item.title,
+      description: item.description ?? null,
+      durationSeconds: item.durationSeconds,
+      leaderName,
+      song,
+    };
+  });
+
+  return {
+    eventId: event.id,
+    kind: event.kind,
+    title: event.title,
+    startsAt: event.startsAt.toISOString(),
+    endsAt: event.endsAt.toISOString(),
+    location: event.location ?? null,
+    description: event.description ?? null,
+    href: `/dashboard/events/${event.id}`,
+    coverage: {
+      assigned: progress.filledFunctions,
+      total: progress.totalFunctions,
+    },
+    departmentCoverage,
+    assignments,
+    songs,
+    planItems,
+  };
 }

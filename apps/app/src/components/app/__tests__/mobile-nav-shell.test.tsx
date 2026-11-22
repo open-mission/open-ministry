@@ -53,18 +53,43 @@ describe("MobileNavShell", () => {
     expect(tokens).toContain("border-t");
   });
 
-  it("continua renderizando os itens de navegação e o botão Menu", () => {
+  it("continua renderizando os itens de navegação e o botão Explorar", () => {
     const markup = renderNav();
 
     expect(markup).toContain('aria-label="Navegação principal"');
-    expect(markup).toContain('aria-label="Abrir menu completo de navegação"');
+    expect(markup).toContain('aria-label="Abrir menu Explorar"');
 
     for (const item of mobileNavItems) {
       expect(markup).toContain(`href="${item.href}"`);
       expect(markup).toContain(item.label);
     }
 
-    expect(markup).toContain("Menu");
+    expect(markup).toContain("Explorar");
+    expect(markup).toContain("lucide-compass");
+    expect(markup).not.toContain("lucide-menu");
     expect(markup).toContain("grid-cols-5");
+  });
+
+  it("respeita piso tipográfico de 11px e mantém peso estável sem deslocamento no item ativo", () => {
+    const markup = renderNav();
+
+    expect(markup).toContain("text-[11px]");
+    expect(markup).not.toContain("text-[0.62rem]");
+    expect(markup).not.toContain("font-semibold");
+    expect(markup).not.toContain("-translate-y-px");
+  });
+
+  it("marca o botão Explorar como ativo em rotas secundárias fora da barra inferior", () => {
+    const secondaryMarkup = renderToStaticMarkup(
+      createElement(MobileNavShell, { activeHref: "/members" }),
+    );
+    const primaryMarkup = renderNav();
+
+    expect(secondaryMarkup).toContain(
+      'aria-label="Abrir menu Explorar" aria-expanded="false" aria-current="page"',
+    );
+    expect(primaryMarkup).not.toContain(
+      'aria-label="Abrir menu Explorar" aria-expanded="false" aria-current="page"',
+    );
   });
 });

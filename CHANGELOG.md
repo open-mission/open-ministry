@@ -6,6 +6,22 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.8.0] - 2026-11-22
+
+### Adicionado e Melhorado
+- **Navegação Desktop por Domínios:** barra lateral consolidada em 6 domínios (`Início`, `Cultos & Escalas`, `Louvor`, `Pessoas`, `Comunicação`, `Bíblia`) + `Minhas tarefas` e `Operações`, com trilho recolhido de `56px` e faixa de sub-abas contextuais nas páginas de índice.
+- **Navegação Mobile (Explorar + Sub-abas):** barra inferior atualizada com o botão `Explorar`, drawer com busca rápida normalizada por acentos, atalhos rápidos, grade `2×3` das áreas da igreja e sub-abas navegáveis no mobile.
+- **Nova Agenda (`calendarcn`):** cinco modos de visualização (Mês, Semana, Agenda, Dia e Ano), filtro unificado em Popover/Drawer e painel de detalhes do evento com cobertura da equipe separada por departamento.
+- **Header Minimalista com Avatar:** cabeçalho sem borda inferior em todas as páginas, menu de conta movido para o avatar no topo no desktop (removendo duplicação na sidebar) e mantendo o Drawer no mobile.
+- **Configurações Unificadas:** todos os pontos de entrada concentrados em `/dashboard/settings` com escopo `Minha Conta` e `Igreja` organizados em 6 seções.
+- **Nova Home Mobile:** versículo diário compacto em destaque no topo ao abrir no celular.
+- **Refino Visual & Design System:** convergência dos 63 componentes de UI para `@openministry/ui`, padrão híbrido Drawer/Sheet e remoção de bordas redundantes em Escalas, Cultos e Disponibilidade (`max-w-6xl`).
+
+### Corrigido
+- **Tailwind v4 e camadas CSS:** adicionado `@source` para `packages/ui/src` e corrigida a ordem de camadas do `@ui-sdk/core/web.css`.
+- **Drawer Explorar no mobile:** corrigidos scroll interno, empilhamento `z-index` e abertura em `95dvh`.
+- **Espaçamento da sidebar desktop:** restaurado alinhamento lateral e respiro entre itens.
+
 ## [1.7.2] - 2026-11-20
 
 ### Corrigido

@@ -1,11 +1,9 @@
 import { Suspense } from "react";
 
 import { AppSidebarLoader } from "@/components/app/app-sidebar-loader";
+import { DashboardBreadcrumb } from "@/components/app/dashboard-breadcrumb";
 import {
-  DashboardBreadcrumb,
-  DashboardBreadcrumbFallback,
-} from "@/components/app/dashboard-breadcrumb";
-import {
+  CalendarHiddenSlot,
   HeaderCenterSlot,
   HeaderUserSlot,
   HomeAwareHeader,
@@ -38,7 +36,6 @@ import {
   UserMenuFallback,
   UserMenuLoader,
 } from "@/components/app/user-menu-loader";
-import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
@@ -52,20 +49,18 @@ export default function DashboardLayout({
 }) {
   const headerContent = (
     <>
-      <SidebarTrigger className="hidden md:inline-flex" />
-      <Suspense fallback={<MobileHeaderLeadingFallback />}>
-        <MobileHeaderLeadingLoader />
-      </Suspense>
-      <Separator
-        orientation="vertical"
-        className="mr-1 hidden h-4 self-center md:block"
-      />
-      <Suspense fallback={<DashboardBreadcrumbFallback />}>
-        <HeaderCenterSlot>
-          <DashboardBreadcrumb />
-        </HeaderCenterSlot>
-      </Suspense>
-      <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+      <SidebarTrigger className="pointer-events-auto hidden md:inline-flex" />
+      <CalendarHiddenSlot>
+        <Suspense fallback={<MobileHeaderLeadingFallback />}>
+          <MobileHeaderLeadingLoader />
+        </Suspense>
+        <Suspense fallback={null}>
+          <HeaderCenterSlot>
+            <DashboardBreadcrumb />
+          </HeaderCenterSlot>
+        </Suspense>
+      </CalendarHiddenSlot>
+      <div className="pointer-events-auto ml-auto flex items-center gap-1.5 sm:gap-2">
         <Suspense fallback={<NotificationBellFallback />}>
           <NotificationBellLoader />
         </Suspense>
@@ -82,7 +77,9 @@ export default function DashboardLayout({
 
   return (
     <OpenMinistryRealtimeProvider>
-      <SidebarProvider>
+      <SidebarProvider
+        style={{ "--sidebar-width": "16.5rem" } as React.CSSProperties}
+      >
         <MobileMenuProvider>
           <SettingsModalProvider>
             <HomeTabProvider>
@@ -103,7 +100,7 @@ export default function DashboardLayout({
                 <Suspense fallback={null}>
                   <NotificationBarLoader />
                 </Suspense>
-                <div className="flex flex-1 flex-col px-4 pt-5 pb-28 sm:px-6 sm:pt-6 sm:pb-28 md:pb-8 lg:px-8 lg:pt-8">
+                <div className="flex flex-1 flex-col px-4 pt-5 pb-28 sm:px-6 sm:pt-6 sm:pb-28 md:pt-3 md:pb-8 lg:px-8 lg:pt-4 has-[[data-calendar-container]]:md:pt-2">
                   {children}
                 </div>
                 <Suspense fallback={<MobileNavShell />}>
@@ -138,7 +135,7 @@ function SidebarSkeleton() {
   return (
     <div
       aria-hidden
-      className="hidden w-64 shrink-0 border-r bg-sidebar p-4 md:block"
+      className="hidden w-[16.5rem] shrink-0 border-r bg-sidebar p-4 md:block"
     >
       <div className="h-9 w-full animate-pulse rounded-lg bg-sidebar-accent" />
       <div className="mt-8 space-y-2">

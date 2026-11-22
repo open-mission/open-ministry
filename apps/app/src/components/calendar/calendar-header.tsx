@@ -1,43 +1,42 @@
 "use client";
 
 import { useState } from "react";
+import { addDays, endOfWeek, format, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  CakeIcon,
-  CalendarDaysIcon,
-  CalendarIcon,
-  CalendarRangeIcon,
-  CalendarX2Icon,
-  CheckCircle2Icon,
+  CheckIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  FilterIcon,
-  ListIcon,
+  Music2Icon,
+  SlidersHorizontalIcon,
+  XIcon,
 } from "lucide-react";
 
 import { CalendarActions } from "@/components/calendar/calendar-actions";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { ButtonGroup } from "@/components/ui/button-group";
 import {
-  NativeSelect,
-  NativeSelectOption,
-} from "@/components/ui/native-select";
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import {
   Popover,
   PopoverContent,
+  PopoverHeader,
+  PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  calendarDateKey,
+  AGENDA_WINDOW_DAYS,
   formatCalendarDate,
   type CalendarFilterType,
-  type CalendarPreferences,
-  type CalendarRange,
   type CalendarViewMode,
 } from "@/lib/calendar";
 import { cn } from "@/lib/utils";
@@ -46,49 +45,185 @@ type CalendarHeaderProps = {
   currentDate: Date;
   viewMode: CalendarViewMode;
   filterType: CalendarFilterType;
-  selectedDepartmentId?: string;
-  preferences: CalendarPreferences;
-  visibleRange: CalendarRange;
+  selectedDepartmentId: string;
+  departments?: { id: string; name: string }[];
+  weekStartsOn: 0 | 1;
+  timeZone?: string | null;
+  totalCount: number;
+  eventsCount: number;
+  assignmentsCount: number;
+  unavailabilitiesCount: number;
+  birthdaysCount: number;
+  weekAssignmentsCount: number;
+  canViewTeamAvailability?: boolean;
+  canCreateEvent?: boolean;
+  canCreateRehearsal?: boolean;
   onViewChange: (view: CalendarViewMode) => void;
   onFilterChange: (filter: CalendarFilterType) => void;
-  onDepartmentChange?: (departmentId: string) => void;
+  onDepartmentChange: (departmentId: string) => void;
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
   onExport: () => void;
-  itemsCount: {
-    total: number;
-    events: number;
-    assignments: number;
-    unavailabilities: number;
-    birthdays?: number;
-  };
-  canCreateEvent?: boolean;
-  canCreateRehearsal?: boolean;
-  canViewTeamAvailability?: boolean;
-  departments?: { id: string; name: string }[];
 };
 
 type FilterOption = {
-  value: CalendarFilterType;
+  id: CalendarFilterType;
   label: string;
   count: number;
-  icon?: typeof CalendarDaysIcon;
-  activeClassName: string;
-  idleClassName: string;
 };
 
-function capitalizeFirst(value: string) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
+const DESKTOP_VIEW_OPTIONS: { value: CalendarViewMode; label: string }[] = [
+  { value: "month", label: "Mês" },
+  { value: "week", label: "Semana" },
+  { value: "agenda", label: "Agenda" },
+  { value: "day", label: "Dia" },
+  { value: "year", label: "Ano" },
+];
+
+// Mobile prioritizes chronological Agenda first, followed by Week, Month, Day, Year.
+const MOBILE_VIEW_OPTIONS: { value: CalendarViewMode; label: string }[] = [
+  { value: "agenda", label: "Agenda" },
+  { value: "week", label: "Semana" },
+  { value: "month", label: "Mês" },
+  { value: "day", label: "Dia" },
+  { value: "year", label: "Ano" },
+];
+
+function FilterPanelBody({
+  filterOptions,
+  filterType,
+  departments,
+  selectedDepartmentId,
+  compact,
+  onFilterChange,
+  onDepartmentChange,
+}: {
+  filterOptions: FilterOption[];
+  filterType: CalendarFilterType;
+  departments: { id: string; name: string }[];
+  selectedDepartmentId: string;
+  compact: boolean;
+  onFilterChange: (filter: CalendarFilterType) => void;
+  onDepartmentChange: (departmentId: string) => void;
+}) {
+  const rowHeight = compact ? "h-9" : "h-11";
+
+  return (
+    <div className="flex flex-col gap-3.5">
+      <div className="flex flex-col gap-1" role="group" aria-label="Tipo de compromisso">
+        <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Tipo de compromisso
+        </p>
+        {filterOptions.map((option) => {
+          const isActive = filterType === option.id;
+          const isEmpty = option.id !== "all" && option.count === 0 && !isActive;
+
+          return (
+            <button
+              key={option.id}
+              type="button"
+              disabled={isEmpty}
+              aria-pressed={isActive}
+              onClick={() => onFilterChange(option.id)}
+              className={cn(
+                "flex w-full items-center justify-between gap-2 rounded-lg px-2.5 text-left text-xs transition-colors",
+                rowHeight,
+                isActive
+                  ? "bg-secondary font-semibold text-primary"
+                  : "text-foreground hover:bg-muted/60",
+                isEmpty && "cursor-not-allowed opacity-45 hover:bg-transparent",
+              )}
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <CheckIcon
+                  className={cn(
+                    "size-3.5 shrink-0 transition-opacity",
+                    isActive ? "opacity-100 text-primary" : "opacity-0",
+                  )}
+                  aria-hidden="true"
+                />
+                <span className="truncate">{option.label}</span>
+              </span>
+              <span
+                className={cn(
+                  "rounded-full px-1.5 py-0.5 font-mono text-[11px] tabular-nums",
+                  isActive
+                    ? "bg-primary/15 font-semibold text-primary"
+                    : "text-muted-foreground",
+                )}
+              >
+                {option.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {departments.length > 0 ? (
+        <div
+          className="flex flex-col gap-1 border-t pt-3"
+          role="group"
+          aria-label="Filtrar por departamento"
+        >
+          <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Departamento
+          </p>
+          <div className="flex max-h-48 flex-col gap-1 overflow-y-auto pr-0.5">
+            {[
+              { id: "all", name: "Todos os departamentos" },
+              ...departments,
+            ].map((department) => {
+              const isSelected = selectedDepartmentId === department.id;
+              return (
+                <button
+                  key={department.id}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => onDepartmentChange(department.id)}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-lg px-2.5 text-left text-xs transition-colors",
+                    rowHeight,
+                    isSelected
+                      ? "bg-secondary font-semibold text-primary"
+                      : "text-foreground hover:bg-muted/60",
+                  )}
+                >
+                  <CheckIcon
+                    className={cn(
+                      "size-3.5 shrink-0 transition-opacity",
+                      isSelected ? "opacity-100 text-primary" : "opacity-0",
+                    )}
+                    aria-hidden="true"
+                  />
+                  <span className="truncate">{department.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 export function CalendarHeader({
   currentDate,
   viewMode,
   filterType,
-  selectedDepartmentId = "all",
-  preferences,
-  visibleRange,
+  selectedDepartmentId,
+  departments = [],
+  weekStartsOn,
+  timeZone,
+  totalCount,
+  eventsCount,
+  assignmentsCount,
+  unavailabilitiesCount,
+  birthdaysCount,
+  weekAssignmentsCount,
+  canViewTeamAvailability = false,
+  canCreateEvent = false,
+  canCreateRehearsal = false,
   onViewChange,
   onFilterChange,
   onDepartmentChange,
@@ -96,390 +231,436 @@ export function CalendarHeader({
   onNext,
   onToday,
   onExport,
-  itemsCount,
-  canCreateEvent,
-  canCreateRehearsal,
-  canViewTeamAvailability,
-  departments,
 }: CalendarHeaderProps) {
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const timeZone = preferences.timezone;
+  const [desktopFilterOpen, setDesktopFilterOpen] = useState(false);
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   function getPeriodLabel() {
-    switch (viewMode) {
-      case "month":
-        return capitalizeFirst(
-          formatCalendarDate(currentDate, "MMMM 'de' yyyy", {
-            timeZone,
-            locale: ptBR,
-          }),
-        );
-      case "week": {
-        const start = formatCalendarDate(
-          visibleRange.start,
-          "d 'de' MMM",
-          { timeZone, locale: ptBR },
-        );
-        const end = formatCalendarDate(
-          visibleRange.end,
-          "d 'de' MMM 'de' yyyy",
-          { timeZone, locale: ptBR },
-        );
-        return capitalizeFirst(`${start} – ${end}`);
-      }
-      case "day":
-        return capitalizeFirst(
-          formatCalendarDate(currentDate, "EEEE, d 'de' MMMM 'de' yyyy", {
-            timeZone,
-            locale: ptBR,
-          }),
-        );
-      case "year":
-        return formatCalendarDate(currentDate, "yyyy", { timeZone });
-      case "agenda": {
-        const range = `${formatCalendarDate(
-          visibleRange.start,
-          "d 'de' MMM",
-          { timeZone, locale: ptBR },
-        )} – ${formatCalendarDate(
-          visibleRange.end,
-          "d 'de' MMM 'de' yyyy",
-          { timeZone, locale: ptBR },
-        )}`;
-        return calendarDateKey(currentDate, timeZone) ===
-          calendarDateKey(new Date(), timeZone)
-          ? `Próximos 30 dias · ${range}`
-          : `30 dias · ${capitalizeFirst(range)}`;
-      }
+    if (viewMode === "year") {
+      return formatCalendarDate(currentDate, "yyyy", {
+        timeZone,
+        locale: ptBR,
+      });
     }
+    if (viewMode === "agenda") {
+      const end = addDays(currentDate, AGENDA_WINDOW_DAYS - 1);
+      const startLabel = formatCalendarDate(currentDate, "d 'de' MMM", {
+        timeZone,
+        locale: ptBR,
+      });
+      const endLabel = formatCalendarDate(end, "d 'de' MMM", {
+        timeZone,
+        locale: ptBR,
+      });
+      return `${startLabel} – ${endLabel}`;
+    }
+    if (viewMode === "day") {
+      const formatted = formatCalendarDate(
+        currentDate,
+        "EEEE, d 'de' MMMM",
+        {
+          timeZone,
+          locale: ptBR,
+        },
+      );
+      return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+    }
+    if (viewMode === "week") {
+      const start = startOfWeek(currentDate, { weekStartsOn });
+      const end = endOfWeek(currentDate, { weekStartsOn });
+      const startMonth = formatCalendarDate(start, "MMM", {
+        timeZone,
+        locale: ptBR,
+      });
+      const endMonth = formatCalendarDate(end, "MMM 'de' yyyy", {
+        timeZone,
+        locale: ptBR,
+      });
+      if (start.getMonth() === end.getMonth()) {
+        return `${formatCalendarDate(start, "d", { timeZone })} – ${formatCalendarDate(end, "d 'de' MMMM 'de' yyyy", { timeZone, locale: ptBR })}`;
+      }
+      return `${formatCalendarDate(start, "d", { timeZone })} ${startMonth} – ${formatCalendarDate(end, "d", { timeZone })} ${endMonth}`;
+    }
+    const label = formatCalendarDate(currentDate, "MMMM 'de' yyyy", {
+      timeZone,
+      locale: ptBR,
+    });
+    return label.charAt(0).toUpperCase() + label.slice(1);
   }
+
+  const defaultDateInput = format(currentDate, "yyyy-MM-dd");
 
   const filterOptions: FilterOption[] = [
+    { id: "all", label: "Todos", count: totalCount },
+    { id: "assignments", label: "Minhas escalas", count: assignmentsCount },
+    { id: "events", label: "Cultos e eventos", count: eventsCount },
     {
-      value: "all",
-      label: "Todos",
-      count: itemsCount.total,
-      activeClassName:
-        "bg-foreground text-background border-foreground shadow-2xs font-semibold",
-      idleClassName:
-        "bg-muted/40 text-muted-foreground border-transparent hover:bg-muted hover:text-foreground",
+      id: "unavailabilities",
+      label: canViewTeamAvailability ? "Indisponibilidades" : "Indisp.",
+      count: unavailabilitiesCount,
     },
-    {
-      value: "events",
-      label: "Cultos e eventos",
-      count: itemsCount.events,
-      icon: CalendarDaysIcon,
-      activeClassName:
-        "bg-primary text-primary-foreground border-primary shadow-2xs font-semibold",
-      idleClassName:
-        "bg-primary/5 text-primary border-primary/10 hover:bg-primary/10",
-    },
-    {
-      value: "assignments",
-      label: "Minhas escalas",
-      count: itemsCount.assignments,
-      icon: CheckCircle2Icon,
-      activeClassName:
-        "bg-emerald-600 text-white border-emerald-600 shadow-2xs font-semibold dark:bg-emerald-500 dark:text-emerald-950",
-      idleClassName:
-        "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20 hover:bg-emerald-500/15",
-    },
-    {
-      value: "unavailabilities",
-      label: canViewTeamAvailability
-        ? "Indisponibilidades"
-        : "Minhas indisponibilidades",
-      count: itemsCount.unavailabilities,
-      icon: CalendarX2Icon,
-      activeClassName:
-        "bg-amber-600 text-white border-amber-600 shadow-2xs font-semibold dark:bg-amber-400 dark:text-amber-950",
-      idleClassName:
-        "bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/25 hover:bg-amber-500/15",
-    },
-    {
-      value: "birthdays",
-      label: "Aniversários",
-      count: itemsCount.birthdays ?? 0,
-      icon: CakeIcon,
-      activeClassName:
-        "bg-rose-600 text-white border-rose-600 shadow-2xs font-semibold dark:bg-rose-400 dark:text-rose-950",
-      idleClassName:
-        "bg-rose-500/10 text-rose-800 dark:text-rose-200 border-rose-500/25 hover:bg-rose-500/15",
-    },
+    { id: "birthdays", label: "Aniversários", count: birthdaysCount },
   ];
 
+  const activeFilterOption = filterOptions.find((option) => option.id === filterType);
+  const activeDepartment = departments.find(
+    (department) => department.id === selectedDepartmentId,
+  );
   const activeFilterCount =
     (filterType !== "all" ? 1 : 0) +
-    (selectedDepartmentId !== "all" ? 1 : 0);
+    (selectedDepartmentId !== "all" && activeDepartment ? 1 : 0);
 
-  function renderFilterChip(option: FilterOption, className?: string) {
-    const Icon = option.icon;
-    const isActive = filterType === option.value;
-    const isDisabled = option.count === 0 && !isActive;
-
-    return (
-      <button
-        key={option.value}
-        type="button"
-        aria-pressed={isActive}
-        disabled={isDisabled}
-        title={
-          isDisabled
-            ? "Nenhum item deste tipo no período visível"
-            : option.label
-        }
-        onClick={() => {
-          onFilterChange(option.value);
-          setFiltersOpen(false);
-        }}
-        className={cn(
-          "flex min-h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-45",
-          isActive ? option.activeClassName : option.idleClassName,
-          className,
-        )}
-      >
-        {Icon ? <Icon className="size-3.5" aria-hidden="true" /> : null}
-        <span>{option.label}</span>
-        <span
-          className={cn(
-            "font-mono text-[11px] tabular-nums",
-            isActive ? "opacity-80" : "opacity-60",
-          )}
-        >
-          {option.count}
-        </span>
-      </button>
-    );
+  function handleResetFilters() {
+    onFilterChange("all");
+    onDepartmentChange("all");
   }
 
-  const departmentSelect = departments && departments.length > 0 &&
-    onDepartmentChange ? (
-    <NativeSelect
-      aria-label="Filtrar por departamento"
-      value={selectedDepartmentId}
-      onChange={(event) => onDepartmentChange(event.target.value)}
-      className="min-w-44 [&_select]:h-9 [&_select]:text-xs"
-    >
-      <NativeSelectOption value="all">
-        Todos os departamentos
-      </NativeSelectOption>
-      {departments.map((department) => (
-        <NativeSelectOption key={department.id} value={department.id}>
-          {department.name}
-        </NativeSelectOption>
-      ))}
-    </NativeSelect>
-  ) : null;
+  const mobileFilterSummary =
+    activeFilterCount === 0
+      ? "Filtrar"
+      : activeFilterOption && filterType !== "all" && !activeDepartment
+        ? activeFilterOption.label
+        : activeDepartment && filterType === "all"
+          ? activeDepartment.name
+          : "Filtros";
 
-  const currentDateLabel = formatCalendarDate(currentDate, "yyyy-MM-dd", {
-    timeZone,
-  });
-
-  const actions = (variant: "mobile" | "desktop") => (
-    <CalendarActions
-      departments={departments ?? []}
-      defaultDate={currentDateLabel}
-      canCreateEvent={Boolean(canCreateEvent)}
-      canCreateRehearsal={Boolean(canCreateRehearsal)}
-      onExport={onExport}
-      variant={variant}
-    />
+  const desktopNavGroup = (
+    <ButtonGroup aria-label="Navegação do período">
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={onPrev}
+        aria-label="Período anterior"
+        className="size-9 rounded-xl bg-card"
+      >
+        <ChevronLeftIcon className="size-4" aria-hidden="true" />
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onToday}
+        className="h-9 rounded-xl bg-card px-3 text-xs font-semibold"
+      >
+        Hoje
+      </Button>
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={onNext}
+        aria-label="Próximo período"
+        className="size-9 rounded-xl bg-card"
+      >
+        <ChevronRightIcon className="size-4" aria-hidden="true" />
+      </Button>
+    </ButtonGroup>
   );
 
   return (
-    <div className="flex flex-col gap-3">
-      {/* Page identity and the period actually on screen */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="font-heading text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            Agenda
-          </h1>
-          <p className="mt-0.5 text-sm font-medium text-muted-foreground">
-            {getPeriodLabel()}
-          </p>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2 sm:hidden">
-          {actions("mobile")}
-        </div>
-      </div>
-
-      {/* Navigation, view switcher and desktop actions */}
-      <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
-        <div
-          className="flex shrink-0 items-center gap-1 rounded-xl border bg-card p-1 shadow-2xs"
-          role="group"
-          aria-label="Navegação do período"
-        >
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onPrev}
-            aria-label="Período anterior"
-            className="size-9 rounded-lg"
-          >
-            <ChevronLeftIcon className="size-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToday}
-            className="h-9 rounded-lg px-2.5 text-xs font-semibold"
-          >
-            Hoje
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onNext}
-            aria-label="Próximo período"
-            className="size-9 rounded-lg"
-          >
-            <ChevronRightIcon className="size-4" />
-          </Button>
-        </div>
-
-        {/* Mobile: one compact selector instead of five tabs */}
-        <div className="sm:hidden">
-          <NativeSelect
-            aria-label="Visualização do calendário"
-            value={viewMode}
-            onChange={(event) =>
-              onViewChange(event.target.value as CalendarViewMode)
-            }
-            className="min-w-32 [&_select]:h-11 [&_select]:text-sm"
-          >
-            <NativeSelectOption value="agenda">Agenda</NativeSelectOption>
-            <NativeSelectOption value="month">Mês</NativeSelectOption>
-            <NativeSelectOption value="week">Semana</NativeSelectOption>
-            <NativeSelectOption value="day">Dia</NativeSelectOption>
-            <NativeSelectOption value="year">Ano</NativeSelectOption>
-          </NativeSelect>
-        </div>
-
-        <div className="hidden sm:block">
-          <Tabs
-            value={viewMode}
-            onValueChange={(value) => onViewChange(value as CalendarViewMode)}
-            className="w-auto shrink-0"
-          >
-            <TabsList
-              className="h-9 rounded-xl bg-muted/80 p-1"
-              aria-label="Visualização do calendário"
-            >
-              <TabsTrigger
-                value="agenda"
-                className="gap-1 px-2.5 py-1 text-xs"
-              >
-                <ListIcon className="size-3.5" aria-hidden="true" />
-                Agenda
-              </TabsTrigger>
-              <TabsTrigger value="month" className="gap-1 px-2.5 py-1 text-xs">
-                <CalendarDaysIcon className="size-3.5" aria-hidden="true" />
-                Mês
-              </TabsTrigger>
-              <TabsTrigger value="week" className="gap-1 px-2.5 py-1 text-xs">
-                <CalendarRangeIcon className="size-3.5" aria-hidden="true" />
-                Semana
-              </TabsTrigger>
-              <TabsTrigger value="day" className="gap-1 px-2.5 py-1 text-xs">
-                <CalendarIcon className="size-3.5" aria-hidden="true" />
-                Dia
-              </TabsTrigger>
-              <TabsTrigger value="year" className="gap-1 px-2.5 py-1 text-xs">
-                Ano
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-
-        <div className="hidden items-center gap-2 sm:flex">
-          {actions("desktop")}
-        </div>
-      </div>
-
-      {/* Filters: a single sheet on mobile, inline chips on desktop */}
-      <div className="sm:hidden">
-        <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="h-11 w-full justify-between gap-2 text-sm"
-              aria-label={
-                activeFilterCount > 0
-                  ? `Filtrar agenda, ${activeFilterCount} filtros ativos`
-                  : "Filtrar agenda"
-              }
-            >
-              <span className="flex items-center gap-2">
-                <FilterIcon className="size-4" aria-hidden="true" />
-                Filtrar
+    <header className="flex flex-col gap-3">
+      {/* Desktop: barra única unificada (Período + Navegação | Filtrar + 5 Visões + Novo) */}
+      <div className="hidden sm:flex flex-wrap items-center justify-between gap-2.5 lg:flex-nowrap">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="min-w-0">
+            <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground xl:text-3xl">
+              {getPeriodLabel()}
+            </h1>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+              <span>
+                {totalCount === 0
+                  ? "Sem compromissos neste período"
+                  : `${totalCount} ${totalCount === 1 ? "compromisso" : "compromissos"}`}
               </span>
-              <span className="flex items-center gap-2">
-                {filterType !== "all" ? (
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {filterOptions.find((option) => option.value === filterType)
-                      ?.label ?? "Filtro ativo"}
-                  </span>
-                ) : null}
+              {weekAssignmentsCount > 0 ? (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <button
+                    type="button"
+                    onClick={() => onFilterChange("assignments")}
+                    className="inline-flex min-h-6 items-center gap-1 rounded-md px-1 font-semibold text-primary transition-colors hover:bg-secondary/60"
+                  >
+                    <Music2Icon className="size-3" aria-hidden="true" />
+                    <span>
+                      Sua semana: {weekAssignmentsCount}{" "}
+                      {weekAssignmentsCount === 1 ? "escala" : "escalas"}
+                    </span>
+                  </button>
+                </>
+              ) : null}
+            </div>
+          </div>
+
+          {desktopNavGroup}
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          <Popover open={desktopFilterOpen} onOpenChange={setDesktopFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                aria-label="Filtrar agenda"
+                className={cn(
+                  "h-9 gap-2 rounded-xl bg-card px-3 text-xs font-medium",
+                  activeFilterCount > 0 &&
+                    "border-primary/35 bg-secondary font-semibold text-primary hover:bg-secondary/80",
+                )}
+              >
+                <SlidersHorizontalIcon className="size-3.5" aria-hidden="true" />
+                <span>Filtrar</span>
                 {activeFilterCount > 0 ? (
-                  <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
+                  <span className="inline-flex size-5 items-center justify-center rounded-full bg-primary/15 font-mono text-[11px] font-semibold tabular-nums text-primary">
                     {activeFilterCount}
                   </span>
                 ) : null}
-              </span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-80 gap-4 p-3">
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Departamento
-              </Label>
-              {departmentSelect ?? (
-                <p className="text-xs text-muted-foreground">
-                  Nenhum departamento disponível.
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Mostrar
-              </Label>
-              <div className="flex flex-col gap-1.5">
-                {filterOptions.map((option) =>
-                  renderFilterChip(
-                    option,
-                    "min-h-11 w-full justify-start rounded-lg px-3",
-                  ),
-                )}
-              </div>
-            </div>
-
-            {activeFilterCount > 0 ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full text-xs"
-                onClick={() => {
-                  onFilterChange("all");
-                  onDepartmentChange?.("all");
-                  setFiltersOpen(false);
-                }}
-              >
-                Limpar filtros
               </Button>
-            ) : null}
-          </PopoverContent>
-        </Popover>
-      </div>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 rounded-xl p-3.5">
+              <PopoverHeader className="flex-row items-center justify-between border-b pb-2.5">
+                <PopoverTitle className="text-sm font-semibold text-foreground">
+                  Filtros
+                </PopoverTitle>
+                {activeFilterCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={handleResetFilters}
+                    className="inline-flex h-7 items-center rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    Limpar
+                  </button>
+                ) : null}
+              </PopoverHeader>
 
-      <div className="hidden flex-col gap-2 sm:flex">
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          {departmentSelect}
-          {filterOptions.map((option) => renderFilterChip(option))}
+              <FilterPanelBody
+                filterOptions={filterOptions}
+                filterType={filterType}
+                departments={departments}
+                selectedDepartmentId={selectedDepartmentId}
+                compact
+                onFilterChange={onFilterChange}
+                onDepartmentChange={onDepartmentChange}
+              />
+            </PopoverContent>
+          </Popover>
+
+          <Tabs
+            value={viewMode}
+            onValueChange={(value) => onViewChange(value as CalendarViewMode)}
+            className="shrink-0"
+          >
+            <TabsList
+              aria-label="Visualizações da agenda"
+              className="h-9 rounded-xl bg-muted/70 p-1"
+            >
+              {DESKTOP_VIEW_OPTIONS.map((option) => (
+                <TabsTrigger
+                  key={option.value}
+                  value={option.value}
+                  className="h-7 rounded-lg px-2.5 text-xs font-medium data-[state=active]:font-semibold xl:px-3"
+                >
+                  {option.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
+          <CalendarActions
+            departments={departments}
+            defaultDate={defaultDateInput}
+            canCreateEvent={canCreateEvent}
+            canCreateRehearsal={canCreateRehearsal}
+            onExport={onExport}
+            variant="desktop"
+          />
         </div>
       </div>
-    </div>
+
+      {/* Desktop: chips removíveis apenas quando houver filtro ativo */}
+      {activeFilterCount > 0 ? (
+        <div className="hidden items-center gap-2 sm:flex">
+          {filterType !== "all" && activeFilterOption ? (
+            <button
+              type="button"
+              onClick={() => onFilterChange("all")}
+              aria-label={`Remover filtro ${activeFilterOption.label}`}
+              className="inline-flex h-7 items-center gap-1.5 rounded-full border border-primary/25 bg-secondary/70 px-2.5 text-xs font-medium text-primary transition-colors hover:bg-secondary"
+            >
+              <span>{activeFilterOption.label}</span>
+              <XIcon className="size-3.5" aria-hidden="true" />
+            </button>
+          ) : null}
+
+          {activeDepartment ? (
+            <button
+              type="button"
+              onClick={() => onDepartmentChange("all")}
+              aria-label={`Remover departamento ${activeDepartment.name}`}
+              className="inline-flex h-7 items-center gap-1.5 rounded-full border border-primary/25 bg-secondary/70 px-2.5 text-xs font-medium text-primary transition-colors hover:bg-secondary"
+            >
+              <span className="max-w-[160px] truncate">{activeDepartment.name}</span>
+              <XIcon className="size-3.5" aria-hidden="true" />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* Mobile: Título + Hoje + Novo/Exportar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 sm:hidden">
+        <div className="min-w-0">
+          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
+            {getPeriodLabel()}
+          </h1>
+          <p className="text-xs text-muted-foreground">
+            {totalCount === 0
+              ? "Sem compromissos neste período"
+              : `${totalCount} ${totalCount === 1 ? "compromisso" : "compromissos"}`}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={onToday}
+            className="h-11 rounded-xl bg-card px-3 text-xs font-semibold"
+          >
+            Hoje
+          </Button>
+          <CalendarActions
+            departments={departments}
+            defaultDate={defaultDateInput}
+            canCreateEvent={canCreateEvent}
+            canCreateRehearsal={canCreateRehearsal}
+            onExport={onExport}
+            variant="mobile"
+          />
+        </div>
+      </div>
+
+      {/* Mobile: 5 visões isoladas + linha limpa com navegação e Drawer de filtros */}
+      <div className="flex flex-col gap-2.5 sm:hidden">
+        <Tabs
+          value={viewMode}
+          onValueChange={(value) => onViewChange(value as CalendarViewMode)}
+          className="w-full"
+        >
+          <TabsList
+            aria-label="Visualizações da agenda"
+            className="grid h-11 w-full grid-cols-5 rounded-xl bg-muted/70 p-1"
+          >
+            {MOBILE_VIEW_OPTIONS.map((option) => (
+              <TabsTrigger
+                key={option.value}
+                value={option.value}
+                className="h-9 rounded-lg px-1 text-[11px] font-medium data-[state=active]:font-semibold"
+              >
+                {option.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+
+        <div className="flex items-center justify-between gap-2">
+          <ButtonGroup aria-label="Navegar período">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onPrev}
+              aria-label="Período anterior"
+              className="size-11 rounded-xl bg-card"
+            >
+              <ChevronLeftIcon className="size-4" aria-hidden="true" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onNext}
+              aria-label="Próximo período"
+              className="size-11 rounded-xl bg-card"
+            >
+              <ChevronRightIcon className="size-4" aria-hidden="true" />
+            </Button>
+          </ButtonGroup>
+
+          <div className="flex min-w-0 items-center justify-end gap-2">
+            {activeFilterCount > 0 ? (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleResetFilters}
+                aria-label="Limpar filtros"
+                className="h-11 shrink-0 rounded-xl px-2.5 text-xs text-muted-foreground hover:text-foreground"
+              >
+                Limpar
+              </Button>
+            ) : null}
+
+            <Drawer open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
+              <DrawerTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  aria-label="Filtrar agenda"
+                  className={cn(
+                    "h-11 min-w-0 gap-2 rounded-xl bg-card px-3.5 text-xs font-semibold",
+                    activeFilterCount > 0 &&
+                      "border-primary/35 bg-secondary text-primary hover:bg-secondary/80",
+                  )}
+                >
+                  <SlidersHorizontalIcon className="size-4 shrink-0" aria-hidden="true" />
+                  <span className="max-w-[140px] truncate">
+                    {mobileFilterSummary}
+                  </span>
+                  {activeFilterCount > 0 ? (
+                    <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 font-mono text-[11px] font-semibold tabular-nums text-primary">
+                      {activeFilterCount}
+                    </span>
+                  ) : null}
+                </Button>
+              </DrawerTrigger>
+
+              <DrawerContent className="gap-0 rounded-t-xl border-x-0 border-b-0 bg-popover p-0">
+                <DrawerHeader className="space-y-1 px-5 pt-3 pb-3 !text-left">
+                  <DrawerTitle className="font-heading text-xl tracking-tight text-foreground">
+                    Filtrar agenda
+                  </DrawerTitle>
+                  <DrawerDescription className="text-xs text-muted-foreground">
+                    Escolha o tipo de compromisso ou departamento.
+                  </DrawerDescription>
+                </DrawerHeader>
+
+                <div className="max-h-[62dvh] overflow-y-auto px-5 pb-4">
+                  <FilterPanelBody
+                    filterOptions={filterOptions}
+                    filterType={filterType}
+                    departments={departments}
+                    selectedDepartmentId={selectedDepartmentId}
+                    compact={false}
+                    onFilterChange={onFilterChange}
+                    onDepartmentChange={onDepartmentChange}
+                  />
+                </div>
+
+                <DrawerFooter className="border-t bg-card px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+                  {activeFilterCount > 0 ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleResetFilters}
+                      className="h-11 w-full rounded-xl"
+                    >
+                      Limpar filtros
+                    </Button>
+                  ) : null}
+                  <DrawerClose asChild>
+                    <Button className="h-11 w-full rounded-xl font-semibold">
+                      Aplicar
+                    </Button>
+                  </DrawerClose>
+                </DrawerFooter>
+              </DrawerContent>
+            </Drawer>
+          </div>
+        </div>
+      </div>
+    </header>
   );
 }

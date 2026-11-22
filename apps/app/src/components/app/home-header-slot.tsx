@@ -7,7 +7,18 @@ import { HomeHeaderTabs } from "@/components/home/home-header-tabs";
 import { cn } from "@/lib/utils";
 
 const HEADER_BASE_CLASS =
-  "sticky top-0 z-20 flex min-h-[calc(3.5rem+env(safe-area-inset-top))] shrink-0 items-center gap-2 border-b bg-background/85 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-xl sm:gap-3 sm:px-6";
+  "sticky top-0 z-20 flex min-h-[calc(3.5rem+env(safe-area-inset-top))] shrink-0 items-center gap-2 border-0 bg-background/85 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-xl sm:gap-3 sm:px-6";
+
+/** Rotas da Agenda que ocultam a barra superior mantendo apenas notificações. */
+export function isCalendarRoute(pathname: string | null | undefined) {
+  if (!pathname) return false;
+  return (
+    pathname === "/calendar" ||
+    pathname === "/dashboard/calendar" ||
+    pathname.startsWith("/calendar/") ||
+    pathname.startsWith("/dashboard/calendar/")
+  );
+}
 
 /** Considera rolado a partir de 4px para evitar flicker com sub-pixel scroll. */
 export function isHeaderScrolled(scrollY: number) {
@@ -18,15 +29,12 @@ export function isHeaderScrolled(scrollY: number) {
  * Classes do header sticky. Na home o indicador de borda só aparece depois que
  * o usuário rola a página; nas demais rotas o header mantém a borda original.
  */
-export function getHeaderClassName(isHome: boolean, scrolled: boolean) {
+export function getHeaderClassName(isHome: boolean, _scrolled: boolean) {
   return cn(
     HEADER_BASE_CLASS,
     isHome
-      ? cn(
-          "mt-2 transition-colors duration-200",
-          scrolled ? "border-border" : "border-transparent",
-        )
-      : "border-border",
+      ? "mt-2 border-0 transition-colors duration-200"
+      : "border-0 md:h-11 md:min-h-0 md:pt-1.5 lg:px-8",
   );
 }
 
@@ -37,6 +45,7 @@ export function getHeaderClassName(isHome: boolean, scrolled: boolean) {
 export function HomeAwareHeader({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const isCalendar = isCalendarRoute(pathname);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -51,6 +60,14 @@ export function HomeAwareHeader({ children }: { children: ReactNode }) {
       window.removeEventListener("scroll", updateScrolled);
     };
   }, []);
+
+  if (isCalendar) {
+    return (
+      <header className="pointer-events-none sticky top-0 z-20 flex h-0 items-start justify-between overflow-visible border-0 bg-transparent px-4 pt-[max(1.125rem,env(safe-area-inset-top))] sm:px-6 md:h-11 md:items-center md:pt-1.5 lg:px-8">
+        {children}
+      </header>
+    );
+  }
 
   return (
     <header className={getHeaderClassName(isHome, scrolled)}>
@@ -92,29 +109,37 @@ export function HomeAwareHeaderFallback() {
 }
 
 /**
+ * Oculta elementos extras do header global na rota da agenda para ganhar espaço,
+ * preservando apenas o ícone de notificações e o alternador da barra lateral.
+ */
+export function CalendarHiddenSlot({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  if (isCalendarRoute(pathname)) return null;
+  return <>{children}</>;
+}
+
+/**
  * Na home, o centro do header abriga as abas Hoje / Minha Igreja. Nas demais
- * rotas, preserva o breadcrumb original recebido como slot.
+ * rotas, o desktop mantém o header minimalista (sem breadcrumb), preservando
+ * o breadcrumb apenas em subpáginas mobile.
  */
 export function HeaderCenterSlot({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+
+  if (isCalendarRoute(pathname)) {
+    return null;
+  }
 
   if (pathname === "/") {
     return <HomeHeaderTabs />;
   }
 
-  return <>{children}</>;
+  return <div className="md:hidden">{children}</div>;
 }
 
 /**
- * Na home, o avatar/menu do usuário também aparece no desktop. Nas demais
- * rotas, continua visível apenas em telas pequenas (o desktop usa outro menu).
+ * Exibe o avatar e menu do usuário no header em todas as páginas (desktop e mobile).
  */
 export function HeaderUserSlot({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-
-  if (pathname === "/") {
-    return <div className="flex items-center">{children}</div>;
-  }
-
-  return <div className="flex items-center md:hidden">{children}</div>;
+  return <div className="flex items-center">{children}</div>;
 }

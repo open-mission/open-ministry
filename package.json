@@ -1,6 +1,6 @@
 {
   "name": "open-ministry-monorepo",
-  "version": "1.7.2",
+  "version": "1.8.0",
   "private": true,
   "license": "SEE LICENSE IN LICENSE",
   "workspaces": [
@@ -17,10 +17,19 @@
     "db:migrate": "turbo run db:migrate",
     "db:push": "turbo run db:push",
     "db:studio": "turbo run db:studio",
+    "db:local:up": "docker compose up -d db",
+    "db:local:down": "docker compose down",
+    "db:local:logs": "docker compose logs -f db",
+    "setup:local": "bun scripts/setup-local.ts",
+    "dev:local": "bun run setup:local && bun run db:local:up && bun scripts/wait-for-db.ts && bun run db:migrate && bun run dev",
     "vercel-build": "turbo run build --filter=@openministry/app..."
   },
   "devDependencies": {
     "turbo": "^2.10.7"
   },
-  "packageManager": "bun@1.3.0"
+  "packageManager": "bun@1.3.0",
+  "dependencies": {
+    "@ui-sdk/core": "^0.1.0-beta.13",
+    "@ui-sdk/react": "^0.1.0-beta.13"
+  }
 }

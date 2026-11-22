@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense, type ReactNode } from "react";
+
+import { DomainSubtabs } from "@/components/app/domain-subtabs-server";
 import {
   CalendarClockIcon,
   ChevronRightIcon,
@@ -127,6 +129,7 @@ async function RehearsalsContent({
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 min-w-0">
+      <DomainSubtabs domain="louvor" />
       <RehearsalsHeader />
 
       {departments.length > 1 ? (

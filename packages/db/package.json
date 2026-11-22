@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./neon-config": "./src/neon-config.ts",
     "./schema": "./src/schema/index.ts"
   },
   "scripts": {
@@ -12,6 +13,7 @@
     "db:migrate": "bun src/migrate.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
+    "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -3,14 +3,11 @@ import { OpenMinistrySymbol } from "@/components/brand/openministry-logo";
 
 import type { NavGroup } from "@/components/app/nav-config";
 import type { ModuleKey } from "@/lib/modules/types";
-import { NavUser } from "@/components/app/nav-user";
 import { SidebarNav } from "@/components/app/sidebar-nav";
-import { SidebarSettingsButton } from "@/components/app/sidebar-settings-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -21,8 +18,8 @@ import {
 type AppSidebarProps = {
   organizationName: string;
   organizationLogo: string | null;
-  role: string;
-  user: {
+  role?: string;
+  user?: {
     name: string;
     email: string;
     image: string | null;
@@ -37,8 +34,6 @@ type AppSidebarProps = {
 export function AppSidebar({
   organizationName,
   organizationLogo,
-  role,
-  user,
   activeModuleKeys,
   groups,
   canManageJobs,
@@ -46,11 +41,11 @@ export function AppSidebar({
   canAccessEmails,
 }: AppSidebarProps) {
   return (
-    <Sidebar collapsible="offcanvas">
-      <SidebarHeader>
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="px-3 pt-4 pb-2 group-data-[collapsible=icon]:px-2">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild size="lg" tooltip="OpenMinistry">
+            <SidebarMenuButton asChild size="lg" tooltip="OpenMinistry" className="h-auto gap-2.5 rounded-lg px-1.5 py-1 group-data-[collapsible=icon]:mx-auto">
               <Link href="/" prefetch={true}>
                 {organizationLogo ? (
                   <Avatar className="size-8 shrink-0 rounded-lg">
@@ -67,12 +62,12 @@ export function AppSidebar({
                     <OpenMinistrySymbol className="size-4" />
                   </span>
                 )}
-                <span className="flex min-w-0 flex-col">
-                  <span className="truncate font-heading text-base leading-tight tracking-tight">
-                    OpenMinistry
-                  </span>
-                  <span className="truncate text-xs text-muted-foreground">
+                <span className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
+                  <span className="truncate text-[13px] font-semibold leading-tight text-sidebar-foreground">
                     {organizationName}
+                  </span>
+                  <span className="truncate text-[11px] text-muted-foreground">
+                    OpenMinistry
                   </span>
                 </span>
               </Link>
@@ -81,7 +76,7 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="pt-1 pb-2">
         <SidebarNav
           groups={groups}
           activeModuleKeys={activeModuleKeys}
@@ -90,11 +85,6 @@ export function AppSidebar({
           canAccessEmails={canAccessEmails}
         />
       </SidebarContent>
-
-      <SidebarFooter>
-        <SidebarSettingsButton />
-        <NavUser user={user} role={role} />
-      </SidebarFooter>
 
       <SidebarRail />
     </Sidebar>

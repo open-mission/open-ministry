@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 
 import { SignOutConfirmDialog } from "@/components/app/sign-out-confirm-dialog";
-import { useSettingsModal } from "@/components/settings/settings-modal-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -51,7 +50,6 @@ export function NavUser({
   role: string;
 }) {
   const { isMobile } = useSidebar();
-  const { openSettings } = useSettingsModal();
   const router = useRouter();
   const [switching, setSwitching] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
@@ -99,7 +97,7 @@ export function NavUser({
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="h-auto gap-2.5 rounded-lg border border-sidebar-border bg-background px-2 py-1.5 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:bg-transparent data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="size-8 rounded-lg">
                 <AvatarImage src={user.image ?? undefined} alt={user.name} />
@@ -107,13 +105,13 @@ export function NavUser({
                   {getInitials(user.name)}
                 </AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
+              <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                 <span className="truncate font-medium">{user.name}</span>
                 <span className="truncate text-xs text-muted-foreground">
                   {user.email}
                 </span>
               </div>
-              <ChevronsUpDownIcon className="ml-auto size-4 shrink-0 text-muted-foreground" />
+              <ChevronsUpDownIcon className="ml-auto size-4 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -212,12 +210,15 @@ export function NavUser({
                   <span>Meu perfil</span>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={openSettings}
-                className="cursor-pointer gap-2"
-              >
-                <SettingsIcon className="size-4" />
-                <span>Configurações</span>
+              <DropdownMenuItem asChild>
+                <Link
+                  href="/dashboard/settings"
+                  prefetch={true}
+                  className="cursor-pointer gap-2"
+                >
+                  <SettingsIcon className="size-4" />
+                  <span>Configurações</span>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link

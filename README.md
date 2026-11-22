@@ -126,6 +126,92 @@ O OpenMinistry possui uma página oficial de diretrizes de marca acessível em [
 
 7. Acesse [http://localhost:3000](http://localhost:3000).
 
+## Desenvolvimento local com Neon Local
+
+Use o [Neon Local](https://neon.com/docs/local/neon-local) para desenvolver sem
+encostar no banco de produção. Ele é um container que cria um **branch do Neon a
+partir do branch `development`** e expõe um endpoint Postgres/HTTP em
+`localhost:5432`. Nada de dados de produção é usado.
+
+### Pré-requisitos
+
+- Docker Desktop ou OrbStack rodando (**Docker Desktop no Mac: use gRPC FUSE,
+  não VirtioFS** — VirtioFS quebra a detecção de branch).
+- Uma `NEON_API_KEY` com acesso ao projeto `delicate-firefly-32175564`.
+
+### Clone e rode em outra máquina
+
+```bash
+bun install
+cp .env.example .env          # preencha NEON_API_KEY
+# (opcional) configure também as chaves de OAuth, UploadThing, QStash, etc.
+bun run dev:local
+```
+
+`dev:local` faz, em ordem: valida o ambiente e o Docker (`setup:local`), sobe o
+container, espera o banco responder `select 1`, aplica as migrations e inicia o
+`bun run dev`. O comando é idempotente: segredos já presentes no `.env` nunca
+são sobrescritos.
+
+> **Por que dois arquivos de ambiente:** o turbo não carrega `.env` e o Next
+> lê apenas `apps/app/.env`. Por isso o `setup:local` grava as chaves de banco
+> no `.env` da raiz **e** em `apps/app/.env` (preservando as demais chaves do
+> app). Sem isso, as migrations iriam para o banco local e o app continuaria
+> conectado ao banco remoto. Se algum dos arquivos mudar, ele é copiado antes
+> para `.env.bak.<data>`.
+
+Comandos avulsos:
+
+| Comando | Descrição |
+| --- | --- |
+| `bun run setup:local` | Prepara o `.env` para o Neon Local e valida pré-requisitos |
+| `bun run db:local:up` | Sobe o container do Neon Local |
+| `bun run db:local:logs` | Acompanha os logs do container |
+| `bun run db:local:down` | Desliga o container |
+| `bun run dev:local` | Setup + container + migrations + dev server |
+
+O branch é persistente por branch Git (volumes `.neon_local/` e `.git/HEAD`), ou
+seja, trocar de branch Git troca de branch de banco. Para descartar tudo, rode
+`bun run db:local:down` e apague `.neon_local/`.
+
+Para reaproveitar sempre o mesmo banco (sem criar um branch por branch Git),
+defina `NEON_LOCAL_BRANCH_ID=br-...` no `.env`; o compose passa a usar
+`BRANCH_ID` em vez de `PARENT_BRANCH_ID`.
+
+> **Atenção ao apagar `.neon_local/`:** sem o estado local, o container cria um
+> branch novo com o nome do branch Git e sufixo (`..._2`, `..._3`). Esses
+> branches ficam no projeto Neon e podem ser removidos no console — o dev nunca
+> apaga branches sozinho.
+
+**Segurança:** o branch default do projeto Neon é `production`
+(`br-royal-term-bbveh4nm`). O compose usa sempre o parent
+`br-holy-truth-bb9hmcnq` (`development`) via `NEON_LOCAL_PARENT_BRANCH_ID`.
+Nunca aponte essa variável para o branch de produção.
+
+### Voltando ao banco remoto
+
+```bash
+bun run db:local:down
+# no .env e no apps/app/.env:
+NEON_LOCAL=false
+DATABASE_URL=<sua connection string Neon>
+DATABASE_AUTHENTICATED_URL=<url do role app_authenticated>
+bun run dev
+```
+
+Quando `NEON_LOCAL=false` (ou a URL não aponta para host local), o driver
+serverless permanece com a configuração padrão de produção — HTTPS/WebSocket —
+e nada do modo local é aplicado.
+
+### Limitação conhecida: RLS no dev local
+
+O Neon Local aceita apenas HTTP. A leitura com RLS do app usa um `Pool` com
+transação interativa (`set_config('request.jwt.claims', ..., true)`), que exige
+WebSocket — no local isso falha. Por isso, com `NEON_LOCAL=true`, o app
+desabilita automaticamente a tenant DB (`isTenantDbEnabled()` retorna `false`)
+e `DATABASE_AUTHENTICATED_URL` deve ficar vazia. Em produção, onde a URL aponta
+para o Neon remoto, o comportamento é o de sempre.
+
 ## URLs úteis
 
 | URL | Descrição |
@@ -163,6 +249,9 @@ O OpenMinistry possui uma página oficial de diretrizes de marca acessível em [
 | `bun run db:migrate` | Aplica as migrations no banco |
 | `bun run db:push` | Sincroniza o schema diretamente no banco (uso local) |
 | `bun run db:studio` | Abre o Drizzle Studio |
+| `bun run setup:local` | Prepara o `.env` para Neon Local (idempotente) |
+| `bun run db:local:up` / `db:local:down` / `db:local:logs` | Gerencia o container do Neon Local |
+| `bun run dev:local` | Setup + container + migrations + servidor de dev |
 | `bun run auth:generate` | Gera o schema Drizzle a partir da configuração do Better Auth |
 | `node scripts/setup-app-role.mjs` | Cria/atualiza o role `app_authenticated` e a URL de RLS |
 | `node scripts/rls-smoke-test.mjs` | Valida o isolamento por igreja (requer `bun run dev`) |

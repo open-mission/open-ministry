@@ -47,10 +47,10 @@ export function MobileHeaderLeading({
     <Button
       asChild
       variant="ghost"
-      size="icon-sm"
+      size="icon"
       aria-label="Voltar"
       title="Voltar"
-      className="-ml-1 size-9 shrink-0 md:hidden"
+      className="-ml-2 size-11 shrink-0 md:hidden"
     >
       <Link href={getParentHref(pathname)}>
         <ArrowLeftIcon className="size-5" />

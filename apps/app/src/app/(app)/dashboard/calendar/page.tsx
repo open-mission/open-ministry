@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
+
+import { DomainSubtabs } from "@/components/app/domain-subtabs-server";
 import { ShieldAlertIcon } from "lucide-react";
 
 import { getCalendarDataAction } from "@/app/actions/calendar";
@@ -67,7 +69,13 @@ async function CalendarContent() {
     (await canAnyDepartment("rehearsals", "createRehearsal", departmentIds));
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+    <div
+      data-calendar-container=""
+      className="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:gap-5"
+    >
+      <div className="pr-24 md:pr-0">
+        <DomainSubtabs domain="cultos" />
+      </div>
       <FullCalendar
         initialItems={data.items}
         initialPreferences={data.preferences}
@@ -82,7 +90,11 @@ async function CalendarContent() {
 
 function CalendarSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6" aria-hidden>
+    <div
+      data-calendar-container=""
+      className="mx-auto w-full max-w-6xl space-y-5"
+      aria-hidden
+    >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Skeleton className="h-10 w-72" />
         <Skeleton className="h-9 w-48" />

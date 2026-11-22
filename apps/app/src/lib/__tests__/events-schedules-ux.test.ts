@@ -404,4 +404,15 @@ describe("schedule rules", () => {
     expect(parseCoverageFilter("qualquer")).toBeNull();
     expect(parseCoverageFilter(undefined)).toBeNull();
   });
+
+  it("renders EventFilters without an outer container border box", async () => {
+    const source = await Bun.file(
+      new URL("../../features/events/components/event-filters.tsx", import.meta.url),
+    ).text();
+
+    expect(source).not.toContain("border-border/70 bg-card/60 p-3");
+    expect(source).toContain(
+      'className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"',
+    );
+  });
 });

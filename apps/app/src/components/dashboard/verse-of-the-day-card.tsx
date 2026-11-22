@@ -21,8 +21,14 @@ import type { VerseOfTheDayData } from "@/lib/youversion";
 
 export function VerseOfTheDayCard({
   verse,
+  variant = "full",
 }: {
   verse: VerseOfTheDayData;
+  /**
+   * `compact` é o bloco curto da primeira dobra mobile: título, referência,
+   * cópia e link para a Bíblia, sem a barra de ações completa.
+   */
+  variant?: "full" | "compact";
 }) {
   const [copied, setCopied] = useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
@@ -57,7 +63,65 @@ export function VerseOfTheDayCard({
 
   return (
     <>
-      <Card className="relative overflow-hidden border-border/70 bg-gradient-to-br from-amber-500/[0.04] via-card to-primary/[0.02] shadow-xs transition-all hover:shadow-sm">
+      {variant === "compact" ? (
+        <Card className="border-border/70 bg-card shadow-xs">
+          <CardContent className="flex flex-col gap-1.5 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex min-w-0 items-center gap-1.5 font-heading text-[11px] font-semibold tracking-wider uppercase text-muted-foreground">
+                <SparklesIcon
+                  className="size-3.5 shrink-0 text-primary"
+                  aria-hidden="true"
+                />
+                <span className="truncate">Versículo do Dia</span>
+              </span>
+
+              <div className="flex shrink-0 items-center gap-0.5">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 min-h-[32px] gap-1 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                  onClick={handleCopy}
+                >
+                  {copied ? (
+                    <CheckIcon
+                      className="size-3.5 text-primary"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <CopyIcon className="size-3.5" aria-hidden="true" />
+                  )}
+                  <span>{copied ? "Copiado" : "Copiar"}</span>
+                </Button>
+
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 min-h-[32px] gap-1 px-2 text-[11px] font-medium text-primary hover:bg-primary/10 hover:text-primary"
+                >
+                  <Link
+                    href={`/dashboard/bible?passage=${encodeURIComponent(verse.passageId)}`}
+                  >
+                    <BookOpenIcon className="size-3.5" aria-hidden="true" />
+                    <span>Abrir na Bíblia</span>
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+            <blockquote className="min-w-0">
+              <p className="line-clamp-2 font-serif text-[13px] leading-snug tracking-tight text-foreground italic">
+                “{verse.content}”
+              </p>
+              <cite className="mt-0.5 block truncate text-[11px] font-medium not-italic text-muted-foreground">
+                — {verse.reference}
+              </cite>
+            </blockquote>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="relative overflow-hidden border-border/70 bg-gradient-to-br from-amber-500/[0.04] via-card to-primary/[0.02] shadow-xs transition-all hover:shadow-sm">
         {/* Subtle decorative glow */}
         <div
           className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-amber-500/10 blur-3xl"
@@ -162,9 +226,10 @@ export function VerseOfTheDayCard({
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Painel responsivo para exibir a imagem do versículo fornecida pelo YouVersion */}
-      {verse.imageUrl ? (
+      {variant === "full" && verse.imageUrl ? (
         <ResponsiveDialog
           open={imageDialogOpen}
           onOpenChange={setImageDialogOpen}
