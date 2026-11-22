@@ -31,16 +31,99 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.7.2";
+export const CURRENT_APP_VERSION = "1.8.0";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.8.0",
+    title: "Uma Nova Experiência para Organizar Sua Igreja",
+    subtitle:
+      "Deixamos o OpenMinistry ainda mais leve, organizado e fácil de usar — tanto no computador quanto no celular, para você encontrar tudo com poucos toques.",
+    releaseDate: "22 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Navegação e Visual",
+        badge: "Novidade",
+        features: [
+          {
+            title: "Menu organizado por áreas da igreja",
+            description:
+              "Agora tudo fica agrupado de forma simples: Início, Cultos e Escalas, Louvor, Pessoas, Comunicação e Bíblia. No computador, você também pode recolher o menu lateral para ganhar mais espaço na tela.",
+            iconName: "LayoutDashboardIcon",
+            badge: "Computador",
+          },
+          {
+            title: "Novo botão Explorar no celular",
+            description:
+              "Ficou muito mais rápido encontrar qualquer área da igreja pelo celular. Toque em Explorar para pesquisar o que precisa ou acessar os atalhos mais usados.",
+            iconName: "SmartphoneIcon",
+            badge: "Celular",
+          },
+          {
+            title: "Visual mais limpo e sua conta sempre à mão",
+            description:
+              "Tiramos linhas e caixas desnecessárias para deixar a leitura mais calma e agradável. No computador, basta clicar na sua foto no canto superior para ver seu perfil, trocar de tema ou sair.",
+            iconName: "SparklesIcon",
+            badge: "Visual",
+          },
+        ],
+      },
+      {
+        moduleName: "Agenda e Escalas",
+        badge: "Melhorado",
+        features: [
+          {
+            title: "Nova Agenda da igreja",
+            description:
+              "Acompanhe toda a programação por mês, semana, dia, ano ou em lista. Filtrar por tipo de culto ou departamento ficou mais simples, e você identifica rapidamente onde vai servir.",
+            iconName: "CalendarDaysIcon",
+            badge: "Agenda",
+          },
+          {
+            title: "Equipe separada por departamento",
+            description:
+              "Ao tocar em um culto ou ensaio na agenda, você vê quem está escalado separado por departamento — como Louvor, Mídia ou Recepção — e quantas vagas ainda faltam preencher.",
+            iconName: "UsersIcon",
+            badge: "Escalas",
+          },
+          {
+            title: "Escalas, Cultos e Disponibilidade mais claros",
+            description:
+              "Os filtros de escalas e cultos e a tela de disponibilidade ficaram mais limpos e alinhados, facilitando o planejamento da semana.",
+            iconName: "CheckSquare2Icon",
+            badge: "Organização",
+          },
+        ],
+      },
+      {
+        moduleName: "Início e Configurações",
+        badge: "Melhorado",
+        features: [
+          {
+            title: "Versículo em destaque ao abrir no celular",
+            description:
+              "Logo ao abrir o aplicativo no celular, o versículo do dia aparece primeiro para abençoar sua rotina, seguido dos seus próximos compromissos e avisos da igreja.",
+            iconName: "HeartHandshakeIcon",
+            badge: "Início",
+          },
+          {
+            title: "Configurações reunidas em um só lugar",
+            description:
+              "Juntamos todas as opções da sua conta e da igreja em uma única tela organizada por temas — perfil, notificações, agenda, equipes e permissões.",
+            iconName: "ShieldCheckIcon",
+            badge: "Conta e Igreja",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.7.2",
     title: "Navegação Mais Ágil e Cliques Confiáveis",
     subtitle:
       "Corrigimos a lentidão ao navegar e o travamento de cliques em escalas, músicas e cronogramas, inclusive no app instalado.",
     releaseDate: "20 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Correções",
