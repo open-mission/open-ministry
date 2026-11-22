@@ -441,7 +441,7 @@ export function FullCalendar({
         createEvent={handleSlotCreateEvent}
         renderEventContent={renderEventContent}
       >
-        <div className="h-[calc(100dvh-16rem)] min-h-[480px] overflow-hidden rounded-xl border bg-card shadow-xs sm:h-[calc(100dvh-13.5rem)] sm:min-h-[600px]">
+        <div className="h-[calc(100dvh-16rem)] min-h-[480px] overflow-hidden rounded-xl border bg-card shadow-xs sm:h-[calc(100dvh-12rem)] sm:min-h-[600px]">
           {viewMode === "month" && <MonthView showEventPopover={false} />}
           {viewMode === "week" && (
             <TimeGrid view="week" showEventPopover={false} scrollToHour={8} />

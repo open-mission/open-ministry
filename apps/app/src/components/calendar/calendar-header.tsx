@@ -357,39 +357,166 @@ export function CalendarHeader({
 
   return (
     <header className="flex flex-col gap-3">
-      {/* Linha 1 Mobile + Desktop: Título do período + Ações principais */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-wrap items-center gap-3">
-          <div>
-            <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+      {/* Desktop: barra única unificada (Período + Navegação | Filtrar + 5 Visões + Novo) */}
+      <div className="hidden sm:flex flex-wrap items-center justify-between gap-2.5 lg:flex-nowrap">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="min-w-0">
+            <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground xl:text-3xl">
               {getPeriodLabel()}
             </h1>
-            <p className="text-xs text-muted-foreground">
-              {totalCount === 0
-                ? "Sem compromissos neste período"
-                : `${totalCount} ${totalCount === 1 ? "compromisso" : "compromissos"}`}
-            </p>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+              <span>
+                {totalCount === 0
+                  ? "Sem compromissos neste período"
+                  : `${totalCount} ${totalCount === 1 ? "compromisso" : "compromissos"}`}
+              </span>
+              {weekAssignmentsCount > 0 ? (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <button
+                    type="button"
+                    onClick={() => onFilterChange("assignments")}
+                    className="inline-flex min-h-6 items-center gap-1 rounded-md px-1 font-semibold text-primary transition-colors hover:bg-secondary/60"
+                  >
+                    <Music2Icon className="size-3" aria-hidden="true" />
+                    <span>
+                      Sua semana: {weekAssignmentsCount}{" "}
+                      {weekAssignmentsCount === 1 ? "escala" : "escalas"}
+                    </span>
+                  </button>
+                </>
+              ) : null}
+            </div>
           </div>
 
-          <div className="hidden sm:block">{desktopNavGroup}</div>
+          {desktopNavGroup}
+        </div>
 
-          {weekAssignmentsCount > 0 ? (
+        <div className="flex shrink-0 items-center gap-2">
+          <Popover open={desktopFilterOpen} onOpenChange={setDesktopFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                aria-label="Filtrar agenda"
+                className={cn(
+                  "h-9 gap-2 rounded-xl bg-card px-3 text-xs font-medium",
+                  activeFilterCount > 0 &&
+                    "border-primary/35 bg-secondary font-semibold text-primary hover:bg-secondary/80",
+                )}
+              >
+                <SlidersHorizontalIcon className="size-3.5" aria-hidden="true" />
+                <span>Filtrar</span>
+                {activeFilterCount > 0 ? (
+                  <span className="inline-flex size-5 items-center justify-center rounded-full bg-primary/15 font-mono text-[11px] font-semibold tabular-nums text-primary">
+                    {activeFilterCount}
+                  </span>
+                ) : null}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 rounded-xl p-3.5">
+              <PopoverHeader className="flex-row items-center justify-between border-b pb-2.5">
+                <PopoverTitle className="text-sm font-semibold text-foreground">
+                  Filtros
+                </PopoverTitle>
+                {activeFilterCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={handleResetFilters}
+                    className="inline-flex h-7 items-center rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    Limpar
+                  </button>
+                ) : null}
+              </PopoverHeader>
+
+              <FilterPanelBody
+                filterOptions={filterOptions}
+                filterType={filterType}
+                departments={departments}
+                selectedDepartmentId={selectedDepartmentId}
+                compact
+                onFilterChange={onFilterChange}
+                onDepartmentChange={onDepartmentChange}
+              />
+            </PopoverContent>
+          </Popover>
+
+          <Tabs
+            value={viewMode}
+            onValueChange={(value) => onViewChange(value as CalendarViewMode)}
+            className="shrink-0"
+          >
+            <TabsList
+              aria-label="Visualizações da agenda"
+              className="h-9 rounded-xl bg-muted/70 p-1"
+            >
+              {DESKTOP_VIEW_OPTIONS.map((option) => (
+                <TabsTrigger
+                  key={option.value}
+                  value={option.value}
+                  className="h-7 rounded-lg px-2.5 text-xs font-medium data-[state=active]:font-semibold xl:px-3"
+                >
+                  {option.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
+          <CalendarActions
+            departments={departments}
+            defaultDate={defaultDateInput}
+            canCreateEvent={canCreateEvent}
+            canCreateRehearsal={canCreateRehearsal}
+            onExport={onExport}
+            variant="desktop"
+          />
+        </div>
+      </div>
+
+      {/* Desktop: chips removíveis apenas quando houver filtro ativo */}
+      {activeFilterCount > 0 ? (
+        <div className="hidden items-center gap-2 sm:flex">
+          {filterType !== "all" && activeFilterOption ? (
             <button
               type="button"
-              onClick={() => onFilterChange("assignments")}
-              className="hidden items-center gap-1.5 rounded-full border border-primary/20 bg-secondary px-3 py-1 text-xs font-semibold text-primary transition-colors hover:bg-secondary/80 md:inline-flex"
+              onClick={() => onFilterChange("all")}
+              aria-label={`Remover filtro ${activeFilterOption.label}`}
+              className="inline-flex h-7 items-center gap-1.5 rounded-full border border-primary/25 bg-secondary/70 px-2.5 text-xs font-medium text-primary transition-colors hover:bg-secondary"
             >
-              <Music2Icon className="size-3.5" aria-hidden="true" />
-              <span>
-                Sua semana: {weekAssignmentsCount}{" "}
-                {weekAssignmentsCount === 1 ? "escala" : "escalas"}
-              </span>
+              <span>{activeFilterOption.label}</span>
+              <XIcon className="size-3.5" aria-hidden="true" />
+            </button>
+          ) : null}
+
+          {activeDepartment ? (
+            <button
+              type="button"
+              onClick={() => onDepartmentChange("all")}
+              aria-label={`Remover departamento ${activeDepartment.name}`}
+              className="inline-flex h-7 items-center gap-1.5 rounded-full border border-primary/25 bg-secondary/70 px-2.5 text-xs font-medium text-primary transition-colors hover:bg-secondary"
+            >
+              <span className="max-w-[160px] truncate">{activeDepartment.name}</span>
+              <XIcon className="size-3.5" aria-hidden="true" />
             </button>
           ) : null}
         </div>
+      ) : null}
 
-        {/* Mobile: Hoje + Novo + Exportar */}
-        <div className="flex items-center gap-2 sm:hidden">
+      {/* Mobile: Título + Hoje + Novo/Exportar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 sm:hidden">
+        <div className="min-w-0">
+          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
+            {getPeriodLabel()}
+          </h1>
+          <p className="text-xs text-muted-foreground">
+            {totalCount === 0
+              ? "Sem compromissos neste período"
+              : `${totalCount} ${totalCount === 1 ? "compromisso" : "compromissos"}`}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             onClick={onToday}
@@ -404,18 +531,6 @@ export function CalendarHeader({
             canCreateRehearsal={canCreateRehearsal}
             onExport={onExport}
             variant="mobile"
-          />
-        </div>
-
-        {/* Desktop: Ações (+ Novo & .ics/Sync) */}
-        <div className="hidden items-center gap-2 sm:flex">
-          <CalendarActions
-            departments={departments}
-            defaultDate={defaultDateInput}
-            canCreateEvent={canCreateEvent}
-            canCreateRehearsal={canCreateRehearsal}
-            onExport={onExport}
-            variant="desktop"
           />
         </div>
       </div>
@@ -545,105 +660,6 @@ export function CalendarHeader({
             </Drawer>
           </div>
         </div>
-      </div>
-
-      {/* Linha 2 Desktop: Botão Filtrar (Popover) + Resumo ativo opcional | 5 Visões (Mês padrão) */}
-      <div className="hidden items-center justify-between gap-3 sm:flex">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <Popover open={desktopFilterOpen} onOpenChange={setDesktopFilterOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                aria-label="Filtrar agenda"
-                className={cn(
-                  "h-9 gap-2 rounded-xl bg-card px-3 text-xs font-medium",
-                  activeFilterCount > 0 &&
-                    "border-primary/35 bg-secondary font-semibold text-primary hover:bg-secondary/80",
-                )}
-              >
-                <SlidersHorizontalIcon className="size-3.5" aria-hidden="true" />
-                <span>Filtrar</span>
-                {activeFilterCount > 0 ? (
-                  <span className="inline-flex size-5 items-center justify-center rounded-full bg-primary/15 font-mono text-[11px] font-semibold tabular-nums text-primary">
-                    {activeFilterCount}
-                  </span>
-                ) : null}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-80 rounded-xl p-3.5">
-              <PopoverHeader className="flex-row items-center justify-between border-b pb-2.5">
-                <PopoverTitle className="text-sm font-semibold text-foreground">
-                  Filtros
-                </PopoverTitle>
-                {activeFilterCount > 0 ? (
-                  <button
-                    type="button"
-                    onClick={handleResetFilters}
-                    className="inline-flex h-7 items-center rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  >
-                    Limpar
-                  </button>
-                ) : null}
-              </PopoverHeader>
-
-              <FilterPanelBody
-                filterOptions={filterOptions}
-                filterType={filterType}
-                departments={departments}
-                selectedDepartmentId={selectedDepartmentId}
-                compact
-                onFilterChange={onFilterChange}
-                onDepartmentChange={onDepartmentChange}
-              />
-            </PopoverContent>
-          </Popover>
-
-          {filterType !== "all" && activeFilterOption ? (
-            <button
-              type="button"
-              onClick={() => onFilterChange("all")}
-              aria-label={`Remover filtro ${activeFilterOption.label}`}
-              className="inline-flex h-8 items-center gap-1.5 rounded-full border border-primary/25 bg-secondary/70 px-3 text-xs font-medium text-primary transition-colors hover:bg-secondary"
-            >
-              <span>{activeFilterOption.label}</span>
-              <XIcon className="size-3.5" aria-hidden="true" />
-            </button>
-          ) : null}
-
-          {activeDepartment ? (
-            <button
-              type="button"
-              onClick={() => onDepartmentChange("all")}
-              aria-label={`Remover departamento ${activeDepartment.name}`}
-              className="inline-flex h-8 items-center gap-1.5 rounded-full border border-primary/25 bg-secondary/70 px-3 text-xs font-medium text-primary transition-colors hover:bg-secondary"
-            >
-              <span className="max-w-[160px] truncate">{activeDepartment.name}</span>
-              <XIcon className="size-3.5" aria-hidden="true" />
-            </button>
-          ) : null}
-        </div>
-
-        <Tabs
-          value={viewMode}
-          onValueChange={(value) => onViewChange(value as CalendarViewMode)}
-          className="shrink-0"
-        >
-          <TabsList
-            aria-label="Visualizações da agenda"
-            className="h-9 rounded-xl bg-muted/70 p-1"
-          >
-            {DESKTOP_VIEW_OPTIONS.map((option) => (
-              <TabsTrigger
-                key={option.value}
-                value={option.value}
-                className="h-7 rounded-lg px-3 text-xs font-medium data-[state=active]:font-semibold"
-              >
-                {option.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
       </div>
     </header>
   );

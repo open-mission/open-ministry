@@ -29,6 +29,14 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -221,6 +229,29 @@ export function EventPreviewSheet({
   const effectiveLocation = effectivePreview?.location ?? item.location;
   const effectiveDescription = effectivePreview?.description ?? item.description;
 
+  const assignmentsByDepartment = effectivePreview
+    ? Array.from(
+        effectivePreview.assignments.reduce(
+          (acc, assignment) => {
+            const deptLabel = assignment.departmentName?.trim() || "Equipe geral";
+            const currentGroup = acc.get(deptLabel) ?? [];
+            currentGroup.push(assignment);
+            acc.set(deptLabel, currentGroup);
+            return acc;
+          },
+          new Map<string, CalendarEventPreview["assignments"]>(),
+        ),
+      )
+    : [];
+
+  const shouldShowTeamSection =
+    !isLoadingPreview &&
+    effectivePreview &&
+    (effectivePreview.assignments.length > 0 ||
+      effectivePreview.coverage.total > 0 ||
+      effectivePreview.kind === "service" ||
+      effectivePreview.kind === "rehearsal");
+
   const bodyContent = (
     <div className="space-y-4 text-sm">
       {/* Data, hora e local */}
@@ -248,14 +279,11 @@ export function EventPreviewSheet({
         </div>
       ) : null}
 
-      {/* Equipe escalada */}
-      {!isLoadingPreview &&
-      effectivePreview &&
-      (effectivePreview.assignments.length > 0 ||
-        effectivePreview.coverage.total > 0) ? (
+      {/* Equipe escalada agrupada por departamento */}
+      {shouldShowTeamSection ? (
         <section
           aria-label="Equipe escalada"
-          className="rounded-xl border bg-card p-3.5 space-y-2.5"
+          className="rounded-xl border bg-card p-3.5 space-y-3"
         >
           <div className="flex items-center justify-between gap-2">
             <h3 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -270,29 +298,70 @@ export function EventPreviewSheet({
             ) : null}
           </div>
 
-          {effectivePreview.assignments.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {effectivePreview.assignments.map((assignment) => (
-                <span
-                  key={assignment.id}
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs",
-                    assignment.isMine
-                      ? "border-primary/30 bg-secondary font-semibold text-primary"
-                      : "bg-muted/50 text-foreground",
-                  )}
-                >
-                  <span>{assignment.personName}</span>
-                  <span className="text-muted-foreground">
-                    · {assignment.functionName}
-                  </span>
-                </span>
+          {assignmentsByDepartment.length > 0 ? (
+            <div className="space-y-3">
+              {assignmentsByDepartment.map(([departmentName, group]) => (
+                <div key={departmentName} className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-foreground/90">
+                      {departmentName}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground tabular-nums">
+                      {group.length}{" "}
+                      {group.length === 1 ? "pessoa" : "pessoas"}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {group.map((assignment) => (
+                      <span
+                        key={assignment.id}
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs",
+                          assignment.isMine
+                            ? "border-primary/30 bg-secondary font-semibold text-primary"
+                            : "bg-muted/50 text-foreground",
+                        )}
+                      >
+                        <span>{assignment.personName}</span>
+                        <span className="text-muted-foreground">
+                          · {assignment.functionName}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground">
-              Nenhuma pessoa escalada ainda.
-            </p>
+            <Empty className="gap-3 rounded-lg border border-dashed bg-muted/20 px-4 py-5">
+              <EmptyHeader className="gap-1.5">
+                <EmptyMedia
+                  variant="icon"
+                  className="mb-0.5 size-9 rounded-full bg-secondary/70 text-primary"
+                >
+                  <UsersIcon className="size-4" aria-hidden="true" />
+                </EmptyMedia>
+                <EmptyTitle className="text-sm font-semibold text-foreground">
+                  Nenhuma pessoa escalada ainda
+                </EmptyTitle>
+                <EmptyDescription className="text-xs leading-relaxed text-muted-foreground">
+                  Quando os líderes preencherem as funções por departamento, a
+                  equipe escalada aparecerá organizada aqui.
+                </EmptyDescription>
+              </EmptyHeader>
+              {targetHref ? (
+                <EmptyContent>
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="h-8 rounded-lg px-3 text-xs font-semibold"
+                  >
+                    <Link href={targetHref}>Escalar equipe</Link>
+                  </Button>
+                </EmptyContent>
+              ) : null}
+            </Empty>
           )}
         </section>
       ) : null}
