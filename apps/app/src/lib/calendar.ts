@@ -466,3 +466,54 @@ export function layoutDayTimedItems(
 
   return result;
 }
+
+export type CalendarEventPreviewPlanItem = {
+  id: string;
+  order: number;
+  type: "header" | "item";
+  title: string;
+  description: string | null;
+  durationSeconds: number;
+  leaderName: string | null;
+  song: {
+    id: string;
+    title: string;
+    artist: string | null;
+    tone: string | null;
+    bpm: number | null;
+  } | null;
+};
+
+export type CalendarEventPreviewSong = {
+  id: string;
+  title: string;
+  artist: string | null;
+  tone: string | null;
+  bpm: number | null;
+};
+
+export type CalendarEventPreviewAssignment = {
+  id: string;
+  personName: string;
+  functionName: string;
+  departmentName: string;
+  isMine: boolean;
+};
+
+export type CalendarEventPreview = {
+  eventId: string;
+  kind: string;
+  title: string;
+  startsAt: string;
+  endsAt: string;
+  location: string | null;
+  description: string | null;
+  href: string;
+  coverage: {
+    assigned: number;
+    total: number;
+  };
+  assignments: CalendarEventPreviewAssignment[];
+  songs: CalendarEventPreviewSong[];
+  planItems: CalendarEventPreviewPlanItem[];
+};
