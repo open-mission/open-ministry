@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 
 import { SignOutConfirmDialog } from "@/components/app/sign-out-confirm-dialog";
-import { useSettingsModal } from "@/components/settings/settings-modal-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -51,7 +50,6 @@ export function NavUser({
   role: string;
 }) {
   const { isMobile } = useSidebar();
-  const { openSettings } = useSettingsModal();
   const router = useRouter();
   const [switching, setSwitching] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
@@ -212,12 +210,15 @@ export function NavUser({
                   <span>Meu perfil</span>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={openSettings}
-                className="cursor-pointer gap-2"
-              >
-                <SettingsIcon className="size-4" />
-                <span>Configurações</span>
+              <DropdownMenuItem asChild>
+                <Link
+                  href="/dashboard/settings"
+                  prefetch={true}
+                  className="cursor-pointer gap-2"
+                >
+                  <SettingsIcon className="size-4" />
+                  <span>Configurações</span>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link
