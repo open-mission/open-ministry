@@ -344,7 +344,7 @@ export function FullCalendar({
                     className={
                       isSelected
                         ? "rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold text-white"
-                        : "rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-primary"
+                        : "rounded-full border border-primary/25 bg-secondary px-2 py-0.5 text-[11px] font-semibold text-primary"
                     }
                   >
                     {item.metadata?.functionName
@@ -398,34 +398,32 @@ export function FullCalendar({
   );
 
   return (
-    <div className="flex flex-1 flex-col gap-3">
-      <div className="px-4 sm:px-5">
-        <CalendarHeader
-          currentDate={currentDate}
-          viewMode={viewMode}
-          filterType={filterType}
-          selectedDepartmentId={selectedDepartmentId}
-          departments={departments}
-          weekStartsOn={preferences.weekStartsOn}
-          timeZone={preferences.timezone}
-          totalCount={itemsCount.total}
-          eventsCount={itemsCount.events}
-          assignmentsCount={itemsCount.assignments}
-          unavailabilitiesCount={itemsCount.unavailabilities}
-          birthdaysCount={itemsCount.birthdays}
-          weekAssignmentsCount={weekAssignmentsCount}
-          canViewTeamAvailability={canViewTeamAvailability}
-          canCreateEvent={canCreateEvent}
-          canCreateRehearsal={canCreateRehearsal}
-          onViewChange={handleViewChange}
-          onFilterChange={setFilterType}
-          onDepartmentChange={setSelectedDepartmentId}
-          onPrev={handlePrev}
-          onNext={handleNext}
-          onToday={handleToday}
-          onExport={handleExport}
-        />
-      </div>
+    <div className="space-y-4">
+      <CalendarHeader
+        currentDate={currentDate}
+        viewMode={viewMode}
+        filterType={filterType}
+        selectedDepartmentId={selectedDepartmentId}
+        departments={departments}
+        weekStartsOn={preferences.weekStartsOn}
+        timeZone={preferences.timezone}
+        totalCount={itemsCount.total}
+        eventsCount={itemsCount.events}
+        assignmentsCount={itemsCount.assignments}
+        unavailabilitiesCount={itemsCount.unavailabilities}
+        birthdaysCount={itemsCount.birthdays}
+        weekAssignmentsCount={weekAssignmentsCount}
+        canViewTeamAvailability={canViewTeamAvailability}
+        canCreateEvent={canCreateEvent}
+        canCreateRehearsal={canCreateRehearsal}
+        onViewChange={handleViewChange}
+        onFilterChange={setFilterType}
+        onDepartmentChange={setSelectedDepartmentId}
+        onPrev={handlePrev}
+        onNext={handleNext}
+        onToday={handleToday}
+        onExport={handleExport}
+      />
 
       <CalendarProvider<OpenMinistryCalendarEvent>
         events={calendarcnEvents}
@@ -443,7 +441,7 @@ export function FullCalendar({
         createEvent={handleSlotCreateEvent}
         renderEventContent={renderEventContent}
       >
-        <div className="h-[calc(100dvh-14.5rem)] min-h-[520px] overflow-hidden border-t border-border/40 bg-background sm:h-[calc(100dvh-9.25rem)] sm:min-h-[640px]">
+        <div className="h-[calc(100dvh-16rem)] min-h-[480px] overflow-hidden rounded-xl border bg-card shadow-xs sm:h-[calc(100dvh-13.5rem)] sm:min-h-[600px]">
           {viewMode === "month" && <MonthView showEventPopover={false} />}
           {viewMode === "week" && (
             <TimeGrid view="week" showEventPopover={false} scrollToHour={8} />

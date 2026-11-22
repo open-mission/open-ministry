@@ -172,7 +172,7 @@ export function WeekViewGrid({
               <div
                 key={`${day.date.toISOString()}-${hourSlot.hour}`}
                 className={cn(
-                  "border-border/40 border-b border-l",
+                  "border-border border-b border-l",
                   isWeekend && "bg-calendar-weekend",
                 )}
               />

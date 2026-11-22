@@ -170,7 +170,7 @@ describe("CalendarCN integration", () => {
     expect(filteredHtml).toContain("Louvor");
   });
 
-  it("renders FullCalendar in full-frame borderless surface without hydration crashes", () => {
+  it("renders FullCalendar cleanly on server without hydration crashes", () => {
     const html = renderToStaticMarkup(
       createElement(FullCalendar, {
         initialItems: SAMPLE_ITEMS,
@@ -187,10 +187,10 @@ describe("CalendarCN integration", () => {
 
     expect(html).toContain("Filtrar");
     expect(html).toContain("Novo");
-    expect(html).not.toContain("overflow-hidden rounded-xl border bg-card shadow-xs");
+    expect(html).toContain("rounded-xl border bg-card shadow-xs");
   });
 
-  it("detects calendar routes for headerless full-frame layout", () => {
+  it("detects calendar routes to hide the top page header while keeping notifications", () => {
     expect(isCalendarRoute("/calendar")).toBe(true);
     expect(isCalendarRoute("/dashboard/calendar")).toBe(true);
     expect(isCalendarRoute("/events")).toBe(false);

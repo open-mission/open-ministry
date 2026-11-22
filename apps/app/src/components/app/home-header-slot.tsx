@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 const HEADER_BASE_CLASS =
   "sticky top-0 z-20 flex min-h-[calc(3.5rem+env(safe-area-inset-top))] shrink-0 items-center gap-2 border-b bg-background/85 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-xl sm:gap-3 sm:px-6";
 
-/** Rotas da Agenda que adotam modo full-frame sem barra superior dedicada. */
+/** Rotas da Agenda que ocultam a barra superior mantendo apenas notificações. */
 export function isCalendarRoute(pathname: string | null | undefined) {
   if (!pathname) return false;
   return (
@@ -42,8 +42,8 @@ export function getHeaderClassName(isHome: boolean, scrolled: boolean) {
 }
 
 /**
- * Header sticky do layout que reconhece a home integrada e o modo full-frame da
- * agenda (removendo a barra superior e mantendo apenas o ícone de notificação).
+ * Header sticky do layout que reconhece a home integrada: aplica uma margem
+ * superior e revela a borda inferior apenas quando a página é rolada.
  */
 export function HomeAwareHeader({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -66,7 +66,7 @@ export function HomeAwareHeader({ children }: { children: ReactNode }) {
 
   if (isCalendar) {
     return (
-      <header className="pointer-events-none sticky top-0 z-20 flex h-0 items-start justify-between overflow-visible border-0 bg-transparent px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5">
+      <header className="pointer-events-none sticky top-0 z-20 flex h-0 items-start justify-between overflow-visible border-0 bg-transparent px-4 pt-[max(1.125rem,env(safe-area-inset-top))] sm:px-6 lg:px-8 lg:pt-6">
         {children}
       </header>
     );
@@ -112,8 +112,8 @@ export function HomeAwareHeaderFallback() {
 }
 
 /**
- * Oculta elementos extras do header global quando a agenda está em modo full-frame,
- * preservando apenas o acionador do menu lateral e o ícone de notificações.
+ * Oculta elementos extras do header global na rota da agenda para ganhar espaço,
+ * preservando apenas o ícone de notificações e o alternador da barra lateral.
  */
 export function CalendarHiddenSlot({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -140,8 +140,8 @@ export function HeaderCenterSlot({ children }: { children: ReactNode }) {
 }
 
 /**
- * Na home, o avatar/menu do usuário também aparece no desktop. Na agenda
- * full-frame é ocultado para manter apenas o sino de notificação.
+ * Na home, o avatar/menu do usuário também aparece no desktop. Nas demais
+ * rotas, continua visível apenas em telas pequenas (o desktop usa outro menu).
  */
 export function HeaderUserSlot({ children }: { children: ReactNode }) {
   const pathname = usePathname();
