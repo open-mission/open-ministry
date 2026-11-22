@@ -90,7 +90,7 @@ export function EventFilters({
   const hasExtraFilters = Boolean(departmentId || query);
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-border/70 bg-card/60 p-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div
         role="group"
         aria-label="Filtrar escalas"
@@ -152,7 +152,7 @@ export function EventFilters({
               updateParams({ department: event.target.value || undefined })
             }
             aria-label="Filtrar por departamento"
-            className="w-full sm:w-48 [&_select]:h-9"
+            className="w-full sm:w-56 [&_select]:h-9"
           >
             <NativeSelectOption value="">
               Todos os departamentos
