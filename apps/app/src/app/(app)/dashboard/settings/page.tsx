@@ -2,13 +2,16 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
+import { getOrganizationPermissionSettingsAction } from "@/app/actions/permissions";
 import {
   getEvolutionSettingsAction,
   getUserPasskeysAction,
   getUserSessionsAction,
 } from "@/app/actions/settings";
-import { getOrganizationPermissionSettingsAction } from "@/app/actions/permissions";
-import { SettingsView } from "@/components/settings/settings-view";
+import {
+  SettingsView,
+  type SettingsScope,
+} from "@/components/settings/settings-view";
 import { Skeleton } from "@/components/ui/skeleton";
 import { loadCalendarFeedViews } from "@/lib/calendar-feed-data";
 import { listDepartments } from "@/lib/departments";
@@ -21,17 +24,31 @@ export const metadata: Metadata = {
   title: "Configurações",
 };
 
-export default function SettingsPage() {
+type SettingsSearchParams = Promise<{
+  scope?: string;
+  tab?: string;
+}>;
+
+export default function SettingsPage({
+  searchParams,
+}: {
+  searchParams: SettingsSearchParams;
+}) {
   return (
     <Suspense fallback={<SettingsSkeleton />}>
-      <SettingsContent />
+      <SettingsContent searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function SettingsContent() {
+async function SettingsContent({
+  searchParams,
+}: {
+  searchParams: SettingsSearchParams;
+}) {
   await connection();
 
+  const resolvedParams = await searchParams;
   const { organization, session, role, isAdmin } =
     await requireOrganizationContext();
 
@@ -78,6 +95,11 @@ async function SettingsContent() {
     timezone: userRecord?.timezone || "America/Sao_Paulo",
   };
 
+  const initialScope: SettingsScope | undefined =
+    resolvedParams.scope === "church" || resolvedParams.scope === "account"
+      ? resolvedParams.scope
+      : undefined;
+
   return (
     <SettingsView
       organization={organization}
@@ -93,21 +115,29 @@ async function SettingsContent() {
       evolutionSettings={evolutionSettings}
       messageTemplates={messageTemplates}
       permissionSettings={permissionSettings}
+      initialScope={initialScope}
+      initialTab={resolvedParams.tab}
     />
   );
 }
 
 function SettingsSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8" aria-hidden>
-      <div className="space-y-2">
-        <Skeleton className="h-10 w-64" />
-        <Skeleton className="h-4 w-96 max-w-full" />
+    <div className="mx-auto w-full max-w-6xl space-y-6" aria-hidden>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="space-y-2">
+          <Skeleton className="h-9 w-56" />
+          <Skeleton className="h-4 w-80 max-w-full" />
+        </div>
+        <Skeleton className="h-11 w-64 rounded-xl" />
       </div>
-      <Skeleton className="h-10 w-96 rounded-lg" />
-      <div className="space-y-6">
-        <Skeleton className="h-72 rounded-xl" />
-        <Skeleton className="h-44 rounded-xl" />
+      <Skeleton className="h-11 w-full max-w-xl rounded-xl" />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <Skeleton className="h-96 rounded-2xl" />
+        <div className="space-y-4">
+          <Skeleton className="h-36 rounded-2xl" />
+          <Skeleton className="h-36 rounded-2xl" />
+        </div>
       </div>
     </div>
   );

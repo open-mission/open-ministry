@@ -1,23 +1,34 @@
 "use client";
 
-import { useState } from "react";
 import {
+  useState,
+  useSyncExternalStore,
+  type KeyboardEvent,
+} from "react";
+import { useTheme } from "next-themes";
+import {
+  ArrowRightIcon,
   BellIcon,
+  Building2Icon,
   CalendarIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  ChurchIcon,
-  HardDriveIcon,
   InfoIcon,
+  LaptopIcon,
   LayersIcon,
   MessageSquareIcon,
   MessageSquareQuoteIcon,
+  MoonIcon,
   PaletteIcon,
   ShieldCheckIcon,
+  SlidersHorizontalIcon,
   SmartphoneIcon,
+  SunIcon,
   UserIcon,
+  type LucideIcon,
 } from "lucide-react";
 
+import type { OrganizationPermissionSettingsData } from "@/app/actions/permissions";
 import type {
   EvolutionSettingsView,
   PasskeyViewItem,
@@ -33,18 +44,18 @@ import { ChangePasswordCard } from "@/components/settings/change-password-card";
 import { ChurchInfoCard } from "@/components/settings/church-info-card";
 import { ChurchNomenclatureCard } from "@/components/settings/church-nomenclature-card";
 import { MessageTemplatesCard } from "@/components/settings/message-templates-card";
+import { ModulePermissionsCard } from "@/components/settings/module-permissions-card";
 import { NotificationPreferencesCard } from "@/components/settings/notification-preferences-card";
 import { OfflineCacheCard } from "@/components/settings/offline-cache-card";
 import { PasskeysCard } from "@/components/settings/passkeys-card";
 import { PwaInstallCard } from "@/components/settings/pwa-install-card";
 import { ThemePreferenceCard } from "@/components/settings/theme-preference-card";
-import { ModulePermissionsCard } from "@/components/settings/module-permissions-card";
-import type { OrganizationPermissionSettingsData } from "@/app/actions/permissions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -56,6 +67,31 @@ import { getInitials, roleLabel } from "@/lib/format";
 import type { ResolvedTemplate } from "@/lib/message-templates";
 import { cn } from "@/lib/utils";
 import { APP_NAME, APP_VERSION } from "@/lib/version";
+
+export type SettingsScope = "account" | "church";
+
+export type AccountTabId =
+  | "profile"
+  | "theme"
+  | "notifications"
+  | "calendar"
+  | "security";
+
+export type ChurchTabId = "church" | "whatsapp" | "templates" | "permissions";
+
+export type MobileSettingsSection =
+  | "account"
+  | "theme"
+  | "notifications"
+  | "calendar"
+  | "pwa_offline"
+  | "security"
+  | "about"
+  | "church"
+  | "whatsapp"
+  | "templates"
+  | "nomenclature"
+  | "permissions";
 
 export type SettingsViewProps = {
   organization: {
@@ -85,38 +121,68 @@ export type SettingsViewProps = {
   evolutionSettings: EvolutionSettingsView | null;
   messageTemplates: ResolvedTemplate[];
   permissionSettings?: OrganizationPermissionSettingsData | null;
+  initialScope?: SettingsScope;
+  initialTab?: string;
   isModal?: boolean;
 };
 
-export type SettingsSection =
-  | "account"
-  | "calendar"
-  | "theme"
-  | "pwa"
-  | "offline"
-  | "security"
-  | "notifications"
-  | "whatsapp"
-  | "templates"
-  | "church"
-  | "nomenclature"
-  | "permissions"
-  | "about";
-
-type SettingsNavItem = {
-  id: SettingsSection;
+type DesktopTabItem<T extends string> = {
+  id: T;
   label: string;
-  subtitle: string;
-  icon: typeof UserIcon;
-  color: string;
+  icon: LucideIcon;
+  badge?: string;
+};
+
+type MobileRowItem = {
+  id: MobileSettingsSection;
+  label: string;
+  status?: string;
   badge?: string;
   badgeVariant?: "default" | "secondary" | "outline";
+  icon: LucideIcon;
 };
 
-type SettingsNavCategory = {
-  title: string;
-  items: SettingsNavItem[];
-};
+const subscribe = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
+
+function formatThemeLabel(theme: string | undefined): string {
+  if (theme === "dark") return "Escuro";
+  if (theme === "light") return "Claro";
+  return "Sistema";
+}
+
+function handleTablistArrowKey<T extends string>(
+  event: KeyboardEvent<HTMLButtonElement>,
+  items: readonly T[],
+  current: T,
+  onSelect: (next: T) => void,
+) {
+  const index = items.indexOf(current);
+  if (index === -1) return;
+
+  let nextIndex: number | null = null;
+  if (event.key === "ArrowRight") {
+    nextIndex = (index + 1) % items.length;
+  } else if (event.key === "ArrowLeft") {
+    nextIndex = (index - 1 + items.length) % items.length;
+  } else if (event.key === "Home") {
+    nextIndex = 0;
+  } else if (event.key === "End") {
+    nextIndex = items.length - 1;
+  }
+
+  if (nextIndex !== null) {
+    event.preventDefault();
+    const nextId = items[nextIndex];
+    onSelect(nextId);
+    const siblings =
+      event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>(
+        '[role="tab"]',
+      );
+    siblings?.[nextIndex]?.focus();
+  }
+}
 
 export function SettingsView({
   organization,
@@ -132,161 +198,228 @@ export function SettingsView({
   evolutionSettings,
   messageTemplates,
   permissionSettings,
+  initialScope,
+  initialTab,
   isModal = false,
 }: SettingsViewProps) {
   const churchMeta = parseChurchMetadata(organization.metadata);
   const currentTerminology = getDepartmentTerminology(churchMeta);
+  const { theme, setTheme } = useTheme();
+  const mounted = useSyncExternalStore(
+    subscribe,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
+  const currentThemeLabel = mounted ? formatThemeLabel(theme) : "Sistema";
 
-  // Mobile active section for iOS style drill-down
+  const resolvedInitialScope: SettingsScope =
+    initialScope === "church" ||
+    (initialTab &&
+      ["church", "whatsapp", "templates", "permissions", "nomenclature"].includes(
+        initialTab,
+      ))
+      ? "church"
+      : "account";
+
+  const resolvedInitialAccountTab: AccountTabId =
+    initialTab === "theme" ||
+    initialTab === "notifications" ||
+    initialTab === "calendar" ||
+    initialTab === "security"
+      ? initialTab
+      : "profile";
+
+  const resolvedInitialChurchTab: ChurchTabId =
+    isAdmin &&
+    (initialTab === "whatsapp" ||
+      initialTab === "templates" ||
+      initialTab === "permissions")
+      ? initialTab
+      : "church";
+
+  const [scope, setScope] = useState<SettingsScope>(resolvedInitialScope);
+  const [accountTab, setAccountTab] = useState<AccountTabId>(
+    resolvedInitialAccountTab,
+  );
+  const [churchTab, setChurchTab] = useState<ChurchTabId>(
+    resolvedInitialChurchTab,
+  );
   const [activeMobileSection, setActiveMobileSection] =
-    useState<SettingsSection | null>(null);
+    useState<MobileSettingsSection | null>(null);
 
-  // Desktop active section
-  const [activeSection, setActiveSection] = useState<SettingsSection>("account");
+  const isWhatsappConnected = Boolean(evolutionSettings?.isActive);
+  const feedsBadge =
+    calendarFeeds.length > 0
+      ? `${calendarFeeds.length} ${calendarFeeds.length === 1 ? "feed" : "feeds"}`
+      : undefined;
+  const passkeysBadge =
+    initialPasskeys.length > 0
+      ? `${initialPasskeys.length} ${initialPasskeys.length === 1 ? "passkey" : "passkeys"}`
+      : undefined;
 
-  // Navegação lateral organizada por categorias (espelhando a lógica mobile)
-  const navCategories: SettingsNavCategory[] = [
+  const accountTabs: DesktopTabItem<AccountTabId>[] = [
+    { id: "profile", label: "Perfil", icon: UserIcon },
     {
-      title: "Geral & Preferências",
-      items: [
-        {
-          id: "account" as const,
-          label: "Minha Conta",
-          subtitle: "Perfil, aniversário e telefone",
-          icon: UserIcon,
-          color: "bg-blue-500 text-white",
-        },
-        {
-          id: "calendar" as const,
-          label: "Agenda & Calendário",
-          subtitle: "Fuso e sincronização de agenda",
-          icon: CalendarIcon,
-          color: "bg-amber-500 text-white",
-        },
-        {
-          id: "theme" as const,
-          label: "Aparência & Tema",
-          subtitle: "Claro, Escuro ou Sistema",
-          icon: PaletteIcon,
-          color: "bg-violet-500 text-white",
-        },
-        {
-          id: "pwa" as const,
-          label: "Instalar no Celular",
-          subtitle: "Aplicativo na tela inicial (PWA)",
-          icon: SmartphoneIcon,
-          color: "bg-teal-600 text-white",
-        },
-        {
-          id: "offline" as const,
-          label: "Modo Offline & Cache",
-          subtitle: "Escalas e dados salvos no aparelho",
-          icon: HardDriveIcon,
-          color: "bg-indigo-600 text-white",
-        },
-      ],
+      id: "theme",
+      label: "Aparência & Tema",
+      icon: PaletteIcon,
+      badge: mounted ? currentThemeLabel : undefined,
+    },
+    { id: "notifications", label: "Notificações", icon: BellIcon },
+    {
+      id: "calendar",
+      label: "Agenda & Offline",
+      icon: CalendarIcon,
+      badge: feedsBadge,
     },
     {
-      title: "Segurança",
-      items: [
-        {
-          id: "security" as const,
-          label: "Segurança & Passkeys",
-          subtitle: `${initialPasskeys.length} chave(s) · Sessões`,
-          icon: ShieldCheckIcon,
-          color: "bg-emerald-500 text-white",
-        },
-      ],
-    },
-    {
-      title: "Comunicação",
-      items: [
-        {
-          id: "notifications" as const,
-          label: "Notificações",
-          subtitle: "Alertas no sino e push",
-          icon: BellIcon,
-          color: "bg-rose-500 text-white",
-        },
-        ...(isAdmin && evolutionSettings
-          ? [
-              {
-                id: "whatsapp" as const,
-                label: "WhatsApp (Evolution API)",
-                subtitle: evolutionSettings.instanceName || "Instância Go",
-                icon: MessageSquareIcon,
-                color: "bg-emerald-600 text-white",
-                badge: evolutionSettings.isActive ? "Ativo" : "Inativo",
-                badgeVariant: (evolutionSettings.isActive
-                  ? "default"
-                  : "secondary") as "default" | "secondary",
-              },
-            ]
-          : []),
-        ...(isAdmin
-          ? [
-              {
-                id: "templates" as const,
-                label: "Modelos do WhatsApp",
-                subtitle: "Convites, escalas e avisos",
-                icon: MessageSquareQuoteIcon,
-                color: "bg-primary text-white",
-              },
-            ]
-          : []),
-      ],
-    },
-    {
-      title: "Igreja & Comunidade",
-      items: [
-        {
-          id: "church" as const,
-          label: isAdmin ? "Identidade & Governança" : "Informações da Igreja",
-          subtitle: `${organization.name} · ${peopleCount} pessoas`,
-          icon: ChurchIcon,
-          color: "bg-amber-600 text-white",
-        },
-        ...(isAdmin
-          ? [
-              {
-                id: "nomenclature" as const,
-                label: "Nomenclatura",
-                subtitle: `${currentTerminology.plural} (${currentTerminology.singular})`,
-                icon: LayersIcon,
-                color: "bg-orange-500 text-white",
-              },
-              {
-                id: "permissions" as const,
-                label: "Módulos & Permissões",
-                subtitle: "Disponibilidade e papéis",
-                icon: ShieldCheckIcon,
-                color: "bg-indigo-600 text-white",
-              },
-            ]
-          : []),
-      ],
-    },
-    {
-      title: "Sistema",
-      items: [
-        {
-          id: "about" as const,
-          label: "Sobre o OpenMinistry",
-          subtitle: `v${APP_VERSION} · Créditos e info`,
-          icon: InfoIcon,
-          color: "bg-sky-600 text-white",
-          badge: `v${APP_VERSION}`,
-          badgeVariant: "outline" as const,
-        },
-      ],
+      id: "security",
+      label: "Segurança",
+      icon: ShieldCheckIcon,
+      badge: passkeysBadge,
     },
   ];
 
-  // Render do conteúdo da seção ativa no Desktop
-  function renderSectionContent(section: SettingsSection) {
+  const churchTabs: DesktopTabItem<ChurchTabId>[] = isAdmin
+    ? [
+        { id: "church", label: "Dados da Igreja", icon: Building2Icon },
+        {
+          id: "whatsapp",
+          label: "WhatsApp",
+          icon: MessageSquareIcon,
+          badge: isWhatsappConnected ? "Conectado" : "Desconectado",
+        },
+        {
+          id: "templates",
+          label: "Modelos",
+          icon: MessageSquareQuoteIcon,
+          badge: `${messageTemplates.length}`,
+        },
+        {
+          id: "permissions",
+          label: "Nomenclatura & Permissões",
+          icon: SlidersHorizontalIcon,
+        },
+      ]
+    : [{ id: "church", label: "Dados da Igreja", icon: Building2Icon }];
+
+  const mobilePreferenceRows: MobileRowItem[] = [
+    {
+      id: "theme",
+      label: "Aparência & Tema",
+      status: currentThemeLabel,
+      icon: PaletteIcon,
+    },
+    {
+      id: "notifications",
+      label: "Notificações",
+      status: "Escalas e ensaios",
+      icon: BellIcon,
+    },
+    {
+      id: "calendar",
+      label: "Agenda & Calendário",
+      status:
+        calendarFeeds.length > 0
+          ? `${calendarFeeds.length} ${calendarFeeds.length === 1 ? "link ativo" : "links ativos"}`
+          : "Sincronizar",
+      icon: CalendarIcon,
+    },
+    {
+      id: "pwa_offline",
+      label: "Celular & Offline",
+      status: "PWA e cache",
+      icon: SmartphoneIcon,
+    },
+  ];
+
+  const mobileSecurityRows: MobileRowItem[] = [
+    {
+      id: "security",
+      label: "Segurança & Passkeys",
+      status:
+        initialPasskeys.length > 0
+          ? `${initialPasskeys.length} ${initialPasskeys.length === 1 ? "ativa" : "ativas"}`
+          : "Senha e sessões",
+      icon: ShieldCheckIcon,
+    },
+    {
+      id: "about",
+      label: "Sobre o OpenMinistry",
+      status: `v${APP_VERSION}`,
+      icon: InfoIcon,
+    },
+  ];
+
+  const mobileChurchRows: MobileRowItem[] = [
+    {
+      id: "church",
+      label: "Dados da Igreja",
+      status: `${peopleCount} membros · ${departmentsCount} ${currentTerminology.plural.toLowerCase()}`,
+      icon: Building2Icon,
+    },
+    ...(isAdmin
+      ? [
+          {
+            id: "whatsapp" as const,
+            label: "WhatsApp (Evolution API)",
+            badge: isWhatsappConnected ? "Conectado" : "Desconectado",
+            badgeVariant: (isWhatsappConnected ? "secondary" : "outline") as
+              | "secondary"
+              | "outline",
+            icon: MessageSquareIcon,
+          },
+          {
+            id: "templates" as const,
+            label: "Modelos do WhatsApp",
+            badge: `${messageTemplates.length}`,
+            badgeVariant: "outline" as const,
+            icon: MessageSquareQuoteIcon,
+          },
+          {
+            id: "nomenclature" as const,
+            label: "Nomenclatura",
+            status: currentTerminology.plural,
+            icon: LayersIcon,
+          },
+          {
+            id: "permissions" as const,
+            label: "Módulos & Permissões",
+            status: "Disponibilidade e papéis",
+            icon: SlidersHorizontalIcon,
+          },
+        ]
+      : []),
+  ];
+
+  const mobileSectionTitles: Record<MobileSettingsSection, string> = {
+    account: "Minha Conta",
+    theme: "Aparência & Tema",
+    notifications: "Notificações",
+    calendar: "Agenda & Calendário",
+    pwa_offline: "Celular & Offline",
+    security: "Segurança & Passkeys",
+    about: "Sobre o OpenMinistry",
+    church: "Dados da Igreja",
+    whatsapp: "WhatsApp (Evolution API)",
+    templates: "Modelos do WhatsApp",
+    nomenclature: "Nomenclatura",
+    permissions: "Módulos & Permissões",
+  };
+
+  function handleScopeChange(nextScope: SettingsScope) {
+    setScope(nextScope);
+    setActiveMobileSection(null);
+  }
+
+  function renderMobileSectionContent(section: MobileSettingsSection) {
     switch (section) {
       case "account":
         return <AccountProfileCard initialData={userData} />;
+      case "theme":
+        return <ThemePreferenceCard />;
+      case "notifications":
+        return <NotificationPreferencesCard />;
       case "calendar":
         return (
           <div className="space-y-6">
@@ -294,12 +427,13 @@ export function SettingsView({
             <CalendarSyncCard feeds={calendarFeeds} />
           </div>
         );
-      case "theme":
-        return <ThemePreferenceCard />;
-      case "pwa":
-        return <PwaInstallCard />;
-      case "offline":
-        return <OfflineCacheCard />;
+      case "pwa_offline":
+        return (
+          <div className="space-y-6">
+            <PwaInstallCard />
+            <OfflineCacheCard />
+          </div>
+        );
       case "security":
         return (
           <div className="space-y-6">
@@ -308,17 +442,29 @@ export function SettingsView({
             <ActiveSessionsCard initialSessions={initialSessions} />
           </div>
         );
-      case "notifications":
-        return <NotificationPreferencesCard />;
+      case "about":
+        return <AboutCard />;
+      case "church":
+        return (
+          <ChurchInfoCard
+            organization={organization}
+            isAdmin={isAdmin}
+            peopleCount={peopleCount}
+            departmentsCount={departmentsCount}
+          />
+        );
       case "whatsapp":
         return evolutionSettings ? (
           <AdminEvolutionApiCard initialSettings={evolutionSettings} />
         ) : (
           <Card>
             <CardHeader>
-              <CardTitle className="font-heading text-lg">WhatsApp (Evolution API)</CardTitle>
+              <CardTitle className="font-heading text-lg">
+                WhatsApp (Evolution API)
+              </CardTitle>
               <CardDescription>
-                A integração do WhatsApp ainda não está configurada para esta igreja.
+                A integração do WhatsApp ainda não está configurada para esta
+                igreja.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -328,15 +474,6 @@ export function SettingsView({
           <MessageTemplatesCard
             initialTemplates={messageTemplates}
             churchName={organization.name}
-          />
-        );
-      case "church":
-        return (
-          <ChurchInfoCard
-            organization={organization}
-            isAdmin={isAdmin}
-            peopleCount={peopleCount}
-            departmentsCount={departmentsCount}
           />
         );
       case "nomenclature":
@@ -351,22 +488,12 @@ export function SettingsView({
         ) : (
           <Card>
             <CardHeader>
-              <CardTitle className="font-heading text-lg">Módulos & Permissões</CardTitle>
+              <CardTitle className="font-heading text-lg">
+                Módulos & Permissões
+              </CardTitle>
               <CardDescription>
-                Não foi possível carregar as configurações de permissões no momento.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        );
-      case "about":
-        return <AboutCard />;
-      default:
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-heading text-lg">Configurações</CardTitle>
-              <CardDescription>
-                Selecione uma opção na lista ao lado para visualizar e editar as preferências.
+                Não foi possível carregar as configurações de permissões no
+                momento.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -374,229 +501,597 @@ export function SettingsView({
     }
   }
 
-  return (
-    <div className={cn("mx-auto flex w-full flex-col", isModal ? "max-w-none" : "max-w-6xl gap-6 sm:gap-8")}>
-      {/* Page Header (apenas na página comum, não dentro do modal onde o DialogHeader já atua) */}
-      {!isModal ? (
-        <header className="border-b pb-4">
-          <h1 className="font-heading text-3xl sm:text-4xl leading-none tracking-tight">
-            Configurações
-          </h1>
-        </header>
-      ) : null}
+  function renderDesktopAccountContent() {
+    switch (accountTab) {
+      case "profile":
+        return (
+          <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <AccountProfileCard initialData={userData} />
 
-      {/* ------------------------------------------------------------------ */}
-      {/* DESKTOP LAYOUT COM SIDEBAR LATERAL                                 */}
-      {/* ------------------------------------------------------------------ */}
-      <div
-        className={cn(
-          "hidden md:flex min-h-[580px] overflow-hidden",
-          isModal
-            ? "border-0 rounded-none shadow-none bg-transparent"
-            : "rounded-2xl border bg-card shadow-xs",
-        )}
-      >
-        {/* Sidebar Lateral de Configurações */}
-        <aside className="w-72 shrink-0 border-r bg-muted/20 flex flex-col justify-between">
-          <div className="p-3 space-y-4 overflow-y-auto max-h-[calc(85vh-80px)]">
-            {/* Resumo do Usuário no topo do Sidebar Lateral */}
-            <div
-              className={cn(
-                "flex items-center gap-3 p-2 transition-colors",
-                isModal
-                  ? "rounded-lg bg-background/50 border-0"
-                  : "rounded-xl bg-background border",
-              )}
-            >
-              <Avatar className="size-10 rounded-lg">
-                <AvatarImage src={userData.image ?? undefined} alt={userData.name} />
-                <AvatarFallback className="rounded-lg bg-primary/10 text-xs font-semibold text-primary">
-                  {getInitials(userData.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold truncate leading-tight">
-                  {userData.name}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {organization.name} · {roleLabel(role)}
-                </p>
-              </div>
-            </div>
-
-            {/* Grupos de Navegação */}
-            <nav className="space-y-4">
-              {navCategories.map((cat) => (
-                <div key={cat.title} className="space-y-1">
-                  <span className="px-2.5 text-[10px] font-semibold tracking-wider text-muted-foreground/80 uppercase">
-                    {cat.title}
-                  </span>
-                  <div className="space-y-0.5">
-                    {cat.items.map((item) => {
-                      const isSelected = activeSection === item.id;
-                      const Icon = item.icon;
-
+            <aside className="space-y-4">
+              {/* Aparência rápida */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="font-heading text-lg tracking-tight">
+                    Aparência rápida
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Tema deste dispositivo ({currentThemeLabel}).
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: "light", label: "Claro", icon: SunIcon },
+                      { id: "dark", label: "Escuro", icon: MoonIcon },
+                      { id: "system", label: "Sistema", icon: LaptopIcon },
+                    ].map((opt) => {
+                      const isSelected = mounted && theme === opt.id;
+                      const Icon = opt.icon;
                       return (
                         <button
-                          key={item.id}
+                          key={opt.id}
                           type="button"
-                          onClick={() => setActiveSection(item.id)}
+                          onClick={() => setTheme(opt.id)}
+                          aria-pressed={isSelected}
                           className={cn(
-                            "flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-left text-xs transition-colors",
+                            "flex min-h-10 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                             isSelected
-                              ? "bg-primary text-primary-foreground font-medium shadow-xs"
-                              : "hover:bg-muted text-muted-foreground hover:text-foreground",
+                              ? "border-primary bg-secondary text-primary font-semibold"
+                              : "border-border bg-background text-foreground hover:bg-muted/60",
                           )}
                         >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div
-                              className={cn(
-                                "flex size-7 shrink-0 items-center justify-center rounded-lg",
-                                isSelected ? "bg-primary-foreground/20 text-primary-foreground" : item.color,
-                              )}
-                            >
-                              <Icon className="size-3.5" />
-                            </div>
-                            <span className="truncate">{item.label}</span>
-                          </div>
-
-                          {item.badge ? (
-                            <Badge
-                              variant={item.badgeVariant || (isSelected ? "secondary" : "outline")}
-                              className={cn(
-                                "text-[10px] py-0 px-1 font-mono",
-                                isSelected ? "bg-primary-foreground/20 text-primary-foreground border-transparent" : "",
-                              )}
-                            >
-                              {item.badge}
-                            </Badge>
-                          ) : null}
+                          <Icon className="size-3.5" />
+                          <span>{opt.label}</span>
                         </button>
                       );
                     })}
                   </div>
-                </div>
-              ))}
-            </nav>
-          </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setAccountTab("theme")}
+                    className="h-8 w-full justify-between px-2 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    <span>Mais detalhes em Aparência & Tema</span>
+                    <ChevronRightIcon className="size-3.5" />
+                  </Button>
+                </CardContent>
+              </Card>
 
-          {/* Footer do Sidebar Lateral com Versão do App */}
-          <div className="border-t p-3 bg-muted/40 flex items-center justify-between text-xs text-muted-foreground">
-            <span className="font-heading font-medium text-foreground">
-              {APP_NAME}
-            </span>
-            <Badge variant="outline" className="font-mono text-[10px] py-0 px-1.5">
-              v{APP_VERSION}
-            </Badge>
-          </div>
-        </aside>
+              {/* Acesso & Passkeys */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="font-heading text-lg tracking-tight">
+                    Acesso & Passkeys
+                  </CardTitle>
+                  <CardDescription className="text-xs leading-relaxed">
+                    {initialPasskeys.length}{" "}
+                    {initialPasskeys.length === 1
+                      ? "passkey registrada"
+                      : "passkeys registradas"}{" "}
+                    e {initialSessions.length}{" "}
+                    {initialSessions.length === 1
+                      ? "sessão ativa"
+                      : "sessões ativas"}{" "}
+                    neste aparelho.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setAccountTab("security")}
+                    className="w-full justify-center text-xs"
+                  >
+                    Abrir Segurança & Passkeys
+                  </Button>
+                </CardContent>
+              </Card>
 
-        {/* Painel de Conteúdo da Seção Ativa */}
-        <main className="flex-1 p-6 lg:p-8 overflow-y-auto max-h-[calc(85vh-40px)] bg-background">
+              {/* Igreja Summary */}
+              <Card className="bg-muted/40">
+                <CardHeader className="pb-3">
+                  <span className="text-[11px] font-semibold tracking-wider text-primary uppercase">
+                    {isAdmin ? "Administração da igreja" : "Minha igreja"}
+                  </span>
+                  <CardTitle className="font-heading text-lg tracking-tight">
+                    {organization.name}
+                  </CardTitle>
+                  <CardDescription className="text-xs leading-relaxed">
+                    {peopleCount} membros · {departmentsCount}{" "}
+                    {currentTerminology.plural.toLowerCase()}
+                    {isAdmin
+                      ? ` · WhatsApp ${isWhatsappConnected ? "conectado" : "desconectado"} · ${messageTemplates.length} ${messageTemplates.length === 1 ? "modelo" : "modelos"}`
+                      : ""}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setScope("church")}
+                    className="w-full justify-center gap-2 bg-card text-xs font-semibold text-primary"
+                  >
+                    <span>
+                      {isAdmin ? "Ir para Igreja (Admin)" : "Ver dados da igreja"}
+                    </span>
+                    <ArrowRightIcon className="size-3.5" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </aside>
+          </div>
+        );
+      case "theme":
+        return (
+          <div className="max-w-3xl">
+            <ThemePreferenceCard />
+          </div>
+        );
+      case "notifications":
+        return (
+          <div className="max-w-3xl">
+            <NotificationPreferencesCard />
+          </div>
+        );
+      case "calendar":
+        return (
+          <div className="grid items-start gap-6 lg:grid-cols-2">
+            <div className="space-y-6">
+              <CalendarPreferencesCard initialPreferences={calendarPreferences} />
+              <CalendarSyncCard feeds={calendarFeeds} />
+            </div>
+            <div className="space-y-6">
+              <PwaInstallCard />
+              <OfflineCacheCard />
+              <AboutCard />
+            </div>
+          </div>
+        );
+      case "security":
+        return (
           <div className="max-w-3xl space-y-6">
-            {renderSectionContent(activeSection)}
+            <PasskeysCard initialPasskeys={initialPasskeys} />
+            <ChangePasswordCard />
+            <ActiveSessionsCard initialSessions={initialSessions} />
           </div>
-        </main>
+        );
+    }
+  }
+
+  function renderDesktopChurchContent() {
+    if (!isAdmin) {
+      return (
+        <div className="max-w-4xl">
+          <ChurchInfoCard
+            organization={organization}
+            isAdmin={false}
+            peopleCount={peopleCount}
+            departmentsCount={departmentsCount}
+          />
+        </div>
+      );
+    }
+
+    switch (churchTab) {
+      case "church":
+        return (
+          <div className="max-w-4xl">
+            <ChurchInfoCard
+              organization={organization}
+              isAdmin={true}
+              peopleCount={peopleCount}
+              departmentsCount={departmentsCount}
+            />
+          </div>
+        );
+      case "whatsapp":
+        return (
+          <div className="max-w-3xl">
+            {evolutionSettings ? (
+              <AdminEvolutionApiCard initialSettings={evolutionSettings} />
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-heading text-lg">
+                    WhatsApp (Evolution API)
+                  </CardTitle>
+                  <CardDescription>
+                    A integração do WhatsApp ainda não está configurada para
+                    esta igreja.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            )}
+          </div>
+        );
+      case "templates":
+        return (
+          <div className="max-w-4xl">
+            <MessageTemplatesCard
+              initialTemplates={messageTemplates}
+              churchName={organization.name}
+            />
+          </div>
+        );
+      case "permissions":
+        return (
+          <div className="max-w-4xl space-y-6">
+            <ChurchNomenclatureCard
+              initialNomenclature={churchMeta.departmentNomenclature}
+            />
+            {permissionSettings ? (
+              <ModulePermissionsCard initialSettings={permissionSettings} />
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-heading text-lg">
+                    Módulos & Permissões
+                  </CardTitle>
+                  <CardDescription>
+                    Não foi possível carregar as configurações de permissões no
+                    momento.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            )}
+          </div>
+        );
+    }
+  }
+
+  return (
+    <div
+      className={cn(
+        "mx-auto flex w-full flex-col",
+        isModal ? "max-w-none gap-5" : "max-w-6xl gap-6",
+      )}
+    >
+      {/* ------------------------------------------------------------------ */}
+      {/* DESKTOP LAYOUT · OPÇÃO A (FAIXA SUPERIOR + ESCOPO EU / IGREJA)     */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="hidden md:flex md:flex-col md:gap-5">
+        {!isModal ? (
+          <header className="flex flex-wrap items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5">
+                <h1 className="font-heading text-3xl leading-none tracking-tight">
+                  Configurações
+                </h1>
+                <Badge
+                  variant="outline"
+                  className="font-mono text-[11px] font-normal text-muted-foreground"
+                >
+                  v{APP_VERSION}
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Preferências pessoais de {userData.name} e{" "}
+                {isAdmin ? "administração" : "dados"} de {organization.name}.
+              </p>
+            </div>
+
+            <div
+              role="tablist"
+              aria-label="Escopo das configurações"
+              className="inline-flex items-center gap-1 rounded-xl border bg-muted/70 p-1"
+            >
+              {(
+                [
+                  { id: "account", label: "Minha Conta", icon: UserIcon },
+                  {
+                    id: "church",
+                    label: isAdmin ? "Igreja (Admin)" : "Igreja",
+                    icon: Building2Icon,
+                  },
+                ] as const
+              ).map((item) => {
+                const isSelected = scope === item.id;
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={isSelected}
+                    onClick={() => handleScopeChange(item.id)}
+                    onKeyDown={(e) =>
+                      handleTablistArrowKey(
+                        e,
+                        ["account", "church"],
+                        scope,
+                        handleScopeChange,
+                      )
+                    }
+                    className={cn(
+                      "inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg px-3.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                      isSelected
+                        ? "bg-primary text-primary-foreground shadow-2xs"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <Icon className="size-4" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </header>
+        ) : null}
+
+        {/* Faixa de sub-abas no padrão DomainSubtabs */}
+        {scope === "account" ? (
+          <nav
+            role="tablist"
+            aria-label="Seções de Minha Conta"
+            className="flex w-full md:w-fit max-w-full items-center gap-1 overflow-x-auto scrollbar-none rounded-xl bg-muted/70 p-1"
+          >
+            {accountTabs.map((tab) => {
+              const isSelected = accountTab === tab.id;
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isSelected}
+                  onClick={() => setAccountTab(tab.id)}
+                  onKeyDown={(e) =>
+                    handleTablistArrowKey(
+                      e,
+                      accountTabs.map((t) => t.id),
+                      accountTab,
+                      setAccountTab,
+                    )
+                  }
+                  className={cn(
+                    "flex min-h-9 shrink-0 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                    isSelected
+                      ? "border-border/70 bg-card text-foreground shadow-2xs"
+                      : "border-transparent text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      "size-4",
+                      isSelected ? "text-primary" : "text-muted-foreground",
+                    )}
+                  />
+                  <span>{tab.label}</span>
+                  {tab.badge ? (
+                    <Badge
+                      variant="secondary"
+                      className="px-1.5 py-0 text-[11px] font-medium text-primary"
+                    >
+                      {tab.badge}
+                    </Badge>
+                  ) : null}
+                </button>
+              );
+            })}
+          </nav>
+        ) : (
+          <nav
+            role="tablist"
+            aria-label="Seções da Igreja"
+            className="flex w-full md:w-fit max-w-full items-center gap-1 overflow-x-auto scrollbar-none rounded-xl bg-muted/70 p-1"
+          >
+            {churchTabs.map((tab) => {
+              const isSelected = churchTab === tab.id;
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isSelected}
+                  onClick={() => setChurchTab(tab.id)}
+                  onKeyDown={(e) =>
+                    handleTablistArrowKey(
+                      e,
+                      churchTabs.map((t) => t.id),
+                      churchTab,
+                      setChurchTab,
+                    )
+                  }
+                  className={cn(
+                    "flex min-h-9 shrink-0 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                    isSelected
+                      ? "border-border/70 bg-card text-foreground shadow-2xs"
+                      : "border-transparent text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      "size-4",
+                      isSelected ? "text-primary" : "text-muted-foreground",
+                    )}
+                  />
+                  <span>{tab.label}</span>
+                  {tab.badge ? (
+                    <Badge
+                      variant="secondary"
+                      className="px-1.5 py-0 text-[11px] font-medium text-primary"
+                    >
+                      {tab.badge}
+                    </Badge>
+                  ) : null}
+                </button>
+              );
+            })}
+          </nav>
+        )}
+
+        <div className="pt-1">
+          {scope === "account"
+            ? renderDesktopAccountContent()
+            : renderDesktopChurchContent()}
+        </div>
       </div>
 
       {/* ------------------------------------------------------------------ */}
-      {/* MOBILE LAYOUT (iOS Drill-down Style)                               */}
+      {/* MOBILE LAYOUT · OPÇÃO A (ESCOPO + LISTA CALMA COM STATUS INLINE)   */}
       {/* ------------------------------------------------------------------ */}
       <div className="block md:hidden">
         {activeMobileSection === null ? (
-          // Lista Principal de Configurações no Celular
           <div className="space-y-5">
-            {/* Card do Usuário */}
-            <div
-              onClick={() => setActiveMobileSection("account")}
-              className="flex items-center justify-between rounded-2xl border bg-card p-4 shadow-2xs transition-colors active:bg-muted/60 cursor-pointer"
-            >
-              <div className="flex items-center gap-3.5 min-w-0">
-                <Avatar className="size-14 ring-2 ring-border shrink-0">
-                  <AvatarImage
-                    src={userData.image ?? undefined}
-                    alt={userData.name}
-                  />
-                  <AvatarFallback className="bg-primary/10 font-heading text-lg text-primary">
-                    {getInitials(userData.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 space-y-0.5">
-                  <h3 className="font-heading text-base font-semibold text-foreground truncate">
-                    {userData.name}
-                  </h3>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {userData.username ? `@${userData.username}` : userData.email}
-                  </p>
-                  <p className="text-[11px] font-medium text-primary">
-                    {organization.name} · {roleLabel(role)}
-                  </p>
-                </div>
+            <div className="space-y-3">
+              <h1 className="font-heading text-2xl font-semibold tracking-tight">
+                Configurações
+              </h1>
+
+              {/* Alternador de Escopo Mobile (>= 44px touch targets) */}
+              <div
+                role="tablist"
+                aria-label="Escopo das configurações no celular"
+                className="grid grid-cols-2 gap-1 rounded-xl border bg-muted/70 p-1"
+              >
+                {(
+                  [
+                    { id: "account", label: "Minha Conta" },
+                    {
+                      id: "church",
+                      label: isAdmin ? "Igreja (Admin)" : "Igreja",
+                    },
+                  ] as const
+                ).map((item) => {
+                  const isSelected = scope === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={isSelected}
+                      onClick={() => setScope(item.id)}
+                      className={cn(
+                        "flex min-h-11 cursor-pointer items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                        isSelected
+                          ? "bg-primary font-semibold text-primary-foreground shadow-2xs"
+                          : "text-foreground/80 hover:text-foreground",
+                      )}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
               </div>
-              <ChevronRightIcon className="size-5 text-muted-foreground/50 shrink-0 ml-2" />
             </div>
 
-            {/* Categorias iOS */}
-            {navCategories.map((cat) => (
-              <div key={cat.title} className="space-y-1.5">
-                <span className="px-3 text-[0.68rem] font-semibold tracking-wider text-muted-foreground uppercase">
-                  {cat.title}
-                </span>
-                <div className="rounded-2xl border bg-card overflow-hidden divide-y divide-border/50 shadow-2xs">
-                  {cat.items.map((item) => (
-                    <IosSettingsRow
-                      key={item.id}
-                      icon={item.icon}
-                      iconBg={item.color}
-                      title={item.label}
-                      subtitle={item.subtitle}
-                      badge={item.badge}
-                      badgeVariant={item.badgeVariant}
-                      onClick={() => setActiveMobileSection(item.id)}
+            {scope === "account" ? (
+              <div className="space-y-5">
+                {/* Cartão de Perfil */}
+                <div className="flex items-center justify-between gap-3 rounded-2xl border bg-card p-3.5 shadow-2xs">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar className="size-12 shrink-0 ring-1 ring-border">
+                      <AvatarImage
+                        src={userData.image ?? undefined}
+                        alt={userData.name}
+                      />
+                      <AvatarFallback className="bg-secondary font-heading text-base font-semibold text-primary">
+                        {getInitials(userData.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 space-y-0.5">
+                      <p className="truncate font-heading text-base font-semibold text-foreground">
+                        {userData.name}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {userData.username
+                          ? `@${userData.username}`
+                          : userData.email}{" "}
+                        · {roleLabel(role)}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setActiveMobileSection("account")}
+                    className="min-h-11 shrink-0 rounded-xl px-3.5 text-xs font-semibold text-primary"
+                  >
+                    Editar
+                  </Button>
+                </div>
+
+                {/* Grupo Preferências */}
+                <section className="space-y-2">
+                  <h2 className="px-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                    Preferências
+                  </h2>
+                  <div className="overflow-hidden rounded-2xl border bg-card divide-y divide-border/60 shadow-2xs">
+                    {mobilePreferenceRows.map((row) => (
+                      <CalmSettingsRow
+                        key={row.id}
+                        item={row}
+                        onSelect={setActiveMobileSection}
+                      />
+                    ))}
+                  </div>
+                </section>
+
+                {/* Grupo Segurança & Sistema */}
+                <section className="space-y-2">
+                  <h2 className="px-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                    Segurança & Sistema
+                  </h2>
+                  <div className="overflow-hidden rounded-2xl border bg-card divide-y divide-border/60 shadow-2xs">
+                    {mobileSecurityRows.map((row) => (
+                      <CalmSettingsRow
+                        key={row.id}
+                        item={row}
+                        onSelect={setActiveMobileSection}
+                      />
+                    ))}
+                  </div>
+                </section>
+              </div>
+            ) : (
+              <section className="space-y-2">
+                <h2 className="px-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                  {isAdmin
+                    ? "Administração da igreja"
+                    : "Informações da igreja"}
+                </h2>
+                <div className="overflow-hidden rounded-2xl border bg-card divide-y divide-border/60 shadow-2xs">
+                  {mobileChurchRows.map((row) => (
+                    <CalmSettingsRow
+                      key={row.id}
+                      item={row}
+                      onSelect={setActiveMobileSection}
                     />
                   ))}
                 </div>
-              </div>
-            ))}
+              </section>
+            )}
 
-            {/* Versão no Rodapé do Mobile */}
-            <div className="py-4 text-center space-y-1">
-              <p className="font-heading text-xs font-semibold text-muted-foreground">
-                {APP_NAME}
-              </p>
-              <p className="font-mono text-[11px] text-muted-foreground/60">
-                Versão {APP_VERSION} · Open-source
-              </p>
-            </div>
+            <footer className="flex items-center justify-between px-1 pt-1 text-[11px] text-muted-foreground">
+              <span className="truncate">{organization.name}</span>
+              <span className="shrink-0 font-mono">
+                {APP_NAME} v{APP_VERSION}
+              </span>
+            </footer>
           </div>
         ) : (
-          // Visualização Detalhada com Barra Superior iOS
           <div className="space-y-5">
-            <div className="flex items-center gap-2 pb-2 border-b">
+            <div className="flex items-center justify-between gap-2 border-b pb-3">
               <Button
+                type="button"
                 variant="ghost"
-                size="sm"
                 onClick={() => setActiveMobileSection(null)}
-                className="gap-1.5 -ml-2 text-primary font-medium hover:bg-transparent h-9 px-2 text-sm"
+                className="-ml-2 min-h-11 gap-1.5 px-2.5 text-sm font-medium text-primary"
               >
                 <ChevronLeftIcon className="size-4" />
                 Voltar
               </Button>
-              {(() => {
-                const activeItem = navCategories
-                  .flatMap((c) => c.items)
-                  .find((item) => item.id === activeMobileSection);
-                return activeItem ? (
-                  <span className="font-heading text-sm font-semibold text-foreground truncate flex-1 text-right">
-                    {activeItem.label}
-                  </span>
-                ) : null;
-              })()}
+              <span className="truncate text-right font-heading text-base font-semibold text-foreground">
+                {mobileSectionTitles[activeMobileSection]}
+              </span>
             </div>
 
-            {/* Conteúdo da Seção no Mobile */}
-            <div className="space-y-6">
-              {renderSectionContent(activeMobileSection)}
+            <div className="space-y-6 pb-4">
+              {renderMobileSectionContent(activeMobileSection)}
             </div>
           </div>
         )}
@@ -605,62 +1100,42 @@ export function SettingsView({
   );
 }
 
-type IosSettingsRowProps = {
-  icon: typeof UserIcon;
-  iconBg: string;
-  title: string;
-  subtitle?: string;
-  badge?: string;
-  badgeVariant?: "default" | "secondary" | "outline";
-  onClick: () => void;
-};
-
-function IosSettingsRow({
-  icon: Icon,
-  iconBg,
-  title,
-  subtitle,
-  badge,
-  badgeVariant = "secondary",
-  onClick,
-}: IosSettingsRowProps) {
+function CalmSettingsRow({
+  item,
+  onSelect,
+}: {
+  item: MobileRowItem;
+  onSelect: (id: MobileSettingsSection) => void;
+}) {
+  const Icon = item.icon;
   return (
-    <div
-      onClick={onClick}
-      className="flex items-center justify-between p-3.5 transition-colors active:bg-muted/70 hover:bg-muted/40 cursor-pointer"
+    <button
+      type="button"
+      onClick={() => onSelect(item.id)}
+      className="flex min-h-[54px] w-full cursor-pointer items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-muted/40 active:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
     >
-      <div className="flex items-center gap-3 min-w-0">
-        <div
-          className={cn(
-            "flex size-8 shrink-0 items-center justify-center rounded-lg shadow-2xs",
-            iconBg,
-          )}
-        >
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-primary">
           <Icon className="size-4" />
-        </div>
-        <div className="min-w-0 space-y-0.5">
-          <p className="text-sm font-medium text-foreground tracking-tight truncate">
-            {title}
-          </p>
-          {subtitle ? (
-            <p className="text-xs text-muted-foreground truncate leading-none">
-              {subtitle}
-            </p>
-          ) : null}
-        </div>
+        </span>
+        <span className="truncate text-sm font-medium text-foreground">
+          {item.label}
+        </span>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0 ml-2">
-        {badge ? (
+      <div className="flex shrink-0 items-center gap-2">
+        {item.badge ? (
           <Badge
-            variant={badgeVariant}
-            className="text-[10px] font-mono font-normal"
+            variant={item.badgeVariant ?? "secondary"}
+            className="px-2 py-0.5 text-[11px] font-medium"
           >
-            {badge}
+            {item.badge}
           </Badge>
+        ) : item.status ? (
+          <span className="text-xs text-muted-foreground">{item.status}</span>
         ) : null}
-        <ChevronRightIcon className="size-4 text-muted-foreground/50" />
+        <ChevronRightIcon className="size-4 text-muted-foreground/60" />
       </div>
-    </div>
+    </button>
   );
 }
