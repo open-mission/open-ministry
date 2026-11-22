@@ -1,29 +1,48 @@
 "use client";
 
-import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   addDays,
   addMonths,
   addWeeks,
   addYears,
+  endOfWeek,
+  format,
+  startOfWeek,
   subDays,
   subMonths,
   subWeeks,
   subYears,
 } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 
 import { CalendarHeader } from "@/components/calendar/calendar-header";
-import { EventDetailDialog } from "@/components/calendar/event-detail-dialog";
-import { CalendarAgendaView } from "@/components/calendar/views/calendar-agenda-view";
-import { CalendarDayView } from "@/components/calendar/views/calendar-day-view";
-import { CalendarMonthView } from "@/components/calendar/views/calendar-month-view";
-import { CalendarWeekView } from "@/components/calendar/views/calendar-week-view";
-import { CalendarYearView } from "@/components/calendar/views/calendar-year-view";
+import { EventPreviewSheet } from "@/components/calendar/event-detail-dialog";
+import { CreateEventDialog } from "@/components/events/create-event-dialog";
+import { AgendaView } from "@/features/calendar/calendarcn/components/agenda-view";
+import { CalendarProvider } from "@/features/calendar/calendarcn/components/calendar-provider";
+import type {
+  EventContentProps,
+  NewEventRange,
+} from "@/features/calendar/calendarcn/components/calendar-types";
+import { MonthView } from "@/features/calendar/calendarcn/components/month-view";
+import { TimeGrid } from "@/features/calendar/calendarcn/components/time-grid";
+import { YearView } from "@/features/calendar/calendarcn/components/year-view";
+import {
+  toCalendarCnEvents,
+  type OpenMinistryCalendarEvent,
+} from "@/features/calendar/lib/to-calendarcn-events";
 import {
   AGENDA_WINDOW_DAYS,
   buildCalendarIcs,
   dedupeCalendarItems,
+  formatCalendarDate,
   getCalendarRange,
   isCalendarItemInRange,
   type CalendarFilterType,
@@ -31,6 +50,7 @@ import {
   type CalendarPreferences,
   type CalendarViewMode,
 } from "@/lib/calendar";
+import type { DepartmentOption } from "@/lib/departments";
 
 type FullCalendarProps = {
   initialItems: CalendarItem[];
@@ -38,7 +58,7 @@ type FullCalendarProps = {
   canCreateEvent?: boolean;
   canCreateRehearsal?: boolean;
   canViewTeamAvailability?: boolean;
-  departments?: { id: string; name: string }[];
+  departments?: DepartmentOption[];
 };
 
 const MOBILE_QUERY = "(max-width: 639px)";
@@ -57,13 +77,59 @@ function getMobileServerSnapshot() {
   return false;
 }
 
+function filterByDepartment(
+  items: CalendarItem[],
+  selectedDepartmentId: string,
+): CalendarItem[] {
+  if (selectedDepartmentId === "all") return items;
+  return items.filter((item) => {
+    if (item.type === "event") {
+      return item.metadata?.departmentIds?.includes(selectedDepartmentId);
+    }
+    if (item.type === "assignment") {
+      return (
+        item.metadata?.departmentId === selectedDepartmentId ||
+        item.metadata?.departmentIds?.includes(selectedDepartmentId)
+      );
+    }
+    if (item.type === "birthday") {
+      return item.metadata?.departmentIds?.includes(selectedDepartmentId);
+    }
+    if (item.type === "unavailability") {
+      return (
+        item.metadata?.departmentIds?.includes(selectedDepartmentId) ?? false
+      );
+    }
+    return true;
+  });
+}
+
+function applyTypeFilter(
+  items: CalendarItem[],
+  filterType: CalendarFilterType,
+): CalendarItem[] {
+  if (filterType === "events") {
+    return items.filter((item) => item.type === "event");
+  }
+  if (filterType === "assignments") {
+    return items.filter((item) => item.type === "assignment");
+  }
+  if (filterType === "unavailabilities") {
+    return items.filter((item) => item.type === "unavailability");
+  }
+  if (filterType === "birthdays") {
+    return items.filter((item) => item.type === "birthday");
+  }
+  return dedupeCalendarItems(items);
+}
+
 export function FullCalendar({
   initialItems,
   initialPreferences,
-  canCreateEvent,
-  canCreateRehearsal,
-  canViewTeamAvailability,
-  departments,
+  canCreateEvent = false,
+  canCreateRehearsal = false,
+  canViewTeamAvailability = false,
+  departments = [],
 }: FullCalendarProps) {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [chosenView, setChosenView] = useState<CalendarViewMode | null>(null);
@@ -71,8 +137,7 @@ export function FullCalendar({
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>("all");
   const preferences = initialPreferences;
 
-  // The member opens the app on a phone on Sunday; start where the answer is,
-  // not in a seven-column grid squeezed into 375px. The chosen view always wins.
+  // Mobile opens on chronological Agenda; desktop opens on Month (Google Calendar style).
   const isMobile = useSyncExternalStore(
     subscribeToMobile,
     getMobileSnapshot,
@@ -83,11 +148,15 @@ export function FullCalendar({
   const [selectedItem, setSelectedItem] = useState<CalendarItem | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
+  const [slotCreateOpen, setSlotCreateOpen] = useState(false);
+  const [slotCreateDate, setSlotCreateDate] = useState<string>(() =>
+    format(new Date(), "yyyy-MM-dd"),
+  );
+
   const handleViewChange = useCallback((view: CalendarViewMode) => {
     setChosenView(view);
   }, []);
 
-  // Navigation Handlers
   const handlePrev = useCallback(() => {
     setCurrentDate((prev) => {
       switch (viewMode) {
@@ -131,18 +200,6 @@ export function FullCalendar({
     setCurrentDate(date);
   }, []);
 
-  const handleSelectMonth = useCallback((date: Date) => {
-    setChosenView("month");
-    setCurrentDate(date);
-  }, []);
-
-  const handleSelectItem = useCallback((item: CalendarItem) => {
-    setSelectedItem(item);
-    setIsDetailOpen(true);
-  }, []);
-
-  // Only the range the view actually renders. Everything below — counts,
-  // filters, empty states — reads from it.
   const visibleRange = useMemo(
     () => getCalendarRange(viewMode, currentDate, preferences.weekStartsOn),
     [currentDate, preferences.weekStartsOn, viewMode],
@@ -156,70 +213,96 @@ export function FullCalendar({
     [initialItems, preferences.timezone, visibleRange],
   );
 
-  // Department filtered items
-  const departmentFilteredItems = useMemo(() => {
-    if (selectedDepartmentId === "all") return visibleItems;
-    return visibleItems.filter((item) => {
-      if (item.type === "event") {
-        return item.metadata?.departmentIds?.includes(selectedDepartmentId);
-      }
-      if (item.type === "assignment") {
-        return (
-          item.metadata?.departmentId === selectedDepartmentId ||
-          item.metadata?.departmentIds?.includes(selectedDepartmentId)
-        );
-      }
-      if (item.type === "birthday") {
-        return item.metadata?.departmentIds?.includes(selectedDepartmentId);
-      }
-      if (item.type === "unavailability") {
-        return (
-          item.metadata?.departmentIds?.includes(selectedDepartmentId) ?? false
-        );
-      }
-      return true;
-    });
-  }, [visibleItems, selectedDepartmentId]);
+  const departmentVisibleItems = useMemo(
+    () => filterByDepartment(visibleItems, selectedDepartmentId),
+    [visibleItems, selectedDepartmentId],
+  );
 
-  // Items count for the visible range. "Todos" mirrors what is rendered
-  // (an assignment replaces its event card), while each type keeps its own
-  // count so the chip matches the filtered result.
-  const itemsCount = useMemo(() => {
-    return {
-      total: dedupeCalendarItems(departmentFilteredItems).length,
-      events: departmentFilteredItems.filter((i) => i.type === "event").length,
-      assignments: departmentFilteredItems.filter(
-        (i) => i.type === "assignment",
-      ).length,
-      unavailabilities: departmentFilteredItems.filter(
+  const itemsCount = useMemo(
+    () => ({
+      total: dedupeCalendarItems(departmentVisibleItems).length,
+      events: departmentVisibleItems.filter((i) => i.type === "event").length,
+      assignments: departmentVisibleItems.filter((i) => i.type === "assignment")
+        .length,
+      unavailabilities: departmentVisibleItems.filter(
         (i) => i.type === "unavailability",
       ).length,
-      birthdays: departmentFilteredItems.filter((i) => i.type === "birthday")
+      birthdays: departmentVisibleItems.filter((i) => i.type === "birthday")
         .length,
+    }),
+    [departmentVisibleItems],
+  );
+
+  const visibleFilteredItems = useMemo(
+    () => applyTypeFilter(departmentVisibleItems, filterType),
+    [departmentVisibleItems, filterType],
+  );
+
+  // Full range across months/scrolling passed to CalendarProvider so CalendarCN
+  // shows neighboring days and scroll buffers accurately.
+  const providerItems = useMemo(
+    () =>
+      applyTypeFilter(
+        filterByDepartment(initialItems, selectedDepartmentId),
+        filterType,
+      ),
+    [initialItems, selectedDepartmentId, filterType],
+  );
+
+  const calendarcnEvents = useMemo(
+    () => toCalendarCnEvents(providerItems),
+    [providerItems],
+  );
+
+  const itemsById = useMemo(
+    () => new Map(providerItems.map((item) => [item.id, item])),
+    [providerItems],
+  );
+
+  const weekAssignmentsCount = useMemo(() => {
+    const now = new Date();
+    const start = startOfWeek(now, { weekStartsOn: preferences.weekStartsOn });
+    const end = endOfWeek(now, { weekStartsOn: preferences.weekStartsOn });
+    const range = {
+      start,
+      end,
+      startKey: format(start, "yyyy-MM-dd"),
+      endKey: format(end, "yyyy-MM-dd"),
     };
-  }, [departmentFilteredItems]);
+    return initialItems.filter(
+      (item) =>
+        item.type === "assignment" &&
+        isCalendarItemInRange(item, range, preferences.timezone),
+    ).length;
+  }, [initialItems, preferences.timezone, preferences.weekStartsOn]);
 
-  // Filtered items
-  const filteredItems = useMemo(() => {
-    if (filterType === "events")
-      return departmentFilteredItems.filter((i) => i.type === "event");
-    if (filterType === "assignments")
-      return departmentFilteredItems.filter((i) => i.type === "assignment");
-    if (filterType === "unavailabilities")
-      return departmentFilteredItems.filter((i) => i.type === "unavailability");
-    if (filterType === "birthdays")
-      return departmentFilteredItems.filter((i) => i.type === "birthday");
+  const handleEventSelect = useCallback(
+    (eventId: string) => {
+      const item = itemsById.get(eventId);
+      if (!item) return;
+      setSelectedItem(item);
+      setIsDetailOpen(true);
+    },
+    [itemsById],
+  );
 
-    return dedupeCalendarItems(departmentFilteredItems);
-  }, [departmentFilteredItems, filterType]);
+  const handleSlotCreateEvent = useCallback(
+    (range: NewEventRange) => {
+      if (!canCreateEvent) return null;
+      setSlotCreateDate(format(range.start, "yyyy-MM-dd"));
+      setSlotCreateOpen(true);
+      return null;
+    },
+    [canCreateEvent],
+  );
 
   const handleExport = useCallback(() => {
-    if (filteredItems.length === 0) {
+    if (visibleFilteredItems.length === 0) {
       toast.info("Não há compromissos para exportar neste período.");
       return;
     }
 
-    const ics = buildCalendarIcs(filteredItems, {
+    const ics = buildCalendarIcs(visibleFilteredItems, {
       timeZone: preferences.timezone,
       calendarName: "Agenda OpenMinistry",
     });
@@ -231,18 +314,108 @@ export function FullCalendar({
     anchor.click();
     URL.revokeObjectURL(url);
     toast.success("Agenda exportada para o seu calendário.");
-  }, [filteredItems, preferences.timezone]);
+  }, [visibleFilteredItems, preferences.timezone]);
+
+  const renderEventContent = useCallback(
+    ({
+      event,
+      placement,
+      isSelected,
+    }: EventContentProps<OpenMinistryCalendarEvent>) => {
+      const item = event.openMinistryItem;
+      const isMine =
+        item.type === "assignment" || Boolean(item.metadata?.isMyAssignment);
+
+      if (placement === "agenda") {
+        const timeText = item.allDay
+          ? "Dia todo"
+          : `${formatCalendarDate(item.startsAt, "HH:mm", {
+              timeZone: preferences.timezone,
+            })} – ${formatCalendarDate(item.endsAt, "HH:mm", {
+              timeZone: preferences.timezone,
+            })}`;
+
+        return (
+          <div className="flex w-full min-w-0 items-center justify-between gap-3 px-2.5 py-2">
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {isMine ? (
+                  <span
+                    className={
+                      isSelected
+                        ? "rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold text-white"
+                        : "rounded-full border border-primary/25 bg-secondary px-2 py-0.5 text-[11px] font-semibold text-primary"
+                    }
+                  >
+                    {item.metadata?.functionName
+                      ? `Você serve: ${item.metadata.functionName}`
+                      : "Minha escala"}
+                  </span>
+                ) : null}
+                <span className="truncate font-heading text-sm font-semibold">
+                  {item.title}
+                </span>
+              </div>
+              <p className="truncate text-xs opacity-80">
+                {timeText}
+                {item.location ? ` · ${item.location}` : ""}
+              </p>
+            </div>
+            <span className="shrink-0 text-[11px] font-semibold opacity-80">
+              Informações ›
+            </span>
+          </div>
+        );
+      }
+
+      if (placement === "month-item") {
+        const startTime = formatCalendarDate(item.startsAt, "HH:mm", {
+          timeZone: preferences.timezone,
+        });
+        return (
+          <div className="flex min-w-0 flex-1 items-center gap-1 text-[11px] leading-tight">
+            {!item.allDay ? (
+              <span className="shrink-0 font-mono font-semibold opacity-85">
+                {startTime}
+              </span>
+            ) : null}
+            <span className="truncate font-medium">
+              {isMine && item.metadata?.functionName
+                ? `${item.metadata.functionName} · ${item.title}`
+                : item.title}
+            </span>
+          </div>
+        );
+      }
+
+      return (
+        <span className="truncate px-1 text-[11px] font-semibold leading-tight">
+          {item.title}
+        </span>
+      );
+    },
+    [preferences.timezone],
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Calendar Header with Navigation, Views & Filters */}
+    <div className="space-y-4">
       <CalendarHeader
         currentDate={currentDate}
         viewMode={viewMode}
         filterType={filterType}
         selectedDepartmentId={selectedDepartmentId}
-        preferences={preferences}
-        visibleRange={visibleRange}
+        departments={departments}
+        weekStartsOn={preferences.weekStartsOn}
+        timeZone={preferences.timezone}
+        totalCount={itemsCount.total}
+        eventsCount={itemsCount.events}
+        assignmentsCount={itemsCount.assignments}
+        unavailabilitiesCount={itemsCount.unavailabilities}
+        birthdaysCount={itemsCount.birthdays}
+        weekAssignmentsCount={weekAssignmentsCount}
+        canViewTeamAvailability={canViewTeamAvailability}
+        canCreateEvent={canCreateEvent}
+        canCreateRehearsal={canCreateRehearsal}
         onViewChange={handleViewChange}
         onFilterChange={setFilterType}
         onDepartmentChange={setSelectedDepartmentId}
@@ -250,76 +423,57 @@ export function FullCalendar({
         onNext={handleNext}
         onToday={handleToday}
         onExport={handleExport}
-        itemsCount={itemsCount}
-        canCreateEvent={canCreateEvent}
-        canCreateRehearsal={canCreateRehearsal}
-        canViewTeamAvailability={canViewTeamAvailability}
-        departments={departments}
       />
 
-      {/* View Content */}
-      <div className="min-h-[500px]">
-        {viewMode === "month" && (
-          <CalendarMonthView
-            currentDate={currentDate}
-            items={filteredItems}
-            weekStartsOn={preferences.weekStartsOn}
-            timeZone={preferences.timezone}
-            onSelectDate={handleSelectDate}
-            onSelectItem={handleSelectItem}
-          />
-        )}
+      <CalendarProvider<OpenMinistryCalendarEvent>
+        events={calendarcnEvents}
+        view={viewMode}
+        onViewChange={handleViewChange}
+        date={currentDate}
+        onDateChange={setCurrentDate}
+        weekStartsOn={preferences.weekStartsOn}
+        locale={ptBR}
+        timeZone={preferences.timezone}
+        hourCycle={24}
+        dayStartHour={6}
+        dayEndHour={23}
+        onEventSelect={handleEventSelect}
+        createEvent={handleSlotCreateEvent}
+        renderEventContent={renderEventContent}
+      >
+        <div className="h-[calc(100dvh-18.5rem)] min-h-[480px] overflow-hidden rounded-xl border bg-card shadow-xs sm:h-[calc(100dvh-15rem)] sm:min-h-[600px]">
+          {viewMode === "month" && <MonthView showEventPopover={false} />}
+          {viewMode === "week" && (
+            <TimeGrid view="week" showEventPopover={false} scrollToHour={8} />
+          )}
+          {viewMode === "agenda" && <AgendaView showEventPopover={false} />}
+          {viewMode === "day" && (
+            <TimeGrid view="day" showEventPopover={false} scrollToHour={8} />
+          )}
+          {viewMode === "year" && (
+            <div className="h-full overflow-y-auto">
+              <YearView onDayClick={handleSelectDate} />
+            </div>
+          )}
+        </div>
+      </CalendarProvider>
 
-        {viewMode === "week" && (
-          <CalendarWeekView
-            currentDate={currentDate}
-            items={filteredItems}
-            weekStartsOn={preferences.weekStartsOn}
-            timeZone={preferences.timezone}
-            onSelectDate={handleSelectDate}
-            onSelectItem={handleSelectItem}
-          />
-        )}
-
-        {viewMode === "day" && (
-          <CalendarDayView
-            currentDate={currentDate}
-            items={filteredItems}
-            timeZone={preferences.timezone}
-            onSelectItem={handleSelectItem}
-            onSwitchToMonth={() => handleViewChange("month")}
-          />
-        )}
-
-        {viewMode === "year" && (
-          <CalendarYearView
-            currentDate={currentDate}
-            items={filteredItems}
-            weekStartsOn={preferences.weekStartsOn}
-            timeZone={preferences.timezone}
-            onSelectDate={handleSelectDate}
-            onSelectMonth={handleSelectMonth}
-          />
-        )}
-
-        {viewMode === "agenda" && (
-          <CalendarAgendaView
-            currentDate={currentDate}
-            items={filteredItems}
-            timeZone={preferences.timezone}
-            onSelectItem={handleSelectItem}
-            onToday={handleToday}
-          />
-        )}
-      </div>
-
-      {/* Item Detail Dialog */}
-      <EventDetailDialog
+      <EventPreviewSheet
         item={selectedItem}
         open={isDetailOpen}
         timeZone={preferences.timezone}
         onOpenChange={setIsDetailOpen}
       />
+
+      {canCreateEvent ? (
+        <CreateEventDialog
+          departments={departments}
+          defaultDate={slotCreateDate}
+          defaultKind="service"
+          open={slotCreateOpen}
+          onOpenChange={setSlotCreateOpen}
+        />
+      ) : null}
     </div>
   );
 }
