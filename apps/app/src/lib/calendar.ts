@@ -496,8 +496,16 @@ export type CalendarEventPreviewAssignment = {
   id: string;
   personName: string;
   functionName: string;
+  departmentId?: string;
   departmentName: string;
   isMine: boolean;
+};
+
+export type CalendarEventPreviewDepartmentCoverage = {
+  departmentId: string;
+  departmentName: string;
+  assigned: number;
+  total: number;
 };
 
 export type CalendarEventPreview = {
@@ -513,6 +521,7 @@ export type CalendarEventPreview = {
     assigned: number;
     total: number;
   };
+  departmentCoverage?: CalendarEventPreviewDepartmentCoverage[];
   assignments: CalendarEventPreviewAssignment[];
   songs: CalendarEventPreviewSong[];
   planItems: CalendarEventPreviewPlanItem[];

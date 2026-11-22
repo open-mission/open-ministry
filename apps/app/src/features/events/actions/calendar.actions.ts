@@ -357,12 +357,39 @@ export async function getCalendarEventPreviewAction(
   );
 
   const rawAssignments = event.schedule?.assignments ?? [];
+  const departmentCoverage: NonNullable<
+    CalendarEventPreview["departmentCoverage"]
+  > = event.departments.map((item) => {
+    const deptId = item.departmentId;
+    const configuredFunctions = event.functions?.filter(
+      (fn) => fn.departmentId === deptId,
+    );
+    const total =
+      configuredFunctions && configuredFunctions.length > 0
+        ? configuredFunctions.length
+        : item.department.functions.length;
+    const deptAssignments = rawAssignments.filter(
+      (assignment) => assignment.departmentId === deptId,
+    );
+    const assigned = new Set(
+      deptAssignments.map((assignment) => assignment.functionId),
+    ).size;
+
+    return {
+      departmentId: deptId,
+      departmentName: item.department.name,
+      assigned,
+      total,
+    };
+  });
+
   const assignments = rawAssignments.map((assignment) => ({
     id: assignment.id,
     personName: assignment.person
       ? personDisplayName(assignment.person)
       : "Membro",
     functionName: assignment.function?.name ?? "Função",
+    departmentId: assignment.departmentId,
     departmentName: deptNameById.get(assignment.departmentId) ?? "",
     isMine: Boolean(
       assignment.person?.userId &&
@@ -418,6 +445,7 @@ export async function getCalendarEventPreviewAction(
       assigned: progress.filledFunctions,
       total: progress.totalFunctions,
     },
+    departmentCoverage,
     assignments,
     songs,
     planItems,
