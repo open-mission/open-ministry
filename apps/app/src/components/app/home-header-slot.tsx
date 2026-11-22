@@ -66,7 +66,7 @@ export function HomeAwareHeader({ children }: { children: ReactNode }) {
 
   if (isCalendar) {
     return (
-      <header className="pointer-events-none sticky top-0 z-20 flex h-0 items-start justify-between overflow-visible border-0 bg-transparent px-4 pt-[max(1.125rem,env(safe-area-inset-top))] sm:px-6 lg:px-8 lg:pt-6">
+      <header className="pointer-events-none sticky top-0 z-20 flex h-0 items-start justify-between overflow-visible border-0 bg-transparent px-4 pt-[max(1.125rem,env(safe-area-inset-top))] sm:px-6 md:h-9 md:items-center md:pt-1.5 lg:px-8">
         {children}
       </header>
     );

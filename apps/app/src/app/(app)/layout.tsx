@@ -106,7 +106,7 @@ export default function DashboardLayout({
                 <Suspense fallback={null}>
                   <NotificationBarLoader />
                 </Suspense>
-                <div className="flex flex-1 flex-col px-4 pt-5 pb-28 sm:px-6 sm:pt-6 sm:pb-28 md:pb-8 lg:px-8 lg:pt-8">
+                <div className="flex flex-1 flex-col px-4 pt-5 pb-28 sm:px-6 sm:pt-6 sm:pb-28 md:pb-8 lg:px-8 lg:pt-8 has-[[data-calendar-container]]:md:pt-2">
                   {children}
                 </div>
                 <Suspense fallback={<MobileNavShell />}>

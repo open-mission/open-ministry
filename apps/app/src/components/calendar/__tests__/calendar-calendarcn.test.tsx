@@ -197,4 +197,19 @@ describe("CalendarCN integration", () => {
     expect(isCalendarRoute("/")).toBe(false);
     expect(isCalendarRoute(null)).toBe(false);
   });
+
+  it("keeps DomainSubtabs aligned left with calendar header and removes Prévia · Modo leitura badge", async () => {
+    const [calendarPageSource, dialogSource] = await Promise.all([
+      Bun.file(
+        new URL("../../../app/(app)/dashboard/calendar/page.tsx", import.meta.url),
+      ).text(),
+      Bun.file(
+        new URL("../event-detail-dialog.tsx", import.meta.url),
+      ).text(),
+    ]);
+
+    expect(calendarPageSource).toContain("data-calendar-container");
+    expect(calendarPageSource).not.toContain("md:pl-10");
+    expect(dialogSource).not.toContain("Prévia · Modo leitura");
+  });
 });

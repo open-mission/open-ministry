@@ -175,15 +175,6 @@ export function EventPreviewSheet({
 
   const badgeRow = (
     <div className="flex flex-wrap items-center gap-2">
-      {eventId ? (
-        <Badge
-          variant="secondary"
-          className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
-        >
-          Prévia · Modo leitura
-        </Badge>
-      ) : null}
-
       {hasMyAssignment ? (
         <Badge className="border-primary/20 bg-secondary text-[11px] font-semibold text-primary">
           <UserCheckIcon className="mr-1 size-3" aria-hidden="true" />
