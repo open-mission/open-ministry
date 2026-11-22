@@ -33,6 +33,9 @@ afterAll(() => {
 
 const { FullCalendar } = await import("@/components/calendar/full-calendar");
 const { CalendarHeader } = await import("@/components/calendar/calendar-header");
+const { buildDepartmentSections } = await import(
+  "@/components/calendar/event-detail-dialog"
+);
 
 const SAMPLE_ITEMS: CalendarItem[] = [
   {
@@ -211,5 +214,67 @@ describe("CalendarCN integration", () => {
     expect(calendarPageSource).toContain("data-calendar-container");
     expect(calendarPageSource).not.toContain("md:pl-10");
     expect(dialogSource).not.toContain("Prévia · Modo leitura");
+    expect(dialogSource).toContain(
+      '<section aria-label="Equipe escalada" className="space-y-3 pt-1">',
+    );
+  });
+
+  it("splits schedule coverage by department including empty departments", () => {
+    const preview: CalendarEventPreview = {
+      eventId: "evt-1",
+      kind: "service",
+      title: "Culto de Domingo",
+      startsAt: "2026-11-22T21:00:00.000Z",
+      endsAt: "2026-11-22T23:30:00.000Z",
+      location: "Templo Principal",
+      description: null,
+      href: "/dashboard/events/evt-1",
+      coverage: { assigned: 2, total: 12 },
+      departmentCoverage: [
+        { departmentId: "dept-louvor", departmentName: "Louvor", assigned: 2, total: 6 },
+        { departmentId: "dept-midia", departmentName: "Mídia", assigned: 0, total: 4 },
+        { departmentId: "dept-recepcao", departmentName: "Recepção", assigned: 0, total: 2 },
+      ],
+      assignments: [
+        {
+          id: "a1",
+          personName: "Maria Clara",
+          functionName: "Violão",
+          departmentId: "dept-louvor",
+          departmentName: "Louvor",
+          isMine: true,
+        },
+        {
+          id: "a2",
+          personName: "Lucas Mendes",
+          functionName: "Bateria",
+          departmentId: "dept-louvor",
+          departmentName: "Louvor",
+          isMine: false,
+        },
+      ],
+      songs: [],
+      planItems: [],
+    };
+
+    const sections = buildDepartmentSections(preview);
+    expect(sections).toHaveLength(3);
+    expect(sections[0]).toMatchObject({
+      departmentName: "Louvor",
+      assigned: 2,
+      total: 6,
+    });
+    expect(sections[0]?.assignments).toHaveLength(2);
+    expect(sections[1]).toMatchObject({
+      departmentName: "Mídia",
+      assigned: 0,
+      total: 4,
+    });
+    expect(sections[1]?.assignments).toHaveLength(0);
+    expect(sections[2]).toMatchObject({
+      departmentName: "Recepção",
+      assigned: 0,
+      total: 2,
+    });
   });
 });

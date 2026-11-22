@@ -98,6 +98,63 @@ function buildPlanPreviewRows(
   );
 }
 
+type DepartmentSection = {
+  key: string;
+  departmentName: string;
+  assigned: number;
+  total: number;
+  assignments: CalendarEventPreview["assignments"];
+};
+
+export function buildDepartmentSections(
+  preview: CalendarEventPreview | null,
+): DepartmentSection[] {
+  if (!preview) return [];
+
+  const matchedIds = new Set<string>();
+  const sections: DepartmentSection[] = [];
+
+  for (const dept of preview.departmentCoverage ?? []) {
+    const deptName = dept.departmentName.trim() || "Equipe geral";
+    const matched = preview.assignments.filter((assignment) =>
+      assignment.departmentId
+        ? assignment.departmentId === dept.departmentId
+        : assignment.departmentName.trim() === deptName,
+    );
+    for (const assignment of matched) {
+      matchedIds.add(assignment.id);
+    }
+    sections.push({
+      key: dept.departmentId,
+      departmentName: deptName,
+      assigned: dept.assigned,
+      total: dept.total,
+      assignments: matched,
+    });
+  }
+
+  const remainingByDept = new Map<string, CalendarEventPreview["assignments"]>();
+  for (const assignment of preview.assignments) {
+    if (matchedIds.has(assignment.id)) continue;
+    const deptLabel = assignment.departmentName?.trim() || "Equipe geral";
+    const group = remainingByDept.get(deptLabel) ?? [];
+    group.push(assignment);
+    remainingByDept.set(deptLabel, group);
+  }
+
+  for (const [deptName, group] of remainingByDept.entries()) {
+    sections.push({
+      key: `fallback-${deptName}`,
+      departmentName: deptName,
+      assigned: group.length,
+      total: 0,
+      assignments: group,
+    });
+  }
+
+  return sections;
+}
+
 export function EventPreviewSheet({
   item,
   open,
@@ -220,25 +277,12 @@ export function EventPreviewSheet({
   const effectiveLocation = effectivePreview?.location ?? item.location;
   const effectiveDescription = effectivePreview?.description ?? item.description;
 
-  const assignmentsByDepartment = effectivePreview
-    ? Array.from(
-        effectivePreview.assignments.reduce(
-          (acc, assignment) => {
-            const deptLabel = assignment.departmentName?.trim() || "Equipe geral";
-            const currentGroup = acc.get(deptLabel) ?? [];
-            currentGroup.push(assignment);
-            acc.set(deptLabel, currentGroup);
-            return acc;
-          },
-          new Map<string, CalendarEventPreview["assignments"]>(),
-        ),
-      )
-    : [];
+  const departmentSections = buildDepartmentSections(effectivePreview);
 
   const shouldShowTeamSection =
     !isLoadingPreview &&
     effectivePreview &&
-    (effectivePreview.assignments.length > 0 ||
+    (departmentSections.length > 0 ||
       effectivePreview.coverage.total > 0 ||
       effectivePreview.kind === "service" ||
       effectivePreview.kind === "rehearsal");
@@ -270,61 +314,102 @@ export function EventPreviewSheet({
         </div>
       ) : null}
 
-      {/* Equipe escalada agrupada por departamento */}
+      {/* Equipe escalada sem borda de container, detalhada por departamento */}
       {shouldShowTeamSection ? (
-        <section
-          aria-label="Equipe escalada"
-          className="rounded-xl border bg-card p-3.5 space-y-3"
-        >
+        <section aria-label="Equipe escalada" className="space-y-3 pt-1">
           <div className="flex items-center justify-between gap-2">
             <h3 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
               <UsersIcon className="size-3.5" aria-hidden="true" />
               Equipe escalada
             </h3>
-            {effectivePreview.coverage.total > 0 ? (
-              <span className="text-[11px] font-semibold text-primary">
-                {effectivePreview.coverage.assigned}/
-                {effectivePreview.coverage.total} funções
-              </span>
-            ) : null}
           </div>
 
-          {assignmentsByDepartment.length > 0 ? (
+          {departmentSections.length > 0 ? (
             <div className="space-y-3">
-              {assignmentsByDepartment.map(([departmentName, group]) => (
-                <div key={departmentName} className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-foreground/90">
-                      {departmentName}
-                    </span>
-                    <span className="text-[11px] text-muted-foreground tabular-nums">
-                      {group.length}{" "}
-                      {group.length === 1 ? "pessoa" : "pessoas"}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {group.map((assignment) => (
-                      <span
-                        key={assignment.id}
-                        className={cn(
-                          "inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs",
-                          assignment.isMine
-                            ? "border-primary/30 bg-secondary font-semibold text-primary"
-                            : "bg-muted/50 text-foreground",
-                        )}
-                      >
-                        <span>{assignment.personName}</span>
-                        <span className="text-muted-foreground">
-                          · {assignment.functionName}
+              <div className="divide-y divide-border/50">
+                {departmentSections.map((section) => {
+                  const missing =
+                    section.total > 0
+                      ? Math.max(0, section.total - section.assigned)
+                      : 0;
+
+                  return (
+                    <div
+                      key={section.key}
+                      className="space-y-2 py-2.5 first:pt-0 last:pb-0"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold text-foreground">
+                          {section.departmentName}
                         </span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                        {section.total > 0 ? (
+                          missing === 0 ? (
+                            <span className="text-[11px] font-semibold text-primary tabular-nums">
+                              Completa ({section.assigned}/{section.total})
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-muted-foreground tabular-nums">
+                              <span className="font-semibold text-foreground">
+                                {section.assigned}/{section.total}
+                              </span>
+                              {" · "}
+                              {missing === 1
+                                ? "falta 1"
+                                : `faltam ${missing}`}
+                            </span>
+                          )
+                        ) : (
+                          <span className="text-[11px] text-muted-foreground tabular-nums">
+                            {section.assignments.length}{" "}
+                            {section.assignments.length === 1
+                              ? "pessoa"
+                              : "pessoas"}
+                          </span>
+                        )}
+                      </div>
+
+                      {section.assignments.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {section.assignments.map((assignment) => (
+                            <span
+                              key={assignment.id}
+                              className={cn(
+                                "inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs",
+                                assignment.isMine
+                                  ? "border-primary/30 bg-secondary font-semibold text-primary"
+                                  : "bg-muted/50 text-foreground",
+                              )}
+                            >
+                              <span>{assignment.personName}</span>
+                              <span className="text-muted-foreground">
+                                · {assignment.functionName}
+                              </span>
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          Nenhuma pessoa escalada neste departamento.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {effectivePreview.assignments.length === 0 && targetHref ? (
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-lg px-3 text-xs font-semibold"
+                >
+                  <Link href={targetHref}>Escalar equipe</Link>
+                </Button>
+              ) : null}
             </div>
           ) : (
-            <Empty className="gap-3 rounded-lg border border-dashed bg-muted/20 px-4 py-5">
+            <Empty className="gap-3 rounded-xl border-0 bg-muted/25 px-4 py-5">
               <EmptyHeader className="gap-1.5">
                 <EmptyMedia
                   variant="icon"
