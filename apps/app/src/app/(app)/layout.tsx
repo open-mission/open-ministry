@@ -82,7 +82,9 @@ export default function DashboardLayout({
 
   return (
     <OpenMinistryRealtimeProvider>
-      <SidebarProvider>
+      <SidebarProvider
+        style={{ "--sidebar-width": "16.5rem" } as React.CSSProperties}
+      >
         <MobileMenuProvider>
           <SettingsModalProvider>
             <HomeTabProvider>
@@ -138,7 +140,7 @@ function SidebarSkeleton() {
   return (
     <div
       aria-hidden
-      className="hidden w-64 shrink-0 border-r bg-sidebar p-4 md:block"
+      className="hidden w-[16.5rem] shrink-0 border-r bg-sidebar p-4 md:block"
     >
       <div className="h-9 w-full animate-pulse rounded-lg bg-sidebar-accent" />
       <div className="mt-8 space-y-2">

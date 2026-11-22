@@ -4,6 +4,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { CalendarDaysIcon } from "lucide-react";
 
 import { toSerializableSubtabs } from "@/components/app/domain-subtabs-data";
+import { SidebarNav } from "@/components/app/sidebar-nav";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import type { NavItem } from "@/components/app/nav-config";
 import {
   buildDesktopSidebarNavigation,
@@ -287,5 +289,42 @@ describe("desktop sidebar configuration", () => {
     expect(globalsCss).toContain('@source "../../../../packages/ui/src";');
     expect(globalsCss).toContain('@import "@ui-sdk/core/web.css";');
     expect(globalsCss).not.toContain('layer(components)');
+  });
+
+  it("alinhamento e respiro do desktop sidebar acompanham o header do logo", () => {
+    currentPathname = "/";
+    const markup = renderToStaticMarkup(
+      createElement(
+        SidebarProvider,
+        null,
+        createElement(SidebarNav, {
+          activeModuleKeys: [...ALL_MODULES],
+          canManageJobs: true,
+          canAccessWhatsApp: true,
+          canAccessEmails: true,
+        }),
+      ),
+    );
+
+    expect(markup).toContain("px-3 py-1 group-data-[collapsible=icon]:px-2");
+    expect(markup).toContain("gap-1.5");
+    expect(markup).toContain("h-9 gap-2.5 rounded-lg px-2.5 text-[13px] group-data-[collapsible=icon]:mx-auto");
+    expect(markup).toContain("peer-data-[size=default]/menu-button:top-1/2 right-2.5 -translate-y-1/2");
+    expect(markup).toContain("text-[11px]");
+    expect(markup).not.toContain("text-[10px]");
+  });
+
+  it("applies matching px-3 header/footer breathing room in AppSidebar and NavUser", async () => {
+    const appSidebar = await Bun.file(
+      new URL("../app-sidebar.tsx", import.meta.url),
+    ).text();
+    const navUser = await Bun.file(
+      new URL("../nav-user.tsx", import.meta.url),
+    ).text();
+
+    expect(appSidebar).toContain("px-3 pt-4 pb-2 group-data-[collapsible=icon]:px-2");
+    expect(appSidebar).toContain("px-3 pt-2 pb-3.5 group-data-[collapsible=icon]:px-2");
+    expect(appSidebar).toContain("px-1.5 py-1 group-data-[collapsible=icon]:mx-auto");
+    expect(navUser).toContain("border border-sidebar-border bg-background px-2 py-1.5");
   });
 });
