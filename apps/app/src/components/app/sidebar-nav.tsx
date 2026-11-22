@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDownIcon } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { isNavItemActive, type NavGroup } from "@/components/app/nav-config";
 import { buildDesktopSidebarNavigation } from "@/lib/modules/nav";
 import type { ModuleKey } from "@/lib/modules/types";
@@ -74,11 +75,19 @@ export function SidebarNav({
 
   return (
     <>
-      {renderMenu(navigation.primary, isItemActive)}
+      <SidebarGroup className="px-3 py-1 group-data-[collapsible=icon]:px-2">
+        <SidebarGroupContent>
+          {renderMenu(navigation.primary, isItemActive)}
+        </SidebarGroupContent>
+      </SidebarGroup>
       {navigation.secondary.length > 0 ? (
         <>
-          <SidebarSeparator className="my-1" />
-          {renderMenu(navigation.secondary, isItemActive)}
+          <SidebarSeparator className="mx-4 my-2 group-data-[collapsible=icon]:mx-2.5" />
+          <SidebarGroup className="px-3 py-1 group-data-[collapsible=icon]:px-2">
+            <SidebarGroupContent>
+              {renderMenu(navigation.secondary, isItemActive)}
+            </SidebarGroupContent>
+          </SidebarGroup>
         </>
       ) : null}
     </>
@@ -90,20 +99,21 @@ function renderMenu(
   isItemActive: (item: DesktopItem) => boolean,
 ) {
   return (
-    <SidebarMenu>
+    <SidebarMenu className="gap-1.5">
       {items.map((item) => (
         <SidebarMenuItem key={item.href}>
           <SidebarMenuButton
             asChild
             isActive={isItemActive(item)}
             tooltip={item.label}
-            className={
+            className={cn(
+              "h-9 gap-2.5 rounded-lg px-2.5 text-[13px] group-data-[collapsible=icon]:mx-auto",
               item.badge
                 ? item.badge.length > 2
                   ? "pr-14"
                   : "pr-8"
-                : undefined
-            }
+                : undefined,
+            )}
           >
             <Link href={item.href} prefetch={true}>
               <item.icon />
@@ -112,11 +122,10 @@ function renderMenu(
           </SidebarMenuButton>
           {item.badge ? (
             <SidebarMenuBadge
-              className={
-                item.badge === "Admin"
-                  ? "bg-muted px-1.5 text-[10px] font-medium text-muted-foreground"
-                  : undefined
-              }
+              className={cn(
+                "peer-data-[size=default]/menu-button:top-1/2 right-2.5 -translate-y-1/2 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground",
+                isItemActive(item) ? "bg-card" : "bg-muted",
+              )}
             >
               {item.badge}
             </SidebarMenuBadge>
@@ -143,7 +152,7 @@ function LegacyGroups({
           defaultOpen={true}
           className="group/collapsible"
         >
-          <SidebarGroup className="py-1.5">
+          <SidebarGroup className="px-3 py-1.5 group-data-[collapsible=icon]:px-2">
             <SidebarGroupLabel
               asChild
               className="text-[11px] font-medium tracking-wider text-muted-foreground/70 uppercase transition-colors hover:text-foreground cursor-pointer select-none"
@@ -155,13 +164,14 @@ function LegacyGroups({
             </SidebarGroupLabel>
             <CollapsibleContent className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden">
               <SidebarGroupContent>
-                <SidebarMenu>
+                <SidebarMenu className="gap-1.5">
                   {group.items.map((item) => (
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton
                         asChild
                         isActive={isNavItemActive(item, pathname)}
                         tooltip={item.label}
+                        className="h-9 gap-2.5 rounded-lg px-2.5 text-[13px] group-data-[collapsible=icon]:mx-auto"
                       >
                         <Link href={item.href} prefetch={true}>
                           <item.icon />

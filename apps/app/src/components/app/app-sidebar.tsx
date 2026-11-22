@@ -46,10 +46,10 @@ export function AppSidebar({
 }: AppSidebarProps) {
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader>
+      <SidebarHeader className="px-3 pt-4 pb-2 group-data-[collapsible=icon]:px-2">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild size="lg" tooltip="OpenMinistry">
+            <SidebarMenuButton asChild size="lg" tooltip="OpenMinistry" className="h-auto gap-2.5 rounded-lg px-1.5 py-1 group-data-[collapsible=icon]:mx-auto">
               <Link href="/" prefetch={true}>
                 {organizationLogo ? (
                   <Avatar className="size-8 shrink-0 rounded-lg">
@@ -80,7 +80,7 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="pt-1 pb-2">
         <SidebarNav
           groups={groups}
           activeModuleKeys={activeModuleKeys}
@@ -90,7 +90,7 @@ export function AppSidebar({
         />
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="px-3 pt-2 pb-3.5 group-data-[collapsible=icon]:px-2">
         <NavUser user={user} role={role} />
       </SidebarFooter>
 
