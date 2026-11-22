@@ -34,7 +34,7 @@ async function AvailabilityContent() {
   const hasAccess = await can("schedules", "manageOwnAvailability");
   if (!hasAccess) {
     return (
-      <div className="mx-auto flex w-full max-w-4xl flex-col items-center justify-center gap-4 py-16 text-center">
+      <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-center gap-4 py-16 text-center">
         <span className="flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
           <ShieldAlertIcon className="size-7" aria-hidden="true" />
         </span>
@@ -60,7 +60,7 @@ async function AvailabilityContent() {
   if (!data) return null;
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
       <DomainSubtabs domain="cultos" />
       <header className="space-y-1.5">
         <h1 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">
@@ -80,7 +80,7 @@ async function AvailabilityContent() {
 
 function AvailabilitySkeleton() {
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-6" aria-hidden>
+    <div className="mx-auto w-full max-w-6xl space-y-8" aria-hidden>
       <div className="space-y-2">
         <Skeleton className="h-8 w-56" />
         <Skeleton className="h-4 w-96 max-w-full" />
