@@ -113,13 +113,13 @@ export function WeekViewAllDayRow({
   return (
     <div
       className={cn(
-        "border-border flex border-t border-b bg-background",
+        "border-border/40 flex border-t border-b bg-background",
         className,
       )}
     >
       {/* All-day label, as wide as the time axis below it */}
       <div
-        className="border-border text-muted-foreground flex w-16 flex-shrink-0 items-start justify-end border-r px-2 py-2 text-[11px]"
+        className="border-border/40 text-muted-foreground flex w-16 flex-shrink-0 items-start justify-end border-r px-2 py-2 text-[11px]"
         style={
           timeAxisWidth === undefined ? undefined : { width: timeAxisWidth }
         }
@@ -149,7 +149,7 @@ export function WeekViewAllDayRow({
                   <div
                     key={day.date.toISOString()}
                     className={cn(
-                      "border-border border-l first:border-l-0 h-full",
+                      "border-border/40 border-l first:border-l-0 h-full",
                       isWeekend && "bg-calendar-weekend",
                       highlightedDate &&
                         isSameDay(day.date, highlightedDate) &&

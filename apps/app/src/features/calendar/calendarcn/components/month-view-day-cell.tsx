@@ -250,7 +250,7 @@ export function MonthViewDayCell({
       onPointerDown={handleBackgroundPointerDown}
       {...(isCreatedDay ? EVENT_DRAFT_ANCHOR_PROPS : null)}
       className={cn(
-        "relative flex flex-col border-b border-r border-border min-w-0 select-none",
+        "relative flex flex-col border-b border-r border-border/40 min-w-0 select-none",
         isWeekend && "bg-calendar-weekend",
         className,
       )}

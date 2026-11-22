@@ -2,6 +2,7 @@ import { afterAll, describe, expect, it, mock } from "bun:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
+import { isCalendarRoute } from "@/components/app/home-header-slot";
 import { toCalendarCnEvents } from "@/features/calendar/lib/to-calendarcn-events";
 import type { CalendarEventPreview, CalendarItem } from "@/lib/calendar";
 
@@ -169,7 +170,7 @@ describe("CalendarCN integration", () => {
     expect(filteredHtml).toContain("Louvor");
   });
 
-  it("renders FullCalendar cleanly on server without hydration crashes", () => {
+  it("renders FullCalendar in full-frame borderless surface without hydration crashes", () => {
     const html = renderToStaticMarkup(
       createElement(FullCalendar, {
         initialItems: SAMPLE_ITEMS,
@@ -186,5 +187,14 @@ describe("CalendarCN integration", () => {
 
     expect(html).toContain("Filtrar");
     expect(html).toContain("Novo");
+    expect(html).not.toContain("overflow-hidden rounded-xl border bg-card shadow-xs");
+  });
+
+  it("detects calendar routes for headerless full-frame layout", () => {
+    expect(isCalendarRoute("/calendar")).toBe(true);
+    expect(isCalendarRoute("/dashboard/calendar")).toBe(true);
+    expect(isCalendarRoute("/events")).toBe(false);
+    expect(isCalendarRoute("/")).toBe(false);
+    expect(isCalendarRoute(null)).toBe(false);
   });
 });

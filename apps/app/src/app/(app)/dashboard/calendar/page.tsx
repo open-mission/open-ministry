@@ -69,8 +69,13 @@ async function CalendarContent() {
     (await canAnyDepartment("rehearsals", "createRehearsal", departmentIds));
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-      <DomainSubtabs domain="cultos" />
+    <div
+      data-calendar-fullframe=""
+      className="flex w-full min-w-0 flex-1 flex-col gap-3"
+    >
+      <div className="px-4 pr-14 pt-1 sm:px-5 sm:pr-16 md:pl-14">
+        <DomainSubtabs domain="cultos" />
+      </div>
       <FullCalendar
         initialItems={data.items}
         initialPreferences={data.preferences}
@@ -85,12 +90,16 @@ async function CalendarContent() {
 
 function CalendarSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6" aria-hidden>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div
+      data-calendar-fullframe=""
+      className="flex w-full flex-1 flex-col gap-4"
+      aria-hidden
+    >
+      <div className="flex flex-col gap-4 px-4 pt-1 sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <Skeleton className="h-10 w-72" />
         <Skeleton className="h-9 w-48" />
       </div>
-      <Skeleton className="h-[600px] rounded-xl" />
+      <Skeleton className="h-[600px] flex-1 rounded-none" />
     </div>
   );
 }

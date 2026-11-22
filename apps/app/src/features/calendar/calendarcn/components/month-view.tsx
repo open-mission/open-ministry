@@ -445,7 +445,7 @@ export function MonthView({
         {/* Day-of-week header — right-aligned to match day number positions */}
         <div
           ref={headerRef}
-          className="relative border-b border-border bg-background"
+          className="relative border-b border-border/40 bg-background"
           style={{ display: "grid", gridTemplateColumns }}
         >
           {showWeekNumbers && (

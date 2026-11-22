@@ -6,6 +6,7 @@ import {
   DashboardBreadcrumbFallback,
 } from "@/components/app/dashboard-breadcrumb";
 import {
+  CalendarHiddenSlot,
   HeaderCenterSlot,
   HeaderUserSlot,
   HomeAwareHeader,
@@ -52,20 +53,22 @@ export default function DashboardLayout({
 }) {
   const headerContent = (
     <>
-      <SidebarTrigger className="hidden md:inline-flex" />
-      <Suspense fallback={<MobileHeaderLeadingFallback />}>
-        <MobileHeaderLeadingLoader />
-      </Suspense>
-      <Separator
-        orientation="vertical"
-        className="mr-1 hidden h-4 self-center md:block"
-      />
-      <Suspense fallback={<DashboardBreadcrumbFallback />}>
-        <HeaderCenterSlot>
-          <DashboardBreadcrumb />
-        </HeaderCenterSlot>
-      </Suspense>
-      <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+      <SidebarTrigger className="pointer-events-auto hidden md:inline-flex" />
+      <CalendarHiddenSlot>
+        <Suspense fallback={<MobileHeaderLeadingFallback />}>
+          <MobileHeaderLeadingLoader />
+        </Suspense>
+        <Separator
+          orientation="vertical"
+          className="mr-1 hidden h-4 self-center md:block"
+        />
+        <Suspense fallback={<DashboardBreadcrumbFallback />}>
+          <HeaderCenterSlot>
+            <DashboardBreadcrumb />
+          </HeaderCenterSlot>
+        </Suspense>
+      </CalendarHiddenSlot>
+      <div className="pointer-events-auto ml-auto flex items-center gap-1.5 sm:gap-2">
         <Suspense fallback={<NotificationBellFallback />}>
           <NotificationBellLoader />
         </Suspense>
@@ -103,7 +106,7 @@ export default function DashboardLayout({
                 <Suspense fallback={null}>
                   <NotificationBarLoader />
                 </Suspense>
-                <div className="flex flex-1 flex-col px-4 pt-5 pb-28 sm:px-6 sm:pt-6 sm:pb-28 md:pb-8 lg:px-8 lg:pt-8">
+                <div className="flex flex-1 flex-col px-4 pt-5 pb-28 sm:px-6 sm:pt-6 sm:pb-28 md:pb-8 lg:px-8 lg:pt-8 has-[[data-calendar-fullframe]]:px-0 has-[[data-calendar-fullframe]]:pt-2 has-[[data-calendar-fullframe]]:pb-20 md:has-[[data-calendar-fullframe]]:pb-0">
                   {children}
                 </div>
                 <Suspense fallback={<MobileNavShell />}>

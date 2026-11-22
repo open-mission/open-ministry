@@ -373,7 +373,7 @@ export function AgendaView({
                 {/* The day groups' labels carry the month for screen readers */}
                 <div
                   aria-hidden
-                  className="sticky top-0 z-10 border-b border-border bg-background/95 px-3 py-1.5 text-xs font-semibold text-muted-foreground backdrop-blur @xl/agenda:px-6"
+                  className="sticky top-0 z-10 border-b border-border/40 bg-background/95 px-3 py-1.5 text-xs font-semibold text-muted-foreground backdrop-blur @xl/agenda:px-6"
                 >
                   {format(month.date, "MMMM yyyy", { locale })}
                 </div>
@@ -442,7 +442,7 @@ function AgendaDayGroup({ day, isToday, renderRow }: AgendaDayGroupProps) {
       role="group"
       aria-label={isToday ? `${fullDate}, hoje` : fullDate}
       data-date={format(day.date, "yyyy-MM-dd")}
-      className="flex gap-3 border-b border-border px-3 py-2.5 @xl/agenda:gap-5 @xl/agenda:px-6"
+      className="flex gap-3 border-b border-border/40 px-3 py-2.5 @xl/agenda:gap-5 @xl/agenda:px-6"
     >
       {/* The group's label reads the date out */}
       <div
