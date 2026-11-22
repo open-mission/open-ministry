@@ -30,13 +30,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Drawer,
   DrawerClose,
   DrawerContent,
@@ -356,38 +349,39 @@ export function AvailabilityEditor({ initialData }: AvailabilityEditorProps) {
 
   return (
     <div className="space-y-4">
-      <Card className="shadow-xs">
-        <CardHeader>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <CalendarDaysIcon className="size-5" aria-hidden="true" />
-                </div>
-                <CardTitle className="font-heading text-xl tracking-tight">
-                  Sua semana
-                </CardTitle>
+      <section aria-labelledby="availability-week-heading" className="space-y-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <CalendarDaysIcon className="size-5" aria-hidden="true" />
               </div>
-              <CardDescription>
-                Marque os períodos em que você costuma poder servir. A liderança
-                usa essa informação ao montar as escalas.
-              </CardDescription>
+              <h2
+                id="availability-week-heading"
+                className="font-heading text-xl font-semibold tracking-tight"
+              >
+                Sua semana
+              </h2>
             </div>
-
-            <Badge
-              variant={totalSelectedPeriods > 0 ? "secondary" : "outline"}
-              className="gap-1.5 self-start font-mono text-xs font-normal sm:self-center"
-            >
-              <CheckCircle2Icon
-                className="size-3.5 text-emerald-600 dark:text-emerald-400"
-                aria-hidden="true"
-              />
-              {daysWithAnswer} de 7 dias informados
-            </Badge>
+            <p className="text-sm text-muted-foreground">
+              Marque os períodos em que você costuma poder servir. A liderança
+              usa essa informação ao montar as escalas.
+            </p>
           </div>
-        </CardHeader>
 
-        <CardContent className="space-y-6">
+          <Badge
+            variant={totalSelectedPeriods > 0 ? "secondary" : "outline"}
+            className="gap-1.5 self-start font-mono text-xs font-normal sm:self-center"
+          >
+            <CheckCircle2Icon
+              className="size-3.5 text-emerald-600 dark:text-emerald-400"
+              aria-hidden="true"
+            />
+            {daysWithAnswer} de 7 dias informados
+          </Badge>
+        </div>
+
+        <div className="space-y-6">
           {!hasSavedOnce ? (
             <div className="flex items-start gap-3 rounded-xl border border-primary/25 bg-primary/5 p-4">
               <SparklesIcon
@@ -733,8 +727,8 @@ export function AvailabilityEditor({ initialData }: AvailabilityEditorProps) {
               Salvar disponibilidade
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       {/* Unsaved changes bar, kept above the mobile bottom navigation. */}
       {isDirty ? (
