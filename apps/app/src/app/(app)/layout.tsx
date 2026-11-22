@@ -1,10 +1,7 @@
 import { Suspense } from "react";
 
 import { AppSidebarLoader } from "@/components/app/app-sidebar-loader";
-import {
-  DashboardBreadcrumb,
-  DashboardBreadcrumbFallback,
-} from "@/components/app/dashboard-breadcrumb";
+import { DashboardBreadcrumb } from "@/components/app/dashboard-breadcrumb";
 import {
   CalendarHiddenSlot,
   HeaderCenterSlot,
@@ -39,7 +36,6 @@ import {
   UserMenuFallback,
   UserMenuLoader,
 } from "@/components/app/user-menu-loader";
-import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
@@ -58,11 +54,7 @@ export default function DashboardLayout({
         <Suspense fallback={<MobileHeaderLeadingFallback />}>
           <MobileHeaderLeadingLoader />
         </Suspense>
-        <Separator
-          orientation="vertical"
-          className="mr-1 hidden h-4 self-center md:block"
-        />
-        <Suspense fallback={<DashboardBreadcrumbFallback />}>
+        <Suspense fallback={null}>
           <HeaderCenterSlot>
             <DashboardBreadcrumb />
           </HeaderCenterSlot>
@@ -108,7 +100,7 @@ export default function DashboardLayout({
                 <Suspense fallback={null}>
                   <NotificationBarLoader />
                 </Suspense>
-                <div className="flex flex-1 flex-col px-4 pt-5 pb-28 sm:px-6 sm:pt-6 sm:pb-28 md:pb-8 lg:px-8 lg:pt-8 has-[[data-calendar-container]]:md:pt-2">
+                <div className="flex flex-1 flex-col px-4 pt-5 pb-28 sm:px-6 sm:pt-6 sm:pb-28 md:pt-3 md:pb-8 lg:px-8 lg:pt-4 has-[[data-calendar-container]]:md:pt-2">
                   {children}
                 </div>
                 <Suspense fallback={<MobileNavShell />}>

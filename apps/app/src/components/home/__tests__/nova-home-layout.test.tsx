@@ -34,6 +34,8 @@ mock.module("next/navigation", () => ({
 const {
   HomeAwareHeader,
   HomeAwareHeaderFallback,
+  HeaderCenterSlot,
+  HeaderUserSlot,
   getHeaderClassName,
   isHeaderScrolled,
 } = await import("@/components/app/home-header-slot");
@@ -166,41 +168,44 @@ describe("header integrado da home", () => {
     expect(isHeaderScrolled(5)).toBe(true);
   });
 
-  it("mantém mt-2 e borda transparente na home antes de rolar", () => {
+  it("mantém mt-2 e header sem borda inferior na home antes de rolar", () => {
     const className = getHeaderClassName(true, false);
 
     expect(className).toContain("sticky");
     expect(className).toContain("top-0");
     expect(className).toContain("z-20");
-    expect(className).toContain("border-b");
+    expect(className).toContain("border-0");
     expect(className).toContain("mt-2");
     expect(className).toContain("transition-colors");
     expect(className).toContain("duration-200");
-    expect(className).toContain("border-transparent");
+    expect(className).not.toContain("border-b");
     expect(className).not.toContain("border-border");
   });
 
-  it("troca a borda da home para border-border ao rolar, sem perder mt-2", () => {
+  it("mantém o header da home sem borda inferior ao rolar, sem perder mt-2", () => {
     const className = getHeaderClassName(true, true);
 
     expect(className).toContain("mt-2");
-    expect(className).toContain("border-b");
+    expect(className).toContain("border-0");
     expect(className).toContain("transition-colors");
-    expect(className).toContain("border-border");
-    expect(className).not.toContain("border-transparent");
+    expect(className).not.toContain("border-b");
+    expect(className).not.toContain("border-border");
   });
 
-  it("preserva o header original sem mt-2 nas demais rotas", () => {
+  it("aplica o header minimalista sem borda inferior e sem mt-2 nas demais rotas", () => {
     const className = getHeaderClassName(false, true);
 
-    expect(className).toContain("border-b");
-    expect(className).toContain("border-border");
+    expect(className).toContain("border-0");
+    expect(className).toContain("md:h-11");
+    expect(className).toContain("md:min-h-0");
+    expect(className).toContain("md:pt-1.5");
+    expect(className).not.toContain("border-b");
+    expect(className).not.toContain("border-border");
     expect(className).not.toContain("mt-2");
-    expect(className).not.toContain("border-transparent");
     expect(className).not.toContain("transition-colors");
   });
 
-  it("HomeAwareHeader renderiza o header da home com margem e borda transparente", () => {
+  it("HomeAwareHeader renderiza o header da home com margem e sem borda inferior", () => {
     currentPathname = "/";
 
     const markup = renderToStaticMarkup(
@@ -213,12 +218,13 @@ describe("header integrado da home", () => {
 
     expect(markup).toContain("<header");
     expect(markup).toContain("mt-2");
-    expect(markup).toContain("border-transparent");
+    expect(markup).toContain("border-0");
+    expect(markup).not.toContain("border-b");
     expect(markup).toContain("sticky");
     expect(markup).toContain("CONTEUDO_HEADER");
   });
 
-  it("HomeAwareHeader mantém borda visível e sem margem extra fora da home", () => {
+  it("HomeAwareHeader mantém header minimalista sem borda e sem margem extra fora da home", () => {
     currentPathname = "/dashboard";
 
     const markup = renderToStaticMarkup(
@@ -230,9 +236,11 @@ describe("header integrado da home", () => {
     );
 
     expect(markup).toContain("<header");
-    expect(markup).toContain("border-border");
+    expect(markup).toContain("border-0");
+    expect(markup).toContain("md:h-11");
+    expect(markup).not.toContain("border-b");
+    expect(markup).not.toContain("border-border");
     expect(markup).not.toContain("mt-2");
-    expect(markup).not.toContain("border-transparent");
     expect(markup).toContain("CONTEUDO_HEADER");
   });
 
@@ -248,7 +256,9 @@ describe("header integrado da home", () => {
     expect(onDashboard).toBe(onHome);
     expect(onHome).toContain("<header");
     expect(onHome).toContain("sticky");
-    expect(onHome).toContain("border-border");
+    expect(onHome).toContain("border-0");
+    expect(onHome).not.toContain("border-b");
+    expect(onHome).not.toContain("border-border");
     expect(onHome).not.toContain("mt-2");
 
     // Esqueletos leves no lugar dos loaders reais.
@@ -280,6 +290,56 @@ describe("header integrado da home", () => {
       /<HomeAwareHeader>\{headerContent\}<\/HomeAwareHeader>/,
     );
     expect(layout.match(/\{headerContent\}/g) ?? []).toHaveLength(1);
+    expect(layout).not.toContain('Separator\n          orientation="vertical"');
+  });
+
+  it("HeaderCenterSlot usa HomeHeaderTabs na home, oculta breadcrumb no desktop e retorna vazio na agenda", () => {
+    currentPathname = "/";
+    const onHome = renderToStaticMarkup(
+      createElement(
+        HeaderCenterSlot,
+        null,
+        createElement("span", null, "BREADCRUMB"),
+      ),
+    );
+    expect(onHome).toContain("Hoje");
+    expect(onHome).toContain("Minha Igreja");
+
+    currentPathname = "/dashboard/events";
+    const onEvents = renderToStaticMarkup(
+      createElement(
+        HeaderCenterSlot,
+        null,
+        createElement("span", null, "BREADCRUMB"),
+      ),
+    );
+    expect(onEvents).toContain("md:hidden");
+    expect(onEvents).toContain("BREADCRUMB");
+
+    currentPathname = "/dashboard/calendar";
+    const onCalendar = renderToStaticMarkup(
+      createElement(
+        HeaderCenterSlot,
+        null,
+        createElement("span", null, "BREADCRUMB"),
+      ),
+    );
+    expect(onCalendar).toBe("");
+  });
+
+  it("HeaderUserSlot mantém avatar visível no header em todas as rotas (inclusive desktop e agenda)", () => {
+    for (const path of ["/", "/dashboard/events", "/dashboard/calendar"]) {
+      currentPathname = path;
+      const markup = renderToStaticMarkup(
+        createElement(
+          HeaderUserSlot,
+          null,
+          createElement("button", null, "AVATAR_USER"),
+        ),
+      );
+      expect(markup).toContain("AVATAR_USER");
+      expect(markup).not.toContain("md:hidden");
+    }
   });
 });
 

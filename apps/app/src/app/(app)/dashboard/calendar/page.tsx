@@ -73,7 +73,7 @@ async function CalendarContent() {
       data-calendar-container=""
       className="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:gap-5"
     >
-      <div className="pr-12 md:pr-0">
+      <div className="pr-24 md:pr-0">
         <DomainSubtabs domain="cultos" />
       </div>
       <FullCalendar

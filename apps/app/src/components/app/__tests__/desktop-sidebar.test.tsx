@@ -314,17 +314,26 @@ describe("desktop sidebar configuration", () => {
     expect(markup).not.toContain("text-[10px]");
   });
 
-  it("applies matching px-3 header/footer breathing room in AppSidebar and NavUser", async () => {
+  it("mantém respiro do header em AppSidebar e move o menu do usuário para o header sem duplicação na sidebar", async () => {
     const appSidebar = await Bun.file(
       new URL("../app-sidebar.tsx", import.meta.url),
     ).text();
-    const navUser = await Bun.file(
-      new URL("../nav-user.tsx", import.meta.url),
+    const userMenuDrawer = await Bun.file(
+      new URL("../user-menu-drawer.tsx", import.meta.url),
+    ).text();
+    const homeHeaderSlot = await Bun.file(
+      new URL("../home-header-slot.tsx", import.meta.url),
     ).text();
 
     expect(appSidebar).toContain("px-3 pt-4 pb-2 group-data-[collapsible=icon]:px-2");
-    expect(appSidebar).toContain("px-3 pt-2 pb-3.5 group-data-[collapsible=icon]:px-2");
     expect(appSidebar).toContain("px-1.5 py-1 group-data-[collapsible=icon]:mx-auto");
-    expect(navUser).toContain("border border-sidebar-border bg-background px-2 py-1.5");
+    expect(appSidebar).not.toContain("NavUser");
+    expect(appSidebar).not.toContain("SidebarFooter");
+    expect(userMenuDrawer).toContain("hidden md:block");
+    expect(userMenuDrawer).toContain("DropdownMenu");
+    expect(userMenuDrawer).toContain("md:hidden");
+    expect(userMenuDrawer).toContain("Drawer");
+    expect(homeHeaderSlot).toContain("HeaderUserSlot");
+    expect(homeHeaderSlot).not.toContain("flex items-center md:hidden");
   });
 });

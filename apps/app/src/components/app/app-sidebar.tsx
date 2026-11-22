@@ -3,13 +3,11 @@ import { OpenMinistrySymbol } from "@/components/brand/openministry-logo";
 
 import type { NavGroup } from "@/components/app/nav-config";
 import type { ModuleKey } from "@/lib/modules/types";
-import { NavUser } from "@/components/app/nav-user";
 import { SidebarNav } from "@/components/app/sidebar-nav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -20,8 +18,8 @@ import {
 type AppSidebarProps = {
   organizationName: string;
   organizationLogo: string | null;
-  role: string;
-  user: {
+  role?: string;
+  user?: {
     name: string;
     email: string;
     image: string | null;
@@ -36,8 +34,6 @@ type AppSidebarProps = {
 export function AppSidebar({
   organizationName,
   organizationLogo,
-  role,
-  user,
   activeModuleKeys,
   groups,
   canManageJobs,
@@ -89,10 +85,6 @@ export function AppSidebar({
           canAccessEmails={canAccessEmails}
         />
       </SidebarContent>
-
-      <SidebarFooter className="px-3 pt-2 pb-3.5 group-data-[collapsible=icon]:px-2">
-        <NavUser user={user} role={role} />
-      </SidebarFooter>
 
       <SidebarRail />
     </Sidebar>
