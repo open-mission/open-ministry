@@ -22,14 +22,19 @@ export function HomeSkeleton() {
       className="mx-auto flex w-full max-w-6xl flex-col gap-8 pb-4"
       aria-hidden="true"
     >
-      <Skeleton className="h-52 w-full rounded-xl" />
+      <div className="lg:hidden">
+        <VerseCardSkeleton variant="compact" />
+      </div>
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start">
         <div className="flex flex-col gap-6 lg:col-span-7">
           <SectionSkeleton rows={2} />
-          <SectionSkeleton rows={3} />
+          <SectionSkeleton rows={2} />
+          <SectionSkeleton rows={2} />
         </div>
         <div className="flex flex-col gap-6 lg:col-span-5">
           <SectionSkeleton rows={3} />
+          <VerseCardSkeleton />
           <SectionSkeleton rows={2} />
         </div>
       </div>
@@ -37,7 +42,30 @@ export function HomeSkeleton() {
   );
 }
 
-export function VerseCardSkeleton() {
+export function VerseCardSkeleton({
+  variant = "full",
+}: {
+  variant?: "full" | "compact";
+} = {}) {
+  if (variant === "compact") {
+    return (
+      <div
+        className="flex flex-col gap-2 rounded-xl border border-border/70 bg-card p-3"
+        aria-hidden="true"
+      >
+        <div className="flex items-center justify-between gap-2">
+          <Skeleton className="h-4 w-32" />
+          <div className="flex items-center gap-1">
+            <Skeleton className="h-8 w-16" />
+            <Skeleton className="h-8 w-24" />
+          </div>
+        </div>
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-3 w-20" />
+      </div>
+    );
+  }
+
   return (
     <div
       className="flex flex-col gap-4 rounded-xl border bg-card p-4 sm:p-5"

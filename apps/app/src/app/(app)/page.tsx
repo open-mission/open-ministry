@@ -9,22 +9,33 @@ import {
   DepartmentsCard,
   HomeSkeleton,
   HomeTabs,
+  NextAssignmentCard,
   NextServiceCard,
   NotificationsCard,
   TasksCard,
+  TodayHomeLayout,
   UpcomingEventsCard,
   VerseCard,
   VerseCardSkeleton,
+  WeekAttentionCard,
   type ServedDepartment,
 } from "@/components/home";
+import { getMyAvailabilityAction } from "@/app/actions/availability";
 import { listTasks } from "@/features/tasks";
 import {
   getDepartmentAgenda,
   getPersonMembershipsForUser,
+  getUpcomingAssignments,
 } from "@/lib/agenda";
+import type { MyAvailabilityResult } from "@/lib/availability";
 import { buildBirthdayEntries, getTodayInSaoPaulo } from "@/lib/birthdays";
 import { getDepartmentTerminology, parseChurchMetadata } from "@/lib/church";
-import { listUpcomingEvents, splitEvents } from "@/lib/events";
+import { listDepartments } from "@/lib/departments";
+import {
+  buildDepartmentCoverage,
+  listUpcomingEvents,
+  splitEvents,
+} from "@/lib/events";
 import { getUnreadAnnouncements } from "@/lib/notifications";
 import { requireOrganizationContext } from "@/lib/organizations";
 import {
@@ -33,6 +44,7 @@ import {
   listPeopleSummary,
   personDisplayName,
 } from "@/lib/people";
+import { can } from "@/lib/permissions/service";
 import {
   getCachedVerseOfTheDay,
   type VerseOfTheDayData,
@@ -62,12 +74,13 @@ async function HomeContent() {
   // limite de Suspense próprio para não bloquear o restante da home.
   const votdPromise = getCachedVerseOfTheDay();
 
-  const [people, initialPerson, unreadAnnouncements, events] =
+  const [people, initialPerson, unreadAnnouncements, events, adminDepartments] =
     await Promise.all([
       listPeopleSummary(organization.id),
       findPersonByUserId(organization.id, session.user.id),
       getUnreadAnnouncements(organization.id, session.user.id, 5),
       listUpcomingEvents(organization.id, 8),
+      isAdmin ? listDepartments(organization.id) : Promise.resolve([]),
     ]);
 
   const person =
@@ -93,19 +106,33 @@ async function HomeContent() {
 
   let tasks: Awaited<ReturnType<typeof listTasks>> = [];
   let departmentAgenda: Awaited<ReturnType<typeof getDepartmentAgenda>> = [];
+  let upcomingAssignments: Awaited<ReturnType<typeof getUpcomingAssignments>> =
+    [];
+  let availability: MyAvailabilityResult | null = null;
 
   if (person) {
-    [tasks, departmentAgenda] = await Promise.all([
-      listTasks({
-        organizationId: organization.id,
-        userId: session.user.id,
-        isAdmin,
-        ledDepartmentIds,
-        memberDepartmentIds,
-        filter: { status: "active", tab: "personal" },
-      }),
-      getDepartmentAgenda(organization.id, person.id, 6),
-    ]);
+    // A disponibilidade é opcional: só é consultada para quem pode gerenciá-la.
+    const canManageOwnAvailability = await can(
+      "schedules",
+      "manageOwnAvailability",
+    );
+
+    [tasks, departmentAgenda, upcomingAssignments, availability] =
+      await Promise.all([
+        listTasks({
+          organizationId: organization.id,
+          userId: session.user.id,
+          isAdmin,
+          ledDepartmentIds,
+          memberDepartmentIds,
+          filter: { status: "active", tab: "personal" },
+        }),
+        getDepartmentAgenda(organization.id, person.id, 6),
+        getUpcomingAssignments(organization.id, person.id, 3),
+        canManageOwnAvailability
+          ? getMyAvailabilityAction()
+          : Promise.resolve(null),
+      ]);
   }
 
   // Preserva a privacidade dos membros: administradores veem todas as pessoas,
@@ -194,57 +221,104 @@ async function HomeContent() {
       ? departmentEvents.slice(0, 5)
       : upcoming.slice(1, 5);
 
+  const nextAssignment = upcomingAssignments[0] ?? null;
+  const nextAssignmentEventId = nextAssignment?.schedule.event.id ?? null;
+  // O bloco 2 já mostra o próximo evento quando não há escala; repetir o mesmo
+  // card no bloco 6 criaria dois "Próximo evento" idênticos na mesma dobra.
+  const showNextEvent =
+    nextAssignment &&
+    featuredEvent &&
+    featuredEvent.id !== nextAssignmentEventId
+      ? featuredEvent
+      : null;
+
+  const canManageSchedules = isAdmin || ledDepartmentIds.length > 0;
+  const attentionDepartments = canManageSchedules
+    ? isAdmin
+      ? adminDepartments.map((department) => ({
+          id: department.id,
+          name: department.name,
+        }))
+      : memberships
+          .filter((membership) => membership.isLeader)
+          .map((membership) => ({
+            id: membership.departmentId,
+            name: membership.department.name,
+          }))
+    : [];
+  const weekCoverage = canManageSchedules
+    ? buildDepartmentCoverage(
+        // Ensaios têm fluxo próprio e não entram na cobertura de escalas.
+        upcoming.filter((event) => event.kind !== "rehearsal"),
+        attentionDepartments,
+      )
+    : [];
+
   const hasActiveTasks = tasks.some(
     (task) => task.status === "todo" || task.status === "in_progress",
   );
   const hasBirthdays =
     birthdaysForCurrentMonth(birthdayEntries, today).length > 0;
-  const hasSideColumn = hasActiveTasks || hasBirthdays;
 
-  const verseSection = (
-    <Suspense fallback={<VerseCardSkeleton />}>
-      <VerseSection votdPromise={votdPromise} />
-    </Suspense>
-  );
-
-  const todayContent = hasSideColumn ? (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start">
-      <div className="flex flex-col gap-6 lg:col-span-7">
-        {verseSection}
-        <NextServiceCard event={featuredEvent} />
-        <NotificationsCard announcements={unreadAnnouncements} />
-      </div>
-      <div className="flex flex-col gap-6 lg:col-span-5">
-        <TasksCard
-          tasks={tasks}
-          currentUserId={session.user.id}
-          isAdmin={isAdmin}
-          ledDepartmentIds={ledDepartmentIds}
-          memberDepartmentIds={memberDepartmentIds}
-          departments={taskDepartments}
-          members={taskMembers}
-        />
-        <BirthdaysCard
-          entries={birthdayEntries}
-          today={today}
-          leaderIds={leaderIds}
-        />
-      </div>
-    </div>
-  ) : (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-      <div className="mx-auto w-full max-w-4xl">{verseSection}</div>
-      <div
-        className={
-          featuredEvent && unreadAnnouncements.length > 0
-            ? "grid grid-cols-1 gap-6 md:grid-cols-2"
-            : "flex flex-col gap-6"
-        }
-      >
-        <NextServiceCard event={featuredEvent} />
-        <NotificationsCard announcements={unreadAnnouncements} />
-      </div>
-    </div>
+  const todayContent = (
+    <TodayHomeLayout
+      mobileVerse={
+        <Suspense fallback={<VerseCardSkeleton variant="compact" />}>
+          <VerseSection votdPromise={votdPromise} variant="compact" />
+        </Suspense>
+      }
+      desktopVerse={
+        <Suspense fallback={<VerseCardSkeleton />}>
+          <VerseSection votdPromise={votdPromise} />
+        </Suspense>
+      }
+      nextAssignment={
+        nextAssignment ? (
+          <NextAssignmentCard assignment={nextAssignment} />
+        ) : featuredEvent ? (
+          <NextServiceCard event={featuredEvent} />
+        ) : null
+      }
+      tasks={
+        hasActiveTasks ? (
+          <TasksCard
+            tasks={tasks}
+            currentUserId={session.user.id}
+            isAdmin={isAdmin}
+            ledDepartmentIds={ledDepartmentIds}
+            memberDepartmentIds={memberDepartmentIds}
+            departments={taskDepartments}
+            members={taskMembers}
+          />
+        ) : null
+      }
+      notifications={
+        unreadAnnouncements.length > 0 ? (
+          <NotificationsCard announcements={unreadAnnouncements} />
+        ) : null
+      }
+      weekAttention={
+        canManageSchedules ? (
+          <WeekAttentionCard
+            departments={weekCoverage}
+            canManage={canManageSchedules}
+            availability={availability}
+          />
+        ) : null
+      }
+      nextEvent={
+        showNextEvent ? <NextServiceCard event={showNextEvent} /> : null
+      }
+      birthdays={
+        hasBirthdays ? (
+          <BirthdaysCard
+            entries={birthdayEntries}
+            today={today}
+            leaderIds={leaderIds}
+          />
+        ) : null
+      }
+    />
   );
 
   const churchContent =
@@ -290,9 +364,11 @@ async function HomeContent() {
 
 async function VerseSection({
   votdPromise,
+  variant = "full",
 }: {
   votdPromise: Promise<VerseOfTheDayData>;
+  variant?: "full" | "compact";
 }) {
   const verse = await votdPromise;
-  return <VerseCard verse={verse} />;
+  return <VerseCard verse={verse} variant={variant} />;
 }
