@@ -6,6 +6,7 @@ export type AnnouncementEmailProps = {
   name?: string;
   churchName: string;
   churchLogo?: string | null;
+  appLogoUrl?: string | null;
   title: string;
   body: string;
   authorName?: string;
@@ -16,6 +17,7 @@ export function AnnouncementEmail({
   name,
   churchName,
   churchLogo,
+  appLogoUrl,
   title,
   body,
   authorName,
@@ -28,6 +30,7 @@ export function AnnouncementEmail({
       previewText={`${title} · ${churchName}`}
       churchName={churchName}
       churchLogo={churchLogo}
+      appLogoUrl={appLogoUrl}
       footerText={`Comunicado oficial da igreja ${churchName}.`}
     >
       <Heading style={heading}>📢 Comunicado da Igreja</Heading>

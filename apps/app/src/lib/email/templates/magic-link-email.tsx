@@ -5,14 +5,16 @@ import { BaseEmailLayout } from "./base-layout";
 export type MagicLinkEmailProps = {
   name?: string;
   magicLinkUrl: string;
+  appLogoUrl?: string | null;
 };
 
-export function MagicLinkEmail({ name, magicLinkUrl }: MagicLinkEmailProps) {
+export function MagicLinkEmail({ name, magicLinkUrl, appLogoUrl }: MagicLinkEmailProps) {
   const greeting = name ? `Olá, ${name}!` : "Olá!";
 
   return (
     <BaseEmailLayout
       previewText="Seu link mágico de acesso ao OpenMinistry"
+      appLogoUrl={appLogoUrl}
       footerText="Se você não solicitou este link de acesso, pode ignorar esta mensagem com total segurança."
     >
       <Heading style={heading}>Acesso sem Senha ✨</Heading>

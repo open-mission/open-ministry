@@ -6,6 +6,7 @@ export type WelcomeEmailProps = {
   name: string;
   churchName?: string;
   churchLogo?: string | null;
+  appLogoUrl?: string | null;
   dashboardUrl?: string;
 };
 
@@ -13,6 +14,7 @@ export function WelcomeEmail({
   name,
   churchName,
   churchLogo,
+  appLogoUrl,
   dashboardUrl = "https://openministry.app/dashboard",
 }: WelcomeEmailProps) {
   const greeting = name ? `Olá, ${name}!` : "Olá!";
@@ -22,6 +24,7 @@ export function WelcomeEmail({
       previewText={`Seja bem-vindo(a) ao OpenMinistry${churchName ? ` · ${churchName}` : ""}`}
       churchName={churchName}
       churchLogo={churchLogo}
+      appLogoUrl={appLogoUrl}
     >
       <Heading style={heading}>Bem-vindo ao OpenMinistry 👋</Heading>
 
