@@ -10,11 +10,13 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+import { getAppBaseUrl } from "@/lib/app-url";
 
 export type BaseEmailLayoutProps = {
   previewText?: string;
   churchName?: string;
   churchLogo?: string | null;
+  appLogoUrl?: string | null;
   children: React.ReactNode;
   footerText?: string;
 };
@@ -23,11 +25,15 @@ export function BaseEmailLayout({
   previewText,
   churchName,
   churchLogo,
+  appLogoUrl,
   children,
   footerText,
 }: BaseEmailLayoutProps) {
   const brandTitle = churchName ? `${churchName} · OpenMinistry` : "OpenMinistry";
   const logoUrl = churchLogo?.trim();
+  const resolvedAppLogoUrl =
+    appLogoUrl?.trim() ||
+    `${getAppBaseUrl().replace(/\/+$/, "")}/brand/openministry-symbol-black.png`;
 
   return (
     <Html lang="pt-BR">
@@ -41,17 +47,35 @@ export function BaseEmailLayout({
               <tbody>
                 <tr>
                   <td>
-                    {logoUrl ? (
-                      <Img
-                        src={logoUrl}
-                        alt={churchName ? `Logo da ${churchName}` : "Logo da igreja"}
-                        style={churchLogoImage}
-                      />
-                    ) : (
-                      <div style={logoBadge}>
-                        <span style={logoBadgeText}>OM</span>
-                      </div>
-                    )}
+                    <table role="presentation" cellPadding="0" cellSpacing="0">
+                      <tbody>
+                        <tr>
+                          <td style={{ verticalAlign: "middle" as const }}>
+                            <Img
+                              src={resolvedAppLogoUrl}
+                              alt="OpenMinistry"
+                              width={30}
+                              height={24}
+                              style={appSymbolImage}
+                            />
+                          </td>
+                          {logoUrl ? (
+                            <>
+                              <td style={{ padding: "0 10px", verticalAlign: "middle" as const }}>
+                                <span style={logoDivider} />
+                              </td>
+                              <td style={{ verticalAlign: "middle" as const }}>
+                                <Img
+                                  src={logoUrl}
+                                  alt={churchName ? `Logo da ${churchName}` : "Logo da igreja"}
+                                  style={churchLogoImage}
+                                />
+                              </td>
+                            </>
+                          ) : null}
+                        </tr>
+                      </tbody>
+                    </table>
                   </td>
                   <td style={{ textAlign: "right" as const }}>
                     <Text style={headerBrandText}>{brandTitle}</Text>
@@ -106,28 +130,24 @@ const headerSection = {
   borderBottom: "1px solid #f1f2f4",
 };
 
-const logoBadge = {
-  width: "36px",
-  height: "36px",
-  borderRadius: "10px",
-  backgroundColor: "#18181b",
-  display: "inline-block",
-  textAlign: "center" as const,
-  lineHeight: "36px",
+const appSymbolImage = {
+  display: "block",
+  width: "30px",
+  height: "24px",
+  objectFit: "contain" as const,
 };
 
-const logoBadgeText = {
-  color: "#ffffff",
-  fontWeight: "bold" as const,
-  fontSize: "14px",
-  letterSpacing: "-0.5px",
+const logoDivider = {
+  display: "block",
+  width: "1px",
+  height: "22px",
+  backgroundColor: "#e4e4e7",
 };
 
 const churchLogoImage = {
   maxHeight: "36px",
   maxWidth: "120px",
   objectFit: "contain" as const,
-  borderRadius: "8px",
   display: "block",
 };
 

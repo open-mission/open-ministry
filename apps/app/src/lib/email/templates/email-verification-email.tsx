@@ -5,17 +5,20 @@ import { BaseEmailLayout } from "./base-layout";
 export type EmailVerificationEmailProps = {
   name?: string;
   verifyUrl: string;
+  appLogoUrl?: string | null;
 };
 
 export function EmailVerificationEmail({
   name,
   verifyUrl,
+  appLogoUrl,
 }: EmailVerificationEmailProps) {
   const greeting = name ? `Olá, ${name}!` : "Olá!";
 
   return (
     <BaseEmailLayout
       previewText="Confirme seu endereço de email no OpenMinistry"
+      appLogoUrl={appLogoUrl}
       footerText="Se você não criou uma conta no OpenMinistry, desconsidere esta mensagem."
     >
       <Heading style={heading}>Confirme seu Email ✉️</Heading>
