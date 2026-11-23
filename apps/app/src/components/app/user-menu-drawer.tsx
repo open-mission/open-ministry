@@ -302,7 +302,7 @@ export function UserMenuDrawer({
                 className="min-h-8 cursor-pointer"
               >
                 <SparklesIcon className="size-4" />
-                Tour da Plataforma
+                Rever tour
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
@@ -531,10 +531,10 @@ export function UserMenuDrawer({
                   </span>
                   <div className="min-w-0 flex-1 text-left">
                     <p className="text-sm font-medium text-foreground">
-                      Tour da Plataforma
+                      Rever tour
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Rever introdução e recursos do OpenMinistry
+                      Abrir o guia de boas-vindas novamente
                     </p>
                   </div>
                   <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40" />
