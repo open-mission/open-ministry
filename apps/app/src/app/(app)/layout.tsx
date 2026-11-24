@@ -9,7 +9,6 @@ import {
   HomeAwareHeader,
   HomeAwareHeaderFallback,
 } from "@/components/app/home-header-slot";
-import { HomeTabProvider } from "@/components/home/home-tab-context";
 import { DashboardOnboardingLoader } from "@/components/onboarding/dashboard-onboarding-loader";
 import { SentryUserLoader } from "@/components/app/sentry-user-loader";
 import { ImpersonationBannerLoader } from "@/components/app/impersonation-banner-loader";
@@ -50,7 +49,7 @@ export default function DashboardLayout({
   const headerContent = (
     <>
       <CalendarHiddenSlot>
-        <SidebarTrigger className="pointer-events-auto hidden md:inline-flex" />
+        <SidebarTrigger className="pointer-events-auto hidden lg:inline-flex" />
         <Suspense fallback={<MobileHeaderLeadingFallback />}>
           <MobileHeaderLeadingLoader />
         </Suspense>
@@ -82,48 +81,46 @@ export default function DashboardLayout({
       >
         <MobileMenuProvider>
           <SettingsModalProvider>
-            <HomeTabProvider>
-              <Suspense fallback={<SidebarSkeleton />}>
-                <AppSidebarLoader />
+            <Suspense fallback={<SidebarSkeleton />}>
+              <AppSidebarLoader />
+            </Suspense>
+            <SidebarInset className="group/sidebar-inset min-w-0 has-[[data-calendar-active]]:h-dvh has-[[data-calendar-active]]:overflow-hidden has-[[data-calendar-active]]:md:h-dvh has-[[data-calendar-active]]:md:overflow-hidden">
+              <Suspense fallback={<HomeAwareHeaderFallback />}>
+                <HomeAwareHeader>{headerContent}</HomeAwareHeader>
               </Suspense>
-              <SidebarInset className="min-w-0 has-[[data-calendar-container]]:md:h-dvh has-[[data-calendar-container]]:md:overflow-hidden">
-                <Suspense fallback={<HomeAwareHeaderFallback />}>
-                  <HomeAwareHeader>{headerContent}</HomeAwareHeader>
-                </Suspense>
-                <OfflineBanner />
-                <Suspense fallback={null}>
-                  <SentryUserLoader />
-                </Suspense>
-                <Suspense fallback={null}>
-                  <ImpersonationBannerLoader />
-                </Suspense>
-                <Suspense fallback={null}>
-                  <NotificationBarLoader />
-                </Suspense>
-                <div className="flex flex-1 flex-col px-4 pt-5 pb-28 sm:px-6 sm:pt-6 sm:pb-28 md:pt-3 md:pb-8 lg:px-8 lg:pt-4 has-[[data-calendar-container]]:md:min-h-0 has-[[data-calendar-container]]:md:overflow-hidden has-[[data-calendar-container]]:md:pt-2 has-[[data-calendar-container]]:md:pb-4">
-                  {children}
-                </div>
-                <Suspense fallback={<MobileNavShell />}>
-                  <MobileNavLoader />
-                </Suspense>
-                <Suspense fallback={null}>
-                  <MobileMenuLoader />
-                </Suspense>
-                <PwaInstallBanner />
-                <PwaNotificationPrompt />
-                <PwaInstallTracker />
-                <Suspense fallback={null}>
-                  <WhatsAppPromptLoader />
-                </Suspense>
-                <Suspense fallback={null}>
-                  <DashboardOnboardingLoader />
-                </Suspense>
-                <Suspense fallback={null}>
-                  <ModalInteractivityGuard />
-                </Suspense>
-                <ReleaseNotesModal />
-              </SidebarInset>
-            </HomeTabProvider>
+              <OfflineBanner />
+              <Suspense fallback={null}>
+                <SentryUserLoader />
+              </Suspense>
+              <Suspense fallback={null}>
+                <ImpersonationBannerLoader />
+              </Suspense>
+              <Suspense fallback={null}>
+                <NotificationBarLoader />
+              </Suspense>
+              <div className="flex flex-1 flex-col px-4 pt-3 pb-28 sm:px-6 sm:pt-4 sm:pb-28 lg:px-8 lg:pt-4 lg:pb-8 group-has-[[data-calendar-active]]/sidebar-inset:min-h-0 group-has-[[data-calendar-active]]/sidebar-inset:overflow-hidden group-has-[[data-calendar-active]]/sidebar-inset:pt-[max(0.75rem,env(safe-area-inset-top))] group-has-[[data-calendar-active]]/sidebar-inset:pb-[calc(4.75rem+env(safe-area-inset-bottom))] group-has-[[data-calendar-active]]/sidebar-inset:md:min-h-0 group-has-[[data-calendar-active]]/sidebar-inset:md:overflow-hidden group-has-[[data-calendar-active]]/sidebar-inset:md:pt-2 group-has-[[data-calendar-active]]/sidebar-inset:md:pb-20 group-has-[[data-calendar-active]]/sidebar-inset:lg:pb-4">
+                {children}
+              </div>
+              <Suspense fallback={<MobileNavShell />}>
+                <MobileNavLoader />
+              </Suspense>
+              <Suspense fallback={null}>
+                <MobileMenuLoader />
+              </Suspense>
+              <PwaInstallBanner />
+              <PwaNotificationPrompt />
+              <PwaInstallTracker />
+              <Suspense fallback={null}>
+                <WhatsAppPromptLoader />
+              </Suspense>
+              <Suspense fallback={null}>
+                <DashboardOnboardingLoader />
+              </Suspense>
+              <Suspense fallback={null}>
+                <ModalInteractivityGuard />
+              </Suspense>
+              <ReleaseNotesModal />
+            </SidebarInset>
           </SettingsModalProvider>
         </MobileMenuProvider>
       </SidebarProvider>
@@ -135,7 +132,7 @@ function SidebarSkeleton() {
   return (
     <div
       aria-hidden
-      className="hidden w-[16.5rem] shrink-0 border-r bg-sidebar p-4 md:block"
+      className="hidden w-[16.5rem] shrink-0 border-r bg-sidebar p-4 lg:block"
     >
       <div className="h-9 w-full animate-pulse rounded-lg bg-sidebar-accent" />
       <div className="mt-8 space-y-2">

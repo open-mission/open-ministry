@@ -36,6 +36,9 @@ afterAll(() => {
 });
 
 const { CalendarHeader } = await import("@/components/calendar/calendar-header");
+const { MobileAgendaView } = await import(
+  "@/components/calendar/mobile-agenda-view"
+);
 const { buildDepartmentSections } = await import(
   "@/components/calendar/event-detail-dialog"
 );
@@ -170,39 +173,103 @@ describe("Calendar integration", () => {
     expect(nativeCalendarSource).not.toContain("max-h-[calc(100dvh-13rem)]");
   });
 
-  it("organizes mobile CalendarHeader into two rows with < Hoje >, Escalas + Novo, and icon-only filter", async () => {
-    const [headerSource, actionsSource] = await Promise.all([
-      Bun.file(new URL("../calendar-header.tsx", import.meta.url)).text(),
+  it("renders dedicated MobileAgendaView for all 4 wireframe views (Agenda, Semana, Mês, Ano) with header and navigator", async () => {
+    const [nativeCalendarSource, actionsSource] = await Promise.all([
+      Bun.file(new URL("../native-calendar.tsx", import.meta.url)).text(),
       Bun.file(new URL("../calendar-actions.tsx", import.meta.url)).text(),
     ]);
 
-    expect(headerSource).toContain("FilterIcon");
-    expect(headerSource).not.toContain("SlidersHorizontalIcon");
-
-    const mobileStart = headerSource.indexOf("flex flex-col gap-3 sm:hidden");
-    const mobileMarkup = headerSource.slice(mobileStart);
-    const navIdx = mobileMarkup.indexOf('aria-label="Navegação do período"');
-    const todayIdx = mobileMarkup.indexOf("Hoje");
-    const nextIdx = mobileMarkup.indexOf('aria-label="Próximo período"');
-    const actionsIdx = mobileMarkup.indexOf("<CalendarActions");
-    const tabsIdx = mobileMarkup.indexOf('aria-label="Visualizações da agenda"');
-    const filterIdx = mobileMarkup.indexOf('aria-label="Filtrar agenda"');
-
-    expect(navIdx).toBeGreaterThan(-1);
-    expect(todayIdx).toBeGreaterThan(navIdx);
-    expect(nextIdx).toBeGreaterThan(todayIdx);
-    expect(actionsIdx).toBeGreaterThan(nextIdx);
-    expect(tabsIdx).toBeGreaterThan(actionsIdx);
-    expect(filterIdx).toBeGreaterThan(tabsIdx);
-    expect(mobileMarkup).not.toContain("{mobileFilterSummary}");
-
+    expect(nativeCalendarSource).toContain("<MobileAgendaView");
+    expect(nativeCalendarSource).toContain('className="flex min-h-0 flex-1 flex-col md:hidden"');
+    expect(nativeCalendarSource).toContain('className="hidden md:flex md:min-h-0 md:flex-1 md:flex-col md:gap-4"');
     expect(actionsSource).toContain('variant === "mobile"');
-    const mobileBranchStart = actionsSource.indexOf('variant === "mobile" ? (');
-    const mobileBranchEnd = actionsSource.indexOf(") : (", mobileBranchStart);
-    const mobileBranch = actionsSource.slice(mobileBranchStart, mobileBranchEnd);
-    expect(mobileBranch.indexOf("<SchedulesPanel")).toBeLessThan(
-      mobileBranch.indexOf("{actionGroup}"),
+    expect(actionsSource).toContain("Filtrar compromissos");
+    expect(actionsSource).toContain("Ver escalas");
+
+    const sampleItems = [
+      {
+        id: "evt-1",
+        type: "event" as const,
+        title: "Culto de gratidão e celebração",
+        startsAt: "2026-11-23T12:00:00.000Z",
+        endsAt: "2026-11-23T14:00:00.000Z",
+        allDay: false,
+        color: "primary" as const,
+        location: "Templo principal",
+        subtitle: "Culto",
+      },
+    ];
+
+    const baseProps = {
+      organizationName: "Igreja Esperança Central",
+      currentDate: new Date("2026-11-23T15:00:00.000Z"),
+      now: new Date("2026-11-23T15:00:00.000Z"),
+      items: sampleItems,
+      filterType: "all" as const,
+      selectedDepartmentId: "all",
+      departments: [{ id: "dept-louvor", name: "Louvor" }],
+      weekStartsOn: 1 as const,
+      timeZone: "America/Sao_Paulo",
+      activeFilterCount: 0,
+      filterContent: createElement("div", null, "Filtros"),
+      canCreateEvent: true,
+      canCreateRehearsal: true,
+      canViewSchedules: true,
+      onViewChange: () => {},
+      onClearFilterType: () => {},
+      onClearDepartment: () => {},
+      onResetFilters: () => {},
+      onPrev: () => {},
+      onNext: () => {},
+      onToday: () => {},
+      onSelectDate: () => {},
+      onSelectMonth: () => {},
+      onSelectItem: () => {},
+      onExport: () => {},
+    };
+
+    const agendaHtml = renderToStaticMarkup(
+      createElement(MobileAgendaView, { ...baseProps, viewMode: "agenda" }),
     );
+    expect(agendaHtml).toContain("Agenda");
+    expect(agendaHtml).toContain("Igreja Esperança Central");
+    expect(agendaHtml).toContain("Semana");
+    expect(agendaHtml).toContain("Mês");
+    expect(agendaHtml).toContain("Ano");
+    expect(agendaHtml).toContain("Culto de gratidão e celebração");
+    expect(agendaHtml).toContain("09:00");
+    expect(agendaHtml).toContain("manhã");
+    expect(agendaHtml.indexOf('aria-label="Período anterior"')).toBeLessThan(
+      agendaHtml.indexOf(">Hoje<"),
+    );
+    expect(agendaHtml.indexOf(">Hoje<")).toBeLessThan(
+      agendaHtml.indexOf('aria-label="Próximo período"'),
+    );
+    expect(agendaHtml.indexOf('aria-label="Próximo período"')).toBeLessThan(
+      agendaHtml.indexOf('aria-label="Mais ações e filtros"'),
+    );
+
+    const weekHtml = renderToStaticMarkup(
+      createElement(MobileAgendaView, { ...baseProps, viewMode: "week" }),
+    );
+    expect(weekHtml).toContain('aria-label="Dias da semana"');
+    expect(weekHtml).toContain("SEG");
+    expect(weekHtml).toContain("DOM");
+
+    const monthHtml = renderToStaticMarkup(
+      createElement(MobileAgendaView, { ...baseProps, viewMode: "month" }),
+    );
+    expect(monthHtml).toContain("Novembro de 2026");
+    expect(monthHtml).toContain("Calendário mensal · 23 selecionado");
+    expect(monthHtml).toContain("09h00");
+
+    const yearHtml = renderToStaticMarkup(
+      createElement(MobileAgendaView, { ...baseProps, viewMode: "year" }),
+    );
+    expect(yearHtml).toContain("Visão anual · 12 meses");
+    expect(yearHtml).toContain("Janeiro");
+    expect(yearHtml).toContain("Novembro");
+    expect(yearHtml).toContain("1 compromisso");
   });
 
   it("locks desktop calendar viewport height and scopes vertical scrolling to each section", async () => {
@@ -231,8 +298,9 @@ describe("Calendar integration", () => {
     ]);
 
     expect(layoutSource).toContain(
-      "has-[[data-calendar-container]]:md:h-dvh has-[[data-calendar-container]]:md:overflow-hidden",
+      "has-[[data-calendar-active]]:md:h-dvh has-[[data-calendar-active]]:md:overflow-hidden",
     );
+    expect(layoutSource).not.toContain("has-[[data-calendar-container]]");
     expect(nativeCalendarSource).toContain(
       "min-h-0 flex-1 divide-y divide-border/60 overflow-y-auto overscroll-contain",
     );
@@ -266,7 +334,7 @@ describe("Calendar integration", () => {
     ]);
 
     expect(nativeCalendarSource).toContain(
-      'if (viewMode === "month" || viewMode === "year") {\n        setChosenView("day");',
+      'if (effectiveViewMode === "month" || effectiveViewMode === "year") {\n        setChosenView("day");',
     );
     expect(nativeCalendarSource).toContain("setBrowsedMonth({");
     expect(monthSource).toContain('data-calendar-today={isDayToday ? "true" : undefined}');

@@ -31,16 +31,65 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.9.0";
+export const CURRENT_APP_VERSION = "1.10.0";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.10.0",
+    title: "Nova Home e Agenda no Celular",
+    subtitle:
+      "A Home ganhou uma versão feita para o celular e outra para o desktop, e a Agenda do celular agora tem quatro visões bem organizadas.",
+    releaseDate: "24 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Home",
+        badge: "Novidade",
+        features: [
+          {
+            title: "Uma Home para cada tela",
+            description:
+              "No celular e no tablet, uma tela enxuta com sua próxima escala e atalhos. No computador, um caderno pastoral com a semana à esquerda e versículo, tarefas e avisos à direita.",
+            iconName: "LayoutDashboardIcon",
+            badge: "Mobile & Desktop",
+          },
+          {
+            title: "Versículo do Dia",
+            description:
+              "Abra o versículo com um toque, leia com calma no celular ou no computador e copie o texto quando quiser.",
+            iconName: "SparklesIcon",
+            badge: "Diário",
+          },
+        ],
+      },
+      {
+        moduleName: "Agenda",
+        badge: "Melhorias",
+        features: [
+          {
+            title: "Quatro visões no celular",
+            description:
+              "Agenda, Semana, Mês e Ano com navegação simples e detalhes do compromisso ao tocar em um item.",
+            iconName: "CalendarDaysIcon",
+            badge: "Mobile",
+          },
+          {
+            title: "Sem travamento ao voltar para a Home",
+            description:
+              "Corrigimos um problema em que a tela ficava sem rolagem depois de sair da Agenda.",
+            iconName: "CheckSquare2Icon",
+            badge: "Correção",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.9.0",
     title: "Agenda em Tela Cheia e Sua Semana Mais Organizada",
     subtitle:
       "A agenda agora aproveita toda a tela, a configuração da sua disponibilidade ficou mais simples e o guia de boas-vindas respeita o seu tempo.",
     releaseDate: "23 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Agenda",

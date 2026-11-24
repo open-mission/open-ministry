@@ -38,6 +38,11 @@ import { cn } from "@/lib/utils";
 type SchedulesPanelProps = {
   /** Resultado de `can("schedules","read")` no servidor. */
   canViewSchedules: boolean;
+  /** Modo controlado: o painel é aberto por outro controle (ex.: menu "…"). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Esconde o botão "Ver escalas" quando outro controle abre o painel. */
+  hideTrigger?: boolean;
 };
 
 type LoadState =
@@ -174,14 +179,21 @@ function PanelBody({ state }: { state: LoadState }) {
  * Botão "Ver escalas" da agenda. No desktop abre um Sheet lateral com pelo
  * menos metade da largura da tela; no mobile, um Drawer independente.
  */
-export function SchedulesPanel({ canViewSchedules }: SchedulesPanelProps) {
-  const [open, setOpen] = useState(false);
+export function SchedulesPanel({
+  canViewSchedules,
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger = false,
+}: SchedulesPanelProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
   const [state, setState] = useState<LoadState>({ status: "idle" });
   const isMobile = useIsMobile();
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
-      setOpen(nextOpen);
+      setInternalOpen(nextOpen);
+      onOpenChange?.(nextOpen);
       if (!nextOpen || !canViewSchedules) return;
 
       setState((previous) =>
@@ -198,12 +210,12 @@ export function SchedulesPanel({ canViewSchedules }: SchedulesPanelProps) {
           setState({ status: "error" });
         });
     },
-    [canViewSchedules],
+    [canViewSchedules, onOpenChange],
   );
 
   if (!canViewSchedules) return null;
 
-  const trigger = (
+  const trigger = hideTrigger ? null : (
     <Button
       type="button"
       variant="outline"

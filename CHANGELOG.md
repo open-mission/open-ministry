@@ -6,6 +6,16 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.10.0] - 2026-11-24
+
+### Adicionado e Melhorado
+- **Home Mobile e Desktop Redesenhadas:** no celular e no tablet (até 1023px), a Home passa a ter shell mobile com barra inferior e um bloco de companhia pastoral; no desktop, caderno pastoral com escala, atenção da semana e agenda à esquerda e versículo, tarefas, avisos e aniversariantes à direita. O tablet agora segue exatamente o quadro do design.
+- **Versículo do Dia (YouVersion):** card clicável com arte, fallback pastoral offline e leitura em gaveta no celular ou janela no desktop.
+- **Agenda Dedicada no Celular:** visões Agenda, Semana, Mês e Ano com navegador `< Hoje >`, menu vertical sem borda e detalhes do compromisso em gaveta, seguindo os wireframes do pen.dev.
+
+### Corrigido
+- **Rolagem da Home no Celular:** ao voltar da Agenda para a Home, o contêiner oculto da agenda não deixa mais a tela travada sem rolagem (o travamento de altura agora vale somente enquanto a Agenda está aberta).
+
 ## [1.9.0] - 2026-11-23
 
 ### Adicionado e Melhorado

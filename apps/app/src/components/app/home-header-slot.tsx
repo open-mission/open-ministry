@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
-import { HomeHeaderTabs } from "@/components/home/home-header-tabs";
 import { cn } from "@/lib/utils";
 
 const HEADER_BASE_CLASS =
@@ -33,8 +32,8 @@ export function getHeaderClassName(isHome: boolean, _scrolled: boolean) {
   return cn(
     HEADER_BASE_CLASS,
     isHome
-      ? "mt-2 border-0 transition-colors duration-200"
-      : "border-0 md:h-11 md:min-h-0 md:pt-1.5 lg:px-8",
+      ? "py-2 border-0 transition-colors duration-200 lg:mt-2 lg:py-0"
+      : "border-0 lg:h-11 lg:min-h-0 lg:pt-1.5 lg:px-8",
   );
 }
 
@@ -63,7 +62,10 @@ export function HomeAwareHeader({ children }: { children: ReactNode }) {
 
   if (isCalendar) {
     return (
-      <header className="pointer-events-none sticky top-0 z-20 flex h-0 shrink-0 items-start justify-between overflow-visible border-0 bg-transparent px-4 pt-[max(1.125rem,env(safe-area-inset-top))] sm:px-6 md:h-11 md:items-center md:pt-1.5 lg:px-8">
+      <header
+        data-calendar-active=""
+        className="pointer-events-none sticky top-0 z-20 -mb-[calc(3.5rem+env(safe-area-inset-top))] flex h-[calc(3.5rem+env(safe-area-inset-top))] shrink-0 items-center justify-between overflow-visible border-0 bg-transparent px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 md:mb-0 md:h-11 md:pt-1.5 lg:px-8"
+      >
         {children}
       </header>
     );
@@ -87,11 +89,11 @@ export function HomeAwareHeaderFallback() {
     <header className={getHeaderClassName(false, false)}>
       <div
         aria-hidden
-        className="hidden size-8 animate-pulse rounded-md bg-muted md:block"
+        className="hidden size-8 animate-pulse rounded-md bg-muted lg:block"
       />
       <div
         aria-hidden
-        className="h-7 w-28 animate-pulse rounded-md bg-muted md:hidden"
+        className="h-7 w-28 animate-pulse rounded-md bg-muted lg:hidden"
       />
       <div aria-hidden className="h-4 w-40 animate-pulse rounded bg-muted" />
       <div className="ml-auto flex items-center gap-2">
@@ -120,22 +122,20 @@ export function CalendarHiddenSlot({ children }: { children: ReactNode }) {
 }
 
 /**
- * Na home, o centro do header abriga as abas Hoje / Minha Igreja. Nas demais
- * rotas, o desktop mantém o header minimalista (sem breadcrumb), preservando
- * o breadcrumb apenas em subpáginas mobile.
+ * Na home o centro do header fica vazio: as abas "Hoje | Minha Igreja" foram
+ * substituídas pelas visões dedicadas (mobile/tablet e desktop), e o sino e o
+ * avatar seguem nos slots da direita. Nas demais rotas o desktop mantém o
+ * header minimalista (sem breadcrumb), preservando o breadcrumb apenas em
+ * subpáginas mobile e tablet (< 1024px).
  */
 export function HeaderCenterSlot({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
-  if (isCalendarRoute(pathname)) {
+  if (isCalendarRoute(pathname) || pathname === "/") {
     return null;
   }
 
-  if (pathname === "/") {
-    return <HomeHeaderTabs />;
-  }
-
-  return <div className="md:hidden">{children}</div>;
+  return <div className="lg:hidden">{children}</div>;
 }
 
 /**

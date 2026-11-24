@@ -48,7 +48,7 @@ describe("MobileNavShell", () => {
     expect(tokens).toContain("inset-x-0");
     expect(tokens).toContain("bottom-0");
     expect(tokens).toContain("z-40");
-    expect(tokens).toContain("md:hidden");
+    expect(tokens).toContain("lg:hidden");
     expect(tokens).toContain("pb-[env(safe-area-inset-bottom)]");
     expect(tokens).toContain("border-t");
   });
