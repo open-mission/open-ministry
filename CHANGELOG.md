@@ -6,6 +6,12 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.10.1] - 2026-11-24
+
+### Melhorado
+- **Equipe escalada organizada por departamento:** nos detalhes de um evento, cada departamento da equipe escalada agora pode ser aberto e fechado. Quando há vários departamentos, eles começam recolhidos para a tela não ficar longa; com um só departamento, ele já aparece aberto.
+- **Alinhamento no desktop:** corrigida a seta duplicada no botão de cada departamento e alinhados o nome, o status de cobertura e a seta na ponta direita, no celular e no computador.
+
 ## [1.10.0] - 2026-11-24
 
 ### Adicionado e Melhorado

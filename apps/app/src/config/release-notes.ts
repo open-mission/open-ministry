@@ -31,16 +31,45 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.10.0";
+export const CURRENT_APP_VERSION = "1.10.1";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.10.1",
+    title: "Equipe dos Eventos Mais Organizada",
+    subtitle:
+      "A equipe escalada dos eventos agora é organizada por departamento, e ficou mais fácil de ler no celular e no computador.",
+    releaseDate: "24 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Eventos & Escalas",
+        badge: "Melhoria",
+        features: [
+          {
+            title: "Departamentos que abrem e fecham",
+            description:
+              "Ao ver os detalhes de um evento, cada departamento da equipe escalada pode ser aberto ou recolhido. Com vários departamentos, eles começam fechados para deixar a tela mais enxuta.",
+            iconName: "UsersIcon",
+            badge: "Equipe escalada",
+          },
+          {
+            title: "Ajuste visual no computador",
+            description:
+              "Corrigimos a seta que aparecia duplicada e alinhámos o nome do departamento, a cobertura da escala e a seta no mesmo lugar no desktop.",
+            iconName: "CheckSquare2Icon",
+            badge: "Alinhamento",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.10.0",
     title: "Nova Home e Agenda no Celular",
     subtitle:
       "A Home ganhou uma versão feita para o celular e outra para o desktop, e a Agenda do celular agora tem quatro visões bem organizadas.",
     releaseDate: "24 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Home",
