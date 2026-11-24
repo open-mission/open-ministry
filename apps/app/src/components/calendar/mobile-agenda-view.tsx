@@ -24,12 +24,17 @@ import {
   XIcon,
 } from "lucide-react";
 
-import { CalendarActions } from "@/components/calendar/calendar-actions";
+import {
+  CalendarActionsProvider,
+  CalendarMobileCreateTrigger,
+  CalendarMobileMoreTrigger,
+} from "@/components/calendar/calendar-actions";
 import {
   getItemAccent,
   getItemTypeLabel,
 } from "@/components/calendar/calendar-item-style";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   calendarDateKey,
@@ -396,107 +401,111 @@ export function MobileAgendaView({
   const defaultDateInput = format(currentDate, "yyyy-MM-dd");
 
   return (
-    <section
-      aria-label="Agenda mobile"
-      className="flex min-h-0 flex-1 flex-col gap-3"
+    <CalendarActionsProvider
+      departments={departments}
+      defaultDate={defaultDateInput}
+      canCreateEvent={canCreateEvent}
+      canCreateRehearsal={canCreateRehearsal}
+      canViewSchedules={canViewSchedules}
+      onExport={onExport}
+      variant="mobile"
+      activeFilterCount={activeFilterCount}
+      filterContent={filterContent}
+      onResetFilters={onResetFilters}
     >
-      {/* Topo do wireframe alinhado ao Sino + Avatar globais do app */}
-      <header className="flex shrink-0 items-center justify-between gap-2 border-b border-border/70 pb-3">
-        <div className="min-w-0 flex-1">
-          <h1 className="font-heading text-xl leading-6 font-semibold tracking-tight text-foreground">
-            Agenda
-          </h1>
-          {organizationName ? (
-            <p className="truncate text-[11px] leading-tight text-muted-foreground">
-              {organizationName}
-            </p>
-          ) : null}
-        </div>
-
-        <div className="shrink-0 pr-[78px] sm:pr-[88px]">
-          <CalendarActions
-            departments={departments}
-            defaultDate={defaultDateInput}
-            canCreateEvent={canCreateEvent}
-            canCreateRehearsal={canCreateRehearsal}
-            canViewSchedules={canViewSchedules}
-            onExport={onExport}
-            variant="mobile"
-            activeFilterCount={activeFilterCount}
-            filterContent={filterContent}
-            onResetFilters={onResetFilters}
-          />
-        </div>
-      </header>
-
-      {/* Seletor de 4 visões igual ao wireframe */}
-      <Tabs
-        value={viewMode}
-        onValueChange={(value) => onViewChange(value as CalendarViewMode)}
-        className="shrink-0"
+      <section
+        aria-label="Agenda mobile"
+        className="flex min-h-0 flex-1 flex-col gap-3"
       >
-        <TabsList
-          aria-label="Visualizações da agenda mobile"
-          className="grid w-full grid-cols-4 gap-0.5 rounded-xl bg-muted p-1 group-data-horizontal/tabs:h-[52px]"
-        >
-          {MOBILE_TABS.map((tab) => (
-            <TabsTrigger
-              key={tab.value}
-              value={tab.value}
-              className="h-full rounded-[9px] px-1 text-xs font-medium text-muted-foreground data-[state=active]:border data-[state=active]:border-border/70 data-[state=active]:bg-card data-[state=active]:font-semibold data-[state=active]:text-foreground data-[state=active]:shadow-2xs"
-            >
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+        {/* Topo do wireframe alinhado ao Sino + Avatar globais do app */}
+        <header className="flex h-11 shrink-0 items-center justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <h1 className="font-heading text-xl leading-6 font-semibold tracking-tight text-foreground">
+              Agenda
+            </h1>
+            {organizationName ? (
+              <p className="truncate text-[11px] leading-tight text-muted-foreground">
+                {organizationName}
+              </p>
+            ) : null}
+          </div>
 
-      {/* Navegador de período: título + contagem à esquerda | Hoje < > à direita */}
-      <div className="flex shrink-0 items-center justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-base leading-tight font-semibold tracking-tight text-foreground">
-            {navigatorCopy.title}
-          </p>
-          <p className="truncate text-[11px] leading-tight text-muted-foreground">
-            {navigatorCopy.subtitle}
-          </p>
-        </div>
+          <div className="flex shrink-0 items-center pr-[72px] sm:pr-[82px]">
+            <CalendarMobileCreateTrigger />
+          </div>
+        </header>
 
-        <div
-          role="group"
-          aria-label="Navegação do período mobile"
-          className="flex shrink-0 items-center gap-1.5"
+        <div aria-hidden="true" className="h-px shrink-0 bg-border/70" />
+
+        {/* Seletor de 4 visões igual ao wireframe */}
+        <Tabs
+          value={viewMode}
+          onValueChange={(value) => onViewChange(value as CalendarViewMode)}
+          className="shrink-0"
         >
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onToday}
-            className="h-11 min-w-[54px] rounded-xl bg-card px-3 text-[11px] font-semibold text-foreground"
+          <TabsList
+            aria-label="Visualizações da agenda mobile"
+            className="grid w-full grid-cols-4 gap-0.5 rounded-xl bg-muted p-1 group-data-horizontal/tabs:h-[52px]"
           >
-            Hoje
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={onPrev}
-            aria-label="Período anterior"
-            className="size-11 rounded-xl bg-card"
-          >
-            <ChevronLeftIcon className="size-4" aria-hidden="true" />
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={onNext}
-            aria-label="Próximo período"
-            className="size-11 rounded-xl bg-card"
-          >
-            <ChevronRightIcon className="size-4" aria-hidden="true" />
-          </Button>
+            {MOBILE_TABS.map((tab) => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="h-full rounded-[9px] px-1 text-xs font-medium text-muted-foreground data-[state=active]:border data-[state=active]:border-border/70 data-[state=active]:bg-card data-[state=active]:font-semibold data-[state=active]:text-foreground data-[state=active]:shadow-2xs"
+              >
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+
+        {/* Navegador de período: título + contagem à esquerda | < Hoje > + ⋮ à direita */}
+        <div className="flex shrink-0 items-center justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-base leading-tight font-semibold tracking-tight text-foreground">
+              {navigatorCopy.title}
+            </p>
+            <p className="truncate text-[11px] leading-tight text-muted-foreground">
+              {navigatorCopy.subtitle}
+            </p>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-1">
+            <ButtonGroup aria-label="Navegação do período mobile">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={onPrev}
+                aria-label="Período anterior"
+                className="h-9 w-8 rounded-xl bg-card"
+              >
+                <ChevronLeftIcon className="size-4" aria-hidden="true" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onToday}
+                className="h-9 rounded-xl bg-card px-2.5 text-xs font-semibold text-foreground"
+              >
+                Hoje
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={onNext}
+                aria-label="Próximo período"
+                className="h-9 w-8 rounded-xl bg-card"
+              >
+                <ChevronRightIcon className="size-4" aria-hidden="true" />
+              </Button>
+            </ButtonGroup>
+
+            <CalendarMobileMoreTrigger />
+          </div>
         </div>
-      </div>
 
       {activeFilterCount > 0 ? (
         <div className="flex shrink-0 flex-wrap items-center gap-1.5">
@@ -865,5 +874,6 @@ export function MobileAgendaView({
         ) : null}
       </div>
     </section>
+    </CalendarActionsProvider>
   );
 }

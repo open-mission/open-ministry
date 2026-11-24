@@ -239,6 +239,15 @@ describe("Calendar integration", () => {
     expect(agendaHtml).toContain("Culto de gratidão e celebração");
     expect(agendaHtml).toContain("09:00");
     expect(agendaHtml).toContain("manhã");
+    expect(agendaHtml.indexOf('aria-label="Período anterior"')).toBeLessThan(
+      agendaHtml.indexOf(">Hoje<"),
+    );
+    expect(agendaHtml.indexOf(">Hoje<")).toBeLessThan(
+      agendaHtml.indexOf('aria-label="Próximo período"'),
+    );
+    expect(agendaHtml.indexOf('aria-label="Próximo período"')).toBeLessThan(
+      agendaHtml.indexOf('aria-label="Mais ações e filtros"'),
+    );
 
     const weekHtml = renderToStaticMarkup(
       createElement(MobileAgendaView, { ...baseProps, viewMode: "week" }),
