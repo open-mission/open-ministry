@@ -7,6 +7,7 @@ import {
   CakeIcon,
   CalendarDaysIcon,
   CalendarX2Icon,
+  ChevronDownIcon,
   ClockIcon,
   ExternalLinkIcon,
   ListOrderedIcon,
@@ -19,6 +20,11 @@ import {
 import { getCalendarEventPreviewAction } from "@/app/actions/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   Drawer,
   DrawerClose,
@@ -153,6 +159,82 @@ export function buildDepartmentSections(
   }
 
   return sections;
+}
+
+export function DepartmentScheduleCollapsible({
+  section,
+  defaultOpen = false,
+}: {
+  section: DepartmentSection;
+  defaultOpen?: boolean;
+}) {
+  const missing =
+    section.total > 0 ? Math.max(0, section.total - section.assigned) : 0;
+
+  return (
+    <Collapsible defaultOpen={defaultOpen} className="py-1 first:pt-0 last:pb-0">
+      <CollapsibleTrigger className="group/dept-trigger relative -mx-1.5 flex min-h-11 w-[calc(100%+0.75rem)] items-center gap-2 rounded-lg px-1.5 py-2 text-left transition-colors after:hidden hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+        <span className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">
+          {section.departmentName}
+        </span>
+
+        {section.total > 0 ? (
+          missing === 0 ? (
+            <span className="shrink-0 text-[11px] font-semibold text-primary tabular-nums">
+              Completa ({section.assigned}/{section.total})
+            </span>
+          ) : (
+            <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
+              <span className="font-semibold text-foreground">
+                {section.assigned}/{section.total}
+              </span>
+              {" · "}
+              {missing === 1 ? "falta 1" : `faltam ${missing}`}
+            </span>
+          )
+        ) : (
+          <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
+            {section.assignments.length}{" "}
+            {section.assignments.length === 1 ? "pessoa" : "pessoas"}
+          </span>
+        )}
+
+        <ChevronDownIcon
+          className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-aria-expanded/dept-trigger:rotate-180 motion-reduce:transition-none"
+          aria-hidden="true"
+        />
+      </CollapsibleTrigger>
+
+      <CollapsibleContent className="min-w-0 overflow-hidden duration-200 [--radix-accordion-content-height:var(--radix-collapsible-content-height)] data-open:animate-accordion-down data-closed:animate-accordion-up motion-reduce:animate-none">
+        <div className="pt-1 pb-2.5">
+          {section.assignments.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {section.assignments.map((assignment) => (
+                <span
+                  key={assignment.id}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs",
+                    assignment.isMine
+                      ? "border-primary/30 bg-secondary font-semibold text-primary"
+                      : "bg-muted/50 text-foreground",
+                  )}
+                >
+                  <span>{assignment.personName}</span>
+                  <span className="text-muted-foreground">
+                    · {assignment.functionName}
+                  </span>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Nenhuma pessoa escalada neste departamento.
+            </p>
+          )}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
 }
 
 export function EventPreviewSheet({
@@ -327,74 +409,13 @@ export function EventPreviewSheet({
           {departmentSections.length > 0 ? (
             <div className="space-y-3">
               <div className="divide-y divide-border/50">
-                {departmentSections.map((section) => {
-                  const missing =
-                    section.total > 0
-                      ? Math.max(0, section.total - section.assigned)
-                      : 0;
-
-                  return (
-                    <div
-                      key={section.key}
-                      className="space-y-2 py-2.5 first:pt-0 last:pb-0"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-semibold text-foreground">
-                          {section.departmentName}
-                        </span>
-                        {section.total > 0 ? (
-                          missing === 0 ? (
-                            <span className="text-[11px] font-semibold text-primary tabular-nums">
-                              Completa ({section.assigned}/{section.total})
-                            </span>
-                          ) : (
-                            <span className="text-[11px] text-muted-foreground tabular-nums">
-                              <span className="font-semibold text-foreground">
-                                {section.assigned}/{section.total}
-                              </span>
-                              {" · "}
-                              {missing === 1
-                                ? "falta 1"
-                                : `faltam ${missing}`}
-                            </span>
-                          )
-                        ) : (
-                          <span className="text-[11px] text-muted-foreground tabular-nums">
-                            {section.assignments.length}{" "}
-                            {section.assignments.length === 1
-                              ? "pessoa"
-                              : "pessoas"}
-                          </span>
-                        )}
-                      </div>
-
-                      {section.assignments.length > 0 ? (
-                        <div className="flex flex-wrap gap-1.5">
-                          {section.assignments.map((assignment) => (
-                            <span
-                              key={assignment.id}
-                              className={cn(
-                                "inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs",
-                                assignment.isMine
-                                  ? "border-primary/30 bg-secondary font-semibold text-primary"
-                                  : "bg-muted/50 text-foreground",
-                              )}
-                            >
-                              <span>{assignment.personName}</span>
-                              <span className="text-muted-foreground">
-                                · {assignment.functionName}
-                              </span>
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">
-                          Nenhuma pessoa escalada neste departamento.
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
+                {departmentSections.map((section) => (
+                  <DepartmentScheduleCollapsible
+                    key={`${effectivePreview.eventId}-${section.key}`}
+                    section={section}
+                    defaultOpen={departmentSections.length === 1}
+                  />
+                ))}
               </div>
 
               {effectivePreview.assignments.length === 0 && targetHref ? (

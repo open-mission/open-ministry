@@ -39,7 +39,7 @@ const { CalendarHeader } = await import("@/components/calendar/calendar-header")
 const { MobileAgendaView } = await import(
   "@/components/calendar/mobile-agenda-view"
 );
-const { buildDepartmentSections } = await import(
+const { buildDepartmentSections, DepartmentScheduleCollapsible } = await import(
   "@/components/calendar/event-detail-dialog"
 );
 
@@ -492,5 +492,76 @@ describe("Calendar integration", () => {
       assigned: 0,
       total: 2,
     });
+  });
+
+  it("renders each scheduled department as collapsible with >=44px trigger, collapsed by default when multiple and open when single", async () => {
+    const sections = buildDepartmentSections({
+      eventId: "evt-2",
+      kind: "service",
+      title: "Culto",
+      startsAt: "2026-11-22T21:00:00.000Z",
+      endsAt: "2026-11-22T23:00:00.000Z",
+      location: null,
+      description: null,
+      href: "/dashboard/events/evt-2",
+      coverage: { assigned: 2, total: 6 },
+      departmentCoverage: [
+        { departmentId: "dept-midia", departmentName: "Mídia", assigned: 2, total: 2 },
+        { departmentId: "dept-louvor", departmentName: "Grupo de Louvor", assigned: 0, total: 4 },
+      ],
+      assignments: [
+        {
+          id: "a1",
+          personName: "Claudio Alberto",
+          functionName: "Livestream",
+          departmentId: "dept-midia",
+          departmentName: "Mídia",
+          isMine: true,
+        },
+        {
+          id: "a2",
+          personName: "Lucas Alves",
+          functionName: "Livestream",
+          departmentId: "dept-midia",
+          departmentName: "Mídia",
+          isMine: false,
+        },
+      ],
+      songs: [],
+      planItems: [],
+    });
+
+    const collapsedHtml = renderToStaticMarkup(
+      createElement(DepartmentScheduleCollapsible, {
+        section: sections[0]!,
+        defaultOpen: false,
+      }),
+    );
+    expect(collapsedHtml).toContain("min-h-11");
+    expect(collapsedHtml).toContain("after:hidden");
+    expect(collapsedHtml).toContain("flex-1 truncate");
+    expect(collapsedHtml).toContain('aria-expanded="false"');
+    expect(collapsedHtml).toContain("Mídia");
+    expect(collapsedHtml).toContain("Completa (2/2)");
+    expect(collapsedHtml.match(/<svg/g) ?? []).toHaveLength(1);
+    expect(collapsedHtml).not.toContain("Claudio Alberto");
+
+    const expandedEmptyHtml = renderToStaticMarkup(
+      createElement(DepartmentScheduleCollapsible, {
+        section: sections[1]!,
+        defaultOpen: true,
+      }),
+    );
+    expect(expandedEmptyHtml).toContain('aria-expanded="true"');
+    expect(expandedEmptyHtml).toContain("Grupo de Louvor");
+    expect(expandedEmptyHtml).toContain("faltam 4");
+    expect(expandedEmptyHtml).toContain(
+      "Nenhuma pessoa escalada neste departamento.",
+    );
+
+    const dialogSource = await Bun.file(
+      new URL("../event-detail-dialog.tsx", import.meta.url),
+    ).text();
+    expect(dialogSource).toContain("defaultOpen={departmentSections.length === 1}");
   });
 });
