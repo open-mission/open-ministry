@@ -26,33 +26,32 @@ export function HomeSkeleton() {
       className="mx-auto w-full max-w-6xl pb-4"
       aria-hidden="true"
     >
-      <div className="@container flex flex-col gap-6 lg:hidden">
-        <div className="space-y-1.5">
-          <Skeleton className="h-3 w-28" />
-          <Skeleton className="h-7 w-56" />
-        </div>
+      <div className="flex flex-col gap-5 lg:hidden">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-stretch">
+          <Skeleton className="h-48 w-full rounded-[18px]" />
 
-        <div className="grid gap-4 @xl:grid-cols-2 @xl:items-start">
-          <div className="flex flex-col gap-4">
-            <Skeleton className="h-44 w-full rounded-2xl" />
-            <div className="grid grid-cols-4 gap-2">
+          <div className="flex flex-col justify-between gap-2.5">
+            <div className="grid grid-cols-4 gap-2 md:grid-cols-2">
               {Array.from({ length: 4 }).map((_, index) => (
-                <Skeleton key={index} className="h-11 w-full rounded-xl" />
+                <Skeleton
+                  key={index}
+                  className="h-11 w-full rounded-xl md:h-12"
+                />
               ))}
             </div>
-          </div>
 
-          <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-3">
-            <Skeleton className="size-12 shrink-0 rounded-lg" />
-            <div className="flex flex-1 flex-col gap-1.5">
-              <Skeleton className="h-3 w-36" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-3 w-24" />
+            <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-3">
+              <Skeleton className="size-12 shrink-0 rounded-lg" />
+              <div className="flex flex-1 flex-col gap-1.5">
+                <Skeleton className="h-3 w-36" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-3 w-24" />
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="grid gap-4 @xl:grid-cols-2 @xl:items-start">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
           <Skeleton className="h-40 w-full rounded-xl" />
           <Skeleton className="h-40 w-full rounded-xl" />
         </div>

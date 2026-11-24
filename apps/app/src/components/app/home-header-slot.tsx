@@ -32,8 +32,8 @@ export function getHeaderClassName(isHome: boolean, _scrolled: boolean) {
   return cn(
     HEADER_BASE_CLASS,
     isHome
-      ? "mt-2 border-0 transition-colors duration-200"
-      : "border-0 md:h-11 md:min-h-0 md:pt-1.5 lg:px-8",
+      ? "py-2 border-0 transition-colors duration-200 lg:mt-2 lg:py-0"
+      : "border-0 lg:h-11 lg:min-h-0 lg:pt-1.5 lg:px-8",
   );
 }
 
@@ -86,11 +86,11 @@ export function HomeAwareHeaderFallback() {
     <header className={getHeaderClassName(false, false)}>
       <div
         aria-hidden
-        className="hidden size-8 animate-pulse rounded-md bg-muted md:block"
+        className="hidden size-8 animate-pulse rounded-md bg-muted lg:block"
       />
       <div
         aria-hidden
-        className="h-7 w-28 animate-pulse rounded-md bg-muted md:hidden"
+        className="h-7 w-28 animate-pulse rounded-md bg-muted lg:hidden"
       />
       <div aria-hidden className="h-4 w-40 animate-pulse rounded bg-muted" />
       <div className="ml-auto flex items-center gap-2">
@@ -123,7 +123,7 @@ export function CalendarHiddenSlot({ children }: { children: ReactNode }) {
  * substituídas pelas visões dedicadas (mobile/tablet e desktop), e o sino e o
  * avatar seguem nos slots da direita. Nas demais rotas o desktop mantém o
  * header minimalista (sem breadcrumb), preservando o breadcrumb apenas em
- * subpáginas mobile.
+ * subpáginas mobile e tablet (< 1024px).
  */
 export function HeaderCenterSlot({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -132,7 +132,7 @@ export function HeaderCenterSlot({ children }: { children: ReactNode }) {
     return null;
   }
 
-  return <div className="md:hidden">{children}</div>;
+  return <div className="lg:hidden">{children}</div>;
 }
 
 /**

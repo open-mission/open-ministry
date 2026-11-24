@@ -240,6 +240,7 @@ async function HomeContent() {
           organizationName={organization.name}
           greeting={greeting}
           firstName={firstName}
+          hideHeader
           nextAssignment={nextAssignment}
           featuredEvent={featuredEvent}
           canManageOwnAvailability={canManageOwnAvailability}

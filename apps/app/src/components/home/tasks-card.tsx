@@ -7,13 +7,7 @@ import { ArrowRightIcon, PlusIcon } from "lucide-react";
 
 import { HomeCard, HomeCardContent } from "@/components/home/home-card";
 import { TaskCheckbox } from "@/components/home/task-checkbox";
-import {
-  HomeSection,
-  HomeSectionAction,
-  HomeSectionDescription,
-  HomeSectionHeader,
-  HomeSectionTitle,
-} from "@/components/home/home-section";
+import { HomeSection } from "@/components/home/home-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TaskDetailDialog } from "@/features/tasks/components/task-detail-dialog";
@@ -277,29 +271,32 @@ export function TasksCard({
         </section>
       ) : (
         <HomeSection aria-labelledby="home-tasks-title">
-          <HomeSectionHeader>
-            <div className="space-y-0.5">
-              <HomeSectionTitle id="home-tasks-title">
-                Minhas Tarefas
-              </HomeSectionTitle>
-              <HomeSectionDescription className="text-xs">
-                Afazeres pessoais e demandas atribuídas a você.
-              </HomeSectionDescription>
-            </div>
-            <HomeSectionAction>
-              <Button
-                asChild
-                variant="ghost"
-                size="sm"
-                className="h-9 min-h-[44px] px-2 text-xs text-primary hover:text-primary"
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2">
+              <h2
+                id="home-tasks-title"
+                className="font-heading text-lg leading-tight font-medium tracking-tight text-foreground"
               >
-                <Link href="/tasks">
-                  Ver todas
-                  <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
-                </Link>
-              </Button>
-            </HomeSectionAction>
-          </HomeSectionHeader>
+                Minhas tarefas
+              </h2>
+              {activeCount > 0 ? (
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-semibold text-muted-foreground tabular-nums">
+                  {activeCount}
+                </span>
+              ) : null}
+            </div>
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="h-9 min-h-11 shrink-0 px-2 text-xs text-primary hover:text-primary"
+            >
+              <Link href="/tasks">
+                Ver todas
+                <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
+              </Link>
+            </Button>
+          </div>
 
           <HomeCard>
             <HomeCardContent className="space-y-0">

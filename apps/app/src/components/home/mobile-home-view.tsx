@@ -32,6 +32,7 @@ export type MobileHomeViewProps = {
   organizationName: string;
   greeting: string;
   firstName: string;
+  hideHeader?: boolean;
   nextAssignment: HomeAssignmentSummary | null;
   featuredEvent: HomeEventSummary | null;
   canManageOwnAvailability: boolean;
@@ -47,9 +48,22 @@ export type MobileHomeViewProps = {
 
 type Shortcut = {
   href: string;
-  label: string;
+  shortLabel: string;
+  tabletLabel: string;
   icon: typeof CalendarDaysIcon;
 };
+
+function HeroStatusPill({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-0.5 text-[11px] font-semibold text-[#faf7ee]">
+      <span
+        className="size-1.5 shrink-0 rounded-full bg-[#9ec8ab]"
+        aria-hidden="true"
+      />
+      {label}
+    </span>
+  );
+}
 
 function HeroCard({ assignment }: { assignment: HomeAssignmentSummary }) {
   const event = assignment.schedule.event;
@@ -59,42 +73,43 @@ function HeroCard({ assignment }: { assignment: HomeAssignmentSummary }) {
   return (
     <section
       aria-labelledby="home-mobile-hero-title"
-      className="rounded-2xl bg-[#1e472f] p-5 text-[#faf7ee] dark:border dark:border-[#2c5b3f] dark:bg-[#1a3c28]"
+      className="flex h-full flex-col rounded-[18px] bg-[#1e472f] p-[18px] text-[#faf7ee] dark:border dark:border-[#2c5b3f] dark:bg-[#1a3c28]"
     >
-      <p className="text-[11px] font-semibold tracking-[0.16em] text-[#faf7ee]/70 uppercase">
-        Sua próxima escala
-      </p>
-
-      <p className="mt-1 text-[11px] font-medium text-[#faf7ee]/80 tabular-nums">
-        {relativeDay ?? parts.weekday} ·{" "}
-        {formatEventTimeRange(event.startsAt, event.endsAt)}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <HeroStatusPill label="Sua próxima escala" />
+        <p className="text-[11px] font-medium text-[#c7d9cc] tabular-nums">
+          {relativeDay ?? parts.weekday} ·{" "}
+          {formatEventTimeRange(event.startsAt, event.endsAt)}
+        </p>
+      </div>
 
       <h2
         id="home-mobile-hero-title"
-        className="mt-2 font-heading text-xl leading-tight tracking-tight"
+        className="mt-2.5 font-heading text-xl leading-tight tracking-tight"
       >
         {event.title}
       </h2>
 
-      <p className="mt-1 truncate text-xs text-[#faf7ee]/80">
+      <p className="mt-1 truncate text-xs text-[#c7d9cc]">
         {assignment.department.name} · {assignment.function.name}
       </p>
 
       {event.location ? (
-        <p className="mt-1 flex items-center gap-1.5 text-xs text-[#faf7ee]/80">
+        <p className="mt-0.5 flex items-center gap-1.5 text-xs text-[#c7d9cc]">
           <MapPinIcon className="size-3.5 shrink-0" aria-hidden="true" />
           <span className="truncate">{event.location}</span>
         </p>
       ) : null}
 
-      <Link
-        href={`/dashboard/events/${event.id}`}
-        className="mt-4 flex min-h-11 w-full items-center justify-between gap-3 rounded-xl bg-[#faf7ee] px-4 text-sm font-semibold text-[#16231a] transition-colors hover:bg-[#f1eade] focus-visible:ring-2 focus-visible:ring-[#faf7ee] focus-visible:outline-none"
-      >
-        Abrir minha escala
-        <ArrowRightIcon className="size-4" aria-hidden="true" />
-      </Link>
+      <div className="mt-4 md:mt-auto md:pt-4">
+        <Link
+          href={`/dashboard/events/${event.id}`}
+          className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl bg-[#faf7ee] px-4 text-[13px] font-semibold text-[#16231a] transition-colors hover:bg-[#f1eade] focus-visible:ring-2 focus-visible:ring-[#faf7ee] focus-visible:outline-none"
+        >
+          Abrir minha escala
+          <ArrowRightIcon className="size-4" aria-hidden="true" />
+        </Link>
+      </div>
     </section>
   );
 }
@@ -103,38 +118,39 @@ function FeaturedEventCard({ event }: { event: HomeEventSummary }) {
   return (
     <section
       aria-labelledby="home-mobile-featured-title"
-      className="rounded-2xl bg-[#1e472f] p-5 text-[#faf7ee] dark:border dark:border-[#2c5b3f] dark:bg-[#1a3c28]"
+      className="flex h-full flex-col rounded-[18px] bg-[#1e472f] p-[18px] text-[#faf7ee] dark:border dark:border-[#2c5b3f] dark:bg-[#1a3c28]"
     >
-      <p className="text-[11px] font-semibold tracking-[0.16em] text-[#faf7ee]/70 uppercase">
-        Próximo encontro da igreja
-      </p>
-
-      <p className="mt-1 text-[11px] font-medium text-[#faf7ee]/80">
-        {formatEventFullDate(event.startsAt)} ·{" "}
-        {formatEventTimeRange(event.startsAt, event.endsAt)}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <HeroStatusPill label="Próximo encontro da igreja" />
+        <p className="text-[11px] font-medium text-[#c7d9cc] tabular-nums">
+          {formatEventFullDate(event.startsAt)} ·{" "}
+          {formatEventTimeRange(event.startsAt, event.endsAt)}
+        </p>
+      </div>
 
       <h2
         id="home-mobile-featured-title"
-        className="mt-2 font-heading text-xl leading-tight tracking-tight"
+        className="mt-2.5 font-heading text-xl leading-tight tracking-tight"
       >
         {event.title}
       </h2>
 
       {event.location ? (
-        <p className="mt-1 flex items-center gap-1.5 text-xs text-[#faf7ee]/80">
+        <p className="mt-1 flex items-center gap-1.5 text-xs text-[#c7d9cc]">
           <MapPinIcon className="size-3.5 shrink-0" aria-hidden="true" />
           <span className="truncate">{event.location}</span>
         </p>
       ) : null}
 
-      <Link
-        href={`/dashboard/events/${event.id}`}
-        className="mt-4 flex min-h-11 w-full items-center justify-between gap-3 rounded-xl bg-[#faf7ee] px-4 text-sm font-semibold text-[#16231a] transition-colors hover:bg-[#f1eade] focus-visible:ring-2 focus-visible:ring-[#faf7ee] focus-visible:outline-none"
-      >
-        Ver detalhes
-        <ArrowRightIcon className="size-4" aria-hidden="true" />
-      </Link>
+      <div className="mt-4 md:mt-auto md:pt-4">
+        <Link
+          href={`/dashboard/events/${event.id}`}
+          className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl bg-[#faf7ee] px-4 text-[13px] font-semibold text-[#16231a] transition-colors hover:bg-[#f1eade] focus-visible:ring-2 focus-visible:ring-[#faf7ee] focus-visible:outline-none"
+        >
+          Ver detalhes
+          <ArrowRightIcon className="size-4" aria-hidden="true" />
+        </Link>
+      </div>
     </section>
   );
 }
@@ -147,34 +163,36 @@ function FirstStepsCard({
   return (
     <section
       aria-labelledby="home-mobile-first-steps-title"
-      className="rounded-2xl bg-[#1e472f] p-5 text-[#faf7ee] dark:border dark:border-[#2c5b3f] dark:bg-[#1a3c28]"
+      className="flex h-full flex-col rounded-[18px] bg-[#1e472f] p-[18px] text-[#faf7ee] dark:border dark:border-[#2c5b3f] dark:bg-[#1a3c28]"
     >
-      <p className="text-[11px] font-semibold tracking-[0.16em] text-[#faf7ee]/70 uppercase">
-        Primeiros passos
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <HeroStatusPill label="Primeiros passos" />
+      </div>
 
       <h2
         id="home-mobile-first-steps-title"
-        className="mt-2 font-heading text-xl leading-tight tracking-tight"
+        className="mt-2.5 font-heading text-xl leading-tight tracking-tight"
       >
         Nenhuma escala agendada ainda
       </h2>
 
-      <p className="mt-1 text-xs leading-relaxed text-[#faf7ee]/80">
+      <p className="mt-1 text-xs leading-relaxed text-[#c7d9cc]">
         {canManageAvailability
           ? "Conte quando você costuma estar livre para servir."
           : "Acompanhe a agenda da igreja para não perder os próximos encontros."}
       </p>
 
-      <Link
-        href={canManageAvailability ? "/availability" : "/calendar"}
-        className="mt-4 flex min-h-11 w-full items-center justify-between gap-3 rounded-xl bg-[#faf7ee] px-4 text-sm font-semibold text-[#16231a] transition-colors hover:bg-[#f1eade] focus-visible:ring-2 focus-visible:ring-[#faf7ee] focus-visible:outline-none"
-      >
-        {canManageAvailability
-          ? "Configurar disponibilidade"
-          : "Abrir agenda"}
-        <ArrowRightIcon className="size-4" aria-hidden="true" />
-      </Link>
+      <div className="mt-4 md:mt-auto md:pt-4">
+        <Link
+          href={canManageAvailability ? "/availability" : "/calendar"}
+          className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl bg-[#faf7ee] px-4 text-[13px] font-semibold text-[#16231a] transition-colors hover:bg-[#f1eade] focus-visible:ring-2 focus-visible:ring-[#faf7ee] focus-visible:outline-none"
+        >
+          {canManageAvailability
+            ? "Configurar disponibilidade"
+            : "Abrir agenda"}
+          <ArrowRightIcon className="size-4" aria-hidden="true" />
+        </Link>
+      </div>
     </section>
   );
 }
@@ -184,23 +202,41 @@ function Shortcuts({ shortcuts }: { shortcuts: Shortcut[] }) {
     <nav aria-label="Atalhos da home">
       <ul
         className={cn(
-          "grid",
-          shortcuts.length === 4
-            ? "grid-cols-4 gap-2"
-            : "grid-cols-3 gap-2",
+          "grid gap-2 md:grid-cols-2",
+          shortcuts.length === 4 ? "grid-cols-4" : "grid-cols-3",
         )}
       >
-        {shortcuts.map((shortcut) => {
+        {shortcuts.map((shortcut, index) => {
           const Icon = shortcut.icon;
+          const isSingleLabel = shortcut.shortLabel === shortcut.tabletLabel;
 
           return (
-            <li key={shortcut.href}>
+            <li
+              key={shortcut.href}
+              className={cn(
+                shortcuts.length === 3 && index === 2 && "md:col-span-2",
+              )}
+            >
               <Link
                 href={shortcut.href}
-                className="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl border border-border/70 bg-card px-1 py-2 text-[11px] font-medium text-foreground transition-colors hover:border-primary/30 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                className="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl border border-border/70 bg-card px-1 py-2 text-[11px] font-medium text-foreground transition-colors hover:border-primary/30 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none md:min-h-12 md:flex-row md:justify-start md:gap-2 md:px-3 md:py-0 md:text-xs"
               >
-                <Icon className="size-4 text-primary" aria-hidden="true" />
-                <span className="truncate">{shortcut.label}</span>
+                <Icon
+                  className="size-4 shrink-0 text-primary"
+                  aria-hidden="true"
+                />
+                {isSingleLabel ? (
+                  <span className="truncate">{shortcut.shortLabel}</span>
+                ) : (
+                  <>
+                    <span className="truncate md:hidden">
+                      {shortcut.shortLabel}
+                    </span>
+                    <span className="hidden truncate md:inline">
+                      {shortcut.tabletLabel}
+                    </span>
+                  </>
+                )}
               </Link>
             </li>
           );
@@ -308,6 +344,7 @@ export function MobileHomeView({
   organizationName,
   greeting,
   firstName,
+  hideHeader = false,
   nextAssignment,
   featuredEvent,
   canManageOwnAvailability,
@@ -321,30 +358,54 @@ export function MobileHomeView({
   verseSlot,
 }: MobileHomeViewProps) {
   const shortcuts: Shortcut[] = [
-    { href: "/schedules", label: "Escalas", icon: ClipboardListIcon },
-    { href: "/calendar", label: "Agenda", icon: CalendarDaysIcon },
+    {
+      href: "/schedules",
+      shortLabel: "Escalas",
+      tabletLabel: "Minhas escalas",
+      icon: ClipboardListIcon,
+    },
+    {
+      href: "/calendar",
+      shortLabel: "Agenda",
+      tabletLabel: "Agenda",
+      icon: CalendarDaysIcon,
+    },
     ...(accessibleModuleKeys.includes("music")
-      ? [{ href: "/songs", label: "Repertório", icon: Music2Icon }]
+      ? [
+          {
+            href: "/songs",
+            shortLabel: "Repertório",
+            tabletLabel: "Repertório",
+            icon: Music2Icon,
+          },
+        ]
       : []),
-    { href: "/tasks", label: "Tarefas", icon: CheckSquare2Icon },
+    {
+      href: "/tasks",
+      shortLabel: "Tarefas",
+      tabletLabel: "Minhas tarefas",
+      icon: CheckSquare2Icon,
+    },
   ];
 
   const showAvailability =
     canManageOwnAvailability && availability !== null && !availability.hasSaved;
 
   return (
-    <div className="@container flex flex-col gap-6">
-      <header className="space-y-1">
-        <p className="truncate text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-          {organizationName}
-        </p>
-        <h1 className="font-heading text-2xl leading-tight tracking-tight text-foreground">
-          {greeting}, {firstName}
-        </h1>
-      </header>
+    <div className="flex flex-col gap-5">
+      {hideHeader ? null : (
+        <header className="space-y-1">
+          <p className="truncate text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+            {organizationName}
+          </p>
+          <h1 className="font-heading text-2xl leading-tight tracking-tight text-foreground">
+            {greeting}, {firstName}
+          </h1>
+        </header>
+      )}
 
-      <div className="grid gap-4 @xl:grid-cols-2 @xl:items-start">
-        <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-stretch">
+        <div className="flex min-w-0 flex-col">
           {nextAssignment ? (
             <HeroCard assignment={nextAssignment} />
           ) : featuredEvent ? (
@@ -352,11 +413,12 @@ export function MobileHomeView({
           ) : (
             <FirstStepsCard canManageAvailability={canManageOwnAvailability} />
           )}
-
-          <Shortcuts shortcuts={shortcuts} />
         </div>
 
-        <div className="min-w-0">{verseSlot}</div>
+        <div className="flex min-w-0 flex-col justify-between gap-2.5">
+          <Shortcuts shortcuts={shortcuts} />
+          <div className="min-w-0">{verseSlot}</div>
+        </div>
       </div>
 
       {showAvailability ? (
@@ -376,7 +438,7 @@ export function MobileHomeView({
         variant="mobile-strip"
       />
 
-      <div className="grid gap-4 @xl:grid-cols-2 @xl:items-start">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
         <div className="min-w-0">{tasksSlot}</div>
         <UpcomingEvents events={events} />
       </div>

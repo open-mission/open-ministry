@@ -167,9 +167,9 @@ describe("layout da nova home", () => {
     expect(skeleton).toContain("hidden flex-col gap-7 lg:flex");
     expect(skeleton).not.toContain("role=\"tablist\"");
     expect(skeleton).not.toContain("h-10 w-56");
-    expect(skeleton).toContain("@container");
-    expect(skeleton).toContain("@xl:grid-cols-2");
-    expect(skeleton).not.toContain("md:grid-cols-2");
+    expect(skeleton).toContain("md:grid-cols-2");
+    expect(skeleton).toContain("md:items-stretch");
+    expect(skeleton).not.toContain("@container");
     expect(skeleton).toContain("lg:grid-cols-[minmax(0,1fr)_316px]");
     expect(skeleton).toContain("xl:grid-cols-[minmax(0,1fr)_360px]");
 
@@ -215,9 +215,9 @@ describe("header integrado da home", () => {
     const className = getHeaderClassName(false, true);
 
     expect(className).toContain("border-0");
-    expect(className).toContain("md:h-11");
-    expect(className).toContain("md:min-h-0");
-    expect(className).toContain("md:pt-1.5");
+    expect(className).toContain("lg:h-11");
+    expect(className).toContain("lg:min-h-0");
+    expect(className).toContain("lg:pt-1.5");
     expect(className).not.toContain("border-b");
     expect(className).not.toContain("border-border");
     expect(className).not.toContain("mt-2");
@@ -256,7 +256,7 @@ describe("header integrado da home", () => {
 
     expect(markup).toContain("<header");
     expect(markup).toContain("border-0");
-    expect(markup).toContain("md:h-11");
+    expect(markup).toContain("lg:h-11");
     expect(markup).not.toContain("border-b");
     expect(markup).not.toContain("border-border");
     expect(markup).not.toContain("mt-2");
@@ -333,7 +333,7 @@ describe("header integrado da home", () => {
         createElement("span", null, "BREADCRUMB"),
       ),
     );
-    expect(onEvents).toContain("md:hidden");
+    expect(onEvents).toContain("lg:hidden");
     expect(onEvents).toContain("BREADCRUMB");
 
     currentPathname = "/dashboard/calendar";
@@ -435,8 +435,9 @@ describe("cards da aba Hoje", () => {
       createElement(TasksCard, { tasks: [task] }),
     );
 
-    expect(markup).toContain("Minhas Tarefas");
-    expect(markup).toContain(
+    expect(markup).toContain("Minhas tarefas");
+    expect(markup).toContain(">1<");
+    expect(markup).not.toContain(
       "Afazeres pessoais e demandas atribuídas a você.",
     );
     expect(markup).toContain("border-accent-foreground");
@@ -1078,7 +1079,7 @@ function renderMobile(
 }
 
 describe("MobileHomeView (Direção A)", () => {
-  it("abre com saudação e nome da igreja, sem duplicar sino/avatar", () => {
+  it("abre com saudação e nome da igreja, sem duplicar sino/avatar, e oculta header quando integrado", () => {
     const markup = renderMobile();
 
     expect(markup).toContain("Igreja Central");
@@ -1087,12 +1088,18 @@ describe("MobileHomeView (Direção A)", () => {
     expect(markup).toContain("text-[11px]");
     expect(markup).not.toContain("text-[10px]");
     expect(markup).not.toContain("BellIcon");
+
+    const integrated = renderMobile({ hideHeader: true });
+    expect(integrated).not.toContain("<header");
+    expect(integrated).not.toContain("Boa tarde, Ana");
   });
 
-  it("destaca a próxima escala no hero verde-floresta com CTA de 44px", () => {
+  it("destaca a próxima escala no hero verde-floresta com pill translúcida e CTA de 44px", () => {
     const markup = renderMobile();
 
     expect(markup).toContain("Sua próxima escala");
+    expect(markup).toContain("bg-white/12");
+    expect(markup).toContain("bg-[#9ec8ab]");
     expect(markup).toContain("bg-[#1e472f]");
     expect(markup).toContain("dark:bg-[#1a3c28]");
     expect(markup).toContain("text-[#faf7ee]");
@@ -1102,26 +1109,28 @@ describe("MobileHomeView (Direção A)", () => {
     expect(markup).toContain("Louvor · Vocal");
   });
 
-  it("mostra 4 atalhos (com Repertório) quando music está acessível", () => {
+  it("mostra 4 atalhos 2x2 horizontais ao lado do hero no tablet quando music está acessível", () => {
     const markup = renderMobile({
       accessibleModuleKeys: ["agenda", "schedules", "music"],
     });
 
-    expect(markup).toContain("grid-cols-4 gap-2");
-    expect(markup).toContain("@xl:grid-cols-2");
-    expect(markup).toContain("@container");
-    expect(markup).not.toContain("md:grid-cols-2");
+    expect(markup).toContain("grid gap-2 md:grid-cols-2 grid-cols-4");
+    expect(markup).toContain("grid-cols-1 gap-4 md:grid-cols-2 md:items-stretch");
+    expect(markup).toContain("md:flex-row");
     expect(markup).toContain('href="/schedules"');
+    expect(markup).toContain("Minhas escalas");
     expect(markup).toContain('href="/calendar"');
     expect(markup).toContain('href="/songs"');
     expect(markup).toContain("Repertório");
     expect(markup).toContain('href="/tasks"');
+    expect(markup).toContain("Minhas tarefas");
   });
 
-  it("esconde Repertório e usa 3 colunas quando music não está acessível", () => {
+  it("esconde Repertório, expande o 3º atalho no tablet e usa 3 colunas no mobile", () => {
     const markup = renderMobile();
 
-    expect(markup).toContain("grid-cols-3 gap-2");
+    expect(markup).toContain("grid gap-2 md:grid-cols-2 grid-cols-3");
+    expect(markup).toContain("md:col-span-2");
     expect(markup).not.toContain('href="/songs"');
     expect(markup).not.toContain("Repertório");
   });
