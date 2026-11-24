@@ -173,37 +173,36 @@ export function DepartmentScheduleCollapsible({
 
   return (
     <Collapsible defaultOpen={defaultOpen} className="py-1 first:pt-0 last:pb-0">
-      <CollapsibleTrigger className="group/dept-trigger -mx-1.5 flex min-h-11 w-[calc(100%+0.75rem)] items-center justify-between gap-2 rounded-lg px-1.5 py-2 text-left transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
-        <span className="min-w-0 truncate text-xs font-semibold text-foreground">
+      <CollapsibleTrigger className="group/dept-trigger relative -mx-1.5 flex min-h-11 w-[calc(100%+0.75rem)] items-center gap-2 rounded-lg px-1.5 py-2 text-left transition-colors after:hidden hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+        <span className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">
           {section.departmentName}
         </span>
 
-        <span className="flex shrink-0 items-center gap-1.5">
-          {section.total > 0 ? (
-            missing === 0 ? (
-              <span className="text-[11px] font-semibold text-primary tabular-nums">
-                Completa ({section.assigned}/{section.total})
-              </span>
-            ) : (
-              <span className="text-[11px] text-muted-foreground tabular-nums">
-                <span className="font-semibold text-foreground">
-                  {section.assigned}/{section.total}
-                </span>
-                {" · "}
-                {missing === 1 ? "falta 1" : `faltam ${missing}`}
-              </span>
-            )
-          ) : (
-            <span className="text-[11px] text-muted-foreground tabular-nums">
-              {section.assignments.length}{" "}
-              {section.assignments.length === 1 ? "pessoa" : "pessoas"}
+        {section.total > 0 ? (
+          missing === 0 ? (
+            <span className="shrink-0 text-[11px] font-semibold text-primary tabular-nums">
+              Completa ({section.assigned}/{section.total})
             </span>
-          )}
-          <ChevronDownIcon
-            className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-aria-expanded/dept-trigger:rotate-180 motion-reduce:transition-none"
-            aria-hidden="true"
-          />
-        </span>
+          ) : (
+            <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
+              <span className="font-semibold text-foreground">
+                {section.assigned}/{section.total}
+              </span>
+              {" · "}
+              {missing === 1 ? "falta 1" : `faltam ${missing}`}
+            </span>
+          )
+        ) : (
+          <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
+            {section.assignments.length}{" "}
+            {section.assignments.length === 1 ? "pessoa" : "pessoas"}
+          </span>
+        )}
+
+        <ChevronDownIcon
+          className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-aria-expanded/dept-trigger:rotate-180 motion-reduce:transition-none"
+          aria-hidden="true"
+        />
       </CollapsibleTrigger>
 
       <CollapsibleContent className="min-w-0 overflow-hidden duration-200 [--radix-accordion-content-height:var(--radix-collapsible-content-height)] data-open:animate-accordion-down data-closed:animate-accordion-up motion-reduce:animate-none">

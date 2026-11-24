@@ -538,9 +538,12 @@ describe("Calendar integration", () => {
       }),
     );
     expect(collapsedHtml).toContain("min-h-11");
+    expect(collapsedHtml).toContain("after:hidden");
+    expect(collapsedHtml).toContain("flex-1 truncate");
     expect(collapsedHtml).toContain('aria-expanded="false"');
     expect(collapsedHtml).toContain("Mídia");
     expect(collapsedHtml).toContain("Completa (2/2)");
+    expect(collapsedHtml.match(/<svg/g) ?? []).toHaveLength(1);
     expect(collapsedHtml).not.toContain("Claudio Alberto");
 
     const expandedEmptyHtml = renderToStaticMarkup(
