@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { ResponsiveDialog } from "@/components/app/responsive-dialog";
+import { SchedulesPanel } from "@/components/calendar/schedules-panel";
 import { CreateEventDialog } from "@/components/events/create-event-dialog";
 import { CalendarSyncCard } from "@/components/settings/calendar-sync-card";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ type CalendarActionsProps = {
   defaultDate: string;
   canCreateEvent: boolean;
   canCreateRehearsal: boolean;
+  canViewSchedules?: boolean;
   onExport: () => void;
   variant?: "mobile" | "desktop";
 };
@@ -61,6 +63,7 @@ export function CalendarActions({
   defaultDate,
   canCreateEvent,
   canCreateRehearsal,
+  canViewSchedules = false,
   onExport,
   variant = "desktop",
 }: CalendarActionsProps) {
@@ -195,83 +198,99 @@ export function CalendarActions({
     </div>
   );
 
+  const actionGroup = (
+    <ButtonGroup aria-label="Ações da agenda">
+      {isMobile ? (
+        <>
+          <ResponsiveDialog
+            open={newOpen}
+            onOpenChange={setNewOpen}
+            trigger={newTrigger}
+            title="Novo compromisso"
+            description="Escolha o que deseja criar."
+          >
+            {newOptions}
+          </ResponsiveDialog>
+          <ResponsiveDialog
+            open={moreOpen}
+            onOpenChange={setMoreOpen}
+            trigger={moreTrigger}
+            title="Mais ações"
+            description="Exporte sua agenda ou conecte-a ao seu calendário."
+          >
+            {moreOptions}
+          </ResponsiveDialog>
+        </>
+      ) : (
+        <>
+          <DropdownMenu open={newOpen} onOpenChange={setNewOpen}>
+            <DropdownMenuTrigger asChild>{newTrigger}</DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuLabel>Criar</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {canCreateEvent ? (
+                <>
+                  <DropdownMenuItem onSelect={() => openCreate("service")}>
+                    <CalendarPlusIcon aria-hidden="true" />
+                    Novo culto
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => openCreate("event")}>
+                    <CalendarPlusIcon aria-hidden="true" />
+                    Novo evento
+                  </DropdownMenuItem>
+                </>
+              ) : null}
+              {canCreateRehearsal ? (
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/rehearsals">
+                    <Music2Icon aria-hidden="true" />
+                    Novo ensaio
+                  </Link>
+                </DropdownMenuItem>
+              ) : null}
+              {!canCreateEvent && !canCreateRehearsal ? (
+                <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                  Sem permissão para criar.
+                </p>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu open={moreOpen} onOpenChange={setMoreOpen}>
+            <DropdownMenuTrigger asChild>{moreTrigger}</DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-60">
+              <DropdownMenuLabel>Agenda</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={handleExport}>
+                <DownloadIcon aria-hidden="true" />
+                Exportar <span className="font-mono">.ics</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={openSync}>
+                <Link2Icon aria-hidden="true" />
+                Conectar meu calendário
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>
+      )}
+    </ButtonGroup>
+  );
+
   return (
     <>
-      <ButtonGroup aria-label="Ações da agenda">
-        {isMobile ? (
+      <div className="flex shrink-0 items-center gap-2">
+        {variant === "mobile" ? (
           <>
-            <ResponsiveDialog
-              open={newOpen}
-              onOpenChange={setNewOpen}
-              trigger={newTrigger}
-              title="Novo compromisso"
-              description="Escolha o que deseja criar."
-            >
-              {newOptions}
-            </ResponsiveDialog>
-            <ResponsiveDialog
-              open={moreOpen}
-              onOpenChange={setMoreOpen}
-              trigger={moreTrigger}
-              title="Mais ações"
-              description="Exporte sua agenda ou conecte-a ao seu calendário."
-            >
-              {moreOptions}
-            </ResponsiveDialog>
+            <SchedulesPanel canViewSchedules={canViewSchedules} />
+            {actionGroup}
           </>
         ) : (
           <>
-            <DropdownMenu open={newOpen} onOpenChange={setNewOpen}>
-              <DropdownMenuTrigger asChild>{newTrigger}</DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuLabel>Criar</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {canCreateEvent ? (
-                  <>
-                    <DropdownMenuItem onSelect={() => openCreate("service")}>
-                      <CalendarPlusIcon aria-hidden="true" />
-                      Novo culto
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => openCreate("event")}>
-                      <CalendarPlusIcon aria-hidden="true" />
-                      Novo evento
-                    </DropdownMenuItem>
-                  </>
-                ) : null}
-                {canCreateRehearsal ? (
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/rehearsals">
-                      <Music2Icon aria-hidden="true" />
-                      Novo ensaio
-                    </Link>
-                  </DropdownMenuItem>
-                ) : null}
-                {!canCreateEvent && !canCreateRehearsal ? (
-                  <p className="px-2 py-1.5 text-xs text-muted-foreground">
-                    Sem permissão para criar.
-                  </p>
-                ) : null}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu open={moreOpen} onOpenChange={setMoreOpen}>
-              <DropdownMenuTrigger asChild>{moreTrigger}</DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-60">
-                <DropdownMenuLabel>Agenda</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={handleExport}>
-                  <DownloadIcon aria-hidden="true" />
-                  Exportar <span className="font-mono">.ics</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={openSync}>
-                  <Link2Icon aria-hidden="true" />
-                  Conectar meu calendário
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {actionGroup}
+            <SchedulesPanel canViewSchedules={canViewSchedules} />
           </>
         )}
-      </ButtonGroup>
+      </div>
 
       <CreateEventDialog
         departments={departments}

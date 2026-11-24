@@ -26,4 +26,3 @@ export * from "./components/create-event-dialog";
 export * from "./components/edit-event-dialog";
 export * from "./components/schedule-editor";
 export * from "./components/schedule-list";
-export * from "./components/full-calendar";

@@ -248,11 +248,12 @@ describe("Menu Explorar (variante A+C)", () => {
         (route) => route.href,
       ),
     ).toContain("/availability");
-    expect(
-      filterMobileExploreRoutes("cultos", [...ALL_MODULES]).map(
-        (route) => route.href,
-      ),
-    ).toContain("/events");
+    const cultosRoutes = filterMobileExploreRoutes("cultos", [
+      ...ALL_MODULES,
+    ]).map((route) => route.href);
+    expect(cultosRoutes).toContain("/calendar");
+    expect(cultosRoutes).toContain("/schedules");
+    expect(cultosRoutes).not.toContain("/events");
   });
 
   it("não vaza rotas bloqueadas por módulo ou permissão", () => {

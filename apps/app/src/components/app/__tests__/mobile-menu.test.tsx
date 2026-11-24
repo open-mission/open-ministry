@@ -68,11 +68,9 @@ const exploreDomains: MobileExploreDomainData[] = [
     href: "/calendar",
     label: "Cultos & Escalas",
     exact: false,
-    badge: "4",
+    badge: "2",
     tabs: [
       { href: "/calendar", label: "Agenda", exact: false },
-      { href: "/events", label: "Cultos e eventos", exact: false },
-      { href: "/schedules", label: "Escalas", exact: false },
       { href: "/availability", label: "Disponibilidade", exact: false },
     ],
   },
@@ -264,8 +262,8 @@ describe("MobileMenu — variante A+C (Explorar)", () => {
       );
     }
 
-    expect(markup).toContain("Agenda · Cultos e eventos · Escalas");
-    expect(markup).toContain(">4<");
+    expect(markup).toContain("Agenda · Disponibilidade");
+    expect(markup).toContain(">2<");
 
     const peopleCard = anchorFor(markup, "Pessoas");
     expect(peopleCard).toContain('aria-current="page"');

@@ -49,8 +49,8 @@ export default function DashboardLayout({
 }) {
   const headerContent = (
     <>
-      <SidebarTrigger className="pointer-events-auto hidden md:inline-flex" />
       <CalendarHiddenSlot>
+        <SidebarTrigger className="pointer-events-auto hidden md:inline-flex" />
         <Suspense fallback={<MobileHeaderLeadingFallback />}>
           <MobileHeaderLeadingLoader />
         </Suspense>
@@ -86,7 +86,7 @@ export default function DashboardLayout({
               <Suspense fallback={<SidebarSkeleton />}>
                 <AppSidebarLoader />
               </Suspense>
-              <SidebarInset>
+              <SidebarInset className="min-w-0 has-[[data-calendar-container]]:md:h-dvh has-[[data-calendar-container]]:md:overflow-hidden">
                 <Suspense fallback={<HomeAwareHeaderFallback />}>
                   <HomeAwareHeader>{headerContent}</HomeAwareHeader>
                 </Suspense>
@@ -100,7 +100,7 @@ export default function DashboardLayout({
                 <Suspense fallback={null}>
                   <NotificationBarLoader />
                 </Suspense>
-                <div className="flex flex-1 flex-col px-4 pt-5 pb-28 sm:px-6 sm:pt-6 sm:pb-28 md:pt-3 md:pb-8 lg:px-8 lg:pt-4 has-[[data-calendar-container]]:md:pt-2">
+                <div className="flex flex-1 flex-col px-4 pt-5 pb-28 sm:px-6 sm:pt-6 sm:pb-28 md:pt-3 md:pb-8 lg:px-8 lg:pt-4 has-[[data-calendar-container]]:md:min-h-0 has-[[data-calendar-container]]:md:overflow-hidden has-[[data-calendar-container]]:md:pt-2 has-[[data-calendar-container]]:md:pb-4">
                   {children}
                 </div>
                 <Suspense fallback={<MobileNavShell />}>

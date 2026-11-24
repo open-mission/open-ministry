@@ -297,7 +297,7 @@ export function MonthViewDayCell({
             <div
               aria-hidden
               className={cn(
-                "absolute top-0 left-0.5 right-0.5 h-5 rounded-sm border-2 pointer-events-none",
+                "absolute top-0 left-0.5 right-0.5 h-6 rounded-sm border-2 pointer-events-none",
                 placeholderBorder,
               )}
               style={{
@@ -359,13 +359,13 @@ export function MonthViewDayCell({
               return (
                 <div
                   key={`bar-placeholder-${index}`}
-                  className="h-5 shrink-0"
+                  className="h-6 shrink-0"
                 />
               );
             }
 
             // spacer — maintains vertical alignment with bars on other days
-            return <div key={`spacer-${index}`} className="h-5 shrink-0" />;
+            return <div key={`spacer-${index}`} className="h-6 shrink-0" />;
           })}
         </div>
       )}
@@ -377,7 +377,7 @@ export function MonthViewDayCell({
           <div
             aria-hidden
             className={cn(
-              "absolute inset-x-0.5 top-0 h-5 rounded-sm border-2 pointer-events-none z-30",
+              "absolute inset-x-0.5 top-0 h-6 rounded-sm border-2 pointer-events-none z-30",
               placeholderBorder,
             )}
           />

@@ -20,6 +20,7 @@ import {
   WeekAttentionCard,
   type ServedDepartment,
 } from "@/components/home";
+import { AvailabilityReminderWidget } from "@/components/availability/availability-reminder-widget";
 import { getMyAvailabilityAction } from "@/app/actions/availability";
 import { listTasks } from "@/features/tasks";
 import {
@@ -109,10 +110,11 @@ async function HomeContent() {
   let upcomingAssignments: Awaited<ReturnType<typeof getUpcomingAssignments>> =
     [];
   let availability: MyAvailabilityResult | null = null;
+  let canManageOwnAvailability = false;
 
   if (person) {
     // A disponibilidade é opcional: só é consultada para quem pode gerenciá-la.
-    const canManageOwnAvailability = await can(
+    canManageOwnAvailability = await can(
       "schedules",
       "manageOwnAvailability",
     );
@@ -130,7 +132,7 @@ async function HomeContent() {
         getDepartmentAgenda(organization.id, person.id, 6),
         getUpcomingAssignments(organization.id, person.id, 3),
         canManageOwnAvailability
-          ? getMyAvailabilityAction()
+          ? getMyAvailabilityAction().catch(() => null)
           : Promise.resolve(null),
       ]);
   }
@@ -279,6 +281,15 @@ async function HomeContent() {
           <NextServiceCard event={featuredEvent} />
         ) : null
       }
+      availabilityReminder={
+        canManageOwnAvailability && availability && !availability.hasSaved ? (
+          <AvailabilityReminderWidget
+            variant="home"
+            hasSaved={availability.hasSaved}
+            canManageAvailability={canManageOwnAvailability}
+          />
+        ) : null
+      }
       tasks={
         hasActiveTasks ? (
           <TasksCard
@@ -302,7 +313,6 @@ async function HomeContent() {
           <WeekAttentionCard
             departments={weekCoverage}
             canManage={canManageSchedules}
-            availability={availability}
           />
         ) : null
       }

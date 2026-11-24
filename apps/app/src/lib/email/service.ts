@@ -84,7 +84,7 @@ export function buildAppEmailBrandAssets(
 ): { appLogoUrl: string; appWordmarkUrl: string } {
   const base = baseUrl.replace(/\/+$/, "");
   return {
-    appLogoUrl: `${base}/brand/openministry-app-icon-dark.png`,
+    appLogoUrl: `${base}/brand/openministry-symbol-black.png`,
     appWordmarkUrl: `${base}/brand/openministry-logo-full-black.png`,
   };
 }

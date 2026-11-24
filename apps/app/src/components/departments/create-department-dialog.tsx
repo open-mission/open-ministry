@@ -21,7 +21,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-export function CreateDepartmentDialog() {
+export function CreateDepartmentDialog({
+  variant = "default",
+}: {
+  variant?: "default" | "outline" | "secondary";
+} = {}) {
   const [open, setOpen] = useState(false);
   const [state, formAction] = useActionState<DepartmentFormState, FormData>(
     createDepartmentAction,
@@ -33,7 +37,7 @@ export function CreateDepartmentDialog() {
       open={open}
       onOpenChange={setOpen}
       trigger={
-        <Button size="lg" className="h-9 max-sm:h-11">
+        <Button variant={variant} size="lg" className="h-9 max-sm:h-11">
           <PlusIcon data-icon="inline-start" />
           Novo departamento
         </Button>

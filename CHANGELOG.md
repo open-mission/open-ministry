@@ -6,6 +6,15 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.9.0] - 2026-11-23
+
+### Adicionado e Melhorado
+- **Agenda Nativa em Tela Cheia:** a página `/calendar` agora ocupa toda a altura disponível no desktop, com rolagem isolada por seção — a grade do mês e da semana preenchem o espaço sem rolagem da página, a lista de eventos da visão Agenda rola sozinha e o ano rola apenas na grade de meses. No mobile, o cabeçalho foi reorganizado em duas linhas (setas + Hoje; Escalas + Novo, e abaixo as visões com filtro em ícone).
+- **Navegação de Data e Indicadores:** selecionar um dia no minicalendário abre a visão Dia (ou mantém a Semana), e os dias de hoje e selecionado ganham destaque nas visões Mês, Semana e Ano, com linha da hora atual na semana.
+- **Departamentos e Disponibilidade:** novo espaço para os departamentos que a pessoa participa, com botão **Configurar disponibilidade** e editor semanal + datas pontuais em painel lateral (`Sheet` 50% no desktop, `Drawer` no mobile). Um aviso minimalista aparece na Home e em Departamentos enquanto a disponibilidade do mês não foi salva.
+- **Guia de Boas-vindas Repensado:** o tour de 6 passos deu lugar a um guia de 3 capítulos em linguagem simples, sem exigir telefone/aniversário — no desktop um painel lateral que não bloqueia a Home, no celular um Drawer com passo dedicado ao botão Explorar.
+- **Símbolo do App nos E-mails:** o badge "OM" dos modelos foi substituído pelo símbolo oficial do OpenMinistry; quando a igreja tem logo, os dois aparecem juntos no cabeçalho.
+
 ## [1.8.0] - 2026-11-22
 
 ### Adicionado e Melhorado

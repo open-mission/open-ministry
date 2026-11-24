@@ -4,6 +4,7 @@ export type TodayHomeLayoutProps = {
   /** Versículo compacto da primeira dobra mobile. */
   mobileVerse: ReactNode;
   nextAssignment: ReactNode;
+  availabilityReminder?: ReactNode;
   tasks: ReactNode;
   notifications: ReactNode;
   weekAttention: ReactNode;
@@ -24,6 +25,7 @@ export type TodayHomeLayoutProps = {
 export function TodayHomeLayout({
   mobileVerse,
   nextAssignment,
+  availabilityReminder,
   tasks,
   notifications,
   weekAttention,
@@ -38,6 +40,10 @@ export function TodayHomeLayout({
       <div className="contents lg:col-span-7 lg:flex lg:flex-col lg:gap-6">
         {nextAssignment ? (
           <div className="order-2 lg:order-none">{nextAssignment}</div>
+        ) : null}
+
+        {availabilityReminder ? (
+          <div className="order-2 lg:order-none">{availabilityReminder}</div>
         ) : null}
 
         {weekAttention ? (

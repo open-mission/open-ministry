@@ -6,18 +6,21 @@ export type ResetPasswordEmailProps = {
   name?: string;
   resetUrl: string;
   expiresInMinutes?: number;
+  appLogoUrl?: string | null;
 };
 
 export function ResetPasswordEmail({
   name,
   resetUrl,
   expiresInMinutes = 60,
+  appLogoUrl,
 }: ResetPasswordEmailProps) {
   const greeting = name ? `Olá, ${name}!` : "Olá!";
 
   return (
     <BaseEmailLayout
       previewText="Instruções para redefinir sua senha no OpenMinistry"
+      appLogoUrl={appLogoUrl}
       footerText="Se você não solicitou a redefinição de senha, desconsidere esta mensagem. Sua conta permanece segura."
     >
       <Heading style={heading}>Redefinição de Senha 🔒</Heading>

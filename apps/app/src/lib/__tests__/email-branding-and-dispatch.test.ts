@@ -110,14 +110,14 @@ describe("normalizeEmailAssetUrl", () => {
 describe("buildAppEmailBrandAssets", () => {
   it("aponta para os assets PNG da marca", () => {
     expect(buildAppEmailBrandAssets(BASE_URL)).toEqual({
-      appLogoUrl: `${BASE_URL}/brand/openministry-app-icon-dark.png`,
+      appLogoUrl: `${BASE_URL}/brand/openministry-symbol-black.png`,
       appWordmarkUrl: `${BASE_URL}/brand/openministry-logo-full-black.png`,
     });
   });
 
   it("remove barras finais duplicadas", () => {
     expect(buildAppEmailBrandAssets(`${BASE_URL}/`).appLogoUrl).toBe(
-      `${BASE_URL}/brand/openministry-app-icon-dark.png`,
+      `${BASE_URL}/brand/openministry-symbol-black.png`,
     );
   });
 });
@@ -218,7 +218,7 @@ describe("sendTransactionalEmail", () => {
       `${BASE_URL}/brand/church-logo.png`,
     );
     expect(render!.props.appLogoUrl).toBe(
-      `${BASE_URL}/brand/openministry-app-icon-dark.png`,
+      `${BASE_URL}/brand/openministry-symbol-black.png`,
     );
     expect(render!.props.appWordmarkUrl).toBe(
       `${BASE_URL}/brand/openministry-logo-full-black.png`,
@@ -226,8 +226,10 @@ describe("sendTransactionalEmail", () => {
 
     const brevoCall = state.brevoCalls.at(-1);
     const html = String(brevoCall?.htmlContent ?? "");
+    expect(html).toContain(`${BASE_URL}/brand/openministry-symbol-black.png`);
     expect(html).toContain(`${BASE_URL}/brand/church-logo.png`);
     expect(html).toContain("Reunião de líderes.");
+    expect(html).not.toContain(">OM<");
     expect(html).not.toContain("Pr. Marcos Silva");
     expect(html).not.toContain("Ensaio Geral e Alinhamento de Equipes");
   });

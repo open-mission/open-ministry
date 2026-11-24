@@ -14,6 +14,7 @@ export type RehearsalReminderEmailProps = {
   body?: string;
   rehearsalUrl?: string;
   churchLogo?: string | null;
+  appLogoUrl?: string | null;
 };
 
 export function RehearsalReminderEmail({
@@ -28,6 +29,7 @@ export function RehearsalReminderEmail({
   body,
   rehearsalUrl = "https://openministry.app/dashboard/rehearsals",
   churchLogo,
+  appLogoUrl,
 }: RehearsalReminderEmailProps) {
   const greeting = name ? `Olá, ${name}!` : "Olá!";
   const message = notes || body;
@@ -38,6 +40,7 @@ export function RehearsalReminderEmail({
       previewText={`Lembrete de ensaio: ${eventTitle} · ${churchName}`}
       churchName={churchName}
       churchLogo={churchLogo}
+      appLogoUrl={appLogoUrl}
       footerText={`Lembrete automático de ensaio enviado para ${churchName}.`}
     >
       <Heading style={heading}>🎶 Lembrete de Ensaio</Heading>

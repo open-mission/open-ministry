@@ -51,6 +51,10 @@ import {
   DashboardOnboardingModal,
   ProfileCompletenessRing,
 } from "@/components/onboarding/dashboard-onboarding-modal";
+import {
+  WELCOME_GUIDE_CHAPTERS,
+  WelcomeGuideContent,
+} from "@/components/onboarding/welcome-guide-content";
 import { actionErrorMessage } from "@/lib/auth-errors";
 import {
   buildWhatsAppShareUrl,
@@ -218,6 +222,30 @@ describe("Regras de convite compartilhado por WhatsApp", () => {
 
 const render = (node: ReactNode) => renderToStaticMarkup(node);
 
+function sourceOf(relativePath: string): string {
+  return readFileSync(
+    fileURLToPath(new URL(relativePath, import.meta.url)),
+    "utf8",
+  );
+}
+
+function guideMarkup(
+  isMobile: boolean,
+  activeChapter = 0,
+  extra: { initialPhone?: string | null; initialBirthday?: string | null } = {},
+): string {
+  return render(
+    createElement(WelcomeGuideContent, {
+      activeChapter,
+      onSelectChapter: () => undefined,
+      onSkip: () => undefined,
+      onNext: () => undefined,
+      isMobile,
+      ...extra,
+    }),
+  );
+}
+
 /** Extrai o bloco HTML do campo de senha para inspecionar o toggle. */
 function passwordFieldMarkup(markup: string): string {
   const idIndex = markup.indexOf('id="password"');
@@ -259,37 +287,30 @@ describe("Acessibilidade — piso tipográfico das telas de acesso", () => {
     }
   });
 
-  it("o tour de onboarding não usa texto abaixo de 11px", () => {
-    const markup = render(
-      createElement(DashboardOnboardingModal, {
-        userName: "Ana",
-        initialTourCompleted: false,
-      }),
-    );
-
-    expect(markup).not.toContain("text-[10px]");
-    expect(markup).not.toContain("text-[9px]");
+  it("o guia de boas-vindas não usa texto abaixo de 11px", () => {
+    for (const markup of [guideMarkup(false), guideMarkup(true)]) {
+      expect(markup).not.toContain("text-[10px]");
+      expect(markup).not.toContain("text-[9px]");
+      expect(markup).not.toContain("text-[0.65rem]");
+    }
   });
 
-  it("nenhum passo do tour usa texto abaixo de 11px no código-fonte", () => {
-    // O tour renderiza um passo por vez, então o markup cobre apenas o passo
-    // inicial: a garantia do piso tipográfico precisa varrer o arquivo inteiro.
+  it("nenhum capítulo do guia usa texto abaixo de 11px no código-fonte", () => {
+    // O guia renderiza um capítulo por vez, então o markup cobre apenas o
+    // capítulo inicial: a garantia do piso tipográfico precisa varrer os
+    // arquivos inteiros.
     const files = [
       "../../components/auth/auth-shell.tsx",
       "../../components/auth/google-sign-in-button.tsx",
       "../../components/auth/login-form.tsx",
       "../../components/auth/signup-form.tsx",
       "../../components/onboarding/dashboard-onboarding-modal.tsx",
+      "../../components/onboarding/welcome-guide-content.tsx",
     ];
     const subEleven = /text-\[(?:9|10)px\]|text-\[0\.[0-6]\d*rem\]/;
 
     for (const file of files) {
-      const source = readFileSync(
-        fileURLToPath(new URL(file, import.meta.url)),
-        "utf8",
-      );
-
-      expect(source).not.toMatch(subEleven);
+      expect(sourceOf(file)).not.toMatch(subEleven);
     }
   });
 });
@@ -425,14 +446,8 @@ describe("Onboarding — anel de progresso circular do perfil", () => {
   });
 
   it("não deixa nenhum clip-path quebrado no código-fonte do tour", () => {
-    const source = readFileSync(
-      fileURLToPath(
-        new URL(
-          "../../components/onboarding/dashboard-onboarding-modal.tsx",
-          import.meta.url,
-        ),
-      ),
-      "utf8",
+    const source = sourceOf(
+      "../../components/onboarding/dashboard-onboarding-modal.tsx",
     );
 
     expect(source).not.toContain("clipPath");
@@ -440,22 +455,212 @@ describe("Onboarding — anel de progresso circular do perfil", () => {
   });
 });
 
-describe("Acessibilidade — passos do tour de onboarding", () => {
-  it("cada passo tem área de toque mínima de 28x28px", () => {
+describe("Guia de boas-vindas — conteúdo dos três capítulos", () => {
+  it("tem exatamente três capítulos", () => {
+    expect(WELCOME_GUIDE_CHAPTERS).toHaveLength(3);
+    expect(WELCOME_GUIDE_CHAPTERS.map((chapter) => chapter.id)).toEqual([
+      "areas",
+      "schedules",
+      "profile",
+    ]);
+  });
+
+  it("desktop mostra os títulos dos três capítulos", () => {
+    const markup = guideMarkup(false);
+
+    expect(markup).toContain("1 · Onde tudo fica");
+    expect(markup).toContain("2 · Suas escalas e avisos");
+    expect(markup).toContain("3 · Seu perfil e o app no celular");
+  });
+
+  it("abre o capítulo 1 por padrão com o selo Agora", () => {
+    const markup = guideMarkup(false);
+
+    expect(markup).toContain("Agora");
+    expect(markup).toContain('aria-expanded="true"');
+    expect(markup).toContain("Cultos &amp; Escalas");
+    expect(markup).toContain("Agenda, escalas e disponibilidade");
+    expect(markup).toContain("Músicas, cifras e ensaios");
+    expect(markup).toContain("Membros, equipes e aniversários");
+    expect(markup).toContain(
+      "No celular, todas essas áreas abrem no botão Explorar.",
+    );
+  });
+
+  it("capítulos são botões expansíveis controlados", () => {
+    const markup = guideMarkup(false);
+    const chapterButtons =
+      markup.match(/<button[^>]*aria-expanded="(?:true|false)"/g) ?? [];
+
+    expect(chapterButtons).toHaveLength(3);
+    expect(
+      chapterButtons.filter((button) => button.includes('"true"')),
+    ).toHaveLength(1);
+    expect(
+      markup.match(/aria-controls="welcome-guide-chapter-/g) ?? [],
+    ).toHaveLength(3);
+  });
+
+  it("mobile dedica o capítulo 1 ao botão Explorar", () => {
+    const markup = guideMarkup(true);
+
+    expect(markup).toContain("1 · Conheça o botão Explorar");
+    expect(markup).toContain(
+      "Toque em Explorar para abrir todas as 6 áreas da igreja.",
+    );
+    expect(markup).toContain("Início");
+    expect(markup).toContain("Escalas");
+    expect(markup).toContain("Agenda");
+    expect(markup).toContain("Músicas");
+    expect(markup).toContain("Explorar");
+    expect(markup).toContain("bg-primary/10");
+    expect(markup).toContain("border-primary/30");
+  });
+
+  it("capítulo 2 explica presença, disponibilidade e avisos com atalho para escalas", () => {
+    const markup = guideMarkup(false, 1);
+
+    expect(markup).toContain("Confirmar presença e avisar disponibilidade");
+    expect(markup).toContain("próxima escala aparece logo no topo");
+    expect(markup).toContain("Disponibilidade");
+    expect(markup).toContain("WhatsApp");
+    expect(markup).toContain('href="/dashboard/schedules"');
+  });
+
+  it("capítulo 3 leva ao Perfil sem renderizar campos de telefone ou aniversário", () => {
+    const markup = guideMarkup(false, 2);
+
+    expect(markup).toContain(
+      "WhatsApp e aniversário no Perfil",
+    );
+    expect(markup).toContain("scope=account");
+    expect(markup).toContain("tab=profile");
+    expect(markup).toContain("Abrir Perfil");
+    expect(markup).toContain("Adicionar à tela inicial no celular");
+    expect(markup).toContain("tab=app");
+
+    for (const variant of [guideMarkup(false, 2), guideMarkup(true, 2)]) {
+      expect(variant).not.toContain("<input");
+      expect(variant).not.toContain("<textarea");
+      expect(variant).not.toContain('type="tel"');
+      expect(variant).not.toContain('type="date"');
+    }
+  });
+
+  it("mostra Preenchido quando telefone e aniversário já existem", () => {
+    const complete = guideMarkup(false, 2, {
+      initialPhone: "(11) 98888-7777",
+      initialBirthday: "1990-05-12",
+    });
+    const incomplete = guideMarkup(false, 2);
+
+    expect(complete).toContain("Preenchido");
+    expect(incomplete).not.toContain("Preenchido");
+  });
+
+  it("rodapé conclui no último capítulo e oferece pular por agora", () => {
+    const first = guideMarkup(false, 0);
+    const last = guideMarkup(false, 2);
+
+    expect(first).toContain("Pular por agora");
+    expect(first).toContain("Próximo capítulo");
+    expect(last).toContain("Concluir guia");
+    expect(last).not.toContain("Próximo capítulo");
+  });
+
+  it("no mobile as ações têm alvo mínimo de 44px", () => {
+    const markup = guideMarkup(true);
+
+    expect(markup).toContain("min-h-11");
+    expect(
+      markup.match(/min-h-11/g)?.length ?? 0,
+    ).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("Guia de boas-vindas — painéis responsivos", () => {
+  const modalSource = () =>
+    sourceOf("../../components/onboarding/dashboard-onboarding-modal.tsx");
+
+  it("desktop usa Sheet lateral direito não modal com a Home clicável", () => {
+    const source = modalSource();
+
+    expect(source).toContain("<Sheet");
+    expect(source).toContain("modal={false}");
+    expect(source).toContain('side="right"');
+    expect(source).toContain("sm:max-w-sm");
+    expect(source).toContain("bg-card");
+    expect(source).toContain("border-l");
+    expect(source).toContain("border-border");
+    expect(source).toContain("onInteractOutside");
+    expect(source).toContain("onOpenAutoFocus");
+    expect(source).toContain("showOverlay={false}");
+  });
+
+  it("mobile usa Drawer inferior com o visual padrão e rolagem sem arrastar", () => {
+    const source = modalSource();
+    const contentSource = sourceOf(
+      "../../components/onboarding/welcome-guide-content.tsx",
+    );
+
+    expect(source).toContain("<Drawer");
+    expect(source).toContain("max-h-[85dvh]");
+    expect(source).toContain("rounded-t-xl");
+    expect(source).toContain("bg-popover");
+    expect(source).toContain("!text-left");
+    expect(source).toContain("min-h-11 min-w-11");
+    expect(source).toContain("BOAS-VINDAS · 3 CAPÍTULOS");
+    expect(contentSource).toContain("env(safe-area-inset-bottom)");
+    expect(contentSource).toContain('data-vaul-no-drag=""');
+  });
+
+  it("detecta o dispositivo só depois da hidratação", () => {
+    const source = modalSource();
+
+    expect(source).toContain("useMounted()");
+    expect(source).toContain("useStableIsMobile(isOpen && mounted)");
+    expect(source).toContain("if (!mounted) return null;");
+  });
+
+  it("o servidor não renderiza o painel antes da hidratação", () => {
     const markup = render(
       createElement(DashboardOnboardingModal, {
         userName: "Ana",
         initialTourCompleted: false,
       }),
     );
-    const stepperButtons = markup.match(
-      /<button[^>]*aria-label="Ir para o passo \d+"[^>]*>/g,
-    );
 
-    expect(stepperButtons).toHaveLength(6);
-    for (const button of stepperButtons ?? []) {
-      expect(button).toContain("min-h-[28px]");
-      expect(button).toContain("min-w-[28px]");
+    expect(markup).toBe("");
+  });
+
+  it("evento de reabertura, telemetria e persistência continuam ligados", () => {
+    const source = modalSource();
+
+    expect(source).toContain('"open-onboarding-tour"');
+    expect(source).toContain('"onboarding.tour.reopened"');
+    expect(source).toContain('"onboarding.step_viewed"');
+    expect(source).toContain("completeOnboardingTourAction()");
+  });
+
+  it("respeita prefers-reduced-motion nos dois painéis", () => {
+    const sources = [
+      modalSource(),
+      sourceOf("../../components/onboarding/welcome-guide-content.tsx"),
+    ];
+
+    for (const source of sources) {
+      expect(source).toContain("motion-reduce:transition-none");
     }
+    expect(
+      sourceOf("../../components/onboarding/welcome-guide-content.tsx"),
+    ).toContain("motion-reduce:animate-none");
+  });
+
+  it("o menu do avatar oferece Rever tour no desktop e no mobile", () => {
+    const source = sourceOf("../../components/app/user-menu-drawer.tsx");
+
+    expect(source.match(/Rever tour/g)).toHaveLength(2);
+    expect(source).not.toContain("Tour da Plataforma");
+    expect(source.match(/open-onboarding-tour/g)).toHaveLength(2);
   });
 });

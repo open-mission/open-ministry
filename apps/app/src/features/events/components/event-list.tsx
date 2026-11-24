@@ -11,16 +11,16 @@ import {
   eventKindLabels,
   type EventKind,
 } from "@/lib/event-options";
+import type { EventListItem } from "@/lib/events";
 import {
   coverageStatus,
   eventDateParts,
   formatEventMonthYear,
   formatEventTimeRange,
-  recurrenceLabel,
   relativeDayLabel,
   scheduleProgress,
-  type EventListItem,
-} from "@/lib/events";
+} from "@/lib/events-pure";
+import { recurrenceLabel } from "@/lib/recurrence-utils";
 import { cn } from "@/lib/utils";
 
 export function EventList({

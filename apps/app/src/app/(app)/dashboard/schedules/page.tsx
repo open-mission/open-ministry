@@ -161,7 +161,7 @@ async function SchedulesContent({
             </p>
           </div>
           <Button asChild variant="outline" size="sm">
-            <Link href="/dashboard/events">Ver cultos e eventos</Link>
+            <Link href="/calendar">Ver a agenda</Link>
           </Button>
         </div>
       ) : (

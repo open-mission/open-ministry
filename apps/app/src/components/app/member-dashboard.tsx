@@ -162,7 +162,7 @@ export function MemberDashboard({
               </CardDescription>
             </div>
             <Button asChild variant="ghost" size="sm" className="h-9 shrink-0 text-xs">
-              <Link href="/dashboard/calendar">
+              <Link href="/calendar">
                 Ver agenda
                 <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
               </Link>

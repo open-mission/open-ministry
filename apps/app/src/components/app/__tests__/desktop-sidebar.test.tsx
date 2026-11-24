@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it, mock } from "bun:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { CalendarDaysIcon } from "lucide-react";
+import { CalendarCheckIcon, CalendarDaysIcon } from "lucide-react";
 
 import { toSerializableSubtabs } from "@/components/app/domain-subtabs-data";
 import { SidebarNav } from "@/components/app/sidebar-nav";
@@ -15,7 +15,7 @@ import {
 
 const actualNavigation = await import("next/navigation");
 
-let currentPathname = "/dashboard/events";
+let currentPathname = "/calendar";
 
 mock.module("next/navigation", () => ({
   ...actualNavigation,
@@ -54,12 +54,13 @@ function findItem(items: DesktopSidebarItem[], label: string) {
 }
 
 describe("buildDesktopSidebarNavigation", () => {
-  it("returns the six primary items and both secondary items with full access", () => {
+  it("returns the primary items (with Departamentos below Cultos & Escalas) and both secondary items with full access", () => {
     const nav = buildDesktopSidebarNavigation([...ALL_MODULES], FULL_OPTIONS);
 
     expect(labels(nav.primary)).toEqual([
       "Início",
       "Cultos & Escalas",
+      "Departamentos",
       "Louvor",
       "Pessoas",
       "Comunicação",
@@ -77,13 +78,24 @@ describe("buildDesktopSidebarNavigation", () => {
       "/calendar",
       "/events",
       "/schedules",
+    ]);
+    expect(cultos.badge).toBeUndefined();
+
+    const departamentos = findItem(nav.primary, "Departamentos");
+    expect(departamentos.href).toBe("/departments");
+    expect(departamentos.matchPrefixes).toEqual([
+      "/departments",
       "/availability",
     ]);
-    expect(cultos.badge).toBe("4");
+    expect(departamentos.badge).toBeUndefined();
 
     const louvor = findItem(nav.primary, "Louvor");
     expect(louvor.matchPrefixes).toEqual(["/songs", "/rehearsals"]);
     expect(louvor.badge).toBe("2");
+
+    const pessoas = findItem(nav.primary, "Pessoas");
+    expect(pessoas.matchPrefixes).toEqual(["/members", "/birthdays"]);
+    expect(pessoas.badge).toBe("2");
 
     const comunicacao = findItem(nav.primary, "Comunicação");
     expect(comunicacao.matchPrefixes).toEqual([
@@ -111,7 +123,12 @@ describe("buildDesktopSidebarNavigation", () => {
   it("omits domains with no accessible tabs", () => {
     const nav = buildDesktopSidebarNavigation([]);
 
-    expect(labels(nav.primary)).toEqual(["Início", "Pessoas", "Bíblia"]);
+    expect(labels(nav.primary)).toEqual([
+      "Início",
+      "Departamentos",
+      "Pessoas",
+      "Bíblia",
+    ]);
   });
 
   it("respects partial module access inside a domain", () => {
@@ -119,7 +136,7 @@ describe("buildDesktopSidebarNavigation", () => {
     const cultos = findItem(nav.primary, "Cultos & Escalas");
 
     expect(cultos.matchPrefixes).toEqual(["/calendar", "/events"]);
-    expect(cultos.badge).toBe("2");
+    expect(cultos.badge).toBeUndefined();
     expect(labels(nav.primary)).not.toContain("Louvor");
     expect(labels(nav.primary)).not.toContain("Comunicação");
   });
@@ -132,15 +149,11 @@ describe("buildDesktopSidebarNavigation", () => {
 });
 
 describe("getAccessibleDomainTabs", () => {
-  it("returns the four Cultos & Escalas tabs in order", () => {
+  it("returns only Agenda for Cultos & Escalas", () => {
     const tabs = getAccessibleDomainTabs("cultos", [...ALL_MODULES]);
 
-    expect(tabs.map((tab) => tab.href)).toEqual([
-      "/calendar",
-      "/events",
-      "/schedules",
-      "/availability",
-    ]);
+    expect(tabs.map((tab) => tab.href)).toEqual(["/calendar"]);
+    expect(tabs.map((tab) => tab.label)).toEqual(["Agenda"]);
   });
 
   it("filters Louvor tabs by the music and rehearsals modules", () => {
@@ -168,10 +181,10 @@ describe("getAccessibleDomainTabs", () => {
     ).toEqual(["/announcements", "/whatsapp", "/emails"]);
   });
 
-  it("keeps Pessoas tabs available regardless of modules", () => {
+  it("keeps Pessoas tabs available without Departamentos", () => {
     expect(
       getAccessibleDomainTabs("pessoas", []).map((tab) => tab.href),
-    ).toEqual(["/members", "/departments", "/birthdays"]);
+    ).toEqual(["/members", "/birthdays"]);
   });
 });
 
@@ -183,19 +196,19 @@ const cultosTabs: NavItem[] = [
     exact: false,
   },
   {
-    href: "/events",
-    label: "Cultos e eventos",
-    icon: CalendarDaysIcon,
+    href: "/availability",
+    label: "Disponibilidade",
+    icon: CalendarCheckIcon,
     exact: false,
   },
 ];
 
 describe("toSerializableSubtabs", () => {
   it("strips icon functions before tabs cross the Server/Client boundary", () => {
-    const tabs = getAccessibleDomainTabs("cultos", [...ALL_MODULES]);
+    const tabs = getAccessibleDomainTabs("louvor", [...ALL_MODULES]);
     const data = toSerializableSubtabs(tabs);
 
-    expect(data).toHaveLength(4);
+    expect(data).toHaveLength(2);
     expect(data.every((tab) => !("icon" in tab))).toBe(true);
     expect(JSON.parse(JSON.stringify(data))).toEqual(data);
   });
@@ -210,11 +223,12 @@ describe("DomainSubtabsNav", () => {
       }),
     );
 
-    expect(markup).toContain("lucide-calendar-days");
+    expect(markup).toContain("lucide-calendar-range");
+    expect(markup).toContain("lucide-calendar-check");
   });
 
   it("marks the current tab with aria-current and the active classes", () => {
-    currentPathname = "/dashboard/events";
+    currentPathname = "/calendar";
 
     const markup = renderToStaticMarkup(
       createElement(DomainSubtabsNav, {
@@ -225,7 +239,7 @@ describe("DomainSubtabsNav", () => {
 
     expect(markup).toContain('aria-label="Sub-abas de Cultos &amp; Escalas"');
     expect(markup).toContain('aria-current="page"');
-    expect(markup).toContain("Cultos e eventos");
+    expect(markup).toContain("Agenda");
     expect(markup).toContain("bg-card");
     expect(markup).toContain("shadow-2xs");
   });

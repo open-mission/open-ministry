@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 
 type CalendarMonthViewProps = {
   currentDate: Date;
+  now?: Date | null;
   items: CalendarItem[];
   weekStartsOn: 0 | 1;
   timeZone?: string | null;
@@ -81,6 +82,7 @@ function ItemTypeIcon({
 
 export function CalendarMonthView({
   currentDate,
+  now,
   items,
   weekStartsOn,
   timeZone,
@@ -124,12 +126,14 @@ export function CalendarMonthView({
     return map;
   }, [items, timeZone]);
 
-  const todayKey = calendarDateKey(new Date(), timeZone);
+  const todayKey = calendarDateKey(now ?? new Date(), timeZone);
+  const selectedKey = calendarDateKey(currentDate, timeZone);
+  const hasDistinctSelection = selectedKey !== todayKey;
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border bg-card shadow-xs">
+    <div className="flex flex-col overflow-hidden rounded-xl border bg-card shadow-xs md:min-h-0 md:flex-1">
       {/* Weekday headers */}
-      <div className="grid grid-cols-7 border-b bg-muted/40 text-center text-xs font-semibold capitalize text-muted-foreground">
+      <div className="grid shrink-0 grid-cols-7 border-b bg-muted/40 text-center text-xs font-semibold capitalize text-muted-foreground">
         {weekDays.map((weekDay, index) => (
           <div key={index} className="py-2.5">
             {weekDay}
@@ -138,11 +142,12 @@ export function CalendarMonthView({
       </div>
 
       {/* Days grid */}
-      <div className="grid grid-cols-7 divide-x divide-y border-b text-xs">
+      <div className="grid grid-cols-7 divide-x divide-y text-xs md:min-h-0 md:flex-1 md:auto-rows-fr">
         {days.map((day) => {
           const isCurrentMonth = isSameMonth(day, currentDate);
           const dayKey = format(day, "yyyy-MM-dd");
           const isDayToday = dayKey === todayKey;
+          const isDaySelected = hasDistinctSelection && dayKey === selectedKey;
           const dayItems = itemsByDay.get(dayKey) ?? [];
 
           const maxVisible = 3;
@@ -155,16 +160,20 @@ export function CalendarMonthView({
           return (
             <div
               key={day.toISOString()}
+              data-calendar-today={isDayToday ? "true" : undefined}
+              data-calendar-selected={isDaySelected ? "true" : undefined}
               className={cn(
-                "group relative flex min-h-[84px] flex-col p-1.5 transition-colors sm:min-h-[125px]",
+                "group relative flex min-h-[84px] flex-col p-1.5 transition-colors sm:min-h-[125px] md:min-h-0 md:overflow-hidden",
                 !isCurrentMonth && "bg-muted/15 text-muted-foreground/60",
-                isDayToday && "bg-primary/5",
+                isDayToday && "bg-primary/[0.07] ring-1 ring-inset ring-primary/45",
+                isDaySelected && "bg-secondary/50 ring-1 ring-inset ring-primary/35",
               )}
             >
               {/* Day header: the only control that opens the day */}
               <button
                 type="button"
                 onClick={() => onSelectDate(day)}
+                aria-current={isDayToday ? "date" : undefined}
                 aria-label={`Abrir ${dayLabel}${
                   dayItems.length > 0
                     ? `, ${dayItems.length} ${
@@ -177,16 +186,25 @@ export function CalendarMonthView({
                   isDayToday && "bg-primary/5",
                 )}
               >
-                <span
-                  className={cn(
-                    "flex size-7 items-center justify-center rounded-full text-xs font-medium transition-colors sm:size-6",
-                    isDayToday
-                      ? "bg-primary font-bold text-primary-foreground shadow-xs"
-                      : "text-foreground group-hover:text-primary",
-                    !isCurrentMonth && "text-muted-foreground/60",
-                  )}
-                >
-                  {format(day, "d")}
+                <span className="flex items-center gap-1.5">
+                  <span
+                    className={cn(
+                      "flex size-7 items-center justify-center rounded-full text-xs font-medium transition-colors sm:size-6",
+                      isDayToday
+                        ? "bg-primary font-bold text-primary-foreground shadow-xs"
+                        : isDaySelected
+                          ? "border border-primary/60 bg-secondary font-semibold text-primary"
+                          : "text-foreground group-hover:text-primary",
+                      !isCurrentMonth && !isDayToday && !isDaySelected && "text-muted-foreground/60",
+                    )}
+                  >
+                    {format(day, "d")}
+                  </span>
+                  {isDayToday ? (
+                    <span className="hidden rounded-full bg-primary/15 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-primary sm:inline-flex">
+                      Hoje
+                    </span>
+                  ) : null}
                 </span>
 
                 {dayItems.length > 0 ? (
@@ -217,7 +235,7 @@ export function CalendarMonthView({
               </div>
 
               {/* Desktop: readable pills */}
-              <div className="hidden flex-1 flex-col gap-1 overflow-hidden pt-1 sm:flex">
+              <div className="hidden min-h-0 flex-1 flex-col gap-1 overflow-hidden pt-1 sm:flex">
                 {visibleItems.map((item) => {
                   const startTime = calendarTimeLabel(item.startsAt, timeZone);
                   const isRehearsal = isRehearsalItem(item);

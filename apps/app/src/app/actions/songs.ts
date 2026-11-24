@@ -379,7 +379,7 @@ export async function addSongToNextServiceAction(
     revalidatePath(`/dashboard/songs/${songId}`);
     revalidatePath("/dashboard/events");
     revalidatePath(`/dashboard/events/${event.id}`);
-    revalidatePath("/dashboard/calendar");
+    revalidatePath("/calendar");
 
     return {
       ok: true,

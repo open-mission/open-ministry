@@ -12,8 +12,11 @@ import {
   CakeIcon,
   CalendarX2Icon,
   CheckCircle2Icon,
+  CircleDashedIcon,
+  Clock3Icon,
   MapPinIcon,
   Music2Icon,
+  UsersIcon,
 } from "lucide-react";
 
 import {
@@ -26,6 +29,7 @@ import { cn } from "@/lib/utils";
 
 type CalendarWeekViewProps = {
   currentDate: Date;
+  now?: Date | null;
   items: CalendarItem[];
   weekStartsOn: 0 | 1;
   timeZone?: string | null;
@@ -40,6 +44,7 @@ const weekGridClassName =
 
 export function CalendarWeekView({
   currentDate,
+  now,
   items,
   weekStartsOn,
   timeZone,
@@ -49,9 +54,12 @@ export function CalendarWeekView({
   const weekStart = startOfWeek(currentDate, { weekStartsOn });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn });
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
-  const todayKey = calendarDateKey(new Date(), timeZone);
+  const todayKey = calendarDateKey(now ?? new Date(), timeZone);
+  const selectedKey = calendarDateKey(currentDate, timeZone);
+  const hasDistinctSelection = selectedKey !== todayKey;
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const selectedDayRef = useRef<HTMLButtonElement>(null);
 
   // Compute dynamic hours range covering all events in the week (default 07:00 - 23:00)
   const { minHour, hours } = useMemo(() => {
@@ -59,6 +67,34 @@ export function CalendarWeekView({
   }, [items, timeZone]);
 
   const totalGridHeight = hours.length * HOUR_HEIGHT;
+
+  const currentTimeTop = useMemo(() => {
+    if (!now) return null;
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: timeZone ?? undefined,
+    }).formatToParts(now);
+    const hour = Number(parts.find((p) => p.type === "hour")?.value ?? NaN);
+    const minute = Number(parts.find((p) => p.type === "minute")?.value ?? NaN);
+    if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
+    const minutesFromStart = (hour - minHour) * 60 + minute;
+    if (minutesFromStart < 0 || minutesFromStart > hours.length * 60) return null;
+    return (minutesFromStart / 60) * HOUR_HEIGHT;
+  }, [hours.length, minHour, now, timeZone]);
+
+  useEffect(() => {
+    const container = scrollRef.current;
+    const target = selectedDayRef.current;
+    if (!container || !target) return;
+    if (container.scrollWidth <= container.clientWidth) return;
+    const nextLeft = Math.max(
+      0,
+      target.offsetLeft - container.clientWidth / 2 + target.offsetWidth / 2,
+    );
+    container.scrollTo({ left: nextLeft, behavior: "smooth" });
+  }, [selectedKey]);
 
   // Auto-scroll on mount to earliest event or 08:00
   useEffect(() => {
@@ -87,13 +123,13 @@ export function CalendarWeekView({
   }, [items, minHour, timeZone]);
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border bg-card shadow-xs">
+    <div className="flex flex-col overflow-hidden rounded-xl border bg-card shadow-xs md:min-h-0 md:flex-1">
       <div
         role="region"
         aria-label="Agenda semanal"
         tabIndex={0}
         ref={scrollRef}
-        className="max-h-[580px] overflow-auto overscroll-contain focus-visible:outline-none"
+        className="max-h-[580px] overflow-auto overscroll-contain focus-visible:outline-none md:min-h-0 md:max-h-none md:flex-1"
       >
         <div className="min-w-[49rem] md:min-w-0">
           {/* Week Header */}
@@ -103,27 +139,39 @@ export function CalendarWeekView({
               "sticky top-0 z-40 h-[58px] border-b bg-card text-xs shadow-2xs",
             )}
           >
-            <div className="sticky left-0 top-0 z-50 flex items-center justify-center border-r bg-muted text-center font-medium text-muted-foreground shadow-xs">
+            <div className="sticky left-0 top-0 z-50 flex items-center justify-center border-b border-r border-border bg-muted text-center font-medium text-muted-foreground shadow-xs">
               Horário
             </div>
             {days.map((day) => {
-              const isDayToday = format(day, "yyyy-MM-dd") === todayKey;
+              const dayKey = format(day, "yyyy-MM-dd");
+              const isDayToday = dayKey === todayKey;
+              const isDaySelected = hasDistinctSelection && dayKey === selectedKey;
               const dayLabel = format(day, "EEEE, d 'de' MMMM", {
                 locale: ptBR,
               });
               return (
                 <button
                   key={day.toISOString()}
+                  ref={dayKey === selectedKey ? selectedDayRef : undefined}
                   type="button"
                   onClick={() => onSelectDate(day)}
+                  aria-current={isDayToday ? "date" : undefined}
+                  data-calendar-today={isDayToday ? "true" : undefined}
+                  data-calendar-selected={isDaySelected ? "true" : undefined}
                   aria-label={`Abrir ${dayLabel}`}
                   className={cn(
-                    "cursor-pointer border-r bg-card py-2 text-center transition-colors last:border-r-0 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
-                    isDayToday && "bg-primary/5",
+                    "cursor-pointer border-b border-r border-border bg-card py-2 text-center transition-colors last:border-r-0 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                    isDayToday && "bg-primary/10",
+                    isDaySelected && "bg-secondary/60 ring-2 ring-inset ring-primary/40",
                   )}
                 >
-                  <p className="text-xs font-medium capitalize text-muted-foreground">
-                    {format(day, "EEE", { locale: ptBR })}
+                  <p className="flex items-center justify-center gap-1 text-xs font-medium capitalize text-muted-foreground">
+                    <span>{format(day, "EEE", { locale: ptBR })}</span>
+                    {isDayToday ? (
+                      <span className="hidden rounded bg-primary/15 px-1 text-[11px] font-semibold leading-4 text-primary sm:inline-flex">
+                        Hoje
+                      </span>
+                    ) : null}
                   </p>
                   <div className="mt-0.5 flex justify-center">
                     <span
@@ -131,7 +179,9 @@ export function CalendarWeekView({
                         "flex size-6 items-center justify-center rounded-full text-xs font-semibold",
                         isDayToday
                           ? "bg-primary text-primary-foreground shadow-xs"
-                          : "text-foreground",
+                          : isDaySelected
+                            ? "border border-primary/60 bg-secondary text-primary"
+                            : "text-foreground",
                       )}
                     >
                       {format(day, "d")}
@@ -212,8 +262,9 @@ export function CalendarWeekView({
 
               {/* 7 Day Columns with Event Layout */}
               {days.map((day) => {
-                const isDayToday = format(day, "yyyy-MM-dd") === todayKey;
                 const dayKey = format(day, "yyyy-MM-dd");
+                const isDayToday = dayKey === todayKey;
+                const isDaySelected = hasDistinctSelection && dayKey === selectedKey;
                 const dayTimedItems = items.filter(
                   (item) =>
                     !item.allDay &&
@@ -232,9 +283,21 @@ export function CalendarWeekView({
                     key={day.toISOString()}
                     className={cn(
                       "relative border-r last:border-r-0 select-none",
-                      isDayToday && "bg-primary/[0.02]",
+                      isDayToday && "bg-primary/[0.04]",
+                      isDaySelected && "bg-primary/[0.025] ring-1 ring-inset ring-primary/25",
                     )}
                   >
+                    {isDayToday && currentTimeTop !== null ? (
+                      <div
+                        aria-hidden="true"
+                        data-calendar-now-line=""
+                        style={{ top: `${currentTimeTop}px` }}
+                        className="pointer-events-none absolute inset-x-0 z-20 flex items-center"
+                      >
+                        <span className="-ml-1 size-2 shrink-0 rounded-full bg-primary ring-2 ring-background" />
+                        <span className="h-[2px] flex-1 bg-primary" />
+                      </div>
+                    ) : null}
                     {/* Background hour slots */}
                     {hours.map((hour) => (
                       <div
@@ -251,6 +314,27 @@ export function CalendarWeekView({
                       const isRehearsal =
                         item.metadata?.eventKind === "rehearsal" ||
                         item.color === "purple";
+                      const summary =
+                        item.type === "event" ? item.scheduleSummary : undefined;
+                      const ScheduleStatusIcon =
+                        summary?.status === "complete"
+                          ? CheckCircle2Icon
+                          : summary?.status === "partial"
+                            ? Clock3Icon
+                            : CircleDashedIcon;
+                      const teamsLabel = summary
+                        ? summary.teamsAssigned === summary.teamsTotal
+                          ? `${summary.teamsTotal} equipes`
+                          : `${summary.teamsAssigned}/${summary.teamsTotal} equipes`
+                        : null;
+                      const scheduleStatusLabel =
+                        summary?.status === "complete"
+                          ? "Escala montada"
+                          : summary?.status === "partial"
+                            ? "Em montagem"
+                            : summary
+                              ? "Sem escala"
+                              : null;
                       return (
                         <button
                           key={item.id}
@@ -303,6 +387,24 @@ export function CalendarWeekView({
                             <span className="flex items-center gap-1 truncate text-[11px] text-muted-foreground/80">
                               <MapPinIcon className="size-3 shrink-0" />
                               {item.location}
+                            </span>
+                          ) : null}
+                          {position.height >= 110 &&
+                          summary &&
+                          teamsLabel &&
+                          scheduleStatusLabel ? (
+                            <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] leading-tight text-muted-foreground/90">
+                              <span
+                                aria-label={`${summary.teamsAssigned} de ${summary.teamsTotal} equipes com pessoas escaladas`}
+                                className="flex min-w-0 items-center gap-1"
+                              >
+                                <UsersIcon className="size-3 shrink-0" aria-hidden="true" />
+                                <span className="truncate">{teamsLabel}</span>
+                              </span>
+                              <span className="flex min-w-0 items-center gap-1">
+                                <ScheduleStatusIcon className="size-3 shrink-0" aria-hidden="true" />
+                                <span className="truncate">{scheduleStatusLabel}</span>
+                              </span>
                             </span>
                           ) : null}
                         </button>

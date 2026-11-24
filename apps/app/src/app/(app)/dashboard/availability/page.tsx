@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
-import { DomainSubtabs } from "@/components/app/domain-subtabs-server";
-import { ShieldAlertIcon } from "lucide-react";
+import { ArrowLeftIcon, ShieldAlertIcon } from "lucide-react";
 
 import {
   getMyAvailabilityAction,
@@ -11,6 +11,7 @@ import {
 } from "@/app/actions/availability";
 import { AvailabilityEditor } from "@/components/availability/availability-editor";
 import { UnavailabilitySection } from "@/components/availability/unavailability-section";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrganizationContext } from "@/lib/organizations";
 import { can } from "@/lib/permissions/service";
@@ -61,7 +62,14 @@ async function AvailabilityContent() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-      <DomainSubtabs domain="cultos" />
+      <div>
+        <Button asChild variant="ghost" size="sm" className="-ml-2.5 gap-1.5 text-muted-foreground hover:text-foreground">
+          <Link href="/departments" prefetch={true}>
+            <ArrowLeftIcon className="size-4" aria-hidden="true" />
+            Voltar para Departamentos
+          </Link>
+        </Button>
+      </div>
       <header className="space-y-1.5">
         <h1 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">
           Disponibilidade

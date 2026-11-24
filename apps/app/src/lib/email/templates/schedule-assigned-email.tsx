@@ -6,6 +6,7 @@ export type ScheduleAssignedEmailProps = {
   name: string;
   churchName: string;
   churchLogo?: string | null;
+  appLogoUrl?: string | null;
   eventTitle: string;
   functionName: string;
   eventDate: string;
@@ -18,6 +19,7 @@ export function ScheduleAssignedEmail({
   name,
   churchName,
   churchLogo,
+  appLogoUrl,
   eventTitle,
   functionName,
   eventDate,
@@ -32,6 +34,7 @@ export function ScheduleAssignedEmail({
       previewText={`Você foi escalado(a) para ${eventTitle} (${eventDate}) · ${churchName}`}
       churchName={churchName}
       churchLogo={churchLogo}
+      appLogoUrl={appLogoUrl}
       footerText={`Notificação automática de escala gerada para ${churchName}.`}
     >
       <Heading style={heading}>Nova Escala de Culto 📋</Heading>

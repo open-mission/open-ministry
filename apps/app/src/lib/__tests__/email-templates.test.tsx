@@ -65,8 +65,24 @@ describe("RehearsalReminderEmail", () => {
   });
 });
 
-describe("BaseEmailLayout - logo da igreja", () => {
-  test("usa a logo da igreja quando informada", async () => {
+describe("BaseEmailLayout - símbolo do app e logo da igreja", () => {
+  const appSymbol = "openministry-symbol-black.png";
+
+  test("renderiza o símbolo puro do app quando a igreja não tem logo", async () => {
+    const html = await render(
+      <BaseEmailLayout churchName="Igreja Central" churchLogo={null}>
+        <p>Conteúdo</p>
+      </BaseEmailLayout>,
+    );
+
+    expect(html).toContain(appSymbol);
+    expect(html).toContain('width="30"');
+    expect(html).toContain('height="24"');
+    expect(html).not.toContain(">OM<");
+    expect(html).not.toContain("logoBadge");
+  });
+
+  test("exibe o símbolo do app ao lado da logo da igreja", async () => {
     const html = await render(
       <BaseEmailLayout
         churchName="Igreja Central"
@@ -76,20 +92,25 @@ describe("BaseEmailLayout - logo da igreja", () => {
       </BaseEmailLayout>,
     );
 
-    expect(html).toContain("<img");
+    expect(html).toContain(appSymbol);
     expect(html).toContain("https://utfs.io/f/logo-igreja.png");
     expect(html).not.toContain(">OM<");
+    expect(html).not.toContain("logoBadge");
   });
 
-  test("usa o badge OM quando a igreja não tem logo", async () => {
+  test("prioriza a URL de appLogoUrl quando informada", async () => {
     const html = await render(
-      <BaseEmailLayout churchName="Igreja Central" churchLogo={null}>
+      <BaseEmailLayout
+        churchName="Igreja Central"
+        appLogoUrl="https://cdn.openministry.test/brand/simbolo.png"
+      >
         <p>Conteúdo</p>
       </BaseEmailLayout>,
     );
 
-    expect(html).toContain(">OM<");
-    expect(html).not.toContain("<img");
+    expect(html).toContain("https://cdn.openministry.test/brand/simbolo.png");
+    expect(html).not.toContain(appSymbol);
+    expect(html).not.toContain(">OM<");
   });
 });
 
@@ -118,6 +139,7 @@ describe("templates de notificação repassam a logo da igreja", () => {
       <WelcomeEmail name="Ana" churchName="Igreja Central" churchLogo={churchLogo} />,
     );
 
+    expect(html).toContain("openministry-symbol-black.png");
     expect(html).toContain(churchLogo);
     expect(html).not.toContain(">OM<");
   });
@@ -133,6 +155,7 @@ describe("templates de notificação repassam a logo da igreja", () => {
       />,
     );
 
+    expect(html).toContain("openministry-symbol-black.png");
     expect(html).toContain(churchLogo);
     expect(html).not.toContain(">OM<");
   });
@@ -151,7 +174,32 @@ describe("templates de notificação repassam a logo da igreja", () => {
       />,
     );
 
+    expect(html).toContain("openministry-symbol-black.png");
     expect(html).toContain(churchLogo);
     expect(html).not.toContain(">OM<");
   });
+});
+
+describe("todos os templates usam o símbolo puro do app", () => {
+  const customAppLogoUrl =
+    "https://cdn.openministry.test/brand/openministry-symbol-black.png";
+
+  for (const [key, meta] of Object.entries(EMAIL_TEMPLATES)) {
+    test(`${key} renderiza o símbolo padrão sem o badge OM`, async () => {
+      const html = await render(meta.renderComponent({ ...meta.sampleData }));
+
+      expect(html).toContain("openministry-symbol-black.png");
+      expect(html).not.toContain(">OM<");
+      expect(html).not.toContain("logoBadge");
+    });
+
+    test(`${key} repassa appLogoUrl customizado`, async () => {
+      const html = await render(
+        meta.renderComponent({ ...meta.sampleData, appLogoUrl: customAppLogoUrl }),
+      );
+
+      expect(html).toContain(customAppLogoUrl);
+      expect(html).not.toContain(">OM<");
+    });
+  }
 });

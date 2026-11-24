@@ -183,7 +183,7 @@ export function QuickActions({
             </Link>
 
             <Link
-              href="/dashboard/calendar"
+              href="/calendar"
               prefetch={true}
               className={tileClassName}
               aria-label="Abrir agenda"
@@ -255,7 +255,7 @@ export function QuickActions({
             </Link>
 
             <Link
-              href="/dashboard/calendar"
+              href="/calendar"
               prefetch={true}
               className={tileClassName}
               aria-label="Abrir agenda"

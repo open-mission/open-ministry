@@ -229,9 +229,13 @@ export async function saveMyAvailabilityAction(payload: {
       }
     }
 
+    revalidatePath("/availability");
     revalidatePath("/dashboard/availability");
+    revalidatePath("/departments");
+    revalidatePath("/dashboard/departments");
     revalidatePath("/dashboard/schedules");
     revalidatePath("/dashboard");
+    revalidatePath("/");
     return { ok: true, updatedAt: now };
   } catch (error) {
     console.error("Erro ao salvar disponibilidade:", error);
@@ -409,7 +413,7 @@ export async function saveUnavailabilityAction(payload: {
     revalidatePath("/dashboard/availability");
     revalidatePath("/dashboard/events");
     revalidatePath("/dashboard/schedules");
-    revalidatePath("/dashboard/calendar");
+    revalidatePath("/calendar");
 
     return {
       ok: true,
@@ -465,7 +469,7 @@ export async function deleteUnavailabilityAction(
     revalidatePath("/dashboard/availability");
     revalidatePath("/dashboard/events");
     revalidatePath("/dashboard/schedules");
-    revalidatePath("/dashboard/calendar");
+    revalidatePath("/calendar");
 
     return { ok: true, deleted: deleted.length > 0 };
   } catch (error) {

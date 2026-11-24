@@ -50,7 +50,6 @@ const nextConfig: NextConfig = {
     return [
       { source: "/tasks", destination: "/dashboard/tasks" },
       { source: "/bible", destination: "/dashboard/bible" },
-      { source: "/calendar", destination: "/dashboard/calendar" },
       { source: "/events", destination: "/dashboard/events" },
       { source: "/events/:path+", destination: "/dashboard/events/:path+" },
       { source: "/schedules", destination: "/dashboard/schedules" },
