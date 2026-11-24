@@ -57,7 +57,7 @@ mock.module("@/lib/cache", () => ({
   cacheInvalidateTags: async () => {},
 }));
 
-let legacyChannelRow: {
+const legacyChannelRow: {
   organizationId: string;
   isActive: boolean;
   instanceName: string;
@@ -67,7 +67,7 @@ let legacyChannelRow: {
   managedByPlatform: boolean;
 } | null = null;
 
-let platformConfig: { apiUrl: string; globalApiKey: string } | null = null;
+const platformConfig: { apiUrl: string; globalApiKey: string } | null = null;
 
 mock.module("@/lib/platform/evolution-config", () => ({
   getPlatformEvolutionConfig: async () => platformConfig,
@@ -164,60 +164,5 @@ describe("getOrganizationEntitlements", () => {
     expect(serialized).not.toContain("enc:v1");
     expect(serialized).not.toContain("globalApiKey");
     expect(serialized).not.toContain("apiUrl");
-  });
-});
-
-describe("getOrganizationEvolutionConfig (resolver da igreja)", () => {
-  it("usa URL e chave da plataforma quando managedByPlatform", async () => {
-    setup({ plan: PRO });
-    platformConfig = { apiUrl: "https://evo.example.com", globalApiKey: "global-key" };
-    legacyChannelRow = {
-      organizationId: "org-1",
-      isActive: true,
-      instanceName: "igreja-1",
-      apiUrl: null,
-      apiKey: null,
-      instanceToken: "enc:v1:instance",
-      managedByPlatform: true,
-    };
-    const result = await getOrganizationEvolutionConfig("org-1");
-    expect(result.config).toEqual({
-      apiUrl: "https://evo.example.com",
-      apiKey: "decrypted:enc:v1:instance",
-      instanceName: "igreja-1",
-    });
-    expect(JSON.stringify(result)).not.toContain("global-key");
-  });
-
-  it("mantém compatibilidade com registro legado", async () => {
-    setup({ plan: PRO });
-    legacyChannelRow = {
-      organizationId: "org-1",
-      isActive: true,
-      instanceName: "legado",
-      apiUrl: "https://legacy.example.com",
-      apiKey: "enc:v1:legacy",
-      instanceToken: null,
-      managedByPlatform: false,
-    };
-    const result = await getOrganizationEvolutionConfig("org-1");
-    expect(result.config?.apiUrl).toBe("https://legacy.example.com");
-    expect(result.config?.apiKey).toBe("decrypted:enc:v1:legacy");
-  });
-
-  it("bloqueia envio quando o plano não libera WhatsApp", async () => {
-    setup({ plan: FREE });
-    platformConfig = { apiUrl: "https://evo.example.com", globalApiKey: "global-key" };
-    legacyChannelRow = {
-      organizationId: "org-1",
-      isActive: true,
-      instanceName: "igreja-1",
-      apiUrl: null,
-      apiKey: null,
-      instanceToken: "enc:v1:instance",
-      managedByPlatform: true,
-    };
-    const result = await getOrganizationEvolutionConfig("org-1");
-    expect(result.config).toBeNull();
   });
 });

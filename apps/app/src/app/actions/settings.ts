@@ -16,6 +16,7 @@ import {
 import { getAppBaseUrl } from "@/lib/app-url";
 import { loadCalendarFeedViews } from "@/lib/calendar-feed-data";
 import {
+  getOrganizationEvolutionConfig,
   listEvolutionMessageLogs,
   retryWhatsAppMessage,
   retryFailedWhatsAppMessages,
@@ -500,15 +501,14 @@ export async function sendTestEvolutionMessageAction(
     return { ok: false, error: "Apenas administradores podem enviar mensagens de teste." };
   }
 
-  const channel = await db.query.organizationNotificationChannel.findFirst({
-    where: and(
-      eq(schema.organizationNotificationChannel.organizationId, context.organization.id),
-      eq(schema.organizationNotificationChannel.channel, "evolution_whatsapp"),
-    ),
-  });
+  // Usa o mesmo resolvedor de envio (respeita entitlements e instâncias
+  // gerenciadas pela plataforma); mantém a assinatura para compatibilidade.
+  const { config: evolutionConfig } = await getOrganizationEvolutionConfig(
+    context.organization.id,
+  );
 
-  if (!channel || !channel.apiUrl || !channel.apiKey || !channel.instanceName) {
-    return { ok: false, error: "Configure e salve as credenciais da Evolution API primeiro." };
+  if (!evolutionConfig) {
+    return { ok: false, error: "Canal do WhatsApp indisponível para a igreja." };
   }
 
   const formatted = formatPhoneNumberForEvolution(recipientPhone);
@@ -522,11 +522,7 @@ export async function sendTestEvolutionMessageAction(
     `Enviado em: ${new Date().toLocaleString("pt-BR")}`;
 
   const result = await sendEvolutionTextMessage({
-    config: {
-      apiUrl: channel.apiUrl,
-      apiKey: decryptSecret(channel.apiKey) ?? "",
-      instanceName: channel.instanceName,
-    },
+    config: evolutionConfig,
     to: formatted,
     text: messageText,
   });

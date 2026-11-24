@@ -1,0 +1,330 @@
+"use server";
+
+import { and, desc, eq, ilike, inArray, sql } from "drizzle-orm";
+
+import { db } from "@/db";
+import * as schema from "@/db/schema";
+import { invalidateOrganizationEntitlements } from "@/lib/platform/entitlements";
+import { getPlatformEvolutionConfig } from "@/lib/platform/evolution-config";
+import { requireSuperAdmin } from "@/lib/platform/auth";
+import { deleteEvolutionInstance } from "@/lib/evolution-api";
+import { decryptSecret } from "@/lib/secret-crypto";
+import { recordPlatformAudit } from "./audit";
+
+export type PlatformOrganizationRow = {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string | null;
+  status: string;
+  plan: { id: string; slug: string; name: string } | null;
+  whatsapp: {
+    enabled: boolean;
+    connectionStatus: string;
+    connectedPhone: string | null;
+    hasInstance: boolean;
+  };
+  membersCount: number;
+  createdAt: Date;
+};
+
+async function loadOrganizationData() {
+  const [organizations, settings, plans, channels, memberCounts] = await Promise.all([
+    db.query.organization.findMany({
+      orderBy: [desc(schema.organization.createdAt)],
+    }),
+    db.query.organizationPlatformSettings.findMany(),
+    db.query.platformPlan.findMany(),
+    db.query.organizationNotificationChannel.findMany({
+      where: eq(schema.organizationNotificationChannel.channel, "evolution_whatsapp"),
+    }),
+    db
+      .select({
+        organizationId: schema.member.organizationId,
+        count: sql<number>`count(*)`,
+      })
+      .from(schema.member)
+      .groupBy(schema.member.organizationId),
+  ]);
+
+  const settingsByOrg = new Map(settings.map((item) => [item.organizationId, item]));
+  const planById = new Map(plans.map((item) => [item.id, item]));
+  const channelByOrg = new Map(channels.map((item) => [item.organizationId, item]));
+  const countByOrg = new Map(
+    memberCounts.map((item) => [item.organizationId, Number(item.count)]),
+  );
+
+  return { organizations, settingsByOrg, planById, channelByOrg, countByOrg };
+}
+
+export async function getPlatformOverviewAction(): Promise<{
+  organizations: { total: number; active: number; trial: number; suspended: number };
+  whatsapp: { enabled: number; connected: number };
+  providers: {
+    provider: string;
+    displayName: string;
+    isEnabled: boolean;
+    lastHealthStatus: string | null;
+    lastHealthLatencyMs: number | null;
+  }[];
+}> {
+  const session = await requireSuperAdmin("access");
+  const [{ organizations, settingsByOrg, channelByOrg }, integrations] =
+    await Promise.all([
+      loadOrganizationData(),
+      db.query.platformIntegrationConfig.findMany(),
+    ]);
+
+  const statuses = organizations.map((org) => settingsByOrg.get(org.id)?.status ?? "active");
+  const connected = [...channelByOrg.values()].filter(
+    (channel) => channel.connectionStatus === "connected",
+  ).length;
+  const enabled = [...channelByOrg.values()].filter(
+    (channel) => channel.isActive && channel.instanceName,
+  ).length;
+
+  void session;
+  return {
+    organizations: {
+      total: organizations.length,
+      active: statuses.filter((status) => status === "active").length,
+      trial: statuses.filter((status) => status === "trial").length,
+      suspended: statuses.filter((status) => status === "suspended").length,
+    },
+    whatsapp: { enabled, connected },
+    providers: integrations.map((item) => ({
+      provider: item.provider,
+      displayName: item.displayName,
+      isEnabled: item.isEnabled,
+      lastHealthStatus: item.lastHealthStatus,
+      lastHealthLatencyMs: item.lastHealthLatencyMs,
+    })),
+  };
+}
+
+export async function listPlatformOrganizationsAction(options?: {
+  search?: string;
+  status?: string;
+  planId?: string;
+  whatsapp?: "all" | "enabled" | "connected";
+  limit?: number;
+  offset?: number;
+}): Promise<{ organizations: PlatformOrganizationRow[]; total: number }> {
+  await requireSuperAdmin("access");
+  const { organizations, settingsByOrg, planById, channelByOrg, countByOrg } =
+    await loadOrganizationData();
+
+  const search = options?.search?.trim().toLowerCase();
+  let rows = organizations
+    .filter((org) => !search || org.name.toLowerCase().includes(search) || org.slug.includes(search))
+    .filter((org) => !options?.status || (settingsByOrg.get(org.id)?.status ?? "active") === options.status)
+    .filter((org) => !options?.planId || settingsByOrg.get(org.id)?.planId === options.planId)
+    .filter((org) => {
+      if (!options?.whatsapp || options.whatsapp === "all") return true;
+      const channel = channelByOrg.get(org.id);
+      if (options.whatsapp === "connected") return channel?.connectionStatus === "connected";
+      return Boolean(channel?.isActive && channel.instanceName);
+    });
+
+  const total = rows.length;
+  rows = rows.slice(options?.offset ?? 0, (options?.offset ?? 0) + Math.min(options?.limit ?? 50, 100));
+
+  return {
+    total,
+    organizations: rows.map((org) => {
+      const settings = settingsByOrg.get(org.id);
+      const plan = settings?.planId ? planById.get(settings.planId) : null;
+      const channel = channelByOrg.get(org.id);
+      return {
+        id: org.id,
+        name: org.name,
+        slug: org.slug,
+        logo: org.logo,
+        status: settings?.status ?? "active",
+        plan: plan ? { id: plan.id, slug: plan.slug, name: plan.name } : null,
+        whatsapp: {
+          enabled: Boolean(channel?.isActive && channel.instanceName),
+          connectionStatus: channel?.connectionStatus ?? "disconnected",
+          connectedPhone: channel?.connectedPhone ?? null,
+          hasInstance: Boolean(channel?.instanceName),
+        },
+        membersCount: countByOrg.get(org.id) ?? 0,
+        createdAt: org.createdAt,
+      };
+    }),
+  };
+}
+
+export async function getPlatformOrganizationAction(organizationId: string): Promise<{
+  organization: PlatformOrganizationRow | null;
+  settings: {
+    status: string;
+    planId: string | null;
+    featureOverrides: Record<string, unknown>;
+    notes: string | null;
+  } | null;
+  channel: {
+    instanceName: string | null;
+    connectionStatus: string;
+    connectedPhone: string | null;
+    connectedProfileName: string | null;
+    lastConnectedAt: Date | null;
+    lastError: string | null;
+  } | null;
+}> {
+  await requireSuperAdmin("manage-organizations");
+  const { organizations, settingsByOrg, planById, channelByOrg, countByOrg } =
+    await loadOrganizationData();
+  const org = organizations.find((item) => item.id === organizationId);
+  if (!org) return { organization: null, settings: null, channel: null };
+
+  const settings = settingsByOrg.get(org.id);
+  const plan = settings?.planId ? planById.get(settings.planId) : null;
+  const channel = channelByOrg.get(org.id);
+
+  return {
+    organization: {
+      id: org.id,
+      name: org.name,
+      slug: org.slug,
+      logo: org.logo,
+      status: settings?.status ?? "active",
+      plan: plan ? { id: plan.id, slug: plan.slug, name: plan.name } : null,
+      whatsapp: {
+        enabled: Boolean(channel?.isActive && channel.instanceName),
+        connectionStatus: channel?.connectionStatus ?? "disconnected",
+        connectedPhone: channel?.connectedPhone ?? null,
+        hasInstance: Boolean(channel?.instanceName),
+      },
+      membersCount: countByOrg.get(org.id) ?? 0,
+      createdAt: org.createdAt,
+    },
+    settings: settings
+      ? {
+          status: settings.status,
+          planId: settings.planId,
+          featureOverrides: settings.featureOverrides as Record<string, unknown>,
+          notes: settings.notes,
+        }
+      : null,
+    channel: channel
+      ? {
+          instanceName: channel.instanceName,
+          connectionStatus: channel.connectionStatus,
+          connectedPhone: channel.connectedPhone,
+          connectedProfileName: channel.connectedProfileName,
+          lastConnectedAt: channel.lastConnectedAt,
+          lastError: channel.lastError,
+        }
+      : null,
+  };
+}
+
+export async function updatePlatformOrganizationAction(input: {
+  organizationId: string;
+  status?: "active" | "trial" | "suspended";
+  planId?: string | null;
+  featureOverrides?: Record<string, unknown>;
+  notes?: string | null;
+}): Promise<{ ok: boolean; error?: string }> {
+  const session = await requireSuperAdmin("manage-organizations");
+  if (input.planId) {
+    const plan = await db.query.platformPlan.findFirst({
+      where: eq(schema.platformPlan.id, input.planId),
+    });
+    if (!plan) return { ok: false, error: "Plano inexistente." };
+  }
+
+  const existing = await db.query.organizationPlatformSettings.findFirst({
+    where: eq(schema.organizationPlatformSettings.organizationId, input.organizationId),
+  });
+
+  const values = {
+    ...(input.status ? { status: input.status } : {}),
+    ...(input.planId !== undefined ? { planId: input.planId } : {}),
+    ...(input.featureOverrides !== undefined ? { featureOverrides: input.featureOverrides } : {}),
+    ...(input.notes !== undefined ? { notes: input.notes } : {}),
+    updatedByUserId: session.user.id,
+  };
+
+  if (existing) {
+    await db
+      .update(schema.organizationPlatformSettings)
+      .set(values)
+      .where(eq(schema.organizationPlatformSettings.organizationId, input.organizationId));
+  } else {
+    await db.insert(schema.organizationPlatformSettings).values({
+      organizationId: input.organizationId,
+      status: input.status ?? "active",
+      planId: input.planId ?? null,
+      featureOverrides: input.featureOverrides ?? {},
+      notes: input.notes ?? null,
+      updatedByUserId: session.user.id,
+    });
+  }
+
+  await invalidateOrganizationEntitlements(input.organizationId);
+  await recordPlatformAudit({
+    actorUserId: session.user.id,
+    actorEmail: session.user.email ?? null,
+    action: "organization.settings_updated",
+    targetType: "organization",
+    targetId: input.organizationId,
+    summary: "Configurações de plataforma da igreja atualizadas.",
+    metadataJson: { ...values, notes: undefined },
+  });
+
+  return { ok: true };
+}
+
+export async function revokeOrganizationInstanceAction(
+  organizationId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await requireSuperAdmin("manage-organizations");
+  const channel = await db.query.organizationNotificationChannel.findFirst({
+    where: and(
+      eq(schema.organizationNotificationChannel.organizationId, organizationId),
+      eq(schema.organizationNotificationChannel.channel, "evolution_whatsapp"),
+    ),
+  });
+  if (!channel?.instanceName) return { ok: false, error: "Igreja sem instância conectada." };
+
+  let remoteError: string | undefined;
+  const platformConfig = await getPlatformEvolutionConfig();
+  if (platformConfig && channel.instanceToken) {
+    const result = await deleteEvolutionInstance({
+      apiUrl: platformConfig.apiUrl,
+      globalApiKey: platformConfig.globalApiKey,
+      instanceToken: decryptSecret(channel.instanceToken) ?? "",
+      instanceName: channel.instanceName,
+    });
+    remoteError = result.error;
+  }
+
+  await db
+    .update(schema.organizationNotificationChannel)
+    .set({
+      instanceName: null,
+      instanceToken: null,
+      connectionStatus: "disconnected",
+      connectedPhone: null,
+      connectedProfileName: null,
+      lastConnectedAt: null,
+      isActive: false,
+      updatedAt: new Date(),
+    })
+    .where(eq(schema.organizationNotificationChannel.id, channel.id));
+
+  await invalidateOrganizationEntitlements(organizationId);
+  await recordPlatformAudit({
+    actorUserId: session.user.id,
+    actorEmail: session.user.email ?? null,
+    action: "organization.instance_revoked",
+    targetType: "organization",
+    targetId: organizationId,
+    summary: "Instância de WhatsApp da igreja revogada pelo Super Admin.",
+    metadataJson: remoteError ? { remoteError } : {},
+  });
+
+  return { ok: true, error: remoteError };
+}

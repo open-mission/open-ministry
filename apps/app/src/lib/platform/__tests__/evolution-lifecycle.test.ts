@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 const originalFetch = globalThis.fetch;
 type FetchCall = { url: string; init?: RequestInit };
@@ -11,11 +11,28 @@ globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) =>
   return responder(url, init);
 }) as typeof fetch;
 
+function installFetchMock() {
+  globalThis.fetch = (async (
+    input: string | URL | Request,
+    init?: RequestInit,
+  ) => {
+    const url =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url;
+    calls.push({ url, init });
+    return responder(url, init);
+  }) as typeof fetch;
+}
+
 beforeEach(() => {
   calls = [];
+  installFetchMock();
 });
 
-afterAll(() => {
+afterEach(() => {
   globalThis.fetch = originalFetch;
 });
 
