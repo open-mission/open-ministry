@@ -118,7 +118,7 @@ export function MobileMenuTrigger({ className }: { className?: string }) {
       variant="ghost"
       size="icon"
       aria-label="Abrir menu de navegação"
-      className={cn("size-11 md:hidden", className)}
+      className={cn("size-11 lg:hidden", className)}
       onClick={() => setOpen(true)}
     >
       <CompassIcon />

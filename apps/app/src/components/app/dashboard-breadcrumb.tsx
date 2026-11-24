@@ -40,7 +40,7 @@ const routeLabels: Record<string, string> = {
 
 export function DashboardBreadcrumbFallback() {
   return (
-    <Breadcrumb className="hidden md:block">
+    <Breadcrumb className="hidden lg:block">
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbPage>Início</BreadcrumbPage>
@@ -54,7 +54,7 @@ export function DashboardBreadcrumb() {
   const pathname = usePathname();
   const segments = pathname.split("/").filter(Boolean);
   const breadcrumbClassName = cn(
-    isMobileNavRoute(pathname) && "hidden md:block",
+    isMobileNavRoute(pathname) && "hidden lg:block",
   );
 
   if (segments.length <= 1) {
@@ -97,11 +97,11 @@ export function DashboardBreadcrumb() {
   return (
     <div className="flex min-w-0 items-center">
       {!isNav ? (
-        <span className="truncate font-heading text-sm font-semibold text-foreground md:hidden">
+        <span className="truncate font-heading text-sm font-semibold text-foreground lg:hidden">
           {currentLabel}
         </span>
       ) : null}
-      <Breadcrumb className="hidden md:block">
+      <Breadcrumb className="hidden lg:block">
         <BreadcrumbList>
           {items.map((item, index) => (
             <React.Fragment key={item.href}>

@@ -345,8 +345,28 @@ describe("MobileMenu — variante A+C (Explorar)", () => {
     );
 
     expect(triggerMarkup).toContain("size-11");
+    expect(triggerMarkup).toContain("lg:hidden");
     expect(triggerMarkup).toContain("lucide-compass");
     expect(backMarkup).toContain("size-11");
+    expect(backMarkup).toContain("lg:hidden");
     expect(backMarkup).toContain('aria-label="Voltar"');
+  });
+
+  it("integra ícone da igreja e saudação no header da home em telas menores que lg", () => {
+    actualPathname.value = "/";
+
+    const homeMarkup = renderToStaticMarkup(
+      createElement(MobileHeaderLeading, {
+        organizationName: "Igreja Esperança Central",
+        greeting: "Boa tarde",
+        firstName: "Maria",
+      }),
+    );
+
+    expect(homeMarkup).toContain("lg:hidden");
+    expect(homeMarkup).toContain("size-[34px]");
+    expect(homeMarkup).toContain("Igreja Esperança Central");
+    expect(homeMarkup).toContain("Boa tarde, Maria");
+    expect(homeMarkup).toContain("bg-[#1e472f]");
   });
 });

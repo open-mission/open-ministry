@@ -13,6 +13,22 @@ export { HomeHeaderTabs } from "./home-header-tabs";
 export { HomeTabProvider, useHomeTab, type HomeTab } from "./home-tab-context";
 export { HomeSkeleton, VerseCardSkeleton } from "./home-skeleton";
 export { VerseCard } from "./verse-card";
+export {
+  VerseOfTheDayWidget,
+  type VerseCardVariant,
+} from "./verse-of-the-day-widget";
+export {
+  MobileHomeView,
+  type MobileHomeViewProps,
+} from "./mobile-home-view";
+export {
+  DesktopHomeView,
+  type DesktopHomeViewProps,
+} from "./desktop-home-view";
+export type {
+  HomeAssignmentSummary,
+  HomeEventSummary,
+} from "./home-types";
 export { NextServiceCard } from "./next-service-card";
 export { NextAssignmentCard } from "./next-assignment-card";
 export {

@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 type AvailabilityReminderWidgetProps = {
   hasSaved: boolean;
   canManageAvailability: boolean;
-  variant?: "home" | "departments";
+  variant?: "home" | "departments" | "desktop-pill";
   initialPanelData?: AvailabilityPanelData | null;
   onConfigureClick?: () => void;
   onSaved?: (updatedAt: Date) => void;
@@ -46,6 +46,7 @@ export function AvailabilityReminderWidget({
   }
 
   const isHome = variant === "home";
+  const isDesktopPill = variant === "desktop-pill";
   const title = isHome
     ? "Disponibilidade do dia a dia pendente"
     : "Sua disponibilidade semanal ainda não foi configurada";
@@ -62,6 +63,45 @@ export function AvailabilityReminderWidget({
     setOpen(true);
     panel.ensureLoaded();
   };
+
+  if (isDesktopPill) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={handleOpen}
+          aria-label="Configurar disponibilidade pendente"
+          className={cn(
+            "inline-flex min-h-7 items-center gap-1.5 rounded-full border border-border/80 bg-card px-3 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            className,
+          )}
+        >
+          <CalendarCheckIcon
+            className="size-3.5 text-primary"
+            aria-hidden="true"
+          />
+          Disponibilidade pendente · Configurar
+          <span aria-hidden="true">→</span>
+        </button>
+
+        {!onConfigureClick ? (
+          <AvailabilitySheet
+            open={open}
+            onOpenChange={setOpen}
+            data={panel.data}
+            loading={panel.loading}
+            error={panel.error}
+            onRetry={panel.reload}
+            onSaved={(updatedAt) => {
+              panel.markSaved(updatedAt);
+              setLocalSaved(true);
+              onSaved?.(updatedAt);
+            }}
+          />
+        ) : null}
+      </>
+    );
+  }
 
   return (
     <>
@@ -98,7 +138,7 @@ export function AvailabilityReminderWidget({
           variant="secondary"
           size="sm"
           onClick={handleOpen}
-          className="min-h-11 w-full shrink-0 gap-1.5 text-primary sm:min-h-9 sm:w-auto"
+          className="min-h-11 w-full shrink-0 gap-1.5 text-primary sm:w-auto lg:min-h-9"
         >
           {ctaLabel}
           <ArrowRightIcon className="size-3.5" aria-hidden="true" />

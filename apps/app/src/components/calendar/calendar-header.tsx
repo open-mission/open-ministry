@@ -357,7 +357,7 @@ export function CalendarHeader({
       <div className="hidden sm:flex flex-wrap items-center justify-between gap-2.5 xl:flex-nowrap">
         <div className="flex min-w-0 items-center gap-3">
           {showSidebarToggle ? (
-            <SidebarTrigger className="hidden shrink-0 md:inline-flex" />
+            <SidebarTrigger className="hidden shrink-0 lg:inline-flex" />
           ) : null}
           <div className="min-w-0">
             <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground xl:text-3xl">
