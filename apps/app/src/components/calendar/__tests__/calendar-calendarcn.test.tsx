@@ -298,8 +298,9 @@ describe("Calendar integration", () => {
     ]);
 
     expect(layoutSource).toContain(
-      "has-[[data-calendar-container]]:md:h-dvh has-[[data-calendar-container]]:md:overflow-hidden",
+      "has-[[data-calendar-active]]:md:h-dvh has-[[data-calendar-active]]:md:overflow-hidden",
     );
+    expect(layoutSource).not.toContain("has-[[data-calendar-container]]");
     expect(nativeCalendarSource).toContain(
       "min-h-0 flex-1 divide-y divide-border/60 overflow-y-auto overscroll-contain",
     );

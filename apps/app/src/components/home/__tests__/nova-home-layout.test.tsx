@@ -347,6 +347,28 @@ describe("header integrado da home", () => {
     expect(onCalendar).toBe("");
   });
 
+  it("HomeAwareHeader marca data-calendar-active só nas rotas de Agenda, evitando lock órfão do Activity na home", () => {
+    currentPathname = "/calendar";
+    const onCalendar = renderToStaticMarkup(
+      createElement(
+        HomeAwareHeader,
+        null,
+        createElement("span", null, "ACTIONS"),
+      ),
+    );
+    expect(onCalendar).toContain("data-calendar-active");
+
+    currentPathname = "/";
+    const onHome = renderToStaticMarkup(
+      createElement(
+        HomeAwareHeader,
+        null,
+        createElement("span", null, "ACTIONS"),
+      ),
+    );
+    expect(onHome).not.toContain("data-calendar-active");
+  });
+
   it("HeaderUserSlot mantém avatar visível no header em todas as rotas (inclusive desktop e agenda)", () => {
     for (const path of ["/", "/dashboard/events", "/dashboard/calendar"]) {
       currentPathname = path;
