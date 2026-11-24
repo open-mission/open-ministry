@@ -31,16 +31,65 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.8.0";
+export const CURRENT_APP_VERSION = "1.9.0";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.9.0",
+    title: "Agenda em Tela Cheia e Sua Semana Mais Organizada",
+    subtitle:
+      "A agenda agora aproveita toda a tela, a configuração da sua disponibilidade ficou mais simples e o guia de boas-vindas respeita o seu tempo.",
+    releaseDate: "23 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Agenda",
+        badge: "Novidade",
+        features: [
+          {
+            title: "A agenda ocupa a tela toda",
+            description:
+              "No computador, mês, semana, dia e ano preenchem o espaço disponível sem rolagem da página. Cada seção tem sua própria rolagem, e o dia de hoje fica sempre destacado.",
+            iconName: "CalendarDaysIcon",
+            badge: "Desktop",
+          },
+          {
+            title: "Cabeçalho mais enxuto no celular",
+            description:
+              "Setas e botão Hoje na primeira linha, seguidos de Escalas e Novo; as visões ficam na segunda linha com o filtro em ícone.",
+            iconName: "SmartphoneIcon",
+            badge: "Mobile",
+          },
+        ],
+      },
+      {
+        moduleName: "Departamentos & Disponibilidade",
+        badge: "Melhorias",
+        features: [
+          {
+            title: "Configure sua disponibilidade",
+            description:
+              "Acesse pelo aviso da Home ou pela página de Departamentos. O editor semanal abre em um painel lateral no computador e em uma gaveta no celular, sem atrapalhar o que você estava fazendo.",
+            iconName: "UsersIcon",
+            badge: "Escala",
+          },
+          {
+            title: "Guia de boas-vindas em 3 capítulos",
+            description:
+              "Um tour mais curto e sem formulários obrigatórios: você navega pela Home, entende suas escalas e descobre o app no celular no seu ritmo.",
+            iconName: "SparklesIcon",
+            badge: "Boas-vindas",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.8.0",
     title: "Uma Nova Experiência para Organizar Sua Igreja",
     subtitle:
       "Deixamos o OpenMinistry ainda mais leve, organizado e fácil de usar — tanto no computador quanto no celular, para você encontrar tudo com poucos toques.",
     releaseDate: "22 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Navegação e Visual",
