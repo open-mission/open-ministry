@@ -37,8 +37,20 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { CalendarHeader } from "@/components/calendar/calendar-header";
+import {
+  buildFilterOptions,
+  CalendarHeader,
+  FilterPanelBody,
+} from "@/components/calendar/calendar-header";
+import {
+  getItemAccent,
+  getItemTypeLabel,
+} from "@/components/calendar/calendar-item-style";
 import { EventPreviewSheet } from "@/components/calendar/event-detail-dialog";
+import {
+  MobileAgendaView,
+  type MobileAgendaViewMode,
+} from "@/components/calendar/mobile-agenda-view";
 import { CalendarAgendaView } from "@/components/calendar/views/calendar-agenda-view";
 import { CalendarDayView } from "@/components/calendar/views/calendar-day-view";
 import { CalendarMonthView } from "@/components/calendar/views/calendar-month-view";
@@ -64,6 +76,7 @@ import { cn } from "@/lib/utils";
 type NativeCalendarProps = {
   initialItems: CalendarItem[];
   initialPreferences: CalendarPreferences;
+  organizationName?: string;
   canCreateEvent?: boolean;
   canCreateRehearsal?: boolean;
   canViewTeamAvailability?: boolean;
@@ -71,7 +84,7 @@ type NativeCalendarProps = {
   departments?: DepartmentOption[];
 };
 
-const MOBILE_QUERY = "(max-width: 639px)";
+const MOBILE_QUERY = "(max-width: 767px)";
 const CALENDAR_FALLBACK_DATE = new Date(0);
 const WEEKDAY_LABELS_SUNDAY_FIRST = ["D", "S", "T", "Q", "Q", "S", "S"];
 const WEEKDAY_LABELS_MONDAY_FIRST = ["S", "T", "Q", "Q", "S", "S", "D"];
@@ -165,26 +178,6 @@ function applyTypeFilter(
 
 function getDateAtCalendarNoon(date: Date, timeZone: string) {
   return fromZonedTime(`${format(date, "yyyy-MM-dd")}T12:00:00`, timeZone);
-}
-
-function getItemAccent(item: CalendarItem) {
-  if (item.type === "assignment") return "bg-chart-1";
-  if (item.type === "unavailability") return "bg-chart-2";
-  if (item.type === "birthday") return "bg-chart-5";
-  if (item.metadata?.eventKind === "rehearsal" || item.color === "purple") {
-    return "bg-chart-4";
-  }
-  return "bg-primary";
-}
-
-function getItemTypeLabel(item: CalendarItem) {
-  if (item.type === "assignment") return "Minha escala";
-  if (item.type === "unavailability") return "Indisponibilidade";
-  if (item.type === "birthday") return "Aniversário";
-  if (item.metadata?.eventKind === "rehearsal" || item.color === "purple") {
-    return "Ensaio";
-  }
-  return "Culto ou evento";
 }
 
 function MiniCalendar({
@@ -596,6 +589,7 @@ function NativeCalendarSidebar({
 export function NativeCalendar({
   initialItems,
   initialPreferences,
+  organizationName,
   canCreateEvent = false,
   canCreateRehearsal = false,
   canViewTeamAvailability = false,
@@ -627,10 +621,15 @@ export function NativeCalendar({
     getMobileServerSnapshot,
   );
   const viewMode = chosenView ?? (isMobile ? "agenda" : "month");
+  const effectiveViewMode: CalendarViewMode =
+    isMobile && viewMode === "day" ? "agenda" : viewMode;
+  const mobileViewMode: MobileAgendaViewMode =
+    effectiveViewMode === "day" ? "agenda" : effectiveViewMode;
 
   const visibleRange = useMemo(
-    () => getCalendarRange(viewMode, currentDate, preferences.weekStartsOn),
-    [currentDate, preferences.weekStartsOn, viewMode],
+    () =>
+      getCalendarRange(effectiveViewMode, currentDate, preferences.weekStartsOn),
+    [currentDate, effectiveViewMode, preferences.weekStartsOn],
   );
   const visibleItems = useMemo(
     () =>
@@ -676,7 +675,7 @@ export function NativeCalendar({
   }, []);
   const handlePrev = useCallback(() => {
     setCurrentDate((previousDate) => {
-      switch (viewMode) {
+      switch (effectiveViewMode) {
         case "month":
           return subMonths(previousDate, 1);
         case "week":
@@ -691,10 +690,10 @@ export function NativeCalendar({
           return previousDate;
       }
     });
-  }, [setCurrentDate, viewMode]);
+  }, [effectiveViewMode, setCurrentDate]);
   const handleNext = useCallback(() => {
     setCurrentDate((previousDate) => {
-      switch (viewMode) {
+      switch (effectiveViewMode) {
         case "month":
           return addMonths(previousDate, 1);
         case "week":
@@ -709,25 +708,27 @@ export function NativeCalendar({
           return previousDate;
       }
     });
-  }, [setCurrentDate, viewMode]);
+  }, [effectiveViewMode, setCurrentDate]);
   const handleToday = useCallback(() => {
     setCurrentDate(now ?? currentDate);
   }, [currentDate, now, setCurrentDate]);
   const handleSelectDate = useCallback(
     (date: Date) => {
-      setChosenView("day");
+      if (!isMobile) {
+        setChosenView("day");
+      }
       setCurrentDate(date);
     },
-    [setCurrentDate],
+    [isMobile, setCurrentDate],
   );
   const handleMiniDateSelect = useCallback(
     (date: Date) => {
       setCurrentDate(date);
-      if (viewMode === "month" || viewMode === "year") {
+      if (effectiveViewMode === "month" || effectiveViewMode === "year") {
         setChosenView("day");
       }
     },
-    [setCurrentDate, viewMode],
+    [effectiveViewMode, setCurrentDate],
   );
   const handleSelectMonth = useCallback(
     (date: Date) => {
@@ -744,6 +745,33 @@ export function NativeCalendar({
     setSelectedItem(item);
     setIsDetailOpen(true);
   }, []);
+  const handleResetFilters = useCallback(() => {
+    setFilterType("all");
+    setSelectedDepartmentId("all");
+  }, []);
+  const filterOptions = useMemo(
+    () =>
+      buildFilterOptions(
+        {
+          total: itemCounts.total,
+          assignments: itemCounts.assignments,
+          events: itemCounts.events,
+          unavailabilities: itemCounts.unavailabilities,
+          birthdays: itemCounts.birthdays,
+        },
+        canViewTeamAvailability,
+      ),
+    [canViewTeamAvailability, itemCounts],
+  );
+  const activeFilterOption = filterOptions.find(
+    (option) => option.id === filterType,
+  );
+  const activeDepartment = departments.find(
+    (department) => department.id === selectedDepartmentId,
+  );
+  const activeFilterCount =
+    (filterType !== "all" ? 1 : 0) +
+    (selectedDepartmentId !== "all" && activeDepartment ? 1 : 0);
   const handleExport = useCallback(() => {
     if (visibleFilteredItems.length === 0) {
       toast.info("Não há compromissos para exportar neste período.");
@@ -769,104 +797,151 @@ export function NativeCalendar({
       <div
         aria-busy={now === null && currentDateOverride === null}
         className={cn(
-          "flex flex-col gap-4 md:min-h-0 md:flex-1",
+          "flex min-h-0 flex-1 flex-col gap-3 md:gap-4",
           now === null && currentDateOverride === null && "invisible",
         )}
       >
-      <CalendarHeader
-        currentDate={currentDate}
-        viewMode={viewMode}
-        filterType={filterType}
-        selectedDepartmentId={selectedDepartmentId}
-        departments={departments}
-        weekStartsOn={preferences.weekStartsOn}
-        timeZone={preferences.timezone}
-        totalCount={itemCounts.total}
-        eventsCount={itemCounts.events}
-        assignmentsCount={itemCounts.assignments}
-        unavailabilitiesCount={itemCounts.unavailabilities}
-        birthdaysCount={itemCounts.birthdays}
-        weekAssignmentsCount={weekAssignmentsCount}
-        canViewTeamAvailability={canViewTeamAvailability}
-        canCreateEvent={canCreateEvent}
-        canCreateRehearsal={canCreateRehearsal}
-        canViewSchedules={canViewSchedules}
-        showSidebarToggle
-        onViewChange={handleViewChange}
-        onFilterChange={setFilterType}
-        onDepartmentChange={setSelectedDepartmentId}
-        onPrev={handlePrev}
-        onNext={handleNext}
-        onToday={handleToday}
-        onExport={handleExport}
-      />
-
-      <div className="flex min-w-0 gap-4 md:min-h-0 md:flex-1">
-        <NativeCalendarSidebar
-          currentDate={currentDate}
-          now={now}
-          items={navigationItems}
-          timeZone={preferences.timezone}
-          weekStartsOn={preferences.weekStartsOn}
-          onDateSelect={handleMiniDateSelect}
-          onItemSelect={handleSelectItem}
-          onOpenAgenda={handleOpenAgenda}
-        />
-
-        <div className="min-w-0 flex-1 md:flex md:min-h-0 md:flex-col">
-          {viewMode === "month" ? (
-            <CalendarMonthView
-              currentDate={currentDate}
-              now={now}
-              items={visibleFilteredItems}
-              weekStartsOn={preferences.weekStartsOn}
-              timeZone={preferences.timezone}
-              onSelectDate={handleSelectDate}
-              onSelectItem={handleSelectItem}
-            />
-          ) : null}
-          {viewMode === "week" ? (
-            <CalendarWeekView
-              currentDate={currentDate}
-              now={now}
-              items={visibleFilteredItems}
-              weekStartsOn={preferences.weekStartsOn}
-              timeZone={preferences.timezone}
-              onSelectDate={handleSelectDate}
-              onSelectItem={handleSelectItem}
-            />
-          ) : null}
-          {viewMode === "day" ? (
-            <CalendarDayView
-              currentDate={currentDate}
-              items={visibleFilteredItems}
-              timeZone={preferences.timezone}
-              onSelectItem={handleSelectItem}
-              onSwitchToMonth={() => setChosenView("month")}
-            />
-          ) : null}
-          {viewMode === "agenda" ? (
-            <CalendarAgendaView
-              currentDate={currentDate}
-              items={visibleFilteredItems}
-              timeZone={preferences.timezone}
-              onSelectItem={handleSelectItem}
-              onToday={handleToday}
-            />
-          ) : null}
-          {viewMode === "year" ? (
-            <CalendarYearView
-              currentDate={currentDate}
-              now={now}
-              items={visibleFilteredItems}
-              weekStartsOn={preferences.weekStartsOn}
-              timeZone={preferences.timezone}
-              onSelectDate={handleSelectDate}
-              onSelectMonth={handleSelectMonth}
-            />
-          ) : null}
+        <div className="flex min-h-0 flex-1 flex-col md:hidden">
+          <MobileAgendaView
+            organizationName={organizationName}
+            currentDate={currentDate}
+            now={now}
+            viewMode={mobileViewMode}
+            items={visibleFilteredItems}
+            filterType={filterType}
+            selectedDepartmentId={selectedDepartmentId}
+            departments={departments}
+            weekStartsOn={preferences.weekStartsOn}
+            timeZone={preferences.timezone}
+            activeFilterLabel={
+              filterType !== "all" ? activeFilterOption?.label : null
+            }
+            activeDepartmentName={activeDepartment?.name ?? null}
+            activeFilterCount={activeFilterCount}
+            filterContent={
+              <FilterPanelBody
+                filterOptions={filterOptions}
+                filterType={filterType}
+                departments={departments}
+                selectedDepartmentId={selectedDepartmentId}
+                compact={false}
+                onFilterChange={setFilterType}
+                onDepartmentChange={setSelectedDepartmentId}
+              />
+            }
+            canCreateEvent={canCreateEvent}
+            canCreateRehearsal={canCreateRehearsal}
+            canViewSchedules={canViewSchedules}
+            onViewChange={handleViewChange}
+            onClearFilterType={() => setFilterType("all")}
+            onClearDepartment={() => setSelectedDepartmentId("all")}
+            onResetFilters={handleResetFilters}
+            onPrev={handlePrev}
+            onNext={handleNext}
+            onToday={handleToday}
+            onSelectDate={handleSelectDate}
+            onSelectMonth={handleSelectMonth}
+            onSelectItem={handleSelectItem}
+            onExport={handleExport}
+          />
         </div>
-      </div>
+
+        <div className="hidden md:flex md:min-h-0 md:flex-1 md:flex-col md:gap-4">
+          <CalendarHeader
+            currentDate={currentDate}
+            viewMode={viewMode}
+            filterType={filterType}
+            selectedDepartmentId={selectedDepartmentId}
+            departments={departments}
+            weekStartsOn={preferences.weekStartsOn}
+            timeZone={preferences.timezone}
+            totalCount={itemCounts.total}
+            eventsCount={itemCounts.events}
+            assignmentsCount={itemCounts.assignments}
+            unavailabilitiesCount={itemCounts.unavailabilities}
+            birthdaysCount={itemCounts.birthdays}
+            weekAssignmentsCount={weekAssignmentsCount}
+            canViewTeamAvailability={canViewTeamAvailability}
+            canCreateEvent={canCreateEvent}
+            canCreateRehearsal={canCreateRehearsal}
+            canViewSchedules={canViewSchedules}
+            showSidebarToggle
+            onViewChange={handleViewChange}
+            onFilterChange={setFilterType}
+            onDepartmentChange={setSelectedDepartmentId}
+            onPrev={handlePrev}
+            onNext={handleNext}
+            onToday={handleToday}
+            onExport={handleExport}
+          />
+
+          <div className="flex min-w-0 gap-4 md:min-h-0 md:flex-1">
+            <NativeCalendarSidebar
+              currentDate={currentDate}
+              now={now}
+              items={navigationItems}
+              timeZone={preferences.timezone}
+              weekStartsOn={preferences.weekStartsOn}
+              onDateSelect={handleMiniDateSelect}
+              onItemSelect={handleSelectItem}
+              onOpenAgenda={handleOpenAgenda}
+            />
+
+            <div className="min-w-0 flex-1 md:flex md:min-h-0 md:flex-col">
+              {viewMode === "month" ? (
+                <CalendarMonthView
+                  currentDate={currentDate}
+                  now={now}
+                  items={visibleFilteredItems}
+                  weekStartsOn={preferences.weekStartsOn}
+                  timeZone={preferences.timezone}
+                  onSelectDate={handleSelectDate}
+                  onSelectItem={handleSelectItem}
+                />
+              ) : null}
+              {viewMode === "week" ? (
+                <CalendarWeekView
+                  currentDate={currentDate}
+                  now={now}
+                  items={visibleFilteredItems}
+                  weekStartsOn={preferences.weekStartsOn}
+                  timeZone={preferences.timezone}
+                  onSelectDate={handleSelectDate}
+                  onSelectItem={handleSelectItem}
+                />
+              ) : null}
+              {viewMode === "day" ? (
+                <CalendarDayView
+                  currentDate={currentDate}
+                  items={visibleFilteredItems}
+                  timeZone={preferences.timezone}
+                  onSelectItem={handleSelectItem}
+                  onSwitchToMonth={() => setChosenView("month")}
+                />
+              ) : null}
+              {viewMode === "agenda" ? (
+                <CalendarAgendaView
+                  currentDate={currentDate}
+                  items={visibleFilteredItems}
+                  timeZone={preferences.timezone}
+                  onSelectItem={handleSelectItem}
+                  onToday={handleToday}
+                />
+              ) : null}
+              {viewMode === "year" ? (
+                <CalendarYearView
+                  currentDate={currentDate}
+                  now={now}
+                  items={visibleFilteredItems}
+                  weekStartsOn={preferences.weekStartsOn}
+                  timeZone={preferences.timezone}
+                  onSelectDate={handleSelectDate}
+                  onSelectMonth={handleSelectMonth}
+                />
+              ) : null}
+            </div>
+          </div>
+        </div>
       </div>
 
       <EventPreviewSheet

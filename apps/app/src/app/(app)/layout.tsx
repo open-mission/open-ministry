@@ -84,7 +84,7 @@ export default function DashboardLayout({
             <Suspense fallback={<SidebarSkeleton />}>
               <AppSidebarLoader />
             </Suspense>
-            <SidebarInset className="min-w-0 has-[[data-calendar-container]]:md:h-dvh has-[[data-calendar-container]]:md:overflow-hidden">
+            <SidebarInset className="min-w-0 has-[[data-calendar-container]]:h-dvh has-[[data-calendar-container]]:overflow-hidden has-[[data-calendar-container]]:md:h-dvh has-[[data-calendar-container]]:md:overflow-hidden">
               <Suspense fallback={<HomeAwareHeaderFallback />}>
                 <HomeAwareHeader>{headerContent}</HomeAwareHeader>
               </Suspense>
@@ -98,7 +98,7 @@ export default function DashboardLayout({
               <Suspense fallback={null}>
                 <NotificationBarLoader />
               </Suspense>
-              <div className="flex flex-1 flex-col px-4 pt-3 pb-28 sm:px-6 sm:pt-4 sm:pb-28 lg:px-8 lg:pt-4 lg:pb-8 has-[[data-calendar-container]]:md:min-h-0 has-[[data-calendar-container]]:md:overflow-hidden has-[[data-calendar-container]]:md:pt-2 has-[[data-calendar-container]]:md:pb-20 has-[[data-calendar-container]]:lg:pb-4">
+              <div className="flex flex-1 flex-col px-4 pt-3 pb-28 sm:px-6 sm:pt-4 sm:pb-28 lg:px-8 lg:pt-4 lg:pb-8 has-[[data-calendar-container]]:min-h-0 has-[[data-calendar-container]]:overflow-hidden has-[[data-calendar-container]]:pt-[max(0.75rem,env(safe-area-inset-top))] has-[[data-calendar-container]]:pb-[calc(4.75rem+env(safe-area-inset-bottom))] has-[[data-calendar-container]]:md:min-h-0 has-[[data-calendar-container]]:md:overflow-hidden has-[[data-calendar-container]]:md:pt-2 has-[[data-calendar-container]]:md:pb-20 has-[[data-calendar-container]]:lg:pb-4">
                 {children}
               </div>
               <Suspense fallback={<MobileNavShell />}>

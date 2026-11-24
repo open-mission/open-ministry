@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  ArrowLeftIcon,
   CalendarPlusIcon,
   ChevronDownIcon,
+  ClipboardListIcon,
   DownloadIcon,
+  FilterIcon,
   Link2Icon,
+  MoreHorizontalIcon,
   Music2Icon,
   PlusIcon,
 } from "lucide-react";
@@ -17,6 +21,16 @@ import { CreateEventDialog } from "@/components/events/create-event-dialog";
 import { CalendarSyncCard } from "@/components/settings/calendar-sync-card";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +45,7 @@ import type { CalendarFeedView } from "@/lib/calendar-feed-data";
 import type { DepartmentOption } from "@/lib/departments";
 
 type CreateKind = "service" | "event";
+type MobileMoreTab = "menu" | "filters";
 
 type CalendarActionsProps = {
   departments: DepartmentOption[];
@@ -40,6 +55,9 @@ type CalendarActionsProps = {
   canViewSchedules?: boolean;
   onExport: () => void;
   variant?: "mobile" | "desktop";
+  activeFilterCount?: number;
+  filterContent?: ReactNode;
+  onResetFilters?: () => void;
 };
 
 function toFeedViews(
@@ -66,10 +84,15 @@ export function CalendarActions({
   canViewSchedules = false,
   onExport,
   variant = "desktop",
+  activeFilterCount = 0,
+  filterContent,
+  onResetFilters,
 }: CalendarActionsProps) {
   const isMobile = useIsMobile();
   const [newOpen, setNewOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [mobileMoreTab, setMobileMoreTab] = useState<MobileMoreTab>("menu");
+  const [schedulesOpen, setSchedulesOpen] = useState(false);
   const [createKind, setCreateKind] = useState<CreateKind | null>(null);
   const [syncOpen, setSyncOpen] = useState(false);
   const [syncFeeds, setSyncFeeds] = useState<CalendarFeedView[]>([]);
@@ -110,6 +133,18 @@ export function CalendarActions({
     onExport();
   }
 
+  function handleOpenSchedules() {
+    setMoreOpen(false);
+    setSchedulesOpen(true);
+  }
+
+  function handleMoreOpenChange(nextOpen: boolean) {
+    setMoreOpen(nextOpen);
+    if (!nextOpen) {
+      setMobileMoreTab("menu");
+    }
+  }
+
   const newTrigger = (
     <Button
       size={variant === "mobile" ? "icon" : "sm"}
@@ -128,10 +163,28 @@ export function CalendarActions({
   const moreTrigger = (
     <Button
       size="icon"
-      className={variant === "mobile" ? "size-11 rounded-xl" : "size-9 rounded-xl"}
-      aria-label="Mais ações da agenda"
+      variant={variant === "mobile" ? "outline" : "default"}
+      className={
+        variant === "mobile"
+          ? "relative size-11 rounded-xl bg-card"
+          : "size-9 rounded-xl"
+      }
+      aria-label={
+        variant === "mobile" ? "Mais ações e filtros" : "Mais ações da agenda"
+      }
     >
-      <ChevronDownIcon className="size-4" aria-hidden="true" />
+      {variant === "mobile" ? (
+        <>
+          <MoreHorizontalIcon className="size-4" aria-hidden="true" />
+          {activeFilterCount > 0 ? (
+            <span className="absolute -top-1 -right-1 inline-flex size-4 items-center justify-center rounded-full bg-primary font-mono text-[11px] font-semibold leading-none tabular-nums text-primary-foreground">
+              {activeFilterCount}
+            </span>
+          ) : null}
+        </>
+      ) : (
+        <ChevronDownIcon className="size-4" aria-hidden="true" />
+      )}
     </Button>
   );
 
@@ -177,6 +230,33 @@ export function CalendarActions({
 
   const moreOptions = (
     <div className="flex flex-col gap-1">
+      {variant === "mobile" && filterContent ? (
+        <button
+          type="button"
+          onClick={() => setMobileMoreTab("filters")}
+          className="flex min-h-11 items-center justify-between gap-2.5 rounded-lg px-3 text-left text-sm transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
+        >
+          <span className="flex items-center gap-2.5">
+            <FilterIcon className="size-4 text-primary" aria-hidden="true" />
+            <span>Filtrar compromissos</span>
+          </span>
+          {activeFilterCount > 0 ? (
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/15 px-1.5 font-mono text-[11px] font-semibold tabular-nums text-primary">
+              {activeFilterCount}
+            </span>
+          ) : null}
+        </button>
+      ) : null}
+      {variant === "mobile" && canViewSchedules ? (
+        <button
+          type="button"
+          onClick={handleOpenSchedules}
+          className="flex min-h-11 items-center gap-2.5 rounded-lg px-3 text-left text-sm transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
+        >
+          <ClipboardListIcon className="size-4 text-primary" aria-hidden="true" />
+          <span>Ver escalas</span>
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={handleExport}
@@ -198,91 +278,174 @@ export function CalendarActions({
     </div>
   );
 
-  const actionGroup = (
-    <ButtonGroup aria-label="Ações da agenda">
-      {isMobile ? (
-        <>
-          <ResponsiveDialog
-            open={newOpen}
-            onOpenChange={setNewOpen}
-            trigger={newTrigger}
-            title="Novo compromisso"
-            description="Escolha o que deseja criar."
-          >
-            {newOptions}
-          </ResponsiveDialog>
-          <ResponsiveDialog
-            open={moreOpen}
-            onOpenChange={setMoreOpen}
-            trigger={moreTrigger}
-            title="Mais ações"
-            description="Exporte sua agenda ou conecte-a ao seu calendário."
-          >
-            {moreOptions}
-          </ResponsiveDialog>
-        </>
-      ) : (
-        <>
-          <DropdownMenu open={newOpen} onOpenChange={setNewOpen}>
-            <DropdownMenuTrigger asChild>{newTrigger}</DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuLabel>Criar</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {canCreateEvent ? (
-                <>
-                  <DropdownMenuItem onSelect={() => openCreate("service")}>
-                    <CalendarPlusIcon aria-hidden="true" />
-                    Novo culto
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => openCreate("event")}>
-                    <CalendarPlusIcon aria-hidden="true" />
-                    Novo evento
-                  </DropdownMenuItem>
-                </>
-              ) : null}
-              {canCreateRehearsal ? (
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/rehearsals">
-                    <Music2Icon aria-hidden="true" />
-                    Novo ensaio
-                  </Link>
-                </DropdownMenuItem>
-              ) : null}
-              {!canCreateEvent && !canCreateRehearsal ? (
-                <p className="px-2 py-1.5 text-xs text-muted-foreground">
-                  Sem permissão para criar.
-                </p>
-              ) : null}
-            </DropdownMenuContent>
-          </DropdownMenu>
+  const actionGroup =
+    variant === "mobile" ? (
+      <div className="flex shrink-0 items-center gap-2" aria-label="Ações da agenda">
+        <ResponsiveDialog
+          open={newOpen}
+          onOpenChange={setNewOpen}
+          trigger={newTrigger}
+          title="Novo compromisso"
+          description="Escolha o que deseja criar."
+        >
+          {newOptions}
+        </ResponsiveDialog>
 
-          <DropdownMenu open={moreOpen} onOpenChange={setMoreOpen}>
-            <DropdownMenuTrigger asChild>{moreTrigger}</DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-60">
-              <DropdownMenuLabel>Agenda</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={handleExport}>
-                <DownloadIcon aria-hidden="true" />
-                Exportar <span className="font-mono">.ics</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={openSync}>
-                <Link2Icon aria-hidden="true" />
-                Conectar meu calendário
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </>
-      )}
-    </ButtonGroup>
-  );
+        <Drawer open={moreOpen} onOpenChange={handleMoreOpenChange}>
+          <DrawerTrigger asChild>{moreTrigger}</DrawerTrigger>
+          <DrawerContent className="gap-0 rounded-t-xl border-x-0 border-b-0 bg-popover p-0">
+            <DrawerHeader className="space-y-1 px-5 pt-3 pb-3 !text-left">
+              {mobileMoreTab === "filters" ? (
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Voltar para mais ações"
+                    onClick={() => setMobileMoreTab("menu")}
+                    className="-ml-2 size-11 shrink-0 rounded-xl"
+                  >
+                    <ArrowLeftIcon className="size-4" aria-hidden="true" />
+                  </Button>
+                  <div className="min-w-0">
+                    <DrawerTitle className="font-heading text-xl tracking-tight text-foreground">
+                      Filtrar agenda
+                    </DrawerTitle>
+                    <DrawerDescription className="text-xs text-muted-foreground">
+                      Escolha o tipo de compromisso ou departamento.
+                    </DrawerDescription>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <DrawerTitle className="font-heading text-xl tracking-tight text-foreground">
+                    Mais ações
+                  </DrawerTitle>
+                  <DrawerDescription className="text-xs text-muted-foreground">
+                    Filtre compromissos, veja escalas ou conecte seu calendário.
+                  </DrawerDescription>
+                </>
+              )}
+            </DrawerHeader>
+
+            <div className="max-h-[62dvh] overflow-y-auto px-5 pb-4">
+              {mobileMoreTab === "filters" && filterContent
+                ? filterContent
+                : moreOptions}
+            </div>
+
+            {mobileMoreTab === "filters" ? (
+              <DrawerFooter className="border-t bg-card px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+                {activeFilterCount > 0 && onResetFilters ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onResetFilters}
+                    className="h-11 w-full rounded-xl"
+                  >
+                    Limpar filtros
+                  </Button>
+                ) : null}
+                <DrawerClose asChild>
+                  <Button className="h-11 w-full rounded-xl font-semibold">
+                    Aplicar
+                  </Button>
+                </DrawerClose>
+              </DrawerFooter>
+            ) : null}
+          </DrawerContent>
+        </Drawer>
+      </div>
+    ) : (
+      <ButtonGroup aria-label="Ações da agenda">
+        {isMobile ? (
+          <>
+            <ResponsiveDialog
+              open={newOpen}
+              onOpenChange={setNewOpen}
+              trigger={newTrigger}
+              title="Novo compromisso"
+              description="Escolha o que deseja criar."
+            >
+              {newOptions}
+            </ResponsiveDialog>
+            <ResponsiveDialog
+              open={moreOpen}
+              onOpenChange={handleMoreOpenChange}
+              trigger={moreTrigger}
+              title="Mais ações"
+              description="Exporte sua agenda ou conecte-a ao seu calendário."
+            >
+              {moreOptions}
+            </ResponsiveDialog>
+          </>
+        ) : (
+          <>
+            <DropdownMenu open={newOpen} onOpenChange={setNewOpen}>
+              <DropdownMenuTrigger asChild>{newTrigger}</DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuLabel>Criar</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {canCreateEvent ? (
+                  <>
+                    <DropdownMenuItem onSelect={() => openCreate("service")}>
+                      <CalendarPlusIcon aria-hidden="true" />
+                      Novo culto
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => openCreate("event")}>
+                      <CalendarPlusIcon aria-hidden="true" />
+                      Novo evento
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+                {canCreateRehearsal ? (
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/rehearsals">
+                      <Music2Icon aria-hidden="true" />
+                      Novo ensaio
+                    </Link>
+                  </DropdownMenuItem>
+                ) : null}
+                {!canCreateEvent && !canCreateRehearsal ? (
+                  <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                    Sem permissão para criar.
+                  </p>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu open={moreOpen} onOpenChange={handleMoreOpenChange}>
+              <DropdownMenuTrigger asChild>{moreTrigger}</DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-60">
+                <DropdownMenuLabel>Agenda</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={handleExport}>
+                  <DownloadIcon aria-hidden="true" />
+                  Exportar <span className="font-mono">.ics</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={openSync}>
+                  <Link2Icon aria-hidden="true" />
+                  Conectar meu calendário
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        )}
+      </ButtonGroup>
+    );
 
   return (
     <>
       <div className="flex shrink-0 items-center gap-2">
         {variant === "mobile" ? (
           <>
-            <SchedulesPanel canViewSchedules={canViewSchedules} />
             {actionGroup}
+            <SchedulesPanel
+              canViewSchedules={canViewSchedules}
+              open={schedulesOpen}
+              onOpenChange={setSchedulesOpen}
+              hideTrigger
+            />
           </>
         ) : (
           <>
