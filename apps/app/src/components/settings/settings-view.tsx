@@ -28,9 +28,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import type { ChurchWhatsAppView } from "@/app/actions/church-whatsapp";
 import type { OrganizationPermissionSettingsData } from "@/app/actions/permissions";
 import type {
-  EvolutionSettingsView,
   PasskeyViewItem,
   SessionItem,
 } from "@/app/actions/settings";
@@ -119,7 +119,7 @@ export type SettingsViewProps = {
   initialPasskeys: PasskeyViewItem[];
   peopleCount: number;
   departmentsCount: number;
-  evolutionSettings: EvolutionSettingsView | null;
+  churchWhatsapp: ChurchWhatsAppView | null;
   messageTemplates: ResolvedTemplate[];
   permissionSettings?: OrganizationPermissionSettingsData | null;
   initialScope?: SettingsScope;
@@ -196,7 +196,7 @@ export function SettingsView({
   initialPasskeys,
   peopleCount,
   departmentsCount,
-  evolutionSettings,
+  churchWhatsapp,
   messageTemplates,
   permissionSettings,
   initialScope,
@@ -249,7 +249,20 @@ export function SettingsView({
   const [activeMobileSection, setActiveMobileSection] =
     useState<MobileSettingsSection | null>(null);
 
-  const isWhatsappConnected = Boolean(evolutionSettings?.isActive);
+  const whatsappBadge =
+    churchWhatsapp?.state === "connected"
+      ? churchWhatsapp.isActive
+        ? "Conectado"
+        : "Pausado"
+      : churchWhatsapp?.state === "pairing"
+        ? "Aguardando QR"
+        : churchWhatsapp?.state === "ready"
+          ? "Pronto"
+          : churchWhatsapp?.state === "blocked"
+            ? "Bloqueado"
+            : "Desconectado";
+  const isWhatsappConnected =
+    churchWhatsapp?.state === "connected" && churchWhatsapp.isActive;
   const feedsBadge =
     calendarFeeds.length > 0 ? `${calendarFeeds.length}` : undefined;
   const passkeysBadge =
@@ -289,7 +302,7 @@ export function SettingsView({
           id: "whatsapp",
           label: "WhatsApp",
           icon: MessageSquareIcon,
-          badge: isWhatsappConnected ? "Conectado" : "Desconectado",
+          badge: whatsappBadge,
         },
         {
           id: "templates",
@@ -364,8 +377,8 @@ export function SettingsView({
       ? [
           {
             id: "whatsapp" as const,
-            label: "WhatsApp (Evolution API)",
-            badge: isWhatsappConnected ? "Conectado" : "Desconectado",
+            label: "WhatsApp da Igreja",
+            badge: whatsappBadge,
             badgeVariant: (isWhatsappConnected ? "secondary" : "outline") as
               | "secondary"
               | "outline",
@@ -403,7 +416,7 @@ export function SettingsView({
     security: "Segurança & Passkeys",
     about: "Sobre o OpenMinistry",
     church: "Dados da Igreja",
-    whatsapp: "WhatsApp (Evolution API)",
+    whatsapp: "WhatsApp da Igreja",
     templates: "Modelos do WhatsApp",
     nomenclature: "Nomenclatura",
     permissions: "Módulos & Permissões",
@@ -456,16 +469,16 @@ export function SettingsView({
           />
         );
       case "whatsapp":
-        return evolutionSettings ? (
-          <AdminEvolutionApiCard initialSettings={evolutionSettings} />
+        return churchWhatsapp ? (
+          <AdminEvolutionApiCard initialView={churchWhatsapp} />
         ) : (
           <Card>
             <CardHeader>
               <CardTitle className="font-heading text-lg">
-                WhatsApp (Evolution API)
+                WhatsApp da Igreja
               </CardTitle>
               <CardDescription>
-                A integração do WhatsApp ainda não está configurada para esta
+                A integração do WhatsApp ainda não está disponível para esta
                 igreja.
               </CardDescription>
             </CardHeader>
@@ -695,17 +708,17 @@ export function SettingsView({
       case "whatsapp":
         return (
           <div className="max-w-3xl">
-            {evolutionSettings ? (
-              <AdminEvolutionApiCard initialSettings={evolutionSettings} />
+            {churchWhatsapp ? (
+              <AdminEvolutionApiCard initialView={churchWhatsapp} />
             ) : (
               <Card>
                 <CardHeader>
                   <CardTitle className="font-heading text-lg">
-                    WhatsApp (Evolution API)
+                    WhatsApp da Igreja
                   </CardTitle>
                   <CardDescription>
-                    A integração do WhatsApp ainda não está configurada para
-                    esta igreja.
+                    A integração do WhatsApp ainda não está disponível para esta
+                    igreja.
                   </CardDescription>
                 </CardHeader>
               </Card>
