@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
-
-import { DomainSubtabs } from "@/components/app/domain-subtabs-server";
 import { HandHeartIcon } from "lucide-react";
 
+import {
+  getMyAvailabilityAction,
+  getMyUnavailabilitiesAction,
+} from "@/app/actions/availability";
+import { DepartmentsWorkspace } from "@/components/availability/availability-reminder-widget";
 import { CreateDepartmentDialog } from "@/components/departments/create-department-dialog";
 import { DepartmentCard } from "@/components/departments/department-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listDepartments } from "@/lib/departments";
 import { requireOrganizationContext } from "@/lib/organizations";
+import { can } from "@/lib/permissions/service";
 
 export const metadata: Metadata = {
   title: "Departamentos",
@@ -26,43 +30,61 @@ export default function DepartmentsPage() {
 async function DepartmentsContent() {
   await connection();
 
-  const { organization, isAdmin } = await requireOrganizationContext();
-  const departments = await listDepartments(organization.id);
+  const { organization, session, isAdmin } = await requireOrganizationContext();
+  const [departments, canManageAvailability] = await Promise.all([
+    listDepartments(organization.id),
+    can("schedules", "manageOwnAvailability"),
+  ]);
+
+  const panelData = canManageAvailability
+    ? await Promise.all([
+        getMyAvailabilityAction(),
+        getMyUnavailabilitiesAction(),
+      ])
+        .then(([availability, unavailabilities]) =>
+          availability ? { availability, unavailabilities } : null,
+        )
+        .catch(() => null)
+    : null;
+
+  const participatedDepartments = departments.filter((department) =>
+    department.members.some(
+      (member) => member.person?.userId === session.user.id,
+    ),
+  );
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-      <DomainSubtabs domain="pessoas" />
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <h1 className="font-heading text-4xl leading-none tracking-tight">
-          Departamentos
-        </h1>
-        {isAdmin && departments.length > 0 ? <CreateDepartmentDialog /> : null}
-      </header>
-
-      {departments.length === 0 ? (
-        <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed px-6 py-16 text-center">
-          <span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <HandHeartIcon className="size-6" />
-          </span>
-          <div className="max-w-sm space-y-1.5">
-            <p className="font-heading text-xl tracking-tight">
-              Nenhum departamento ainda
-            </p>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              {isAdmin
-                ? "Comece pelo ministério que mais movimenta a igreja. Depois adicione as funções e as pessoas."
-                : "Quando a liderança criar os primeiros ministérios, eles aparecem aqui."}
-            </p>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+      <DepartmentsWorkspace
+        isAdmin={isAdmin}
+        canManageAvailability={canManageAvailability}
+        initialPanelData={panelData}
+      >
+        {participatedDepartments.length === 0 ? (
+          <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed px-6 py-16 text-center">
+            <span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <HandHeartIcon className="size-6" />
+            </span>
+            <div className="max-w-sm space-y-1.5">
+              <p className="font-heading text-xl tracking-tight">
+                Você ainda não participa de nenhum departamento
+              </p>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {isAdmin
+                  ? "Crie um novo ministério ou adicione seu perfil a um existente para acompanhá-lo aqui."
+                  : "Quando a liderança adicionar você a um ministério, ele aparecerá aqui."}
+              </p>
+            </div>
+            {isAdmin ? <CreateDepartmentDialog /> : null}
           </div>
-          {isAdmin ? <CreateDepartmentDialog /> : null}
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {departments.map((department) => (
-            <DepartmentCard key={department.id} department={department} />
-          ))}
-        </div>
-      )}
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {participatedDepartments.map((department) => (
+              <DepartmentCard key={department.id} department={department} />
+            ))}
+          </div>
+        )}
+      </DepartmentsWorkspace>
     </div>
   );
 }

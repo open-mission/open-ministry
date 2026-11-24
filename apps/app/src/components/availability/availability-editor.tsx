@@ -46,6 +46,8 @@ import { cn } from "@/lib/utils";
 
 type AvailabilityEditorProps = {
   initialData: MyAvailabilityResult;
+  onSaved?: (updatedAt: Date) => void;
+  embedded?: boolean;
 };
 
 const ALL_PERIODS: AvailabilityPeriod[] = [
@@ -112,7 +114,11 @@ function getDayStatus(day: EditableDay) {
   return "available" as const;
 }
 
-export function AvailabilityEditor({ initialData }: AvailabilityEditorProps) {
+export function AvailabilityEditor({
+  initialData,
+  onSaved,
+  embedded = false,
+}: AvailabilityEditorProps) {
   const [isPending, startTransition] = useTransition();
   const [days, setDays] = useState<EditableDay[]>(() =>
     buildEditableDays(initialData.days),
@@ -332,6 +338,7 @@ export function AvailabilityEditor({ initialData }: AvailabilityEditorProps) {
         setBaseline({ days: buildEditableDays(savedDays), notes: savedNotes });
         setHasSavedOnce(true);
         setLastSavedAt(savedAt);
+        onSaved?.(savedAt);
         toast.success(
           `Disponibilidade atualizada às ${format(savedAt, "HH:mm")}.`,
         );
@@ -730,8 +737,8 @@ export function AvailabilityEditor({ initialData }: AvailabilityEditorProps) {
         </div>
       </section>
 
-      {/* Unsaved changes bar, kept above the mobile bottom navigation. */}
-      {isDirty ? (
+      {/* Unsaved changes bar, kept above the mobile bottom navigation when standalone. */}
+      {!embedded && isDirty ? (
         <div
           role="status"
           aria-live="polite"
@@ -774,7 +781,7 @@ export function AvailabilityEditor({ initialData }: AvailabilityEditorProps) {
         </div>
       ) : null}
 
-      {isDirty ? <div className="h-20 md:h-16" aria-hidden="true" /> : null}
+      {!embedded && isDirty ? <div className="h-20 md:h-16" aria-hidden="true" /> : null}
     </div>
   );
 }

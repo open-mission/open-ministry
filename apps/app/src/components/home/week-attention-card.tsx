@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRightIcon, CalendarClockIcon } from "lucide-react";
+import { ArrowRightIcon } from "lucide-react";
 
 import { HomeCard, HomeCardContent } from "@/components/home/home-card";
 import {
@@ -10,7 +10,6 @@ import {
 } from "@/components/home/home-section";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import type { MyAvailabilityResult } from "@/lib/availability";
 import { formatEventFullDate, type DepartmentCoverage } from "@/lib/events";
 
 export type WeekAttentionItem = {
@@ -55,19 +54,15 @@ export function buildWeekAttentionItems(
 export function WeekAttentionCard({
   departments,
   canManage = false,
-  availability = null,
 }: {
   departments: DepartmentCoverage[];
   canManage?: boolean;
-  availability?: MyAvailabilityResult | null;
 }) {
   const items = buildWeekAttentionItems(departments);
 
   if (!canManage || items.length === 0) {
     return null;
   }
-
-  const needsAvailability = availability ? !availability.hasSaved : false;
 
   return (
     <HomeSection aria-labelledby="home-week-attention-title">
@@ -119,19 +114,6 @@ export function WeekAttentionCard({
               </Link>
             </div>
           ))}
-
-          {needsAvailability ? (
-            <Link
-              href="/dashboard/availability"
-              className="mt-1 flex min-h-[44px] items-center gap-1.5 border-t border-border/70 pt-2 text-xs font-medium text-primary hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <CalendarClockIcon className="size-3.5" aria-hidden="true" />
-              <span className="min-w-0 flex-1">
-                Informe sua disponibilidade para facilitar as escalas
-              </span>
-              <ArrowRightIcon className="size-3.5" aria-hidden="true" />
-            </Link>
-          ) : null}
         </HomeCardContent>
       </HomeCard>
     </HomeSection>

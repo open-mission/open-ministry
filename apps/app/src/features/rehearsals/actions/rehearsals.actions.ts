@@ -42,7 +42,7 @@ function revalidateRehearsalPaths(eventId?: string) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/rehearsals");
   revalidatePath("/dashboard/events");
-  revalidatePath("/dashboard/calendar");
+  revalidatePath("/calendar");
   if (eventId) {
     revalidatePath(`/dashboard/rehearsals/${eventId}`);
     revalidatePath(`/dashboard/events/${eventId}`);

@@ -17,7 +17,6 @@ import { TodayHomeLayout } from "@/components/home/today-home-layout";
 import { UpcomingEventsCard } from "@/components/home/upcoming-events-card";
 import { VerseCard } from "@/components/home/verse-card";
 import { WeekAttentionCard } from "@/components/home/week-attention-card";
-import type { MyAvailabilityResult } from "@/lib/availability";
 import type { DepartmentCoverage } from "@/lib/events";
 
 // O caminho é controlado pelo roteador do Next; o mock permite renderizar o
@@ -29,7 +28,12 @@ let currentPathname = "/";
 mock.module("next/navigation", () => ({
   ...actualNavigation,
   usePathname: () => currentPathname,
+  useRouter: () => ({ push: () => {}, refresh: () => {} }),
 }));
+
+const { AvailabilityReminderWidget } = await import(
+  "@/components/availability/availability-reminder-widget"
+);
 
 const {
   HomeAwareHeader,
@@ -636,14 +640,6 @@ const coverageWithGap: DepartmentCoverage[] = [
   },
 ];
 
-const unsavedAvailability: MyAvailabilityResult = {
-  personId: "person-1",
-  days: [],
-  notes: null,
-  hasSaved: false,
-  updatedAt: null,
-};
-
 describe("Versículo compacto da home mobile", () => {
   it("mantém título, referência, Copiar e Abrir na Bíblia em um bloco baixo", () => {
     const markup = renderToStaticMarkup(
@@ -731,12 +727,11 @@ describe("WeekAttentionCard", () => {
     expect(markup).toBe("");
   });
 
-  it("aparece para a liderança com até 3 pendências e lembrete de disponibilidade", () => {
+  it("aparece para a liderança com até 3 pendências sem duplicar aviso de disponibilidade", () => {
     const markup = renderToStaticMarkup(
       createElement(WeekAttentionCard, {
         departments: coverageWithGap,
         canManage: true,
-        availability: unsavedAvailability,
       }),
     );
 
@@ -745,8 +740,7 @@ describe("WeekAttentionCard", () => {
     expect(markup).toContain("Culto de domingo");
     expect(markup).toContain("Teclado, Bateria");
     expect(markup).toContain('href="/dashboard/events/event-1"');
-    expect(markup).toContain('href="/dashboard/availability"');
-    expect(markup).toContain("disponibilidade");
+    expect(markup).not.toContain("Informe sua disponibilidade");
   });
 
   it("limita a lista a 3 pendências", () => {
@@ -848,5 +842,89 @@ describe("TodayHomeLayout", () => {
     expect(markup).not.toContain("order-6");
     expect(markup).not.toContain("order-7");
     expect(markup).toContain("NEXT_ASSIGNMENT");
+  });
+
+  it("renderiza availabilityReminder logo após nextAssignment quando informado", () => {
+    const markup = renderLayout({
+      availabilityReminder: "AVAILABILITY_REMINDER",
+    });
+
+    expect(markup).toContain("AVAILABILITY_REMINDER");
+    expect(markup.indexOf("NEXT_ASSIGNMENT")).toBeLessThan(
+      markup.indexOf("AVAILABILITY_REMINDER"),
+    );
+  });
+});
+
+describe("AvailabilityReminderWidget e Departamentos", () => {
+  it("mostra widget minimalista quando disponibilidade não foi salva e oculta após salvar ou sem permissão", () => {
+    const homeMarkup = renderToStaticMarkup(
+      createElement(AvailabilityReminderWidget, {
+        variant: "home",
+        hasSaved: false,
+        canManageAvailability: true,
+      }),
+    );
+    expect(homeMarkup).toContain("Disponibilidade do dia a dia pendente");
+    expect(homeMarkup).toContain("Configurar");
+
+    const deptMarkup = renderToStaticMarkup(
+      createElement(AvailabilityReminderWidget, {
+        variant: "departments",
+        hasSaved: false,
+        canManageAvailability: true,
+      }),
+    );
+    expect(deptMarkup).toContain(
+      "Sua disponibilidade semanal ainda não foi configurada",
+    );
+    expect(deptMarkup).toContain("Configurar agora");
+
+    expect(
+      renderToStaticMarkup(
+        createElement(AvailabilityReminderWidget, {
+          variant: "home",
+          hasSaved: true,
+          canManageAvailability: true,
+        }),
+      ),
+    ).toBe("");
+
+    expect(
+      renderToStaticMarkup(
+        createElement(AvailabilityReminderWidget, {
+          variant: "home",
+          hasSaved: false,
+          canManageAvailability: false,
+        }),
+      ),
+    ).toBe("");
+  });
+
+  it("usa Sheet de 50% no desktop, Drawer no mobile e verifica permissão no servidor", async () => {
+    const [sheetSource, actionSource, deptPageSource] = await Promise.all([
+      Bun.file(
+        new URL("../../availability/availability-sheet.tsx", import.meta.url),
+      ).text(),
+      Bun.file(
+        new URL("../../../app/actions/availability.ts", import.meta.url),
+      ).text(),
+      Bun.file(
+        new URL(
+          "../../../app/(app)/dashboard/departments/page.tsx",
+          import.meta.url,
+        ),
+      ).text(),
+    ]);
+
+    expect(sheetSource).toContain(
+      "data-[side=right]:md:!w-1/2 data-[side=right]:md:!max-w-[50vw]",
+    );
+    expect(sheetSource).toContain("rounded-t-xl border-x-0 border-b-0 bg-popover");
+    expect(actionSource).toContain(
+      'requirePermission("schedules", "manageOwnAvailability")',
+    );
+    expect(deptPageSource).toContain("participatedDepartments");
+    expect(deptPageSource).not.toContain("DomainSubtabs");
   });
 });

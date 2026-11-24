@@ -1,10 +1,8 @@
 import {
   BookOpenIcon,
   CakeIcon,
-  CalendarCheckIcon,
   CalendarDaysIcon,
   CheckSquare2Icon,
-  ClipboardListIcon,
   HandHeartIcon,
   LayersIcon,
   LayoutDashboardIcon,
@@ -246,24 +244,6 @@ const desktopDomainTabs: Record<DesktopDomainKey, NavItem[]> = {
       icon: CalendarDaysIcon,
       exact: false,
     },
-    {
-      href: "/events",
-      label: "Cultos e eventos",
-      icon: CalendarDaysIcon,
-      exact: false,
-    },
-    {
-      href: "/schedules",
-      label: "Escalas",
-      icon: ClipboardListIcon,
-      exact: false,
-    },
-    {
-      href: "/availability",
-      label: "Disponibilidade",
-      icon: CalendarCheckIcon,
-      exact: false,
-    },
   ],
   louvor: [
     { href: "/songs", label: "Músicas", icon: Music2Icon, exact: false },
@@ -276,12 +256,6 @@ const desktopDomainTabs: Record<DesktopDomainKey, NavItem[]> = {
   ],
   pessoas: [
     { href: "/members", label: "Pessoas", icon: UsersIcon, exact: false },
-    {
-      href: "/departments",
-      label: "Departamentos",
-      icon: HandHeartIcon,
-      exact: false,
-    },
     {
       href: "/birthdays",
       label: "Aniversariantes",
@@ -310,8 +284,18 @@ const desktopDomainConfig: {
   key: DesktopDomainKey;
   label: string;
   icon: LucideIcon;
+  /**
+   * Rotas legadas do domínio que deixaram de ser sub-abas mas continuam
+   * válidas por deep link; mantêm o domínio destacado na navegação.
+   */
+  matchAliases?: string[];
 }[] = [
-  { key: "cultos", label: "Cultos & Escalas", icon: CalendarDaysIcon },
+  {
+    key: "cultos",
+    label: "Cultos & Escalas",
+    icon: CalendarDaysIcon,
+    matchAliases: ["/events", "/schedules"],
+  },
   { key: "louvor", label: "Louvor", icon: Music2Icon },
   { key: "pessoas", label: "Pessoas", icon: UsersIcon },
   { key: "comunicacao", label: "Comunicação", icon: MegaphoneIcon },
@@ -348,6 +332,10 @@ export function buildDesktopSidebarNavigation(
     );
     if (tabs.length === 0) continue;
 
+    const aliasPrefixes = (config.matchAliases ?? []).filter((href) =>
+      isItemAllowed(href, activeModuleKeys),
+    );
+
     domains.push({
       href: tabs[0]!.href,
       label: config.label,
@@ -355,14 +343,33 @@ export function buildDesktopSidebarNavigation(
       exact: false,
       domain: config.key,
       tabs,
-      matchPrefixes: tabs.map((tab) => tab.href),
+      matchPrefixes: [
+        ...tabs.map((tab) => tab.href),
+        ...aliasPrefixes.filter(
+          (href) => !tabs.some((tab) => tab.href === href),
+        ),
+      ],
       ...(tabs.length > 1 ? { badge: String(tabs.length) } : {}),
     });
   }
 
+  const departmentsItem: DesktopSidebarItem = {
+    href: "/departments",
+    label: "Departamentos",
+    icon: HandHeartIcon,
+    exact: false,
+    matchPrefixes: activeModuleKeys.includes("schedules")
+      ? ["/departments", "/availability"]
+      : ["/departments"],
+  };
+
+  const cultosIndex = domains.findIndex((item) => item.domain === "cultos");
+  const primaryDomains = [...domains];
+  primaryDomains.splice(cultosIndex >= 0 ? cultosIndex + 1 : 0, 0, departmentsItem);
+
   const primary: DesktopSidebarItem[] = [
     { href: "/", label: "Início", icon: LayoutDashboardIcon, exact: true },
-    ...domains,
+    ...primaryDomains,
     { href: "/bible", label: "Bíblia", icon: BookOpenIcon, exact: false },
   ];
 
@@ -404,6 +411,40 @@ const mobileExploreQuickLinkHrefs = [
   "/calendar",
   "/songs",
 ];
+
+/**
+ * Escalas saiu das sub-abas de Cultos e Disponibilidade passou para
+ * Departamentos (em Sheet/Drawer), mas ambas as rotas continuam válidas e
+ * pesquisáveis no menu Explorar quando o módulo de escalas está ativo.
+ */
+function withExploreSyntheticRoutes(
+  routes: MobileExploreRoute[],
+  activeModuleKeys: ModuleKey[],
+): MobileExploreRoute[] {
+  if (!activeModuleKeys.includes("schedules")) {
+    return routes;
+  }
+
+  const additions: MobileExploreRoute[] = [];
+  if (!routes.some((route) => route.href === "/schedules")) {
+    additions.push({
+      href: "/schedules",
+      label: "Escalas",
+      domainLabel: "Cultos & Escalas",
+      exact: false,
+    });
+  }
+  if (!routes.some((route) => route.href === "/availability")) {
+    additions.push({
+      href: "/availability",
+      label: "Disponibilidade",
+      domainLabel: "Departamentos",
+      exact: false,
+    });
+  }
+
+  return additions.length > 0 ? [...routes, ...additions] : routes;
+}
 
 function normalizeExploreText(value: string) {
   return value
@@ -458,8 +499,11 @@ export function buildMobileExploreQuickLinks(
   options?: DesktopSidebarOptions,
 ): MobileExploreRoute[] {
   const byHref = new Map(
-    flattenExploreRoutes(
-      buildDesktopSidebarNavigation(activeModuleKeys, options),
+    withExploreSyntheticRoutes(
+      flattenExploreRoutes(
+        buildDesktopSidebarNavigation(activeModuleKeys, options),
+      ),
+      activeModuleKeys,
     ).map((route) => [route.href, route]),
   );
 
@@ -475,8 +519,11 @@ export function filterMobileExploreRoutes(
   activeModuleKeys: ModuleKey[] = [],
   options?: DesktopSidebarOptions,
 ): MobileExploreRoute[] {
-  const routes = flattenExploreRoutes(
-    buildDesktopSidebarNavigation(activeModuleKeys, options),
+  const routes = withExploreSyntheticRoutes(
+    flattenExploreRoutes(
+      buildDesktopSidebarNavigation(activeModuleKeys, options),
+    ),
+    activeModuleKeys,
   );
   const term = normalizeExploreText(query);
 

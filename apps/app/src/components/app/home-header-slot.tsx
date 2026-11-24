@@ -63,7 +63,7 @@ export function HomeAwareHeader({ children }: { children: ReactNode }) {
 
   if (isCalendar) {
     return (
-      <header className="pointer-events-none sticky top-0 z-20 flex h-0 items-start justify-between overflow-visible border-0 bg-transparent px-4 pt-[max(1.125rem,env(safe-area-inset-top))] sm:px-6 md:h-11 md:items-center md:pt-1.5 lg:px-8">
+      <header className="pointer-events-none sticky top-0 z-20 flex h-0 shrink-0 items-start justify-between overflow-visible border-0 bg-transparent px-4 pt-[max(1.125rem,env(safe-area-inset-top))] sm:px-6 md:h-11 md:items-center md:pt-1.5 lg:px-8">
         {children}
       </header>
     );
@@ -110,7 +110,8 @@ export function HomeAwareHeaderFallback() {
 
 /**
  * Oculta elementos extras do header global na rota da agenda para ganhar espaço,
- * preservando apenas o ícone de notificações e o alternador da barra lateral.
+ * preservando apenas o ícone de notificações e o menu do usuário (o alternador da
+ * barra lateral passa a ficar ao lado do título do período).
  */
 export function CalendarHiddenSlot({ children }: { children: ReactNode }) {
   const pathname = usePathname();
