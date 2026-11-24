@@ -814,8 +814,8 @@ export function calculateAllDayEventRows(
 /** Week rows the month view shows at once */
 export const MONTH_VIEW_ROWS = 6;
 
-/** Height of a single event row in the month grid (px): h-5 (20px) + gap-px (1px) */
-export const MONTH_EVENT_ROW_HEIGHT = 21;
+/** Height of a single event row in the month grid (px): h-6 (24px) + gap-px (1px) */
+export const MONTH_EVENT_ROW_HEIGHT = 25;
 
 /** Height consumed by the day number header inside each cell (px) */
 const MONTH_DAY_HEADER_HEIGHT = 28;

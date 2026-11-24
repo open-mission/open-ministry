@@ -17,6 +17,12 @@ import type { AvailabilityPeriod } from "@/db/schema/people";
 
 export type CalendarItemType = "event" | "assignment" | "unavailability" | "birthday";
 
+export type CalendarScheduleSummary = {
+  teamsAssigned: number;
+  teamsTotal: number;
+  status: "empty" | "partial" | "complete";
+};
+
 export type CalendarItem = {
   id: string;
   type: CalendarItemType;
@@ -26,6 +32,7 @@ export type CalendarItem = {
   startsAt: string; // ISO string
   endsAt: string; // ISO string
   allDay: boolean;
+  scheduleSummary?: CalendarScheduleSummary;
   color: "primary" | "emerald" | "amber" | "purple" | "blue" | "rose";
   location?: string | null;
   href?: string | null;

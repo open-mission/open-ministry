@@ -61,7 +61,7 @@ export function CalendarAgendaView({
 
   if (groupList.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed bg-card px-4 py-16 text-center">
+      <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed bg-card px-4 py-16 text-center md:min-h-0 md:flex-1">
         <div className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
           <CalendarDaysIcon className="size-6" />
         </div>
@@ -84,7 +84,11 @@ export function CalendarAgendaView({
   const todayKey = calendarDateKey(new Date(), timeZone);
 
   return (
-    <div className="space-y-6">
+    <div
+      role="region"
+      aria-label="Lista de compromissos"
+      className="space-y-6 md:min-h-0 md:flex-1 md:overflow-y-auto md:overscroll-contain md:pr-1"
+    >
       {groupList.map(([dayKey, dayItems], index) => {
         const date = parseISO(dayKey);
         const monthKey = format(date, "yyyy-MM");

@@ -7,7 +7,7 @@ import {
   eventDateParts,
   formatEventTimeRange,
   relativeDayLabel,
-} from "@/lib/events";
+} from "@/lib/events-pure";
 import { cn } from "@/lib/utils";
 
 export function AssignmentList({

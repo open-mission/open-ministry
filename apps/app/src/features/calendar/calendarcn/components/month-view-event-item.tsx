@@ -148,7 +148,7 @@ export function MonthViewEventItem({
       onPointerDown={handlePointerDown}
       onKeyDown={handleKeyDown}
       className={cn(
-        "h-5 flex items-center overflow-hidden rounded-sm",
+        "h-6 flex items-center overflow-hidden rounded-sm",
         "cursor-default select-none",
         "hover:bg-accent",
         "focus:outline-none",

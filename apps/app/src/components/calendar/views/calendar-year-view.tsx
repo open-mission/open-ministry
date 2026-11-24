@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 
 type CalendarYearViewProps = {
   currentDate: Date;
+  now?: Date | null;
   items: CalendarItem[];
   weekStartsOn: 0 | 1;
   timeZone?: string | null;
@@ -56,6 +57,7 @@ const LEGEND: { type: CalendarItemType; label: string; dot: string }[] = [
 
 export function CalendarYearView({
   currentDate,
+  now,
   items,
   weekStartsOn,
   timeZone,
@@ -86,13 +88,16 @@ export function CalendarYearView({
     return map;
   }, [items, timeZone]);
 
-  const todayKey = calendarDateKey(new Date(), timeZone);
+  const todayKey = calendarDateKey(now ?? new Date(), timeZone);
+  const todayMonthKey = todayKey.slice(0, 7);
+  const selectedKey = calendarDateKey(currentDate, timeZone);
+  const hasDistinctSelection = selectedKey !== todayKey;
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4 md:min-h-0 md:flex-1">
       <ul
         aria-label="Legenda do calendário"
-        className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground"
+        className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground"
       >
         {LEGEND.map((entry) => (
           <li key={entry.type} className="flex items-center gap-1.5">
@@ -105,7 +110,8 @@ export function CalendarYearView({
         ))}
       </ul>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="md:min-h-0 md:flex-1 md:overflow-y-auto md:overscroll-contain md:pr-1">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {months.map((month) => {
           const mStart = startOfMonth(month);
           const mEnd = endOfMonth(month);
@@ -119,19 +125,31 @@ export function CalendarYearView({
             end: endOfWeek(cStart, { weekStartsOn }),
           }).map((d) => format(d, "EEEEE", { locale: ptBR }));
 
+          const isCurrentRealMonth = format(month, "yyyy-MM") === todayMonthKey;
+
           return (
             <div
               key={month.toISOString()}
-              className="flex flex-col rounded-xl border bg-card p-3 shadow-2xs transition-all hover:border-primary/30"
+              className={cn(
+                "flex flex-col rounded-xl border bg-card p-3 shadow-2xs transition-all hover:border-primary/30",
+                isCurrentRealMonth && "border-primary/45 ring-1 ring-primary/15",
+              )}
             >
               {/* Month title */}
-              <button
-                type="button"
-                onClick={() => onSelectMonth(month)}
-                className="cursor-pointer pb-2 text-left font-heading text-sm font-semibold capitalize text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                {format(month, "MMMM", { locale: ptBR })}
-              </button>
+              <div className="flex items-center justify-between gap-2 pb-2">
+                <button
+                  type="button"
+                  onClick={() => onSelectMonth(month)}
+                  className="cursor-pointer text-left font-heading text-sm font-semibold capitalize text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {format(month, "MMMM", { locale: ptBR })}
+                </button>
+                {isCurrentRealMonth ? (
+                  <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-primary">
+                    Hoje
+                  </span>
+                ) : null}
+              </div>
 
               {/* Weekday headers */}
               <div className="grid grid-cols-7 border-b pb-1 text-center text-[11px] font-semibold uppercase text-muted-foreground">
@@ -146,6 +164,7 @@ export function CalendarYearView({
                   const isCurrentMonth = isSameMonth(day, month);
                   const dayKey = format(day, "yyyy-MM-dd");
                   const isDayToday = dayKey === todayKey;
+                  const isDaySelected = hasDistinctSelection && dayKey === selectedKey;
                   const summary = summaryByDay.get(dayKey) ?? EMPTY_SUMMARY;
                   const dateLabel = format(day, "d 'de' MMMM", {
                     locale: ptBR,
@@ -165,6 +184,9 @@ export function CalendarYearView({
                       onClick={() => onSelectDate(day)}
                       aria-label={`${dateLabel}, ${countLabel}`}
                       aria-current={isDayToday ? "date" : undefined}
+                      aria-pressed={isDaySelected || undefined}
+                      data-calendar-today={isDayToday && isCurrentMonth ? "true" : undefined}
+                      data-calendar-selected={isDaySelected && isCurrentMonth ? "true" : undefined}
                       className={cn(
                         "group relative flex flex-col items-center justify-center rounded py-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none",
                         isCurrentMonth &&
@@ -177,7 +199,10 @@ export function CalendarYearView({
                         className={cn(
                           "flex size-5 items-center justify-center rounded-full text-xs",
                           isDayToday &&
-                            "bg-primary font-bold text-primary-foreground",
+                            "bg-primary font-bold text-primary-foreground shadow-xs ring-2 ring-primary/30",
+                          isCurrentMonth &&
+                            isDaySelected &&
+                            "border border-primary/60 bg-secondary font-semibold text-primary",
                         )}
                       >
                         {format(day, "d")}
@@ -212,6 +237,7 @@ export function CalendarYearView({
             </div>
           );
         })}
+        </div>
       </div>
     </div>
   );

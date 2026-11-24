@@ -7,8 +7,8 @@ import {
   CheckIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  FilterIcon,
   Music2Icon,
-  SlidersHorizontalIcon,
   XIcon,
 } from "lucide-react";
 
@@ -32,6 +32,7 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AGENDA_WINDOW_DAYS,
@@ -58,6 +59,8 @@ type CalendarHeaderProps = {
   canViewTeamAvailability?: boolean;
   canCreateEvent?: boolean;
   canCreateRehearsal?: boolean;
+  canViewSchedules?: boolean;
+  showSidebarToggle?: boolean;
   onViewChange: (view: CalendarViewMode) => void;
   onFilterChange: (filter: CalendarFilterType) => void;
   onDepartmentChange: (departmentId: string) => void;
@@ -224,6 +227,8 @@ export function CalendarHeader({
   canViewTeamAvailability = false,
   canCreateEvent = false,
   canCreateRehearsal = false,
+  canViewSchedules = false,
+  showSidebarToggle = false,
   onViewChange,
   onFilterChange,
   onDepartmentChange,
@@ -315,15 +320,6 @@ export function CalendarHeader({
     onDepartmentChange("all");
   }
 
-  const mobileFilterSummary =
-    activeFilterCount === 0
-      ? "Filtrar"
-      : activeFilterOption && filterType !== "all" && !activeDepartment
-        ? activeFilterOption.label
-        : activeDepartment && filterType === "all"
-          ? activeDepartment.name
-          : "Filtros";
-
   const desktopNavGroup = (
     <ButtonGroup aria-label="Navegação do período">
       <Button
@@ -356,10 +352,13 @@ export function CalendarHeader({
   );
 
   return (
-    <header className="flex flex-col gap-3">
+    <header className="flex shrink-0 flex-col gap-3">
       {/* Desktop: barra única unificada (Período + Navegação | Filtrar + 5 Visões + Novo) */}
-      <div className="hidden sm:flex flex-wrap items-center justify-between gap-2.5 lg:flex-nowrap">
+      <div className="hidden sm:flex flex-wrap items-center justify-between gap-2.5 xl:flex-nowrap">
         <div className="flex min-w-0 items-center gap-3">
+          {showSidebarToggle ? (
+            <SidebarTrigger className="hidden shrink-0 md:inline-flex" />
+          ) : null}
           <div className="min-w-0">
             <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground xl:text-3xl">
               {getPeriodLabel()}
@@ -405,7 +404,7 @@ export function CalendarHeader({
                     "border-primary/35 bg-secondary font-semibold text-primary hover:bg-secondary/80",
                 )}
               >
-                <SlidersHorizontalIcon className="size-3.5" aria-hidden="true" />
+                <FilterIcon className="size-3.5" aria-hidden="true" />
                 <span>Filtrar</span>
                 {activeFilterCount > 0 ? (
                   <span className="inline-flex size-5 items-center justify-center rounded-full bg-primary/15 font-mono text-[11px] font-semibold tabular-nums text-primary">
@@ -468,6 +467,7 @@ export function CalendarHeader({
             defaultDate={defaultDateInput}
             canCreateEvent={canCreateEvent}
             canCreateRehearsal={canCreateRehearsal}
+            canViewSchedules={canViewSchedules}
             onExport={onExport}
             variant="desktop"
           />
@@ -503,9 +503,9 @@ export function CalendarHeader({
         </div>
       ) : null}
 
-      {/* Mobile: Título + Hoje + Novo/Exportar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 sm:hidden">
-        <div className="min-w-0">
+      {/* Mobile: Título + Linha 1 (< Hoje > | Escalas + Novo) + Linha 2 (Visões + Filtrar) */}
+      <div className="flex flex-col gap-3 sm:hidden">
+        <div className="min-w-0 pr-24">
           <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
             {getPeriodLabel()}
           </h1>
@@ -516,149 +516,131 @@ export function CalendarHeader({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={onToday}
-            className="h-11 rounded-xl bg-card px-3 text-xs font-semibold"
-          >
-            Hoje
-          </Button>
-          <CalendarActions
-            departments={departments}
-            defaultDate={defaultDateInput}
-            canCreateEvent={canCreateEvent}
-            canCreateRehearsal={canCreateRehearsal}
-            onExport={onExport}
-            variant="mobile"
-          />
-        </div>
-      </div>
-
-      {/* Mobile: 5 visões isoladas + linha limpa com navegação e Drawer de filtros */}
-      <div className="flex flex-col gap-2.5 sm:hidden">
-        <Tabs
-          value={viewMode}
-          onValueChange={(value) => onViewChange(value as CalendarViewMode)}
-          className="w-full"
-        >
-          <TabsList
-            aria-label="Visualizações da agenda"
-            className="grid h-11 w-full grid-cols-5 rounded-xl bg-muted/70 p-1"
-          >
-            {MOBILE_VIEW_OPTIONS.map((option) => (
-              <TabsTrigger
-                key={option.value}
-                value={option.value}
-                className="h-9 rounded-lg px-1 text-[11px] font-medium data-[state=active]:font-semibold"
-              >
-                {option.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-
         <div className="flex items-center justify-between gap-2">
-          <ButtonGroup aria-label="Navegar período">
+          <ButtonGroup aria-label="Navegação do período">
             <Button
               variant="outline"
               size="icon"
               onClick={onPrev}
               aria-label="Período anterior"
-              className="size-11 rounded-xl bg-card"
+              className="h-11 w-9 rounded-xl bg-card"
             >
               <ChevronLeftIcon className="size-4" aria-hidden="true" />
+            </Button>
+            <Button
+              variant="outline"
+              onClick={onToday}
+              className="h-11 rounded-xl bg-card px-2.5 text-xs font-semibold"
+            >
+              Hoje
             </Button>
             <Button
               variant="outline"
               size="icon"
               onClick={onNext}
               aria-label="Próximo período"
-              className="size-11 rounded-xl bg-card"
+              className="h-11 w-9 rounded-xl bg-card"
             >
               <ChevronRightIcon className="size-4" aria-hidden="true" />
             </Button>
           </ButtonGroup>
 
-          <div className="flex min-w-0 items-center justify-end gap-2">
-            {activeFilterCount > 0 ? (
+          <CalendarActions
+            departments={departments}
+            defaultDate={defaultDateInput}
+            canCreateEvent={canCreateEvent}
+            canCreateRehearsal={canCreateRehearsal}
+            canViewSchedules={canViewSchedules}
+            onExport={onExport}
+            variant="mobile"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Tabs
+            value={viewMode}
+            onValueChange={(value) => onViewChange(value as CalendarViewMode)}
+            className="min-w-0 flex-1"
+          >
+            <TabsList
+              aria-label="Visualizações da agenda"
+              className="grid h-11 w-full grid-cols-5 rounded-xl bg-muted/70 p-1"
+            >
+              {MOBILE_VIEW_OPTIONS.map((option) => (
+                <TabsTrigger
+                  key={option.value}
+                  value={option.value}
+                  className="h-9 rounded-lg px-1 text-[11px] font-medium data-[state=active]:font-semibold"
+                >
+                  {option.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
+          <Drawer open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
+            <DrawerTrigger asChild>
               <Button
                 type="button"
-                variant="ghost"
-                onClick={handleResetFilters}
-                aria-label="Limpar filtros"
-                className="h-11 shrink-0 rounded-xl px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                variant="outline"
+                size="icon"
+                aria-label="Filtrar agenda"
+                className={cn(
+                  "relative size-11 shrink-0 rounded-xl bg-card",
+                  activeFilterCount > 0 &&
+                    "border-primary/35 bg-secondary text-primary hover:bg-secondary/80",
+                )}
               >
-                Limpar
-              </Button>
-            ) : null}
-
-            <Drawer open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
-              <DrawerTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  aria-label="Filtrar agenda"
-                  className={cn(
-                    "h-11 min-w-0 gap-2 rounded-xl bg-card px-3.5 text-xs font-semibold",
-                    activeFilterCount > 0 &&
-                      "border-primary/35 bg-secondary text-primary hover:bg-secondary/80",
-                  )}
-                >
-                  <SlidersHorizontalIcon className="size-4 shrink-0" aria-hidden="true" />
-                  <span className="max-w-[140px] truncate">
-                    {mobileFilterSummary}
+                <FilterIcon className="size-4 shrink-0" aria-hidden="true" />
+                {activeFilterCount > 0 ? (
+                  <span className="absolute -top-1 -right-1 inline-flex size-4 items-center justify-center rounded-full bg-primary font-mono text-[11px] font-semibold leading-none tabular-nums text-primary-foreground">
+                    {activeFilterCount}
                   </span>
-                  {activeFilterCount > 0 ? (
-                    <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 font-mono text-[11px] font-semibold tabular-nums text-primary">
-                      {activeFilterCount}
-                    </span>
-                  ) : null}
-                </Button>
-              </DrawerTrigger>
+                ) : null}
+              </Button>
+            </DrawerTrigger>
 
-              <DrawerContent className="gap-0 rounded-t-xl border-x-0 border-b-0 bg-popover p-0">
-                <DrawerHeader className="space-y-1 px-5 pt-3 pb-3 !text-left">
-                  <DrawerTitle className="font-heading text-xl tracking-tight text-foreground">
-                    Filtrar agenda
-                  </DrawerTitle>
-                  <DrawerDescription className="text-xs text-muted-foreground">
-                    Escolha o tipo de compromisso ou departamento.
-                  </DrawerDescription>
-                </DrawerHeader>
+            <DrawerContent className="gap-0 rounded-t-xl border-x-0 border-b-0 bg-popover p-0">
+              <DrawerHeader className="space-y-1 px-5 pt-3 pb-3 !text-left">
+                <DrawerTitle className="font-heading text-xl tracking-tight text-foreground">
+                  Filtrar agenda
+                </DrawerTitle>
+                <DrawerDescription className="text-xs text-muted-foreground">
+                  Escolha o tipo de compromisso ou departamento.
+                </DrawerDescription>
+              </DrawerHeader>
 
-                <div className="max-h-[62dvh] overflow-y-auto px-5 pb-4">
-                  <FilterPanelBody
-                    filterOptions={filterOptions}
-                    filterType={filterType}
-                    departments={departments}
-                    selectedDepartmentId={selectedDepartmentId}
-                    compact={false}
-                    onFilterChange={onFilterChange}
-                    onDepartmentChange={onDepartmentChange}
-                  />
-                </div>
+              <div className="max-h-[62dvh] overflow-y-auto px-5 pb-4">
+                <FilterPanelBody
+                  filterOptions={filterOptions}
+                  filterType={filterType}
+                  departments={departments}
+                  selectedDepartmentId={selectedDepartmentId}
+                  compact={false}
+                  onFilterChange={onFilterChange}
+                  onDepartmentChange={onDepartmentChange}
+                />
+              </div>
 
-                <DrawerFooter className="border-t bg-card px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-                  {activeFilterCount > 0 ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleResetFilters}
-                      className="h-11 w-full rounded-xl"
-                    >
-                      Limpar filtros
-                    </Button>
-                  ) : null}
-                  <DrawerClose asChild>
-                    <Button className="h-11 w-full rounded-xl font-semibold">
-                      Aplicar
-                    </Button>
-                  </DrawerClose>
-                </DrawerFooter>
-              </DrawerContent>
-            </Drawer>
-          </div>
+              <DrawerFooter className="border-t bg-card px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+                {activeFilterCount > 0 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleResetFilters}
+                    className="h-11 w-full rounded-xl"
+                  >
+                    Limpar filtros
+                  </Button>
+                ) : null}
+                <DrawerClose asChild>
+                  <Button className="h-11 w-full rounded-xl font-semibold">
+                    Aplicar
+                  </Button>
+                </DrawerClose>
+              </DrawerFooter>
+            </DrawerContent>
+          </Drawer>
         </div>
       </div>
     </header>

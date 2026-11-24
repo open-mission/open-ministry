@@ -242,7 +242,7 @@ async function revalidateEvents(eventId?: string, organizationId?: string) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/events");
   revalidatePath("/dashboard/schedules");
-  revalidatePath("/dashboard/calendar");
+  revalidatePath("/calendar");
 
   if (eventId) {
     revalidatePath(`/dashboard/events/${eventId}`);

@@ -105,10 +105,10 @@ export function CalendarDayView({
       : `${dayItems.length} compromissos registrados.`;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 md:min-h-0 md:flex-1">
       {/* Birthday banner if birthdays on this day */}
       {birthdays.length > 0 && (
-        <div className="flex items-start gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-rose-900 shadow-xs dark:text-rose-200">
+        <div className="flex shrink-0 items-start gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-rose-900 shadow-xs dark:text-rose-200">
           <CakeIcon className="mt-0.5 size-5 shrink-0 text-rose-600 dark:text-rose-400" />
           <div className="min-w-0 space-y-1">
             <h4 className="font-heading text-sm font-semibold">
@@ -133,7 +133,7 @@ export function CalendarDayView({
 
       {/* Unavailability banner if blocked on this day */}
       {unavailabilities.length > 0 && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-900 shadow-xs dark:text-amber-200">
+        <div className="flex shrink-0 items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-900 shadow-xs dark:text-amber-200">
           <AlertTriangleIcon className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400" />
           <div className="min-w-0 space-y-1">
             <h4 className="font-heading text-sm font-semibold">
@@ -167,9 +167,9 @@ export function CalendarDayView({
       )}
 
       {/* Main Day Timeline */}
-      <div className="flex flex-col overflow-hidden rounded-xl border bg-card shadow-xs">
+      <div className="flex flex-col overflow-hidden rounded-xl border bg-card shadow-xs md:min-h-0 md:flex-1">
         {/* Day Header */}
-        <div className="flex flex-col gap-3 border-b bg-muted/40 p-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+        <div className="flex shrink-0 flex-col gap-3 border-b bg-muted/40 p-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-heading text-base font-semibold capitalize text-foreground">
@@ -205,7 +205,7 @@ export function CalendarDayView({
 
         {/* Timeline */}
         {dayItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 px-4 py-16 text-center">
+          <div className="flex flex-col items-center justify-center gap-3 px-4 py-16 text-center md:flex-1">
             <div className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
               <CalendarDaysIcon className="size-6" />
             </div>
@@ -224,7 +224,7 @@ export function CalendarDayView({
             role="region"
             aria-label={`Agenda de ${dayLabel}`}
             tabIndex={0}
-            className="max-h-[650px] overflow-y-auto overscroll-contain focus-visible:outline-none"
+            className="max-h-[650px] overflow-y-auto overscroll-contain focus-visible:outline-none md:min-h-0 md:max-h-none md:flex-1"
           >
             <div
               className="relative flex"

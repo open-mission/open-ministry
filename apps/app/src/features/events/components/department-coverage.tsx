@@ -1,11 +1,8 @@
 import Link from "next/link";
 import { CheckIcon, ClipboardListIcon } from "lucide-react";
 
-import {
-  formatEventFullDate,
-  relativeDayLabel,
-  type DepartmentCoverage,
-} from "@/lib/events";
+import type { DepartmentCoverage } from "@/lib/events";
+import { formatEventFullDate, relativeDayLabel } from "@/lib/events-pure";
 import { cn } from "@/lib/utils";
 
 export function DepartmentCoverageBoard({

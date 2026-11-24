@@ -109,6 +109,29 @@ export async function getCalendarDataAction(): Promise<{
       : [];
 
     const eventDeptIds = event.departments.map((d) => d.departmentId);
+    const scheduledDepartmentIds = new Set(
+      event.functions.length > 0
+        ? event.functions.map((item) => item.departmentId)
+        : event.departments
+            .filter((item) => item.department.functions.length > 0)
+            .map((item) => item.departmentId),
+    );
+    const scheduleCoverage = scheduleProgress(event);
+    const assignedDepartmentIds = new Set(
+      assignments
+        .filter((assignment) =>
+          scheduledDepartmentIds.has(assignment.departmentId),
+        )
+        .map((assignment) => assignment.departmentId),
+    );
+    const scheduleSummary =
+      scheduledDepartmentIds.size > 0
+        ? {
+            teamsAssigned: assignedDepartmentIds.size,
+            teamsTotal: scheduledDepartmentIds.size,
+            status: scheduleCoverage.status,
+          }
+        : undefined;
 
     // Push church event
     items.push({
@@ -122,6 +145,7 @@ export async function getCalendarDataAction(): Promise<{
       color: event.kind === "service" ? "primary" : "purple",
       location: event.location,
       href: `/dashboard/events/${event.id}`,
+      ...(scheduleSummary ? { scheduleSummary } : {}),
       metadata: {
         eventId: event.id,
         eventKind: event.kind,
@@ -318,7 +342,7 @@ export async function saveCalendarPreferencesAction(payload: {
       })
       .where(eq(schema.user.id, context.session.user.id));
 
-    revalidatePath("/dashboard/calendar");
+    revalidatePath("/calendar");
     revalidatePath("/dashboard/settings");
     revalidatePath("/dashboard");
 

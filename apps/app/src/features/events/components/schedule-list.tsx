@@ -3,6 +3,7 @@ import { ArrowRightIcon, CheckIcon, ClipboardListIcon } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import type { EventListItem } from "@/lib/events";
 import {
   coverageStatus,
   eventDateParts,
@@ -10,8 +11,7 @@ import {
   formatEventTimeRange,
   relativeDayLabel,
   scheduleProgress,
-  type EventListItem,
-} from "@/lib/events";
+} from "@/lib/events-pure";
 import { getInitials } from "@/lib/format";
 import {
   personDisplayImage,

@@ -9,7 +9,7 @@ import {
   NativeSelect,
   NativeSelectOption,
 } from "@/components/ui/native-select";
-import type { CoverageFilter } from "@/lib/events";
+import type { CoverageFilter } from "@/lib/events-pure";
 import { cn } from "@/lib/utils";
 
 type DepartmentOption = {
