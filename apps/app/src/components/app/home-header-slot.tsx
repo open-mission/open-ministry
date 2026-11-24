@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
-import { HomeHeaderTabs } from "@/components/home/home-header-tabs";
 import { cn } from "@/lib/utils";
 
 const HEADER_BASE_CLASS =
@@ -120,19 +119,17 @@ export function CalendarHiddenSlot({ children }: { children: ReactNode }) {
 }
 
 /**
- * Na home, o centro do header abriga as abas Hoje / Minha Igreja. Nas demais
- * rotas, o desktop mantém o header minimalista (sem breadcrumb), preservando
- * o breadcrumb apenas em subpáginas mobile.
+ * Na home o centro do header fica vazio: as abas "Hoje | Minha Igreja" foram
+ * substituídas pelas visões dedicadas (mobile/tablet e desktop), e o sino e o
+ * avatar seguem nos slots da direita. Nas demais rotas o desktop mantém o
+ * header minimalista (sem breadcrumb), preservando o breadcrumb apenas em
+ * subpáginas mobile.
  */
 export function HeaderCenterSlot({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
-  if (isCalendarRoute(pathname)) {
+  if (isCalendarRoute(pathname) || pathname === "/") {
     return null;
-  }
-
-  if (pathname === "/") {
-    return <HomeHeaderTabs />;
   }
 
   return <div className="md:hidden">{children}</div>;

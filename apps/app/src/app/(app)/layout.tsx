@@ -9,7 +9,6 @@ import {
   HomeAwareHeader,
   HomeAwareHeaderFallback,
 } from "@/components/app/home-header-slot";
-import { HomeTabProvider } from "@/components/home/home-tab-context";
 import { DashboardOnboardingLoader } from "@/components/onboarding/dashboard-onboarding-loader";
 import { SentryUserLoader } from "@/components/app/sentry-user-loader";
 import { ImpersonationBannerLoader } from "@/components/app/impersonation-banner-loader";
@@ -82,48 +81,46 @@ export default function DashboardLayout({
       >
         <MobileMenuProvider>
           <SettingsModalProvider>
-            <HomeTabProvider>
-              <Suspense fallback={<SidebarSkeleton />}>
-                <AppSidebarLoader />
+            <Suspense fallback={<SidebarSkeleton />}>
+              <AppSidebarLoader />
+            </Suspense>
+            <SidebarInset className="min-w-0 has-[[data-calendar-container]]:md:h-dvh has-[[data-calendar-container]]:md:overflow-hidden">
+              <Suspense fallback={<HomeAwareHeaderFallback />}>
+                <HomeAwareHeader>{headerContent}</HomeAwareHeader>
               </Suspense>
-              <SidebarInset className="min-w-0 has-[[data-calendar-container]]:md:h-dvh has-[[data-calendar-container]]:md:overflow-hidden">
-                <Suspense fallback={<HomeAwareHeaderFallback />}>
-                  <HomeAwareHeader>{headerContent}</HomeAwareHeader>
-                </Suspense>
-                <OfflineBanner />
-                <Suspense fallback={null}>
-                  <SentryUserLoader />
-                </Suspense>
-                <Suspense fallback={null}>
-                  <ImpersonationBannerLoader />
-                </Suspense>
-                <Suspense fallback={null}>
-                  <NotificationBarLoader />
-                </Suspense>
-                <div className="flex flex-1 flex-col px-4 pt-5 pb-28 sm:px-6 sm:pt-6 sm:pb-28 md:pt-3 md:pb-8 lg:px-8 lg:pt-4 has-[[data-calendar-container]]:md:min-h-0 has-[[data-calendar-container]]:md:overflow-hidden has-[[data-calendar-container]]:md:pt-2 has-[[data-calendar-container]]:md:pb-4">
-                  {children}
-                </div>
-                <Suspense fallback={<MobileNavShell />}>
-                  <MobileNavLoader />
-                </Suspense>
-                <Suspense fallback={null}>
-                  <MobileMenuLoader />
-                </Suspense>
-                <PwaInstallBanner />
-                <PwaNotificationPrompt />
-                <PwaInstallTracker />
-                <Suspense fallback={null}>
-                  <WhatsAppPromptLoader />
-                </Suspense>
-                <Suspense fallback={null}>
-                  <DashboardOnboardingLoader />
-                </Suspense>
-                <Suspense fallback={null}>
-                  <ModalInteractivityGuard />
-                </Suspense>
-                <ReleaseNotesModal />
-              </SidebarInset>
-            </HomeTabProvider>
+              <OfflineBanner />
+              <Suspense fallback={null}>
+                <SentryUserLoader />
+              </Suspense>
+              <Suspense fallback={null}>
+                <ImpersonationBannerLoader />
+              </Suspense>
+              <Suspense fallback={null}>
+                <NotificationBarLoader />
+              </Suspense>
+              <div className="flex flex-1 flex-col px-4 pt-5 pb-28 sm:px-6 sm:pt-6 sm:pb-28 md:pt-3 md:pb-8 lg:px-8 lg:pt-4 has-[[data-calendar-container]]:md:min-h-0 has-[[data-calendar-container]]:md:overflow-hidden has-[[data-calendar-container]]:md:pt-2 has-[[data-calendar-container]]:md:pb-4">
+                {children}
+              </div>
+              <Suspense fallback={<MobileNavShell />}>
+                <MobileNavLoader />
+              </Suspense>
+              <Suspense fallback={null}>
+                <MobileMenuLoader />
+              </Suspense>
+              <PwaInstallBanner />
+              <PwaNotificationPrompt />
+              <PwaInstallTracker />
+              <Suspense fallback={null}>
+                <WhatsAppPromptLoader />
+              </Suspense>
+              <Suspense fallback={null}>
+                <DashboardOnboardingLoader />
+              </Suspense>
+              <Suspense fallback={null}>
+                <ModalInteractivityGuard />
+              </Suspense>
+              <ReleaseNotesModal />
+            </SidebarInset>
           </SettingsModalProvider>
         </MobileMenuProvider>
       </SidebarProvider>

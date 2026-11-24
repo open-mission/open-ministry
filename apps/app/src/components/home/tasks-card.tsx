@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { isToday, isTomorrow } from "date-fns";
-import { ArrowRightIcon } from "lucide-react";
+import { ArrowRightIcon, PlusIcon } from "lucide-react";
 
 import { HomeCard, HomeCardContent } from "@/components/home/home-card";
 import { TaskCheckbox } from "@/components/home/task-checkbox";
@@ -16,12 +16,12 @@ import {
 } from "@/components/home/home-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { TaskDetailDialog } from "@/features/tasks/components/task-detail-dialog";
 import { TaskFormDialog } from "@/features/tasks/components/task-form-dialog";
 import { resolveTaskCapabilities } from "@/features/tasks/lib/task-permissions";
 import { formatTaskDeadline } from "@/features/tasks/lib/task-utils";
 import type { TaskItem, TaskStatus } from "@/features/tasks/services/tasks-service";
+import { cn } from "@/lib/utils";
 
 type DepartmentOption = {
   id: string;
@@ -44,6 +44,10 @@ export type TasksCardProps = {
   memberDepartmentIds?: string[];
   departments?: DepartmentOption[];
   members?: MemberOption[];
+  /** `folio` integra a lista ao caderno pastoral do desktop, sem card externo. */
+  variant?: "card" | "folio";
+  /** Quando true, mostra um estado vazio acolhedor em vez de sumir. */
+  showEmptyState?: boolean;
 };
 
 /** Cores semânticas para o prazo, aplicadas ao checkbox e ao badge. */
@@ -88,6 +92,8 @@ export function TasksCard({
   memberDepartmentIds = [],
   departments = [],
   members = [],
+  variant = "card",
+  showEmptyState = false,
 }: TasksCardProps) {
   const [taskList, setTaskList] = useState<TaskItem[]>(tasks);
   const [previousTasks, setPreviousTasks] = useState(tasks);
@@ -102,6 +108,9 @@ export function TasksCard({
   const [editingTask, setEditingTask] = useState<TaskItem | null>(null);
   const [formOpen, setFormOpen] = useState(false);
 
+  const activeCount = taskList.filter(
+    (task) => task.status === "todo" || task.status === "in_progress",
+  ).length;
   const activeTasks = taskList
     .filter((task) => task.status === "todo" || task.status === "in_progress")
     .slice(0, 3);
@@ -142,6 +151,11 @@ export function TasksCard({
     setFormOpen(true);
   };
 
+  const openCreateForm = () => {
+    setEditingTask(null);
+    setFormOpen(true);
+  };
+
   const capabilities = selectedTask
     ? resolveTaskCapabilities(selectedTask, {
         userId: currentUserId ?? "",
@@ -151,86 +165,149 @@ export function TasksCard({
       })
     : undefined;
 
-  if (activeTasks.length === 0) {
+  if (activeCount === 0 && !showEmptyState) {
     return null;
   }
 
+  const isFolio = variant === "folio";
+
+  const rows =
+    activeTasks.length > 0 ? (
+      <div className="flex flex-col divide-y divide-border/70">
+        {activeTasks.map((task) => {
+          const deadline = formatTaskDeadline(
+            task.deadline,
+            task.status === "completed",
+          );
+          const tone = deadlineTone(
+            task.deadline,
+            Boolean(deadline?.isOverdue),
+          );
+
+          return (
+            <div
+              key={task.id}
+              className={cn(
+                "flex items-center gap-3",
+                isFolio ? "min-h-11 py-1.5" : "min-h-[44px] py-1.5",
+              )}
+            >
+              <TaskCheckbox
+                taskId={task.id}
+                initialStatus={task.status}
+                label={task.title}
+                className={tone.checkbox}
+                onStatusChange={(nextStatus) =>
+                  handleStatusChange(task.id, nextStatus)
+                }
+              />
+              <button
+                type="button"
+                onClick={() => handleOpenDetail(task)}
+                aria-label={`Abrir detalhes da tarefa: ${task.title}`}
+                className="min-h-11 min-w-0 flex-1 cursor-pointer truncate rounded-sm text-left text-sm font-medium text-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+              >
+                {task.title}
+              </button>
+              {deadline ? (
+                <Badge
+                  className={cn(
+                    "shrink-0 px-2 py-0.5 text-[11px] font-medium tabular-nums",
+                    tone.badge,
+                  )}
+                >
+                  {deadline.isOverdue ? "Atrasada" : deadline.label}
+                </Badge>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    ) : null;
+
+  const emptyState = (
+    <div className="flex flex-col items-start gap-2">
+      <p className="font-heading text-base leading-snug text-foreground">
+        Tudo em dia nas tarefas
+      </p>
+      <p className="text-xs leading-relaxed text-muted-foreground">
+        Crie um lembrete pessoal quando precisar.
+      </p>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={openCreateForm}
+        className="mt-1 min-h-11 gap-1.5 lg:min-h-9"
+      >
+        <PlusIcon className="size-3.5" aria-hidden="true" />
+        Nova
+      </Button>
+    </div>
+  );
+
   return (
     <>
-      <HomeSection aria-labelledby="home-tasks-title">
-        <HomeSectionHeader>
-          <div className="space-y-0.5">
-            <HomeSectionTitle id="home-tasks-title">
-              Minhas Tarefas
-            </HomeSectionTitle>
-            <HomeSectionDescription className="text-xs">
-              Afazeres pessoais e demandas atribuídas a você.
-            </HomeSectionDescription>
-          </div>
-          <HomeSectionAction>
+      {isFolio ? (
+        <section
+          aria-labelledby="home-tasks-title"
+          className="flex flex-col gap-2.5"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <h2
+              id="home-tasks-title"
+              className="font-heading text-lg leading-tight font-medium tracking-tight whitespace-nowrap text-foreground"
+            >
+              Minhas tarefas ({activeCount})
+            </h2>
             <Button
               asChild
               variant="ghost"
               size="sm"
-              className="h-9 min-h-[44px] px-2 text-xs text-primary hover:text-primary"
+              className="h-6 min-h-6 shrink-0 px-1 text-[11px] font-medium text-primary hover:text-primary"
             >
-              <Link href="/dashboard/tasks">
+              <Link href="/tasks">
                 Ver todas
                 <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
               </Link>
             </Button>
-          </HomeSectionAction>
-        </HomeSectionHeader>
+          </div>
 
-        <HomeCard>
-          <HomeCardContent className="space-y-0">
-            {activeTasks.map((task, index) => {
-              const deadline = formatTaskDeadline(
-                task.deadline,
-                task.status === "completed",
-              );
-              const tone = deadlineTone(
-                task.deadline,
-                Boolean(deadline?.isOverdue),
-              );
+          {activeTasks.length > 0 ? rows : emptyState}
+        </section>
+      ) : (
+        <HomeSection aria-labelledby="home-tasks-title">
+          <HomeSectionHeader>
+            <div className="space-y-0.5">
+              <HomeSectionTitle id="home-tasks-title">
+                Minhas Tarefas
+              </HomeSectionTitle>
+              <HomeSectionDescription className="text-xs">
+                Afazeres pessoais e demandas atribuídas a você.
+              </HomeSectionDescription>
+            </div>
+            <HomeSectionAction>
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="h-9 min-h-[44px] px-2 text-xs text-primary hover:text-primary"
+              >
+                <Link href="/tasks">
+                  Ver todas
+                  <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
+                </Link>
+              </Button>
+            </HomeSectionAction>
+          </HomeSectionHeader>
 
-              return (
-                <div key={task.id}>
-                  {index > 0 ? <Separator className="my-1" /> : null}
-                  <div className="flex min-h-[44px] items-center gap-3 py-1.5 hover:bg-muted/50">
-                    <TaskCheckbox
-                      taskId={task.id}
-                      initialStatus={task.status}
-                      label={task.title}
-                      className={tone.checkbox}
-                      onStatusChange={(nextStatus) =>
-                        handleStatusChange(task.id, nextStatus)
-                      }
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleOpenDetail(task)}
-                      aria-label={`Abrir detalhes da tarefa: ${task.title}`}
-                      className="min-h-[44px] min-w-0 flex-1 cursor-pointer truncate rounded-sm text-left text-sm font-medium text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    >
-                      {task.title}
-                    </button>
-                    {deadline ? (
-                      <Badge
-                        className={`shrink-0 px-2 py-0.5 text-[11px] font-medium tabular-nums ${tone.badge}`}
-                      >
-                        {deadline.isOverdue
-                          ? `Atrasada · ${deadline.label}`
-                          : deadline.label}
-                      </Badge>
-                    ) : null}
-                  </div>
-                </div>
-              );
-            })}
-          </HomeCardContent>
-        </HomeCard>
-      </HomeSection>
+          <HomeCard>
+            <HomeCardContent className="space-y-0">
+              {activeTasks.length > 0 ? rows : emptyState}
+            </HomeCardContent>
+          </HomeCard>
+        </HomeSection>
+      )}
 
       <TaskDetailDialog
         task={selectedTask}
@@ -255,7 +332,9 @@ export function TasksCard({
           setTaskList((previous) => {
             const exists = previous.some((task) => task.id === savedTask.id);
             return exists
-              ? previous.map((task) => (task.id === savedTask.id ? savedTask : task))
+              ? previous.map((task) =>
+                  task.id === savedTask.id ? savedTask : task,
+                )
               : [savedTask, ...previous];
           });
           if (selectedTask?.id === savedTask.id) {
