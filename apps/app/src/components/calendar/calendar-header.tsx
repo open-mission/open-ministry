@@ -16,16 +16,6 @@ import { CalendarActions } from "@/components/calendar/calendar-actions";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
-import {
   Popover,
   PopoverContent,
   PopoverHeader,
@@ -70,7 +60,7 @@ type CalendarHeaderProps = {
   onExport: () => void;
 };
 
-type FilterOption = {
+export type FilterOption = {
   id: CalendarFilterType;
   label: string;
   count: number;
@@ -84,16 +74,30 @@ const DESKTOP_VIEW_OPTIONS: { value: CalendarViewMode; label: string }[] = [
   { value: "year", label: "Ano" },
 ];
 
-// Mobile prioritizes chronological Agenda first, followed by Week, Month, Day, Year.
-const MOBILE_VIEW_OPTIONS: { value: CalendarViewMode; label: string }[] = [
-  { value: "agenda", label: "Agenda" },
-  { value: "week", label: "Semana" },
-  { value: "month", label: "Mês" },
-  { value: "day", label: "Dia" },
-  { value: "year", label: "Ano" },
-];
+export function buildFilterOptions(
+  counts: {
+    total: number;
+    assignments: number;
+    events: number;
+    unavailabilities: number;
+    birthdays: number;
+  },
+  canViewTeamAvailability: boolean,
+): FilterOption[] {
+  return [
+    { id: "all", label: "Todos", count: counts.total },
+    { id: "assignments", label: "Minhas escalas", count: counts.assignments },
+    { id: "events", label: "Cultos e eventos", count: counts.events },
+    {
+      id: "unavailabilities",
+      label: canViewTeamAvailability ? "Indisponibilidades" : "Indisp.",
+      count: counts.unavailabilities,
+    },
+    { id: "birthdays", label: "Aniversários", count: counts.birthdays },
+  ];
+}
 
-function FilterPanelBody({
+export function FilterPanelBody({
   filterOptions,
   filterType,
   departments,
@@ -238,7 +242,6 @@ export function CalendarHeader({
   onExport,
 }: CalendarHeaderProps) {
   const [desktopFilterOpen, setDesktopFilterOpen] = useState(false);
-  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   function getPeriodLabel() {
     if (viewMode === "year") {
@@ -295,17 +298,16 @@ export function CalendarHeader({
 
   const defaultDateInput = format(currentDate, "yyyy-MM-dd");
 
-  const filterOptions: FilterOption[] = [
-    { id: "all", label: "Todos", count: totalCount },
-    { id: "assignments", label: "Minhas escalas", count: assignmentsCount },
-    { id: "events", label: "Cultos e eventos", count: eventsCount },
+  const filterOptions = buildFilterOptions(
     {
-      id: "unavailabilities",
-      label: canViewTeamAvailability ? "Indisponibilidades" : "Indisp.",
-      count: unavailabilitiesCount,
+      total: totalCount,
+      assignments: assignmentsCount,
+      events: eventsCount,
+      unavailabilities: unavailabilitiesCount,
+      birthdays: birthdaysCount,
     },
-    { id: "birthdays", label: "Aniversários", count: birthdaysCount },
-  ];
+    canViewTeamAvailability,
+  );
 
   const activeFilterOption = filterOptions.find((option) => option.id === filterType);
   const activeDepartment = departments.find(
@@ -354,7 +356,7 @@ export function CalendarHeader({
   return (
     <header className="flex shrink-0 flex-col gap-3">
       {/* Desktop: barra única unificada (Período + Navegação | Filtrar + 5 Visões + Novo) */}
-      <div className="hidden sm:flex flex-wrap items-center justify-between gap-2.5 xl:flex-nowrap">
+      <div className="hidden md:flex flex-wrap items-center justify-between gap-2.5 xl:flex-nowrap">
         <div className="flex min-w-0 items-center gap-3">
           {showSidebarToggle ? (
             <SidebarTrigger className="hidden shrink-0 lg:inline-flex" />
@@ -476,7 +478,7 @@ export function CalendarHeader({
 
       {/* Desktop: chips removíveis apenas quando houver filtro ativo */}
       {activeFilterCount > 0 ? (
-        <div className="hidden items-center gap-2 sm:flex">
+        <div className="hidden items-center gap-2 md:flex">
           {filterType !== "all" && activeFilterOption ? (
             <button
               type="button"
@@ -502,147 +504,6 @@ export function CalendarHeader({
           ) : null}
         </div>
       ) : null}
-
-      {/* Mobile: Título + Linha 1 (< Hoje > | Escalas + Novo) + Linha 2 (Visões + Filtrar) */}
-      <div className="flex flex-col gap-3 sm:hidden">
-        <div className="min-w-0 pr-24">
-          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
-            {getPeriodLabel()}
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            {totalCount === 0
-              ? "Sem compromissos neste período"
-              : `${totalCount} ${totalCount === 1 ? "compromisso" : "compromissos"}`}
-          </p>
-        </div>
-
-        <div className="flex items-center justify-between gap-2">
-          <ButtonGroup aria-label="Navegação do período">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={onPrev}
-              aria-label="Período anterior"
-              className="h-11 w-9 rounded-xl bg-card"
-            >
-              <ChevronLeftIcon className="size-4" aria-hidden="true" />
-            </Button>
-            <Button
-              variant="outline"
-              onClick={onToday}
-              className="h-11 rounded-xl bg-card px-2.5 text-xs font-semibold"
-            >
-              Hoje
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={onNext}
-              aria-label="Próximo período"
-              className="h-11 w-9 rounded-xl bg-card"
-            >
-              <ChevronRightIcon className="size-4" aria-hidden="true" />
-            </Button>
-          </ButtonGroup>
-
-          <CalendarActions
-            departments={departments}
-            defaultDate={defaultDateInput}
-            canCreateEvent={canCreateEvent}
-            canCreateRehearsal={canCreateRehearsal}
-            canViewSchedules={canViewSchedules}
-            onExport={onExport}
-            variant="mobile"
-          />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Tabs
-            value={viewMode}
-            onValueChange={(value) => onViewChange(value as CalendarViewMode)}
-            className="min-w-0 flex-1"
-          >
-            <TabsList
-              aria-label="Visualizações da agenda"
-              className="grid h-11 w-full grid-cols-5 rounded-xl bg-muted/70 p-1"
-            >
-              {MOBILE_VIEW_OPTIONS.map((option) => (
-                <TabsTrigger
-                  key={option.value}
-                  value={option.value}
-                  className="h-9 rounded-lg px-1 text-[11px] font-medium data-[state=active]:font-semibold"
-                >
-                  {option.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-
-          <Drawer open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
-            <DrawerTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                aria-label="Filtrar agenda"
-                className={cn(
-                  "relative size-11 shrink-0 rounded-xl bg-card",
-                  activeFilterCount > 0 &&
-                    "border-primary/35 bg-secondary text-primary hover:bg-secondary/80",
-                )}
-              >
-                <FilterIcon className="size-4 shrink-0" aria-hidden="true" />
-                {activeFilterCount > 0 ? (
-                  <span className="absolute -top-1 -right-1 inline-flex size-4 items-center justify-center rounded-full bg-primary font-mono text-[11px] font-semibold leading-none tabular-nums text-primary-foreground">
-                    {activeFilterCount}
-                  </span>
-                ) : null}
-              </Button>
-            </DrawerTrigger>
-
-            <DrawerContent className="gap-0 rounded-t-xl border-x-0 border-b-0 bg-popover p-0">
-              <DrawerHeader className="space-y-1 px-5 pt-3 pb-3 !text-left">
-                <DrawerTitle className="font-heading text-xl tracking-tight text-foreground">
-                  Filtrar agenda
-                </DrawerTitle>
-                <DrawerDescription className="text-xs text-muted-foreground">
-                  Escolha o tipo de compromisso ou departamento.
-                </DrawerDescription>
-              </DrawerHeader>
-
-              <div className="max-h-[62dvh] overflow-y-auto px-5 pb-4">
-                <FilterPanelBody
-                  filterOptions={filterOptions}
-                  filterType={filterType}
-                  departments={departments}
-                  selectedDepartmentId={selectedDepartmentId}
-                  compact={false}
-                  onFilterChange={onFilterChange}
-                  onDepartmentChange={onDepartmentChange}
-                />
-              </div>
-
-              <DrawerFooter className="border-t bg-card px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-                {activeFilterCount > 0 ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleResetFilters}
-                    className="h-11 w-full rounded-xl"
-                  >
-                    Limpar filtros
-                  </Button>
-                ) : null}
-                <DrawerClose asChild>
-                  <Button className="h-11 w-full rounded-xl font-semibold">
-                    Aplicar
-                  </Button>
-                </DrawerClose>
-              </DrawerFooter>
-            </DrawerContent>
-          </Drawer>
-        </div>
-      </div>
     </header>
   );
 }

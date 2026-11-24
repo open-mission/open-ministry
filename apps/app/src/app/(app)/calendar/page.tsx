@@ -69,15 +69,16 @@ async function CalendarContent() {
   return (
     <div
       data-calendar-container=""
-      className="mx-auto flex w-full max-w-none flex-col gap-4 sm:gap-5 md:min-h-0 md:flex-1"
+      className="mx-auto flex min-h-0 w-full max-w-none flex-1 flex-col md:gap-4"
     >
-      <div className="pr-24 empty:hidden md:pr-0">
+      <div className="hidden empty:hidden md:block">
         <DomainSubtabs domain="cultos" />
       </div>
 
       <NativeCalendar
         initialItems={data.items}
         initialPreferences={data.preferences}
+        organizationName={organization.name}
         canCreateEvent={canCreateEvent}
         canCreateRehearsal={canCreateRehearsal}
         canViewTeamAvailability={data.canViewTeamAvailability}
@@ -90,12 +91,23 @@ async function CalendarContent() {
 
 function CalendarSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-none space-y-5" aria-hidden>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mx-auto flex min-h-0 w-full max-w-none flex-1 flex-col gap-3 md:gap-4" aria-hidden>
+      <div className="flex items-center justify-between gap-3 md:hidden">
+        <div className="space-y-1.5">
+          <Skeleton className="h-6 w-24" />
+          <Skeleton className="h-3.5 w-36" />
+        </div>
+        <div className="flex items-center gap-2 pr-[84px]">
+          <Skeleton className="size-11 rounded-xl" />
+          <Skeleton className="size-11 rounded-xl" />
+        </div>
+      </div>
+      <Skeleton className="h-[52px] w-full rounded-xl md:hidden" />
+      <div className="hidden md:flex md:items-center md:justify-between md:gap-4">
         <Skeleton className="h-10 w-72" />
         <Skeleton className="h-9 w-48" />
       </div>
-      <Skeleton className="h-[600px] rounded-xl" />
+      <Skeleton className="min-h-0 flex-1 rounded-xl md:h-[600px]" />
     </div>
   );
 }
