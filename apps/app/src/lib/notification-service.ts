@@ -17,6 +17,8 @@ import {
 import { getAppBaseUrl } from "@/lib/app-url";
 import { sendWebPushToUser } from "@/lib/push-notifications";
 import { decryptSecret } from "@/lib/secret-crypto";
+import { getOrganizationEntitlements } from "@/lib/platform/entitlements";
+import { getPlatformEvolutionConfig } from "@/lib/platform/evolution-config";
 import { renderOrganizationMessageText } from "@/lib/message-templates-server";
 import { sendTransactionalEmail } from "@/lib/email/service";
 
@@ -59,22 +61,28 @@ export async function getOrganizationEvolutionConfig(
     300,
     async () => {
       try {
-        const channel = await db.query.organizationNotificationChannel.findFirst({
-          where: and(
-            eq(schema.organizationNotificationChannel.organizationId, organizationId),
-            eq(schema.organizationNotificationChannel.channel, "evolution_whatsapp"),
-          ),
-        });
+        const [channel, entitlements] = await Promise.all([
+          db.query.organizationNotificationChannel.findFirst({
+            where: and(
+              eq(schema.organizationNotificationChannel.organizationId, organizationId),
+              eq(schema.organizationNotificationChannel.channel, "evolution_whatsapp"),
+            ),
+          }),
+          getOrganizationEntitlements(organizationId),
+        ]);
 
-        const apiKey = channel ? decryptSecret(channel.apiKey) : null;
+        // Respeita status do plano, overrides e disponibilidade do provedor
+        // global antes de tentar qualquer envio.
+        if (!channel?.isActive || !channel.instanceName || !entitlements.whatsapp.enabled) {
+          return { channel: channel ?? null, config: null };
+        }
 
-        if (
-          channel &&
-          channel.isActive &&
-          channel.apiUrl &&
-          apiKey &&
-          channel.instanceName
-        ) {
+        if (channel.managedByPlatform === false) {
+          // Registro legado: a igreja ainda guarda URL e chave próprios.
+          const apiKey = decryptSecret(channel.apiKey);
+          if (!channel.apiUrl || !apiKey) {
+            return { channel, config: null };
+          }
           return {
             channel,
             config: {
@@ -85,13 +93,30 @@ export async function getOrganizationEvolutionConfig(
           };
         }
 
-        return { channel: channel ?? null, config: null };
+        const platformConfig = await getPlatformEvolutionConfig();
+        const instanceToken = decryptSecret(channel.instanceToken);
+        if (!platformConfig || !instanceToken) {
+          return { channel, config: null };
+        }
+
+        return {
+          channel,
+          config: {
+            apiUrl: platformConfig.apiUrl,
+            apiKey: instanceToken,
+            instanceName: channel.instanceName,
+          },
+        };
       } catch (error) {
         console.error("Erro ao buscar canal de notificação da igreja:", error);
         return { channel: null, config: null };
       }
     },
-    [`evolution:${organizationId}`],
+    [
+      `evolution:${organizationId}`,
+      `platform:entitlements:${organizationId}`,
+      "platform:integrations",
+    ],
   );
 }
 

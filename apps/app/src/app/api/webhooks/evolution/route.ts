@@ -78,6 +78,60 @@ export async function POST(req: Request) {
 
     const orgScopeId = organizationId.organizationId;
 
+    // 1.1 Sincroniza o estado da instância gerenciada pela plataforma.
+    if (eventRaw.includes("connection")) {
+      const connectionData = Array.isArray(rawData) ? rawData[0] : rawData;
+      const state = String(
+        connectionData?.state ?? connectionData?.status ?? "",
+      ).toLowerCase();
+      const connected = state === "open" || state === "connected";
+      const rawPhone =
+        connectionData?.jid ??
+        connectionData?.phone ??
+        connectionData?.connectedPhone ??
+        "";
+      const phone = String(rawPhone).split("@")[0] || null;
+      const profileName =
+        connectionData?.profileName ?? connectionData?.name ?? null;
+      const errorMessage = connected
+        ? null
+        : connectionData?.error
+          ? String(connectionData.error).slice(0, 500)
+          : null;
+
+      if (orgScopeId) {
+        await db
+          .update(schema.organizationNotificationChannel)
+          .set({
+            connectionStatus: connected ? "connected" : state || "disconnected",
+            connectedPhone: connected ? phone : null,
+            connectedProfileName:
+              connected && profileName ? String(profileName) : null,
+            lastConnectedAt: connected ? new Date() : undefined,
+            lastError: errorMessage,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(
+                schema.organizationNotificationChannel.organizationId,
+                orgScopeId,
+              ),
+              eq(
+                schema.organizationNotificationChannel.channel,
+                "evolution_whatsapp",
+              ),
+              instanceName
+                ? eq(
+                    schema.organizationNotificationChannel.instanceName,
+                    instanceName,
+                  )
+                : undefined,
+            ),
+          );
+      }
+    }
+
     // 2. Handle Status Updates (messages.update / message.update / etc.)
     if (eventRaw.includes("update")) {
       const items: EvolutionUpdateItem[] = Array.isArray(rawData)
