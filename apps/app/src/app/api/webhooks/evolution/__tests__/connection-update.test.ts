@@ -37,11 +37,26 @@ mock.module("@/db", () => ({
   },
 }));
 
+let mockedAuth:
+  | {
+      ok: true;
+      organizationId: string | null;
+      channelId: string | null;
+      instanceName: string | null;
+    }
+  | { ok: false } = {
+  ok: true,
+  organizationId: "org-1",
+  channelId: null,
+  instanceName: null,
+};
+let receivedToken: string | null | undefined;
+
 mock.module("@/lib/evolution-webhook", () => ({
-  authenticateEvolutionWebhook: async () => ({
-    ok: true,
-    organizationId: "org-1",
-  }),
+  authenticateEvolutionWebhook: async (token: string | null | undefined) => {
+    receivedToken = token;
+    return mockedAuth;
+  },
 }));
 
 mock.module("@/lib/telemetry/sentry", () => ({
@@ -101,5 +116,79 @@ describe("webhook connection.update", () => {
     expect(updates[0].values.connectionStatus).toBe("close");
     expect(updates[0].values.lastError).toBe("device disconnected");
     expect(updates[0].values.connectedPhone).toBeNull();
+  });
+
+  it("rejeita connection.update sem instanceName", async () => {
+    updates = [];
+    const response = await POST(
+      request({
+        event: "connection.update",
+        data: { state: "open" },
+      }),
+    );
+    expect(response.status).toBe(400);
+    expect(updates.length).toBe(0);
+  });
+
+  it("rejeita instanceName diferente do canal autenticado", async () => {
+    updates = [];
+    mockedAuth = {
+      ok: true,
+      organizationId: "org-1",
+      channelId: "channel-1",
+      instanceName: "igreja-1",
+    };
+    const response = await POST(
+      request({
+        event: "connection.update",
+        instance: "outra-igreja",
+        data: { state: "open" },
+      }),
+    );
+    expect(response.status).toBe(400);
+    expect(updates.length).toBe(0);
+    mockedAuth = {
+      ok: true,
+      organizationId: "org-1",
+      channelId: null,
+      instanceName: null,
+    };
+  });
+
+  it("aceita o segredo via header x-webhook-token e via authorization Bearer", async () => {
+    updates = [];
+    const baseBody = {
+      event: "connection.update",
+      instance: "igreja-1",
+      data: { state: "open" },
+    };
+
+    const withHeader = new Request(
+      "https://app.test/api/webhooks/evolution",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-webhook-token": "secret-do-header",
+        },
+        body: JSON.stringify(baseBody),
+      },
+    );
+    await POST(withHeader);
+    expect(receivedToken).toBe("secret-do-header");
+
+    const withBearer = new Request(
+      "https://app.test/api/webhooks/evolution",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: "Bearer secret-do-bearer",
+        },
+        body: JSON.stringify(baseBody),
+      },
+    );
+    await POST(withBearer);
+    expect(receivedToken).toBe("secret-do-bearer");
   });
 });

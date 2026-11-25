@@ -32,7 +32,16 @@ export async function POST(req: Request) {
   let instanceName = "";
   try {
     const url = new URL(req.url);
-    const tokenParam = url.searchParams.get("token")?.trim();
+    // Header dedicado primeiro: a query string mantém-se apenas como fallback
+    // de compatibilidade com a Evolution Go, sem logar o token em nenhum ponto.
+    const authorization = req.headers.get("authorization")?.trim();
+    const bearer = authorization
+      ? /^Bearer\s+(.+)$/i.exec(authorization)?.[1]?.trim()
+      : undefined;
+    const webhookToken =
+      req.headers.get("x-webhook-token")?.trim() ||
+      bearer ||
+      url.searchParams.get("token")?.trim();
 
     const rawBody = await req.json().catch(() => null);
     if (!rawBody || typeof rawBody !== "object") {
@@ -55,14 +64,19 @@ export async function POST(req: Request) {
     // 1. Identify organization (falhe fechado: em produção, um token válido é
     // obrigatório; o token identifica a organização e autentica o webhook).
     const organizationId = await authenticateEvolutionWebhook(
-      tokenParam,
+      webhookToken,
       async (candidate) => {
         const channel = await db.query.organizationNotificationChannel.findFirst({
           where: eq(
             schema.organizationNotificationChannel.webhookSecret,
             candidate,
           ),
-          columns: { organizationId: true },
+          columns: {
+            id: true,
+            organizationId: true,
+            webhookSecret: true,
+            instanceName: true,
+          },
         });
         return channel ?? null;
       },
@@ -80,6 +94,23 @@ export async function POST(req: Request) {
 
     // 1.1 Sincroniza o estado da instância gerenciada pela plataforma.
     if (eventRaw.includes("connection")) {
+      // Um webhook autenticado só pode alterar o canal da própria instância.
+      if (!instanceName) {
+        return NextResponse.json(
+          { error: "Instância não informada" },
+          { status: 400 },
+        );
+      }
+      if (
+        organizationId.instanceName &&
+        organizationId.instanceName !== instanceName
+      ) {
+        return NextResponse.json(
+          { error: "Instância não corresponde ao canal autenticado" },
+          { status: 400 },
+        );
+      }
+
       const connectionData = Array.isArray(rawData) ? rawData[0] : rawData;
       const state = String(
         connectionData?.state ?? connectionData?.status ?? "",
@@ -121,10 +152,14 @@ export async function POST(req: Request) {
                 schema.organizationNotificationChannel.channel,
                 "evolution_whatsapp",
               ),
-              instanceName
+              eq(
+                schema.organizationNotificationChannel.instanceName,
+                instanceName,
+              ),
+              organizationId.channelId && schema.organizationNotificationChannel.id
                 ? eq(
-                    schema.organizationNotificationChannel.instanceName,
-                    instanceName,
+                    schema.organizationNotificationChannel.id,
+                    organizationId.channelId,
                   )
                 : undefined,
             ),

@@ -6,6 +6,13 @@ mock.module("next/headers", () => ({ headers: async () => new Headers() }));
 
 let auditInserts: Record<string, unknown>[] = [];
 let roleChanges: { userId: string; role: string }[] = [];
+let transactionUpdates: { role: string }[] = [];
+let userToPromote: {
+  id: string;
+  email: string;
+  role: string | null;
+  emailVerified?: boolean;
+} | null = null;
 
 const integrationRow = {
   id: "int-1",
@@ -50,7 +57,7 @@ mock.module("@/db", () => ({
       },
       user: {
         findMany: async () => operatorRows,
-        findFirst: async () => operatorRows[1],
+        findFirst: async () => userToPromote ?? operatorRows[1],
       },
       platformAuditLog: {
         findMany: async () => [],
@@ -70,6 +77,17 @@ mock.module("@/db", () => ({
     select: () => ({
       from: () => ({ where: async () => [{ count: 0 }] }),
     }),
+    transaction: async (callback: (tx: unknown) => Promise<unknown>) =>
+      callback({
+        execute: async () => ({ rows: operatorRows.map((row) => ({ id: row.id })) }),
+        update: () => ({
+          set: (values: { role: string }) => ({
+            where: async () => {
+              transactionUpdates.push({ role: values.role });
+            },
+          }),
+        }),
+      }),
   },
   schema: {
     platformAuditLog: {
@@ -132,9 +150,8 @@ afterAll(() => {
 
 const { listPlatformIntegrationsAction, saveEvolutionPlatformIntegrationAction } =
   await import("@/app/actions/platform/integrations");
-const { revokePlatformOperatorAction } = await import(
-  "@/app/actions/platform/operators"
-);
+const { revokePlatformOperatorAction, promotePlatformOperatorAction } =
+  await import("@/app/actions/platform/operators");
 
 describe("actions da plataforma", () => {
   it("lista integrações com máscara e hasSecret, sem vazar segredos", async () => {
@@ -182,11 +199,48 @@ describe("actions da plataforma", () => {
       role: "super_admin",
       createdAt: new Date(),
     });
-    roleChanges = [];
+    transactionUpdates = [];
     auditInserts = [];
     const result = await revokePlatformOperatorAction("user-2");
     expect(result.ok).toBe(true);
-    expect(roleChanges).toEqual([{ userId: "user-2", role: "user" }]);
+    expect(transactionUpdates).toEqual([{ role: "user" }]);
     expect(auditInserts[0].action).toBe("operator.revoked");
+  });
+
+  it("exige e-mail verificado ao promover operador", async () => {
+    userToPromote = {
+      id: "user-3",
+      email: "novo@empresa.test",
+      role: "user",
+      emailVerified: false,
+    };
+    roleChanges = [];
+    const result = await promotePlatformOperatorAction("novo@empresa.test");
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Confirme o e-mail");
+    expect(roleChanges).toEqual([]);
+    userToPromote = null;
+  });
+
+  it("promove operador com e-mail verificado", async () => {
+    userToPromote = {
+      id: "user-3",
+      email: "novo@empresa.test",
+      role: "user",
+      emailVerified: true,
+    };
+    roleChanges = [];
+    const result = await promotePlatformOperatorAction("novo@empresa.test");
+    expect(result.ok).toBe(true);
+    expect(roleChanges).toEqual([
+      { userId: "user-3", role: "super_admin" },
+    ]);
+    userToPromote = null;
+  });
+
+  it("bloqueia auto-revogação do próprio operador", async () => {
+    const result = await revokePlatformOperatorAction("admin-1");
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("próprio acesso");
   });
 });

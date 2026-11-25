@@ -47,9 +47,18 @@ if (revoke) {
     );
   }
 
-  const superAdmins = (await sql`
-    select id from "user" where role like '%super_admin%'
-  `) as { id: string }[];
+  const rowsWithRole = (await sql`
+    select id, role from "user" where lower(role) like '%super_admin%'
+  `) as { id: string; role: string | null }[];
+
+  // Correspondência exata do token, sem LIKE amplo: papéis que apenas contêm
+  // a substring não contam como operadores da plataforma.
+  const superAdmins = rowsWithRole.filter((item) =>
+    (item.role ?? "")
+      .split(",")
+      .map((role) => role.trim().toLowerCase())
+      .includes("super_admin"),
+  );
 
   const selfIsSuperAdmin = superAdmins.some((item) => item.id === user.id);
   if (selfIsSuperAdmin && superAdmins.length <= 1) {
