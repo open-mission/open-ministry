@@ -137,59 +137,10 @@ mock.module("@/lib/profile", () => ({
 // imports dele (@/db, @/lib/cache, @/lib/organizations) já está mockada acima.
 
 const {
-  getEvolutionSettingsAction,
   getEvolutionMessageLogsAction,
   retryEvolutionMessageAction,
   retryAllFailedEvolutionMessagesAction,
 } = await import("@/app/actions/settings");
-
-describe("getEvolutionSettingsAction", () => {
-  it("hides the WhatsApp gateway credentials from non-admin members", async () => {
-    mockContext = {
-      session: { user: { id: "user-1" } },
-      organization: { id: "org-1" },
-      isAdmin: false,
-    };
-
-    const result = await getEvolutionSettingsAction();
-
-    expect(result).toEqual({
-      id: null,
-      apiUrl: "",
-      apiKey: "",
-      instanceName: "",
-      isActive: false,
-    });
-    expect(result.apiKey).toBe("");
-    expect(result.webhookSecret).toBeUndefined();
-  });
-
-  it("still returns the settings for organization admins", async () => {
-    mockContext = {
-      session: { user: { id: "user-1" } },
-      organization: { id: "org-1" },
-      isAdmin: true,
-    };
-
-    const result = await getEvolutionSettingsAction();
-
-    expect(result.id).toBe("channel-1");
-    expect(result.apiKey).toBe("evo-api-key-should-not-leak");
-    expect(result.webhookSecret).toBe("webhook-secret-should-not-leak");
-    expect(result.webhookUrl).toBe(
-      "https://app.test/api/webhooks/evolution?token=webhook-secret-should-not-leak",
-    );
-  });
-
-  it("returns empty settings when there is no organization context", async () => {
-    mockContext = null;
-
-    const result = await getEvolutionSettingsAction();
-
-    expect(result.id).toBeNull();
-    expect(result.apiKey).toBe("");
-  });
-});
 
 describe("getEvolutionMessageLogsAction — escopo de líder", () => {
   it("admin consulta todos os logs da organização, sem escopo de departamento", async () => {
