@@ -421,9 +421,9 @@ const BLOCKED_HOSTNAMES = /^(localhost|.*\.localhost|.*\.local|.*\.internal)$/i;
 function isBlockedIpAddress(address: string): boolean {
   const hostname = address.replace(/^\[|\]$/g, "").toLowerCase();
   if (hostname === "::1" || hostname === "0.0.0.0" || hostname === "::") return true;
-  if (hostname.startsWith("::ffff:")) {
-    return isBlockedIpAddress(hostname.slice(7));
-  }
+  // O WHATWG URL normaliza ::ffff:127.0.0.1 para ::ffff:7f00:1, que escapa do
+  // parser decimal. Qualquer IPv4-mapped IPv6 é host interno por definição.
+  if (hostname.startsWith("::ffff:")) return true;
   if (/^fe[89ab][0-9a-f]:/i.test(hostname) || hostname.startsWith("fe80:")) return true;
   if (/^f[cd][0-9a-f]{2}:/i.test(hostname)) return true;
 

@@ -14,16 +14,33 @@ function source(relativePath: string): string {
 }
 
 describe("cache L2 sem segredos descriptografados", () => {
-  it("evolution-config guarda só o segredo cifrado e descriptografa fora do remember", () => {
-    const code = source("apps/app/src/lib/platform/evolution-config.ts");
-    expect(code).toContain("platform:evolution:config:v2");
-    expect(code).toContain("encryptedSecrets: integration.encryptedSecrets");
+  it("integrations-config guarda só o segredo cifrado e resolve env fora do remember", () => {
+    const code = source("apps/app/src/lib/platform/integrations-config.ts");
+    expect(code).toContain("platform:integration:${provider}:v2");
+    expect(code).toContain("encryptedSecrets: row.encryptedSecrets");
 
-    const rememberStart = code.indexOf("remember<");
-    const decryptOutside = code.indexOf("decryptSecret(cached.encryptedSecrets)");
-    expect(rememberStart).toBeGreaterThan(-1);
-    expect(decryptOutside).toBeGreaterThan(rememberStart);
-    expect(code).not.toContain("globalApiKey: decryptSecret");
+    const fetcherStart = code.indexOf("getCachedPlatformIntegration");
+    const fetcherBodyIndex = code.indexOf("db.query.platformIntegrationConfig.findFirst", fetcherStart);
+    const rememberEnd = code.indexOf('"platform:integrations"', fetcherStart);
+    const fetcherBody = code.slice(fetcherStart, rememberEnd);
+    expect(fetcherBody).not.toContain("process.env");
+    expect(fetcherBody).not.toContain("decryptSecret");
+    expect(fetcherBody).not.toContain("JSON.stringify");
+
+    const envReaders = code.indexOf("function readEnv");
+    const decryptReader = code.indexOf("export function parseEncryptedSecrets");
+    expect(fetcherStart).toBeGreaterThan(-1);
+    expect(fetcherBodyIndex).toBeGreaterThan(fetcherStart);
+    expect(rememberEnd).toBeGreaterThan(fetcherBodyIndex);
+    // Leitura de env e descriptografia são helpers separados, fora do fetcher.
+    expect(envReaders).toBeGreaterThan(-1);
+    expect(decryptReader).toBeGreaterThan(-1);
+  });
+
+  it("evolution-config permanece compatível reexportando o resolvedor", () => {
+    const code = source("apps/app/src/lib/platform/evolution-config.ts");
+    expect(code).toContain('from "@/lib/platform/integrations-config"');
+    expect(code).toContain("getPlatformEvolutionConfig");
   });
 
   it("notification-service guarda só o instanceToken cifrado", () => {
