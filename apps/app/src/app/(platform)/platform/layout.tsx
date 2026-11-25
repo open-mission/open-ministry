@@ -46,6 +46,7 @@ async function PlatformLayoutGate({
     if (evo) {
       evolutionHealth = {
         isEnabled: evo.isEnabled,
+        source: evo.source,
         lastHealthStatus: evo.lastHealthStatus,
         lastHealthLatencyMs: evo.lastHealthLatencyMs,
       };

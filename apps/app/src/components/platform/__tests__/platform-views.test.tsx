@@ -70,6 +70,32 @@ describe("Painel /platform — Shell e páginas operacionais", () => {
     expect(html).toContain('href="/platform/plans"');
     expect(html).toContain('href="/platform/operators"');
     expect(html).toContain("Conteúdo Plataforma");
+
+    const envShellHtml = renderToStaticMarkup(
+      createElement(PlatformShell, {
+        operator: { name: "Dono", email: "dono@openministry.app" },
+        evolutionHealth: {
+          isEnabled: true,
+          source: "env",
+          lastHealthStatus: null,
+          lastHealthLatencyMs: null,
+        },
+      }),
+    );
+    expect(envShellHtml).toContain("Evolution Go · Via .env");
+
+    const unconfiguredShellHtml = renderToStaticMarkup(
+      createElement(PlatformShell, {
+        operator: { name: "Dono", email: "dono@openministry.app" },
+        evolutionHealth: {
+          isEnabled: false,
+          source: "unconfigured",
+          lastHealthStatus: null,
+          lastHealthLatencyMs: null,
+        },
+      }),
+    );
+    expect(unconfiguredShellHtml).toContain("Evolution Go · Não configurada");
   });
 
   it("renderiza /platform com KPIs, filtros e lista de igrejas", () => {
@@ -134,8 +160,8 @@ describe("Painel /platform — Shell e páginas operacionais", () => {
     expect(html).toContain("Gerenciar");
   });
 
-  it("renderiza /platform/integrations com segredo mascarado e cards futuros", () => {
-    const html = renderToStaticMarkup(
+  it("renderiza /platform/integrations com origem .env, customização, restauração, Brevo e Web Push", () => {
+    const customizedHtml = renderToStaticMarkup(
       createElement(PlatformIntegrationsView, {
         initialIntegrations: [
           {
@@ -153,15 +179,112 @@ describe("Painel /platform — Shell e páginas operacionais", () => {
             lastHealthCheckedAt: new Date("2026-11-24T12:00:00Z"),
             lastHealthError: null,
           },
+          {
+            provider: "brevo_email",
+            displayName: "Brevo (E-mail)",
+            isEnabled: true,
+            source: "env",
+            hasEnvFallback: true,
+            config: {
+              senderEmail: "avisos@igreja.org",
+              senderName: "Secretaria",
+            },
+            hasSecret: true,
+            maskedSecret: "••••brv9",
+            secretMasks: { apiKey: "••••brv9" },
+            lastHealthStatus: null,
+            lastHealthLatencyMs: null,
+            lastHealthCheckedAt: null,
+            lastHealthError: null,
+          },
+          {
+            provider: "web_push",
+            displayName: "Web Push (VAPID / OneSignal)",
+            isEnabled: true,
+            source: "platform",
+            hasEnvFallback: false,
+            config: {
+              vapidPublicKey: "BPublicVapid123",
+              vapidSubject: "mailto:tech@igreja.org",
+              oneSignalAppId: "os-app-1",
+            },
+            hasSecret: true,
+            maskedSecret: "••••priv",
+            secretMasks: {
+              vapidPrivateKey: "••••priv",
+              oneSignalRestApiKey: "••••os99",
+            },
+            lastHealthStatus: "healthy",
+            lastHealthLatencyMs: 14,
+            lastHealthCheckedAt: new Date("2026-11-24T12:00:00Z"),
+            lastHealthError: null,
+          },
+          {
+            provider: "meta_whatsapp_cloud",
+            displayName: "WhatsApp Oficial (Meta Cloud)",
+            isEnabled: false,
+            source: "unconfigured",
+            hasEnvFallback: false,
+            config: {},
+            hasSecret: false,
+            maskedSecret: null,
+            secretMasks: {},
+            lastHealthStatus: null,
+            lastHealthLatencyMs: null,
+            lastHealthCheckedAt: null,
+            lastHealthError: null,
+          },
         ],
       }),
     );
 
-    expect(html).toContain("Evolution API Go (Evogo)");
-    expect(html).toContain("Salva: ••••89ab");
-    expect(html).toContain("https://evo.openministry.app");
-    expect(html).toContain("WhatsApp Oficial (Meta Cloud API)");
-    expect(html).toContain("Em breve");
+    expect(customizedHtml).toContain("Evolution API Go (Evogo)");
+    expect(customizedHtml).toContain("Customizado no painel");
+    expect(customizedHtml).toContain("Usar padrão do .env");
+    expect(customizedHtml).toContain("Salva: ••••89ab");
+    expect(customizedHtml).toContain("https://evo.openministry.app");
+
+    expect(customizedHtml).toContain("Brevo — E-mail Transacional");
+    expect(customizedHtml).toContain("Origem: .env");
+    expect(customizedHtml).toContain("Via .env: ••••brv9");
+    expect(customizedHtml).toContain("avisos@igreja.org");
+
+    expect(customizedHtml).toContain("Web Push — Notificações Push");
+    expect(customizedHtml).toContain("BPublicVapid123");
+    expect(customizedHtml).toContain("Salva: ••••priv");
+    expect(customizedHtml).toContain("os-app-1");
+    expect(customizedHtml).toContain("Salva: ••••os99");
+    expect(customizedHtml).toContain("Testar configuração");
+
+    expect(customizedHtml).toContain("WhatsApp Oficial (Meta Cloud API)");
+    expect(customizedHtml).toContain("Em breve");
+
+    // Quando vem exclusivamente do .env e não foi customizado, não exibe botão de restauração
+    const envOnlyHtml = renderToStaticMarkup(
+      createElement(PlatformIntegrationsView, {
+        initialIntegrations: [
+          {
+            provider: "evolution_whatsapp",
+            displayName: "Evolution API Go (Evogo)",
+            isEnabled: true,
+            source: "env",
+            hasEnvFallback: true,
+            config: { apiUrl: "https://evo-env.openministry.app" },
+            hasSecret: true,
+            maskedSecret: "••••env1",
+            secretMasks: { globalApiKey: "••••env1" },
+            lastHealthStatus: null,
+            lastHealthLatencyMs: null,
+            lastHealthCheckedAt: null,
+            lastHealthError: null,
+          },
+        ],
+      }),
+    );
+    expect(envOnlyHtml).toContain("Origem: .env");
+    expect(envOnlyHtml).toContain("Via .env: ••••env1");
+    expect(envOnlyHtml).toContain("Não configurado");
+    expect(envOnlyHtml).not.toContain("Usar padrão do .env");
   });
 
   it("renderiza /platform/plans e /platform/operators respeitando trava de bootstrap", () => {

@@ -64,6 +64,7 @@ const THEME_OPTIONS = [
 
 export type PlatformEvolutionHealthSummary = {
   isEnabled: boolean;
+  source?: "env" | "platform" | "unconfigured";
   lastHealthStatus: string | null;
   lastHealthLatencyMs: number | null;
 } | null;
@@ -88,8 +89,9 @@ function EvolutionHealthPill({
     health?.isEnabled &&
     health.lastHealthStatus !== null &&
     health.lastHealthStatus !== "healthy";
+  const isUnconfigured = !health || health.source === "unconfigured";
 
-  const label = !health
+  const label = isUnconfigured
     ? "Evolution Go · Não configurada"
     : !health.isEnabled
       ? "Evolution Go · Pausada"
@@ -97,7 +99,9 @@ function EvolutionHealthPill({
         ? `Evolution Go · Online${health.lastHealthLatencyMs != null ? ` (${health.lastHealthLatencyMs}ms)` : ""}`
         : isDegraded
           ? "Evolution Go · Atenção"
-          : "Evolution Go · Aguardando teste";
+          : health.source === "env"
+            ? "Evolution Go · Via .env"
+            : "Evolution Go · Aguardando teste";
 
   return (
     <Link

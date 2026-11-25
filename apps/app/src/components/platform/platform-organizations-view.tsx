@@ -661,18 +661,22 @@ export function PlatformOrganizationsView({
               <ActivityIcon className="size-4 text-primary" />
             </CardDescription>
             <CardTitle className="flex items-center gap-2 font-heading text-2xl tracking-tight">
-              {evolutionProvider?.isEnabled &&
-              evolutionProvider.lastHealthStatus === "healthy" ? (
+              {!evolutionProvider ||
+              evolutionProvider.source === "unconfigured" ? (
+                <span>Não configurada</span>
+              ) : !evolutionProvider.isEnabled ? (
+                <span>Pausada</span>
+              ) : evolutionProvider.lastHealthStatus === "healthy" ? (
                 <>
                   <CheckCircle2Icon className="size-5 text-emerald-600 dark:text-emerald-400" />
                   <span>Online</span>
                 </>
-              ) : evolutionProvider ? (
-                <span>
-                  {evolutionProvider.isEnabled ? "Atenção" : "Pausada"}
-                </span>
+              ) : evolutionProvider.lastHealthStatus ? (
+                <span>Atenção</span>
+              ) : evolutionProvider.source === "env" ? (
+                <span>Via .env</span>
               ) : (
-                <span>Não configurada</span>
+                <span>Configurada</span>
               )}
             </CardTitle>
           </CardHeader>
@@ -680,7 +684,11 @@ export function PlatformOrganizationsView({
             <span>
               {evolutionProvider?.lastHealthLatencyMs != null
                 ? `Latência ${evolutionProvider.lastHealthLatencyMs}ms`
-                : "Sem leitura recente"}
+                : evolutionProvider?.source === "env"
+                  ? "Ativa via .env"
+                  : evolutionProvider?.source === "platform"
+                    ? "Customizada no painel"
+                    : "Sem leitura recente"}
             </span>
             <Link
               href="/platform/integrations"
