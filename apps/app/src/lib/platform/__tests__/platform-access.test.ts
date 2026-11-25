@@ -57,9 +57,22 @@ mock.module("@/db", () => {
       update: () => ({
         set: (value: { role: string }) => ({
           where: async () => {
-            if (mockUserRows[0]) roleUpdates.push({ id: mockUserRows[0].id, role: value.role });
+            roleUpdates.push({
+              id: currentSession?.user.id ?? mockUserRows[0]?.id ?? "unknown",
+              role: value.role,
+            });
+            // auth.api.getSession relê o papel do banco após a promoção.
+            if (currentSession) {
+              currentSession = {
+                ...currentSession,
+                user: { ...currentSession.user, role: value.role },
+              };
+            }
           },
         }),
+      }),
+      insert: () => ({
+        values: () => Promise.resolve(),
       }),
     },
     schema: realSchema,
@@ -149,13 +162,15 @@ describe("requireSuperAdmin", () => {
   it("promove e-mail bootstrap verificado e valida permissão nativa", async () => {
     process.env.PLATFORM_SUPER_ADMIN_EMAILS = "owner@igreja.test";
     setRoleCalls.length = 0;
+    roleUpdates.length = 0;
     permissionResult = { success: true };
     currentSession = makeSession();
     const session = await requireSuperAdmin("manage-plans");
     expect(session.user.role).toBe("super_admin");
-    expect(setRoleCalls).toEqual([
-      { userId: "user-1", role: "super_admin" },
-    ]);
+    // Bootstrap não usa auth.api.setRole (FALHA com FORBIDDEN sem a permissão
+    // set-role): promove direto no banco e registra auditoria.
+    expect(setRoleCalls).toEqual([]);
+    expect(roleUpdates).toEqual([{ id: "user-1", role: "super_admin" }]);
     process.env.PLATFORM_SUPER_ADMIN_EMAILS = "";
   });
 

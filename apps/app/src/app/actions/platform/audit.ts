@@ -1,6 +1,5 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
 import { and, desc, ilike, or, sql } from "drizzle-orm";
 
 import { db } from "@/db";
@@ -18,27 +17,6 @@ export type PlatformAuditEntry = {
   metadataJson: Record<string, unknown>;
   createdAt: Date;
 };
-
-export async function recordPlatformAudit(input: {
-  actorUserId: string | null;
-  actorEmail: string | null;
-  action: string;
-  targetType: string;
-  targetId?: string | null;
-  summary: string;
-  metadataJson?: Record<string, unknown>;
-}): Promise<void> {
-  await db.insert(schema.platformAuditLog).values({
-    id: randomUUID(),
-    actorUserId: input.actorUserId,
-    actorEmail: input.actorEmail,
-    action: input.action,
-    targetType: input.targetType,
-    targetId: input.targetId ?? null,
-    summary: input.summary,
-    metadataJson: input.metadataJson ?? {},
-  });
-}
 
 export async function listPlatformAuditLogAction(options?: {
   search?: string;

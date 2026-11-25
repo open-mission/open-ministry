@@ -2,7 +2,12 @@ import "server-only";
 
 import { headers } from "next/headers";
 
+import { eq } from "drizzle-orm";
+
+import { db } from "@/db";
+import * as schema from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { recordPlatformAudit } from "@/lib/platform/audit";
 import { getSession } from "@/lib/session";
 import type { PlatformPermission } from "@/lib/platform/access-control";
 import {
@@ -35,7 +40,10 @@ export async function getSuperAdminSession(): Promise<SessionLike | null> {
   if (!session || isImpersonated(session)) return null;
 
   const role = session.user.role;
-  if (!isSuperAdminRole(role)) return null;
+  const canBootstrap =
+    Boolean(session.user.emailVerified) &&
+    isBootstrapSuperAdminEmail(session.user.email);
+  if (!isSuperAdminRole(role) && !canBootstrap) return null;
 
   return session;
 }
@@ -71,10 +79,26 @@ export async function requireSuperAdmin(
     verified &&
     isBootstrapSuperAdminEmail(session.user.email)
   ) {
-    await auth.api.setRole({
-      body: { userId: session.user.id, role: "super_admin" as never },
-      headers: requestHeaders,
-    });
+    // O chamador ainda não tem a permissão `set-role`; usar auth.api.setRole
+    // aqui Lancaria FORBIDDEN. Promovemos direto no banco (owner) e auditamos.
+    await db
+      .update(schema.user)
+      .set({ role: "super_admin" })
+      .where(eq(schema.user.id, session.user.id));
+
+    try {
+      await recordPlatformAudit({
+        actorUserId: session.user.id,
+        actorEmail: session.user.email ?? null,
+        action: "operator.bootstrap",
+        targetType: "user",
+        targetId: session.user.id,
+        summary: "Primeiro acesso: operador promovido a Super Admin via bootstrap.",
+      });
+    } catch (error) {
+      console.error("Falha ao auditar bootstrap de Super Admin", error);
+    }
+
     session = (await auth.api.getSession({ headers: requestHeaders })) as SessionLike;
   }
 
