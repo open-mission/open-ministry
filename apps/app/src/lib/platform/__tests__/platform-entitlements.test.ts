@@ -67,10 +67,16 @@ const legacyChannelRow: {
   managedByPlatform: boolean;
 } | null = null;
 
-const platformConfig: { apiUrl: string; globalApiKey: string } | null = null;
+let envEvolutionConfig: { apiUrl: string; globalApiKey: string } | null = null;
 
 mock.module("@/lib/platform/evolution-config", () => ({
-  getPlatformEvolutionConfig: async () => platformConfig,
+  // O resolvedor considera .env + banco; no teste, a linha do banco define o
+  // fallback quando não há configuração de ambiente explícita.
+  getPlatformEvolutionConfig: async () =>
+    envEvolutionConfig ??
+    (integrationRow?.isEnabled && integrationRow.encryptedSecrets
+      ? { apiUrl: "https://evo.example.com", globalApiKey: "key" }
+      : null),
 }));
 
 mock.module("@/lib/secret-crypto", () => ({
@@ -127,6 +133,17 @@ describe("getOrganizationEntitlements", () => {
     const result = await getOrganizationEntitlements("org-1");
     expect(result.whatsapp.enabled).toBe(false);
     expect(result.whatsapp.maxInstances).toBe(0);
+  });
+
+  it("Evolution no .env habilita o recurso sem linha no banco", async () => {
+    setup({ plan: PRO });
+    integrationRow = null;
+    envEvolutionConfig = { apiUrl: "https://evo.example.com", globalApiKey: "env-key" };
+    const result = await getOrganizationEntitlements("org-1");
+    expect(result.whatsapp.providerAvailable).toBe(true);
+    expect(result.whatsapp.enabled).toBe(true);
+    envEvolutionConfig = null;
+    setup({ plan: PRO });
   });
 
   it("plano pro liga WhatsApp com limite do plano", async () => {

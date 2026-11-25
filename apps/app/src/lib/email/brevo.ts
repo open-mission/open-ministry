@@ -1,3 +1,5 @@
+import { getPlatformBrevoConfig } from "@/lib/platform/integrations-config";
+
 export type BrevoContact = {
   email: string;
   name?: string;
@@ -40,7 +42,14 @@ export function getDefaultSender(): BrevoContact {
 export async function sendEmailViaBrevo(
   params: SendBrevoEmailParams,
 ): Promise<SendBrevoEmailResult> {
-  const apiKey = getBrevoApiKey();
+  const platform = await getPlatformBrevoConfig();
+  if (!platform.isEnabled) {
+    const error = "Integração de e-mail Brevo desativada pela plataforma.";
+    console.warn(`[Brevo] ${error}`);
+    return { ok: false, error };
+  }
+
+  const apiKey = platform.apiKey || getBrevoApiKey();
 
   if (!apiKey) {
     const error = "Chave da API Brevo (BREVO_API_KEY) não configurada.";
@@ -48,7 +57,10 @@ export async function sendEmailViaBrevo(
     return { ok: false, error };
   }
 
-  const sender = params.sender ?? getDefaultSender();
+  const sender = params.sender ?? {
+    email: platform.senderEmail || getDefaultSender().email,
+    name: platform.senderName || getDefaultSender().name,
+  };
 
   try {
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {

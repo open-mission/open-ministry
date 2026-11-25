@@ -3,9 +3,9 @@
 import { headers } from "next/headers";
 import { getOrganizationContext } from "@/lib/organizations";
 import {
+  getEffectivePushConfig,
   countUserPushSubscriptions,
   deletePushSubscription,
-  getVapidConfig,
   isVapidConfigured,
   savePushSubscription,
   sendWebPushToUser,
@@ -18,7 +18,7 @@ export async function getPushSubscriptionStatusAction() {
     return { ok: false, error: "Não autenticado", isSubscribed: false, publicKey: "" };
   }
 
-  const { publicKey } = getVapidConfig();
+  const { publicKey } = await getEffectivePushConfig();
   const count = await countUserPushSubscriptions(context.session.user.id);
 
   return {
@@ -67,7 +67,14 @@ export async function sendTestPushNotificationAction() {
     return { ok: false, error: "Sua sessão expirou." };
   }
 
-  if (!isVapidConfigured()) {
+  const config = await getEffectivePushConfig();
+  if (!config.isEnabled) {
+    return {
+      ok: false,
+      error: "Integração de Web Push desativada pela plataforma.",
+    };
+  }
+  if (!isVapidConfigured(config)) {
     return {
       ok: false,
       error: "Chaves VAPID não configuradas no servidor.",

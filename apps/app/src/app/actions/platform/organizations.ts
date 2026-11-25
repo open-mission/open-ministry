@@ -11,6 +11,7 @@ import { requireSuperAdmin } from "@/lib/platform/auth";
 import { deleteEvolutionInstance } from "@/lib/evolution-api";
 import { decryptSecret } from "@/lib/secret-crypto";
 import { recordPlatformAudit } from "@/lib/platform/audit";
+import { listResolvedPlatformIntegrations } from "@/lib/platform/integrations-config";
 
 const organizationIdSchema = z.string().trim().min(1, "Igreja inválida.");
 
@@ -81,16 +82,14 @@ export async function getPlatformOverviewAction(): Promise<{
     provider: string;
     displayName: string;
     isEnabled: boolean;
+    source: "env" | "platform" | "unconfigured";
     lastHealthStatus: string | null;
     lastHealthLatencyMs: number | null;
   }[];
 }> {
   const session = await requireSuperAdmin("access");
   const [{ organizations, settingsByOrg, channelByOrg }, integrations] =
-    await Promise.all([
-      loadOrganizationData(),
-      db.query.platformIntegrationConfig.findMany(),
-    ]);
+    await Promise.all([loadOrganizationData(), listResolvedPlatformIntegrations()]);
 
   const statuses = organizations.map((org) => settingsByOrg.get(org.id)?.status ?? "active");
   const connected = [...channelByOrg.values()].filter(
@@ -113,8 +112,9 @@ export async function getPlatformOverviewAction(): Promise<{
       provider: item.provider,
       displayName: item.displayName,
       isEnabled: item.isEnabled,
-      lastHealthStatus: item.lastHealthStatus,
-      lastHealthLatencyMs: item.lastHealthLatencyMs,
+      source: item.source,
+      lastHealthStatus: item.row?.lastHealthStatus ?? null,
+      lastHealthLatencyMs: item.row?.lastHealthLatencyMs ?? null,
     })),
   };
 }

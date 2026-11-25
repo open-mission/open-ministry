@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { cacheDelete, cacheInvalidateTags, remember } from "@/lib/cache";
+import { getPlatformEvolutionConfig } from "@/lib/platform/evolution-config";
 import {
   DEFAULT_PLATFORM_FEATURES,
   type PlatformFeatureFlags,
@@ -44,10 +45,19 @@ export type OrganizationEntitlements = {
  * overrides manuais e disponibilidade do provedor global. Nunca devolve
  * segredos ou a URL global da Evolution.
  */
+type CachedEntitlements = {
+  organizationId: string;
+  status: string;
+  plan: OrganizationEntitlements["plan"];
+  features: PlatformFeatureFlags;
+  integration: OrganizationEntitlements["integration"];
+  suspended: boolean;
+};
+
 export async function getOrganizationEntitlements(
   organizationId: string,
 ): Promise<OrganizationEntitlements> {
-  return remember(
+  const cached = await remember<CachedEntitlements>(
     `platform:entitlements:${organizationId}`,
     300,
     async () => {
@@ -78,12 +88,6 @@ export async function getOrganizationEntitlements(
       };
 
       const status = settings?.status ?? "active";
-      const suspended = status === "suspended";
-      const providerAvailable = Boolean(
-        integration?.isEnabled && integration?.encryptedSecrets,
-      );
-
-      const enabled = !suspended && features.whatsapp_notifications && providerAvailable;
 
       return {
         organizationId,
@@ -100,15 +104,30 @@ export async function getOrganizationEntitlements(
               lastHealthStatus: integration.lastHealthStatus,
             }
           : null,
-        whatsapp: {
-          enabled,
-          maxInstances: enabled ? features.whatsapp_max_instances : 0,
-          providerAvailable,
-        },
-      } satisfies OrganizationEntitlements;
+        suspended: status === "suspended",
+      } satisfies CachedEntitlements;
     },
     [...PLATFORM_CACHE_TAGS],
   );
+
+  // A disponibilidade do provedor é resolvida FORA do cache: o toggle global
+  // e os segredos podem vir do .env, que nunca entra no Redis.
+  const providerAvailable = Boolean(await getPlatformEvolutionConfig());
+  const enabled =
+    !cached.suspended && cached.features.whatsapp_notifications && providerAvailable;
+
+  return {
+    organizationId: cached.organizationId,
+    status: cached.status,
+    plan: cached.plan,
+    features: cached.features,
+    integration: cached.integration,
+    whatsapp: {
+      enabled,
+      maxInstances: enabled ? cached.features.whatsapp_max_instances : 0,
+      providerAvailable,
+    },
+  };
 }
 
 /** Invalida o cache de entitlements de uma igreja após qualquer mutação. */
