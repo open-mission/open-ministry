@@ -52,6 +52,7 @@ globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) =>
 }) as typeof fetch;
 
 let inserted: Record<string, unknown> | null = null;
+let lastUpdate: Record<string, unknown> | null = null;
 mock.module("@/db", () => ({
   db: {
     query: {
@@ -94,7 +95,12 @@ mock.module("@/db", () => ({
         return Promise.resolve();
       },
     }),
-    update: () => ({ set: () => ({ where: async () => ({ rowCount: 1 }) }) }),
+    update: () => ({
+      set: (values: Record<string, unknown>) => {
+        lastUpdate = values;
+        return { where: async () => ({ rowCount: 1 }) };
+      },
+    }),
   },
   schema: {
     organizationNotificationChannel: {
@@ -120,6 +126,8 @@ const { getOrganizationEvolutionConfig } = await import(
 const {
   getChurchWhatsAppViewAction,
   createChurchWhatsAppInstanceAction,
+  refreshChurchWhatsAppQrAction,
+  toggleChurchWhatsAppActiveAction,
 } = await import("@/app/actions/church-whatsapp");
 
 describe("WhatsApp gerenciado da igreja", () => {
@@ -151,5 +159,58 @@ describe("WhatsApp gerenciado da igreja", () => {
     const serialized = JSON.stringify(result) + JSON.stringify(inserted);
     expect(serialized).not.toContain("GLOBAL_SECRET_DO_NOT_LEAK");
     expect(serialized).not.toContain("https://evo.example.com");
+  });
+
+  it("bloqueia renovação de QR em igreja suspensa", async () => {
+    entitlementsEnabled = false;
+    channel = { id: "ch-1", instanceName: "igreja-pcm", instanceToken: "enc:token", webhookSecret: "secret-1" };
+    const result = await refreshChurchWhatsAppQrAction();
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("não liberado");
+    entitlementsEnabled = true;
+  });
+
+  it("bloqueia ativação do canal em igreja suspensa", async () => {
+    entitlementsEnabled = false;
+    const result = await toggleChurchWhatsAppActiveAction(true);
+    expect(result.ok).toBe(false);
+    entitlementsEnabled = true;
+  });
+
+  it("migra canal legado e remove apiUrl/apiKey", async () => {
+    entitlementsEnabled = true;
+    channel = {
+      id: "ch-legacy",
+      organizationId: "org-1",
+      instanceName: "igreja-legada",
+      apiUrl: "https://api-antiga.example.com",
+      apiKey: "legado-secreto",
+      managedByPlatform: false,
+    };
+    const result = await createChurchWhatsAppInstanceAction();
+    expect(result.ok).toBe(true);
+    expect(lastUpdate).toMatchObject({
+      managedByPlatform: true,
+      apiUrl: null,
+      apiKey: null,
+    });
+    expect(JSON.stringify(lastUpdate)).not.toContain("legado-secreto");
+  });
+
+  it("persiste webhookSecret ausente antes de renovar o QR", async () => {
+    entitlementsEnabled = true;
+    lastUpdate = null;
+    channel = {
+      id: "ch-2",
+      instanceName: "igreja-pcm",
+      instanceToken: "enc:token",
+      webhookSecret: null,
+      managedByPlatform: true,
+    };
+    const result = await refreshChurchWhatsAppQrAction();
+    expect(result.ok).toBe(true);
+    const update = lastUpdate as Record<string, unknown> | null;
+    expect(update?.webhookSecret).toBeTruthy();
+    expect(update?.webhookSecret).not.toBeNull();
   });
 });

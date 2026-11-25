@@ -52,6 +52,11 @@ function webhookUrl(secret: string): string {
   return `${getAppBaseUrl().replace(/\/+$/, "")}/api/webhooks/evolution?token=${secret}`;
 }
 
+async function requireWhatsAppEntitlement(organizationId: string): Promise<boolean> {
+  const entitlements = await getOrganizationEntitlements(organizationId);
+  return entitlements.whatsapp.enabled;
+}
+
 /** DTO seguro: nunca inclui apiUrl, globalApiKey, instanceToken nem webhookSecret. */
 export async function getChurchWhatsAppViewAction(): Promise<ChurchWhatsAppView | null> {
   const context = await requireChurchAdmin();
@@ -119,7 +124,7 @@ export async function createChurchWhatsAppInstanceAction(): Promise<{
       eq(schema.organizationNotificationChannel.channel, "evolution_whatsapp"),
     ),
   });
-  if (channel?.instanceName) {
+  if (channel?.instanceName && channel.managedByPlatform !== false) {
     return { ok: false, error: "A igreja já possui uma instância. Use 'Recriar QR Code'." };
   }
 
@@ -158,6 +163,10 @@ export async function createChurchWhatsAppInstanceAction(): Promise<{
     webhookSecret: secret,
     connectionStatus: "disconnected",
     managedByPlatform: true,
+    // Migração legada: remove a URL e a chave da igreja, que passam a ser
+    // exclusivas da configuração global da plataforma.
+    apiUrl: null,
+    apiKey: null,
     isActive: true,
     updatedAt: new Date(),
   };
@@ -187,6 +196,9 @@ export async function refreshChurchWhatsAppQrAction(): Promise<{
 }> {
   const context = await requireChurchAdmin();
   if (!context) return { ok: false, error: "Sem permissão." };
+  if (!(await requireWhatsAppEntitlement(context.organization.id))) {
+    return { ok: false, error: "Recurso não liberado no plano da igreja." };
+  }
   const channel = await db.query.organizationNotificationChannel.findFirst({
     where: and(
       eq(schema.organizationNotificationChannel.organizationId, context.organization.id),
@@ -199,12 +211,23 @@ export async function refreshChurchWhatsAppQrAction(): Promise<{
     return { ok: false, error: "Conexão não encontrada." };
   }
 
+  // Nunca gerar um segredo de webhook sem persisti-lo: o token usado pelo
+  // Evolution precisa ser exatamente o mesmo gravado no banco.
+  let webhookSecret = channel.webhookSecret;
+  if (!webhookSecret) {
+    webhookSecret = randomUUID();
+    await db
+      .update(schema.organizationNotificationChannel)
+      .set({ webhookSecret, updatedAt: new Date() })
+      .where(eq(schema.organizationNotificationChannel.id, channel.id));
+  }
+
   const result = await connectEvolutionInstance({
     apiUrl: platform.apiUrl,
     globalApiKey: platform.globalApiKey,
     instanceToken: token,
     instanceName: channel.instanceName,
-    webhookUrl: webhookUrl(channel.webhookSecret ?? randomUUID()),
+    webhookUrl: webhookUrl(webhookSecret),
   });
   return result;
 }
@@ -219,6 +242,9 @@ export async function checkChurchWhatsAppStatusAction(): Promise<{
 }> {
   const context = await requireChurchAdmin();
   if (!context) return { ok: false, connected: false, state: "unauthorized", phone: null, profileName: null };
+  if (!(await requireWhatsAppEntitlement(context.organization.id))) {
+    return { ok: false, connected: false, state: "not_allowed", phone: null, profileName: null };
+  }
   const channel = await db.query.organizationNotificationChannel.findFirst({
     where: and(
       eq(schema.organizationNotificationChannel.organizationId, context.organization.id),
@@ -267,6 +293,9 @@ export async function toggleChurchWhatsAppActiveAction(
 ): Promise<{ ok: boolean; error?: string }> {
   const context = await requireChurchAdmin();
   if (!context) return { ok: false, error: "Sem permissão." };
+  if (!(await requireWhatsAppEntitlement(context.organization.id))) {
+    return { ok: false, error: "Recurso não liberado no plano da igreja." };
+  }
   await db
     .update(schema.organizationNotificationChannel)
     .set({ isActive, updatedAt: new Date() })
@@ -286,6 +315,9 @@ export async function disconnectChurchWhatsAppInstanceAction(): Promise<{
 }> {
   const context = await requireChurchAdmin();
   if (!context) return { ok: false, error: "Sem permissão." };
+  if (!(await requireWhatsAppEntitlement(context.organization.id))) {
+    return { ok: false, error: "Recurso não liberado no plano da igreja." };
+  }
   const channel = await db.query.organizationNotificationChannel.findFirst({
     where: and(
       eq(schema.organizationNotificationChannel.organizationId, context.organization.id),
@@ -328,6 +360,9 @@ export async function sendChurchWhatsAppTestMessageAction(
 ): Promise<{ ok: boolean; error?: string }> {
   const context = await requireChurchAdmin();
   if (!context) return { ok: false, error: "Sem permissão." };
+  if (!(await requireWhatsAppEntitlement(context.organization.id))) {
+    return { ok: false, error: "Recurso não liberado no plano da igreja." };
+  }
 
   const formatted = formatPhoneNumberForEvolution(recipientPhone);
   if (!formatted) return { ok: false, error: "Número de WhatsApp inválido." };
