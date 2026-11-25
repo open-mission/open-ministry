@@ -53,11 +53,22 @@ export type DispatchNotificationOptions = {
   };
 };
 
+type CachedEvolutionConfig = {
+  channel: typeof schema.organizationNotificationChannel.$inferSelect | null;
+  source: "legacy" | "platform" | null;
+  apiUrl: string | null;
+  /** Ainda cifrado em repouso; NUNCA o valor descriptografado. */
+  encryptedSecret: string | null;
+  instanceName: string | null;
+};
+
 export async function getOrganizationEvolutionConfig(
   organizationId: string,
 ): Promise<{ channel: typeof schema.organizationNotificationChannel.$inferSelect | null; config: EvolutionConfig | null }> {
-  return remember(
-    `org:${organizationId}:evolution-config`,
+  // O cache L2 guarda apenas o segredo cifrado; decryptSecret roda fora do
+  // remember(), somente em memória, no momento do uso.
+  const cached = await remember<CachedEvolutionConfig>(
+    `org:${organizationId}:evolution-config:v2`,
     300,
     async () => {
       try {
@@ -71,45 +82,41 @@ export async function getOrganizationEvolutionConfig(
           getOrganizationEntitlements(organizationId),
         ]);
 
-        // Respeita status do plano, overrides e disponibilidade do provedor
-        // global antes de tentar qualquer envio.
+        const empty: CachedEvolutionConfig = {
+          channel: channel ?? null,
+          source: null,
+          apiUrl: null,
+          encryptedSecret: null,
+          instanceName: null,
+        };
+
         if (!channel?.isActive || !channel.instanceName || !entitlements.whatsapp.enabled) {
-          return { channel: channel ?? null, config: null };
+          return empty;
         }
 
         if (channel.managedByPlatform === false) {
-          // Registro legado: a igreja ainda guarda URL e chave próprios.
-          const apiKey = decryptSecret(channel.apiKey);
-          if (!channel.apiUrl || !apiKey) {
-            return { channel, config: null };
-          }
+          if (!channel.apiUrl || !channel.apiKey) return empty;
           return {
             channel,
-            config: {
-              apiUrl: channel.apiUrl,
-              apiKey,
-              instanceName: channel.instanceName,
-            },
+            source: "legacy",
+            apiUrl: channel.apiUrl,
+            encryptedSecret: channel.apiKey,
+            instanceName: channel.instanceName,
           };
         }
 
         const platformConfig = await getPlatformEvolutionConfig();
-        const instanceToken = decryptSecret(channel.instanceToken);
-        if (!platformConfig || !instanceToken) {
-          return { channel, config: null };
-        }
-
+        if (!platformConfig || !channel.instanceToken) return empty;
         return {
           channel,
-          config: {
-            apiUrl: platformConfig.apiUrl,
-            apiKey: instanceToken,
-            instanceName: channel.instanceName,
-          },
+          source: "platform",
+          apiUrl: platformConfig.apiUrl,
+          encryptedSecret: channel.instanceToken,
+          instanceName: channel.instanceName,
         };
       } catch (error) {
         console.error("Erro ao buscar canal de notificação da igreja:", error);
-        return { channel: null, config: null };
+        return { channel: null, source: null, apiUrl: null, encryptedSecret: null, instanceName: null };
       }
     },
     [
@@ -118,6 +125,19 @@ export async function getOrganizationEvolutionConfig(
       "platform:integrations",
     ],
   );
+
+  const channel = cached.channel;
+  if (!channel?.isActive || !cached.source || !cached.apiUrl || !cached.encryptedSecret || !cached.instanceName) {
+    return { channel, config: null };
+  }
+
+  const apiKey = decryptSecret(cached.encryptedSecret);
+  if (!apiKey) return { channel, config: null };
+
+  return {
+    channel,
+    config: { apiUrl: cached.apiUrl, apiKey, instanceName: cached.instanceName },
+  };
 }
 
 export function buildWhatsAppMessageText(

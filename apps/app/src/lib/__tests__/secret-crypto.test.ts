@@ -42,13 +42,34 @@ describe("encryptSecret / decryptSecret", () => {
     );
   });
 
-  it("sem chave no env, grava em claro (fail-open) e lê de volta", () => {
+  it("sem chave no env e fora de produção, mantém fallback legado", () => {
     delete process.env.SECRETS_ENCRYPTION_KEY;
 
     const stored = encryptSecret("evo-api-key-sem-chave");
 
     expect(stored).toBe("evo-api-key-sem-chave");
     expect(decryptSecret(stored)).toBe("evo-api-key-sem-chave");
+  });
+
+  it("sem chave em produção, falha fechado em vez de gravar em claro", () => {
+    const originalEnv = process.env.NODE_ENV;
+    Object.defineProperty(process.env, "NODE_ENV", {
+      value: "production",
+      configurable: true,
+      writable: true,
+    });
+    delete process.env.SECRETS_ENCRYPTION_KEY;
+    try {
+      expect(() => encryptSecret("evo-api-key-sem-chave")).toThrow(
+        /SECRETS_ENCRYPTION_KEY/,
+      );
+    } finally {
+      Object.defineProperty(process.env, "NODE_ENV", {
+        value: originalEnv,
+        configurable: true,
+        writable: true,
+      });
+    }
   });
 
   it("chave errada não decifra (retorna null)", () => {

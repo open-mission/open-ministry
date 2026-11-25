@@ -64,9 +64,33 @@ describe("parseEvolutionApiUrl", () => {
     expect(parseEvolutionApiUrl("https://evo.example.com/")).toBe(
       "https://evo.example.com",
     );
-    expect(parseEvolutionApiUrl("http://localhost:8080")).toBe(
-      "http://localhost:8080",
-    );
+    // hosts internos são bloqueados por definição (SSRF)
+    expect(parseEvolutionApiUrl("http://localhost:8080")).toBeNull();
+    expect(parseEvolutionApiUrl("http://127.0.0.1:8080")).toBeNull();
+    expect(parseEvolutionApiUrl("http://169.254.169.254/latest/meta-data")).toBeNull();
+    expect(parseEvolutionApiUrl("http://10.0.0.5")).toBeNull();
+    expect(parseEvolutionApiUrl("https://user:pass@evo.example.com")).toBeNull();
+  });
+
+  it("exige https em produção", () => {
+    const original = process.env.NODE_ENV;
+    try {
+      Object.defineProperty(process.env, "NODE_ENV", {
+        value: "production",
+        configurable: true,
+        writable: true,
+      });
+      expect(parseEvolutionApiUrl("http://evo.example.com")).toBeNull();
+      expect(parseEvolutionApiUrl("https://evo.example.com")).toBe(
+        "https://evo.example.com",
+      );
+    } finally {
+      Object.defineProperty(process.env, "NODE_ENV", {
+        value: original,
+        configurable: true,
+        writable: true,
+      });
+    }
   });
 
   it("rejeita protocolos e valores inválidos", () => {

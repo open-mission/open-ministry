@@ -1,3 +1,4 @@
+import { lookup } from "node:dns/promises";
 export type EvolutionConfig = {
   apiUrl: string;
   apiKey: string;
@@ -66,6 +67,7 @@ export async function resolveEvolutionInstanceToken(
       headers: {
         apikey: key,
       },
+      redirect: "error",
       signal: AbortSignal.timeout(6000),
     });
 
@@ -93,6 +95,7 @@ export async function resolveEvolutionInstanceToken(
       headers: {
         apikey: key,
       },
+      redirect: "error",
       signal: AbortSignal.timeout(6000),
     });
 
@@ -210,6 +213,7 @@ export async function checkEvolutionConnection({
           apikey: key,
           "Content-Type": "application/json",
         },
+        redirect: "error",
         signal: AbortSignal.timeout(6000),
       },
     );
@@ -237,6 +241,7 @@ export async function checkEvolutionConnection({
       headers: {
         apikey: key,
       },
+      redirect: "error",
       signal: AbortSignal.timeout(6000),
     });
 
@@ -326,6 +331,7 @@ export async function sendEvolutionTextMessage({
         number,
         text: text.trim(),
       }),
+      redirect: "error",
       signal: AbortSignal.timeout(12000),
     });
 
@@ -348,13 +354,14 @@ export async function sendEvolutionTextMessage({
     // Otherwise, if Evolution Go returned an actual error (e.g. 400 or 500), return it.
     if (goRes.status !== 404 && goRes.status !== 405) {
       const errJson = await goRes.json().catch(() => null);
-      const errMsg = errJson?.error || errJson?.message;
-      if (errMsg) {
-        return {
-          ok: false,
-          error: `Evolution API Go: ${errMsg}`,
-        };
-      }
+      console.error("Evolution Go recusou envio", {
+        status: goRes.status,
+        upstream: errJson?.error ?? errJson?.message ?? null,
+      });
+      return {
+        ok: false,
+        error: `Falha no envio via Evolution (HTTP ${goRes.status}).`,
+      };
     }
   } catch (err) {
     console.warn("Tentativa via Evolution Go falhou, tentando fallback Node:", err);
@@ -373,6 +380,7 @@ export async function sendEvolutionTextMessage({
         number,
         text: text.trim(),
       }),
+      redirect: "error",
       signal: AbortSignal.timeout(12000),
     });
 
@@ -391,29 +399,79 @@ export async function sendEvolutionTextMessage({
     }
 
     const errorText = await nodeRes.text().catch(() => "");
+    console.error("Evolution Node recusou envio", {
+      status: nodeRes.status,
+      upstream: errorText.slice(0, 500),
+    });
     return {
       ok: false,
-      error: `Falha no envio Evolution API (HTTP ${nodeRes.status}): ${errorText || nodeRes.statusText}`,
+      error: `Falha no envio via WhatsApp (HTTP ${nodeRes.status}).`,
     };
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Erro desconhecido ao enviar.";
+    console.error("Erro ao enviar mensagem via WhatsApp", error);
     return {
       ok: false,
-      error: `Erro ao enviar mensagem via WhatsApp: ${message}`,
+      error: "Não foi possível enviar a mensagem. Tente novamente.",
     };
   }
 }
 
-/** Valida estritamente a URL global (somente http/https). */
+const BLOCKED_HOSTNAMES = /^(localhost|.*\.localhost|.*\.local|.*\.internal)$/i;
+
+function isBlockedIpAddress(address: string): boolean {
+  const hostname = address.replace(/^\[|\]$/g, "").toLowerCase();
+  if (hostname === "::1" || hostname === "0.0.0.0" || hostname === "::") return true;
+  if (hostname.startsWith("::ffff:")) {
+    return isBlockedIpAddress(hostname.slice(7));
+  }
+  if (/^fe[89ab][0-9a-f]:/i.test(hostname) || hostname.startsWith("fe80:")) return true;
+  if (/^f[cd][0-9a-f]{2}:/i.test(hostname)) return true;
+
+  const parts = hostname.split(".").map(Number);
+  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) {
+    return false;
+  }
+  const [a, b] = parts;
+  return (
+    a === 0 ||
+    a === 10 ||
+    a === 127 ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    (a === 100 && b >= 64 && b <= 127)
+  );
+}
+
+/**
+ * Validação de URL da Evolution: credenciais na URL proibidas, hosts internos e
+ * faixas IP privadas/loopback/metadata bloqueadas, e HTTPS obrigatório em produção.
+ */
 export function parseEvolutionApiUrl(input: string): string | null {
   try {
     const url = new URL(input.trim());
     if (url.protocol !== "http:" && url.protocol !== "https:") return null;
-    if (!url.hostname) return null;
+    if (!url.hostname || url.username || url.password) return null;
+    if (process.env.NODE_ENV === "production" && url.protocol !== "https:") return null;
+
+    const hostname = url.hostname.replace(/^\[|\]$/g, "").toLowerCase();
+    if (BLOCKED_HOSTNAMES.test(hostname) || isBlockedIpAddress(hostname)) return null;
+
     return url.toString().replace(/\/+$/, "");
   } catch {
     return null;
+  }
+}
+
+/** Em produção, bloqueia também domínios que resolvem para IPs internos (DNS rebinding). */
+export async function assertEvolutionUrlResolvedSafe(url: string | URL): Promise<boolean> {
+  if (process.env.NODE_ENV !== "production") return true;
+  try {
+    const hostname = new URL(url).hostname;
+    const addresses = await lookup(hostname, { all: true });
+    return !addresses.some((address) => isBlockedIpAddress(address.address));
+  } catch {
+    return false;
   }
 }
 
@@ -455,12 +513,22 @@ export async function checkEvolutionPlatformHealth({
       error: "URL da API ou chave global inválida.",
     };
   }
+  if (!(await assertEvolutionUrlResolvedSafe(new URL(baseUrl)))) {
+    return {
+      ok: false,
+      latencyMs: null,
+      instanceCount: 0,
+      status: "blocked_host",
+      error: "Host da API não permitido.",
+    };
+  }
 
   const started = Date.now();
   try {
     const response = await fetch(`${baseUrl}/instance/all`, {
       method: "GET",
       headers: { apikey: globalApiKey.trim() },
+      redirect: "error",
       signal: AbortSignal.timeout(8000),
       cache: "no-store",
     });
@@ -535,6 +603,7 @@ export async function createEvolutionInstance({
         webhook: webhookUrl,
         qrcode: true,
       }),
+      redirect: "error",
       signal: AbortSignal.timeout(12000),
     });
 
@@ -598,6 +667,7 @@ export async function connectEvolutionInstance({
         instanceId: instanceName.trim(),
       },
       body: JSON.stringify({ webhookUrl }),
+      redirect: "error",
       signal: AbortSignal.timeout(12000),
     });
 
@@ -661,6 +731,7 @@ export async function getEvolutionInstanceStatus({
     const response = await fetch(`${baseUrl}/instance/status`, {
       method: "GET",
       headers: { apikey: token, instanceId: instanceName.trim() },
+      redirect: "error",
       signal: AbortSignal.timeout(8000),
     });
 
@@ -719,6 +790,7 @@ export async function disconnectEvolutionInstance({
       method: "POST",
       headers: { apikey: token, "Content-Type": "application/json" },
       body: JSON.stringify({ instanceName: instanceName.trim() }),
+      redirect: "error",
       signal: AbortSignal.timeout(10000),
     });
     if (!response.ok) {
@@ -752,6 +824,7 @@ export async function deleteEvolutionInstance({
       {
         method: "DELETE",
         headers: { apikey: token },
+        redirect: "error",
         signal: AbortSignal.timeout(10000),
       },
     );
@@ -812,6 +885,7 @@ export async function configureEvolutionWebhook({
             "Content-Type": "application/json",
           },
           body: JSON.stringify(payload),
+          redirect: "error",
           signal: AbortSignal.timeout(8000),
         },
       );
@@ -837,6 +911,7 @@ export async function configureEvolutionWebhook({
           subscribe: ["ALL"],
           immediate: true,
         }),
+        redirect: "error",
         signal: AbortSignal.timeout(8000),
       });
 
@@ -870,6 +945,7 @@ export async function configureEvolutionWebhook({
             ],
           },
         }),
+        redirect: "error",
         signal: AbortSignal.timeout(8000),
       },
     );

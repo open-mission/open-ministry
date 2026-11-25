@@ -10,9 +10,10 @@ import { invalidateOrganizationEntitlements } from "@/lib/platform/entitlements"
 import { encryptSecret, decryptSecret } from "@/lib/secret-crypto";
 import {
   checkEvolutionPlatformHealth,
+  assertEvolutionUrlResolvedSafe,
   parseEvolutionApiUrl,
 } from "@/lib/evolution-api";
-import { recordPlatformAudit } from "./audit";
+import { recordPlatformAudit } from "@/lib/platform/audit";
 
 export type PlatformIntegrationView = {
   provider: string;
@@ -62,7 +63,9 @@ export async function saveEvolutionPlatformIntegrationAction(input: {
 }): Promise<{ ok: boolean; error?: string; health?: { ok: boolean; latencyMs: number | null } }> {
   const session = await requireSuperAdmin("manage-integrations");
   const apiUrl = parseEvolutionApiUrl(input.apiUrl);
-  if (!apiUrl) return { ok: false, error: "Informe uma URL http(s) válida." };
+  if (!apiUrl || !(await assertEvolutionUrlResolvedSafe(new URL(apiUrl)))) {
+    return { ok: false, error: "Informe uma URL http(s) pública válida (hosts internos não são permitidos)." };
+  }
 
   const existing = await db.query.platformIntegrationConfig.findFirst({
     where: eq(schema.platformIntegrationConfig.provider, "evolution_whatsapp"),
