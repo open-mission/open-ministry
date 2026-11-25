@@ -19,7 +19,7 @@ afterAll(() => {
   mock.restore();
 });
 
-const { AdminEvolutionApiCard } = await import(
+const { AdminEvolutionApiCard, normalizeQrCodeSrc } = await import(
   "@/components/settings/admin-evolution-api-card"
 );
 const { UserMenuDrawer } = await import("@/components/app/user-menu-drawer");
@@ -147,6 +147,69 @@ describe("AdminEvolutionApiCard — WhatsApp gerenciado pela plataforma", () => 
     expect(source).not.toContain("apiKey");
     expect(source).not.toContain("globalApiKey");
     expect(source).not.toContain("webhookUrl");
+  });
+
+  it("aceita apenas data:image/(png|jpeg|webp);base64 ou base64 puro válido em normalizeQrCodeSrc", () => {
+    expect(normalizeQrCodeSrc("QRBASE64")).toBe("data:image/png;base64,QRBASE64");
+    expect(
+      normalizeQrCodeSrc("  data:image/PNG;base64,iVBORw0KGgo=  "),
+    ).toBe("data:image/png;base64,iVBORw0KGgo=");
+    expect(normalizeQrCodeSrc("data:image/jpeg;base64,/9j/4AAQ")).toBe(
+      "data:image/jpeg;base64,/9j/4AAQ",
+    );
+    expect(normalizeQrCodeSrc("data:image/webp;base64,UklGRh4=")).toBe(
+      "data:image/webp;base64,UklGRh4=",
+    );
+
+    expect(normalizeQrCodeSrc("data:image/svg+xml;base64,PHN2Zz4=")).toBeNull();
+    expect(normalizeQrCodeSrc("data:image/svg+xml;utf8,<svg></svg>")).toBeNull();
+    expect(normalizeQrCodeSrc("<svg onload=alert(1)></svg>")).toBeNull();
+    expect(normalizeQrCodeSrc("data:text/html,<script>alert(1)</script>")).toBeNull();
+    expect(normalizeQrCodeSrc("data:image/gif;base64,R0lGODlh")).toBeNull();
+    expect(normalizeQrCodeSrc("http://evil.test/qr.png")).toBeNull();
+    expect(normalizeQrCodeSrc("https://evil.test/qr.png")).toBeNull();
+    expect(normalizeQrCodeSrc("data:image/png;base64,not valid!")).toBeNull();
+    expect(normalizeQrCodeSrc("   ")).toBeNull();
+    expect(normalizeQrCodeSrc(null)).toBeNull();
+  });
+
+  it("renderiza <img> apenas para QR Code válido e exibe aviso limpo quando o QR Code é rejeitado", () => {
+    const basePairing = {
+      state: "pairing" as const,
+      organizationId: "org-1",
+      instanceName: "om-igreja-pcm",
+      connectionStatus: "disconnected",
+      connectedPhone: null,
+      connectedProfileName: null,
+      lastError: null,
+      isActive: true,
+    };
+
+    const validHtml = renderToStaticMarkup(
+      createElement(AdminEvolutionApiCard, {
+        initialView: basePairing,
+        initialQrCode: "QRBASE64",
+      }),
+    );
+    expect(validHtml).toContain('src="data:image/png;base64,QRBASE64"');
+    expect(validHtml).toContain("Recriar QR Code");
+
+    for (const maliciousQr of [
+      "data:image/svg+xml;utf8,<svg onload=alert(1)></svg>",
+      "<svg onload=alert(1)></svg>",
+      "https://evil.test/qr.png",
+      "data:text/html;base64,PHNjcmlwdD4=",
+    ]) {
+      const rejectedHtml = renderToStaticMarkup(
+        createElement(AdminEvolutionApiCard, {
+          initialView: basePairing,
+          initialQrCode: maliciousQr,
+        }),
+      );
+      expect(rejectedHtml).not.toContain("<img");
+      expect(rejectedHtml).toContain("QR Code inválido ou em formato não suportado");
+      expect(rejectedHtml).toContain("Gerar QR Code");
+    }
   });
 });
 

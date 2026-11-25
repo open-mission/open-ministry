@@ -49,28 +49,56 @@ import { formatBrazilianPhone } from "@/lib/whatsapp-prompt";
 
 type AdminEvolutionApiCardProps = {
   initialView: ChurchWhatsAppView;
+  initialQrCode?: string | null;
 };
 
-function normalizeQrCodeSrc(raw: string): string {
+const DATA_IMAGE_QR_RE =
+  /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/i;
+const STRICT_BASE64_RE =
+  /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$/;
+
+/**
+ * Valida estritamente o QR Code retornado pela Evolution API.
+ * Aceita apenas `data:image/(png|jpeg|webp);base64,<base64-valido>` ou base64 puro
+ * convertido para PNG; rejeita SVG, esquemas data: inseguros e URLs http(s).
+ */
+export function normalizeQrCodeSrc(
+  raw: string | null | undefined,
+): string | null {
+  if (!raw) return null;
   const trimmed = raw.trim();
-  if (trimmed.startsWith("data:") || trimmed.startsWith("http")) {
-    return trimmed;
+  if (!trimmed) return null;
+
+  if (/^data:/i.test(trimmed)) {
+    const match = DATA_IMAGE_QR_RE.exec(trimmed);
+    if (!match) return null;
+    const [, mime, payload] = match;
+    if (!mime || !payload || !STRICT_BASE64_RE.test(payload)) {
+      return null;
+    }
+    return `data:image/${mime.toLowerCase()};base64,${payload}`;
   }
-  if (trimmed.startsWith("<svg")) {
-    return `data:image/svg+xml;utf8,${encodeURIComponent(trimmed)}`;
+
+  if (STRICT_BASE64_RE.test(trimmed)) {
+    return `data:image/png;base64,${trimmed}`;
   }
-  return `data:image/png;base64,${trimmed}`;
+
+  return null;
 }
 
 export function AdminEvolutionApiCard({
   initialView,
+  initialQrCode = null,
 }: AdminEvolutionApiCardProps) {
   const [view, setView] = useState<ChurchWhatsAppView>(initialView);
-  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [qrCode, setQrCode] = useState<string | null>(initialQrCode);
   const [pairingCode, setPairingCode] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [testPhone, setTestPhone] = useState("");
   const [disconnectOpen, setDisconnectOpen] = useState(false);
+
+  const safeQrCodeSrc = normalizeQrCodeSrc(qrCode);
+  const hasInvalidQrCode = Boolean(qrCode && !safeQrCodeSrc);
 
   const [isMutating, startMutating] = useTransition();
   const [isCheckingStatus, startCheckingStatus] = useTransition();
@@ -89,9 +117,9 @@ export function AdminEvolutionApiCard({
     }
   }
 
-  // Atualização automática leve enquanto o QR Code está exibido na tela
+  // Atualização automática leve enquanto o QR Code válido está exibido na tela
   useEffect(() => {
-    if (view.state !== "pairing" || !qrCode) return;
+    if (view.state !== "pairing" || !safeQrCodeSrc) return;
 
     const timer = setInterval(() => {
       void checkChurchWhatsAppStatusAction()
@@ -109,7 +137,28 @@ export function AdminEvolutionApiCard({
     }, 5000);
 
     return () => clearInterval(timer);
-  }, [view.state, qrCode]);
+  }, [view.state, safeQrCodeSrc]);
+
+  function applyQrCodeResponse(
+    nextQr: string | undefined,
+    nextPairing: string | undefined,
+    successToast: string,
+  ) {
+    const validatedQr = nextQr ? normalizeQrCodeSrc(nextQr) : null;
+    if (nextQr && !validatedQr) {
+      const invalidMessage =
+        "O QR Code retornado é inválido ou usa formato não suportado. Tente gerar novamente.";
+      setQrCode(null);
+      setPairingCode(nextPairing ?? null);
+      setActionError(invalidMessage);
+      toast.error(invalidMessage);
+      return;
+    }
+
+    setQrCode(validatedQr);
+    setPairingCode(nextPairing ?? null);
+    toast.success(successToast);
+  }
 
   function handleCreateConnection() {
     setActionError(null);
@@ -122,10 +171,12 @@ export function AdminEvolutionApiCard({
         toast.error(message);
         return;
       }
-      setQrCode(res.qrCode ?? null);
-      setPairingCode(res.pairingCode ?? null);
       await reloadView();
-      toast.success("Conexão criada! Escaneie o QR Code com o celular.");
+      applyQrCodeResponse(
+        res.qrCode,
+        res.pairingCode,
+        "Conexão criada! Escaneie o QR Code com o celular.",
+      );
     });
   }
 
@@ -140,10 +191,12 @@ export function AdminEvolutionApiCard({
         toast.error(message);
         return;
       }
-      setQrCode(res.qrCode ?? null);
-      setPairingCode(res.pairingCode ?? null);
       await reloadView();
-      toast.success("Novo QR Code gerado.");
+      applyQrCodeResponse(
+        res.qrCode,
+        res.pairingCode,
+        "Novo QR Code gerado.",
+      );
     });
   }
 
@@ -566,12 +619,12 @@ export function AdminEvolutionApiCard({
           ) : (
             /* Pairing view: QR Code + Pairing Code + Actions */
             <div className="space-y-5">
-              {qrCode ? (
+              {safeQrCodeSrc ? (
                 <div className="flex flex-col items-center gap-4 rounded-2xl border border-border/70 bg-muted/20 p-5 text-center sm:flex-row sm:items-start sm:text-left">
                   <div className="shrink-0 rounded-2xl border border-border bg-white p-3 shadow-xs">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={normalizeQrCodeSrc(qrCode)}
+                      src={safeQrCodeSrc}
                       alt="QR Code para conectar o WhatsApp da igreja"
                       className="size-48 object-contain"
                     />
@@ -610,6 +663,14 @@ export function AdminEvolutionApiCard({
                     </p>
                   </div>
                 </div>
+              ) : hasInvalidQrCode ? (
+                <div className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-xs text-destructive">
+                  <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />
+                  <span>
+                    QR Code inválido ou em formato não suportado. Gere um novo
+                    QR Code para conectar o aparelho.
+                  </span>
+                </div>
               ) : (
                 <div className="rounded-xl border border-border/70 bg-muted/25 p-4 text-xs text-muted-foreground">
                   Gere um novo QR Code para parear o aparelho da igreja ou
@@ -629,7 +690,7 @@ export function AdminEvolutionApiCard({
                   ) : (
                     <QrCodeIcon className="size-4" />
                   )}
-                  {qrCode ? "Recriar QR Code" : "Gerar QR Code"}
+                  {safeQrCodeSrc ? "Recriar QR Code" : "Gerar QR Code"}
                 </Button>
 
                 <Button
