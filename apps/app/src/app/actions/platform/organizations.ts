@@ -1,6 +1,7 @@
 "use server";
 
 import { and, desc, eq, ilike, inArray, sql } from "drizzle-orm";
+import { z } from "zod";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
@@ -9,7 +10,23 @@ import { getPlatformEvolutionConfig } from "@/lib/platform/evolution-config";
 import { requireSuperAdmin } from "@/lib/platform/auth";
 import { deleteEvolutionInstance } from "@/lib/evolution-api";
 import { decryptSecret } from "@/lib/secret-crypto";
-import { recordPlatformAudit } from "./audit";
+import { recordPlatformAudit } from "@/lib/platform/audit";
+
+const organizationIdSchema = z.string().trim().min(1, "Igreja inválida.");
+
+const updateOrganizationSchema = z.object({
+  organizationId: organizationIdSchema,
+  status: z.enum(["active", "trial", "suspended"]).optional(),
+  planId: organizationIdSchema.nullable().optional(),
+  featureOverrides: z
+    .object({
+      whatsapp_notifications: z.boolean().optional(),
+      whatsapp_max_instances: z.number().int().min(0).max(1000).optional(),
+    })
+    .strict()
+    .optional(),
+  notes: z.string().trim().max(2000).nullable().optional(),
+});
 
 export type PlatformOrganizationRow = {
   id: string;
@@ -228,22 +245,27 @@ export async function updatePlatformOrganizationAction(input: {
   notes?: string | null;
 }): Promise<{ ok: boolean; error?: string }> {
   const session = await requireSuperAdmin("manage-organizations");
-  if (input.planId) {
+  const parsed = updateOrganizationSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Dados inválidos: verifique os campos enviados." };
+  }
+  const data = parsed.data;
+  if (data.planId) {
     const plan = await db.query.platformPlan.findFirst({
-      where: eq(schema.platformPlan.id, input.planId),
+      where: eq(schema.platformPlan.id, data.planId),
     });
     if (!plan) return { ok: false, error: "Plano inexistente." };
   }
 
   const existing = await db.query.organizationPlatformSettings.findFirst({
-    where: eq(schema.organizationPlatformSettings.organizationId, input.organizationId),
+    where: eq(schema.organizationPlatformSettings.organizationId, data.organizationId),
   });
 
   const values = {
-    ...(input.status ? { status: input.status } : {}),
-    ...(input.planId !== undefined ? { planId: input.planId } : {}),
-    ...(input.featureOverrides !== undefined ? { featureOverrides: input.featureOverrides } : {}),
-    ...(input.notes !== undefined ? { notes: input.notes } : {}),
+    ...(data.status ? { status: data.status } : {}),
+    ...(data.planId !== undefined ? { planId: data.planId } : {}),
+    ...(data.featureOverrides !== undefined ? { featureOverrides: data.featureOverrides } : {}),
+    ...(data.notes !== undefined ? { notes: data.notes } : {}),
     updatedByUserId: session.user.id,
   };
 
@@ -251,25 +273,25 @@ export async function updatePlatformOrganizationAction(input: {
     await db
       .update(schema.organizationPlatformSettings)
       .set(values)
-      .where(eq(schema.organizationPlatformSettings.organizationId, input.organizationId));
+      .where(eq(schema.organizationPlatformSettings.organizationId, data.organizationId));
   } else {
     await db.insert(schema.organizationPlatformSettings).values({
-      organizationId: input.organizationId,
-      status: input.status ?? "active",
-      planId: input.planId ?? null,
-      featureOverrides: input.featureOverrides ?? {},
-      notes: input.notes ?? null,
+      organizationId: data.organizationId,
+      status: data.status ?? "active",
+      planId: data.planId ?? null,
+      featureOverrides: data.featureOverrides ?? {},
+      notes: data.notes ?? null,
       updatedByUserId: session.user.id,
     });
   }
 
-  await invalidateOrganizationEntitlements(input.organizationId);
+  await invalidateOrganizationEntitlements(data.organizationId);
   await recordPlatformAudit({
     actorUserId: session.user.id,
     actorEmail: session.user.email ?? null,
     action: "organization.settings_updated",
     targetType: "organization",
-    targetId: input.organizationId,
+    targetId: data.organizationId,
     summary: "Configurações de plataforma da igreja atualizadas.",
     metadataJson: { ...values, notes: undefined },
   });
@@ -281,9 +303,12 @@ export async function revokeOrganizationInstanceAction(
   organizationId: string,
 ): Promise<{ ok: boolean; error?: string }> {
   const session = await requireSuperAdmin("manage-organizations");
+  const parsedId = organizationIdSchema.safeParse(organizationId);
+  if (!parsedId.success) return { ok: false, error: "Igreja inválida." };
+  const organizationIdValue = parsedId.data;
   const channel = await db.query.organizationNotificationChannel.findFirst({
     where: and(
-      eq(schema.organizationNotificationChannel.organizationId, organizationId),
+      eq(schema.organizationNotificationChannel.organizationId, organizationIdValue),
       eq(schema.organizationNotificationChannel.channel, "evolution_whatsapp"),
     ),
   });
@@ -315,13 +340,13 @@ export async function revokeOrganizationInstanceAction(
     })
     .where(eq(schema.organizationNotificationChannel.id, channel.id));
 
-  await invalidateOrganizationEntitlements(organizationId);
+  await invalidateOrganizationEntitlements(organizationIdValue);
   await recordPlatformAudit({
     actorUserId: session.user.id,
     actorEmail: session.user.email ?? null,
     action: "organization.instance_revoked",
     targetType: "organization",
-    targetId: organizationId,
+    targetId: organizationIdValue,
     summary: "Instância de WhatsApp da igreja revogada pelo Super Admin.",
     metadataJson: remoteError ? { remoteError } : {},
   });

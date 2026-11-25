@@ -109,6 +109,7 @@ async function main() {
       for (const table of [
         "platform_integration_config",
         "platform_audit_log",
+        "platform_plan",
         "organization_platform_settings",
       ]) {
         try {
@@ -176,6 +177,7 @@ async function main() {
       for (const table of [
         "platform_integration_config",
         "platform_audit_log",
+        "platform_plan",
         "organization_platform_settings",
       ]) {
         assert.equal(
