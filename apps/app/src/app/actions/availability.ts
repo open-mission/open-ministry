@@ -21,7 +21,7 @@ import {
 import { requireOrganizationContext } from "@/lib/organizations";
 import { ensurePersonForUser } from "@/lib/people";
 import { requirePermission } from "@/lib/permissions/service";
-import type { AvailabilityPeriod } from "@/db/schema/people";
+import type { AvailabilityPeriod } from "@/db/schema";
 
 const VALID_PERIODS: AvailabilityPeriod[] = [
   "morning",
