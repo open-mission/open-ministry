@@ -7,6 +7,7 @@ mock.module("next/headers", () => ({ headers: async () => new Headers() }));
 let auditInserts: Record<string, unknown>[] = [];
 let roleChanges: { userId: string; role: string }[] = [];
 let transactionUpdates: { role: string }[] = [];
+let integrationUpdates: Record<string, unknown>[] = [];
 let userToPromote: {
   id: string;
   email: string;
@@ -70,9 +71,10 @@ mock.module("@/db", () => ({
       },
     }),
     update: () => ({
-      set: () => ({
-        where: async () => ({ rowCount: 1 }),
-      }),
+      set: (values: Record<string, unknown>) => {
+        integrationUpdates.push(values);
+        return { where: async () => ({ rowCount: 1 }) };
+      },
     }),
     select: () => ({
       from: () => ({ where: async () => [{ count: 0 }] }),
@@ -148,8 +150,11 @@ afterAll(() => {
   globalThis.fetch = realFetch;
 });
 
-const { listPlatformIntegrationsAction, saveEvolutionPlatformIntegrationAction } =
-  await import("@/app/actions/platform/integrations");
+const {
+  listPlatformIntegrationsAction,
+  saveEvolutionPlatformIntegrationAction,
+  resetPlatformIntegrationToEnvAction,
+} = await import("@/app/actions/platform/integrations");
 const { revokePlatformOperatorAction, promotePlatformOperatorAction } =
   await import("@/app/actions/platform/operators");
 
@@ -161,6 +166,39 @@ describe("actions da plataforma", () => {
     const serialized = JSON.stringify(integrations);
     expect(serialized).not.toContain("global-secret-1234");
     expect(serialized).not.toContain("enc:v1:abcdef123456");
+  });
+
+  it("devolve os 4 provedores com origem, fallback e máscaras", async () => {
+    const integrations = await listPlatformIntegrationsAction();
+    expect(integrations.map((item) => item.provider)).toEqual([
+      "evolution_whatsapp",
+      "brevo_email",
+      "web_push",
+      "meta_whatsapp_cloud",
+    ]);
+    for (const item of integrations) {
+      expect(item.source).toBeDefined();
+      expect(typeof item.hasEnvFallback).toBe("boolean");
+      expect(typeof item.isEnabled).toBe("boolean");
+      expect(item.secretMasks).toBeDefined();
+    }
+    const serialized = JSON.stringify(integrations);
+    expect(serialized).not.toContain("global-secret-1234");
+    expect(serialized).not.toContain("enc:v1:abcdef123456");
+  });
+
+  it("restaura o padrão do .env com auditoria e sem segredo gravado", async () => {
+    integrationUpdates = [];
+    auditInserts = [];
+    const result = await resetPlatformIntegrationToEnvAction("brevo_email");
+    expect(result.ok).toBe(true);
+    expect(integrationUpdates[0]).toMatchObject({
+      configJson: { source: "env" },
+      encryptedSecrets: null,
+      isEnabled: true,
+    });
+    expect(auditInserts[0].action).toBe("integration.reset_to_env");
+    expect(JSON.stringify(auditInserts)).not.toContain("secret");
   });
 
   it("grava auditoria ao salvar integração sem expor a chave", async () => {
