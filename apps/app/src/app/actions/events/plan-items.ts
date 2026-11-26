@@ -308,10 +308,11 @@ export async function importPlanItemsAction(
       .delete(schema.eventPlanItem)
       .where(eq(schema.eventPlanItem.eventId, eventId));
 
+    const rows: (typeof schema.eventPlanItem.$inferInsert)[] = [];
     for (let index = 0; index < items.length; index++) {
       const item = items[index];
       if (!item.title) continue;
-      await db.insert(schema.eventPlanItem).values({
+      rows.push({
         id: randomUUID(),
         eventId,
         type: item.type === "header" ? "header" : "item",
@@ -327,6 +328,10 @@ export async function importPlanItemsAction(
           : null,
         songId: item.songId ? String(item.songId).trim() : null,
       });
+    }
+
+    if (rows.length > 0) {
+      await db.insert(schema.eventPlanItem).values(rows);
     }
   } catch (error) {
     console.error("Erro ao importar cronograma", error);

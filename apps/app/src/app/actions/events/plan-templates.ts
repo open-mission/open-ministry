@@ -225,9 +225,8 @@ export async function applyPlanTemplateAction(
       .delete(schema.eventPlanItem)
       .where(eq(schema.eventPlanItem.eventId, eventId));
 
-    for (let index = 0; index < itemsToApply.length; index++) {
-      const item = itemsToApply[index];
-      await db.insert(schema.eventPlanItem).values({
+    const rows: (typeof schema.eventPlanItem.$inferInsert)[] = itemsToApply.map(
+      (item, index) => ({
         id: randomUUID(),
         eventId,
         type: item.type,
@@ -237,7 +236,11 @@ export async function applyPlanTemplateAction(
         order: index,
         customResponsible: item.customResponsible ?? null,
         songId: item.songId ?? null,
-      });
+      }),
+    );
+
+    if (rows.length > 0) {
+      await db.insert(schema.eventPlanItem).values(rows);
     }
   } catch (error) {
     console.error("Erro ao aplicar modelo no cronograma", error);
