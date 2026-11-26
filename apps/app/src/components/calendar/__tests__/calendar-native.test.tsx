@@ -355,11 +355,11 @@ describe("Calendar integration", () => {
     expect(isCalendarRoute(null)).toBe(false);
   });
 
-  it("serves the native calendar at /calendar and redirects legacy routes", async () => {
+  it("serves the native calendar at /calendar, redirects legacy routes, and removes the temporary preview", async () => {
     const [
       calendarPageSource,
       legacyCalendarPageSource,
-      legacyPreviewPageSource,
+      previewPageExists,
       dialogSource,
     ] = await Promise.all([
       Bun.file(
@@ -373,7 +373,7 @@ describe("Calendar integration", () => {
           "../../../app/(app)/dashboard/calendar/preview/page.tsx",
           import.meta.url,
         ),
-      ).text(),
+      ).exists(),
       Bun.file(
         new URL("../event-detail-dialog.tsx", import.meta.url),
       ).text(),
@@ -386,7 +386,7 @@ describe("Calendar integration", () => {
     expect(calendarPageSource).not.toContain("Prévia temporária");
     expect(calendarPageSource).not.toContain("md:pl-10");
     expect(legacyCalendarPageSource).toContain('redirect("/calendar")');
-    expect(legacyPreviewPageSource).toContain('redirect("/calendar")');
+    expect(previewPageExists).toBe(false);
     expect(dialogSource).not.toContain("Prévia · Modo leitura");
     expect(dialogSource).toContain(
       '<section aria-label="Equipe escalada" className="space-y-3 pt-1">',

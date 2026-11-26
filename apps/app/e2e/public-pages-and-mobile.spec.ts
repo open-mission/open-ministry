@@ -18,15 +18,7 @@ test.describe("Rotas públicas sem login — desktop e mobile", () => {
 
         page.on("console", (msg) => {
           if (msg.type() === "error") {
-            const text = msg.text();
-            // Bloqueio conhecido e esperado pela CSP `worker-src 'self'` quando
-            // o Sentry Replay tenta instanciar worker inline `blob:`.
-            const isKnownSentryReplayBlobCsp =
-              text.includes("Creating a worker from 'blob:") &&
-              text.includes(`violates the following Content Security Policy directive: "worker-src 'self'"`);
-            if (!isKnownSentryReplayBlobCsp) {
-              consoleErrors.push(text);
-            }
+            consoleErrors.push(msg.text());
           }
         });
         page.on("pageerror", (error) => {
