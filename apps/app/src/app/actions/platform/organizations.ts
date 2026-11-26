@@ -47,22 +47,48 @@ export type PlatformOrganizationRow = {
 };
 
 async function loadOrganizationData() {
-  const [organizations, settings, plans, channels, memberCounts] = await Promise.all([
-    db.query.organization.findMany({
-      orderBy: [desc(schema.organization.createdAt)],
-    }),
-    db.query.organizationPlatformSettings.findMany(),
+  const organizations = await db.query.organization.findMany({
+    orderBy: [desc(schema.organization.createdAt)],
+    limit: 500,
+  });
+  const organizationIds = organizations.map((organization) => organization.id);
+
+  // As tabelas relacionadas são buscadas apenas para as organizações que
+  // realmente serão exibidas, em vez de varrer o banco inteiro.
+  const [settings, plans, channels, memberCounts] = await Promise.all([
+    organizationIds.length > 0
+      ? db.query.organizationPlatformSettings.findMany({
+          where: inArray(
+            schema.organizationPlatformSettings.organizationId,
+            organizationIds,
+          ),
+        })
+      : [],
     db.query.platformPlan.findMany(),
-    db.query.organizationNotificationChannel.findMany({
-      where: eq(schema.organizationNotificationChannel.channel, "evolution_whatsapp"),
-    }),
-    db
-      .select({
-        organizationId: schema.member.organizationId,
-        count: sql<number>`count(*)`,
-      })
-      .from(schema.member)
-      .groupBy(schema.member.organizationId),
+    organizationIds.length > 0
+      ? db.query.organizationNotificationChannel.findMany({
+          where: and(
+            eq(
+              schema.organizationNotificationChannel.channel,
+              "evolution_whatsapp",
+            ),
+            inArray(
+              schema.organizationNotificationChannel.organizationId,
+              organizationIds,
+            ),
+          ),
+        })
+      : [],
+    organizationIds.length > 0
+      ? db
+          .select({
+            organizationId: schema.member.organizationId,
+            count: sql<number>`count(*)`,
+          })
+          .from(schema.member)
+          .where(inArray(schema.member.organizationId, organizationIds))
+          .groupBy(schema.member.organizationId)
+      : [],
   ]);
 
   const settingsByOrg = new Map(settings.map((item) => [item.organizationId, item]));

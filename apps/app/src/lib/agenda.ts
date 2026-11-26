@@ -1,6 +1,6 @@
 import "server-only";
 
-import { eq, inArray } from "drizzle-orm";
+import { and, asc, eq, gte, inArray } from "drizzle-orm";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
@@ -79,6 +79,9 @@ export async function getPersonAssignments(
           function: true,
           department: true,
         },
+        // Histórico antigo não pode ser lido sem teto: limita o número de
+        // atribuições consideradas nesta visão.
+        limit: 500,
       });
 
       return rows
@@ -154,24 +157,36 @@ export async function getDepartmentAgenda(
     return [];
   }
 
-  const rows = await db.query.eventDepartment.findMany({
-    where: inArray(schema.eventDepartment.departmentId, departmentIds),
-    with: {
-      event: true,
-      department: true,
-    },
-  });
-  const now = Date.now();
+  const safeLimit = Math.min(Math.max(Math.trunc(limit) || 6, 1), 100);
+  // Organização, janela de datas e ordem são resolvidas no banco: antes, a
+  // consulta trazia todo o vínculo evento/departamento e filtrava em JS.
+  const rows = await db
+    .select({
+      event: schema.event,
+      departmentId: schema.eventDepartment.departmentId,
+      departmentName: schema.department.name,
+    })
+    .from(schema.eventDepartment)
+    .innerJoin(
+      schema.event,
+      eq(schema.eventDepartment.eventId, schema.event.id),
+    )
+    .innerJoin(
+      schema.department,
+      eq(schema.eventDepartment.departmentId, schema.department.id),
+    )
+    .where(
+      and(
+        eq(schema.event.organizationId, organizationId),
+        gte(schema.event.endsAt, new Date()),
+        inArray(schema.eventDepartment.departmentId, departmentIds),
+      ),
+    )
+    .orderBy(asc(schema.event.startsAt))
+    .limit(Math.max(safeLimit * 4, 24));
   const byEvent = new Map<string, AgendaEvent>();
 
   for (const row of rows) {
-    if (
-      row.event.organizationId !== organizationId ||
-      row.event.endsAt.getTime() < now
-    ) {
-      continue;
-    }
-
     const current = byEvent.get(row.event.id);
 
     if (current) {
@@ -182,23 +197,16 @@ export async function getDepartmentAgenda(
       ) {
         current.departments.push({
           id: row.departmentId,
-          name: row.department.name,
+          name: row.departmentName,
         });
       }
     } else {
       byEvent.set(row.event.id, {
         event: row.event,
-        departments: [
-          { id: row.departmentId, name: row.department.name },
-        ],
+        departments: [{ id: row.departmentId, name: row.departmentName }],
       });
     }
   }
 
-  return [...byEvent.values()]
-    .sort(
-      (a, b) =>
-        a.event.startsAt.getTime() - b.event.startsAt.getTime(),
-    )
-    .slice(0, limit);
+  return [...byEvent.values()].slice(0, safeLimit);
 }

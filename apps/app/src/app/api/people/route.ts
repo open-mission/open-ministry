@@ -2,9 +2,10 @@ import { connection } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { requireApiOrganizationContext } from "@/lib/api-auth";
+import { readPaginationParams } from "@/lib/pagination";
 import { listPeople } from "@/lib/people";
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   await connection();
 
   try {
@@ -12,7 +13,8 @@ export async function GET(_request: NextRequest) {
     if (!auth.ok) return auth.response;
 
     const { organization } = auth.context;
-    const people = await listPeople(organization.id);
+    const pagination = readPaginationParams(request.nextUrl.searchParams, 1000, 2000);
+    const people = await listPeople(organization.id, pagination);
 
     return Response.json({ people });
   } catch (error) {
