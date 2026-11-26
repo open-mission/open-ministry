@@ -1,6 +1,12 @@
 import { describe, expect, it, mock } from "bun:test";
 
 mock.module("server-only", () => ({}));
+mock.module("@/lib/rate-limit", () => ({
+  checkRateLimit: async () => ({ allowed: true, retryAfter: null }),
+  extractClientIp: () => "unknown",
+  rateLimitHeaders: () => ({}),
+  RATE_LIMIT_RULES: {},
+}));
 mock.module("next/cache", () => ({
   revalidatePath: () => {},
   revalidateTag: () => {},

@@ -4,6 +4,12 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { authenticateEvolutionWebhook } from "@/lib/evolution-webhook";
 import { formatPhoneNumberForEvolution } from "@/lib/evolution-api";
+import {
+  checkRateLimit,
+  extractClientIp,
+  rateLimitHeaders,
+  RATE_LIMIT_RULES,
+} from "@/lib/rate-limit";
 import { sentryLogger } from "@/lib/telemetry/sentry";
 
 type EvolutionUpdateItem = {
@@ -53,6 +59,18 @@ function buildStatusUpdateFields(status: EvolutionStatus): Record<string, unknow
 export async function POST(req: Request) {
   let instanceName = "";
   try {
+    // Antes de qualquer leitura no banco: limita flood por IP do remetente.
+    const decision = await checkRateLimit(
+      `evolution-webhook:${extractClientIp(req.headers)}`,
+      RATE_LIMIT_RULES.evolutionWebhook,
+    );
+    if (!decision.allowed) {
+      return NextResponse.json(
+        { error: "Muitas requisições. Tente novamente em instantes." },
+        { status: 429, headers: rateLimitHeaders(decision) },
+      );
+    }
+
     const url = new URL(req.url);
     // Header dedicado primeiro: a query string mantém-se apenas como fallback
     // de compatibilidade com a Evolution Go, sem logar o token em nenhum ponto.

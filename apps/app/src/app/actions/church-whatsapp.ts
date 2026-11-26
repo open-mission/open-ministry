@@ -8,6 +8,7 @@ import * as schema from "@/db/schema";
 import { getOrganizationContext } from "@/lib/organizations";
 import { getAppBaseUrl } from "@/lib/app-url";
 import { getOrganizationEntitlements, invalidateOrganizationEntitlements } from "@/lib/platform/entitlements";
+import { checkRateLimit, RATE_LIMIT_RULES } from "@/lib/rate-limit";
 import { getPlatformEvolutionConfig } from "@/lib/platform/evolution-config";
 import {
   connectEvolutionInstance,
@@ -196,6 +197,16 @@ export async function refreshChurchWhatsAppQrAction(): Promise<{
 }> {
   const context = await requireChurchAdmin();
   if (!context) return { ok: false, error: "Sem permissão." };
+  const decision = await checkRateLimit(
+    `church-whatsapp:reconnect:${context.organization.id}:${context.session?.user?.id ?? "unknown"}`,
+    RATE_LIMIT_RULES.churchWhatsApp,
+  );
+  if (!decision.allowed) {
+    return {
+      ok: false,
+      error: `Muitas tentativas de reconexão. Aguarde ${decision.retryAfter ?? 60} segundos.`,
+    };
+  }
   if (!(await requireWhatsAppEntitlement(context.organization.id))) {
     return { ok: false, error: "Recurso não liberado no plano da igreja." };
   }
@@ -360,6 +371,16 @@ export async function sendChurchWhatsAppTestMessageAction(
 ): Promise<{ ok: boolean; error?: string }> {
   const context = await requireChurchAdmin();
   if (!context) return { ok: false, error: "Sem permissão." };
+  const decision = await checkRateLimit(
+    `church-whatsapp:test:${context.organization.id}:${context.session?.user?.id ?? "unknown"}`,
+    RATE_LIMIT_RULES.churchWhatsApp,
+  );
+  if (!decision.allowed) {
+    return {
+      ok: false,
+      error: `Muitos testes de WhatsApp. Aguarde ${decision.retryAfter ?? 60} segundos.`,
+    };
+  }
   if (!(await requireWhatsAppEntitlement(context.organization.id))) {
     return { ok: false, error: "Recurso não liberado no plano da igreja." };
   }

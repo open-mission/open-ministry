@@ -3,6 +3,12 @@ import { PgDialect } from "drizzle-orm/pg-core";
 import type { SQL } from "drizzle-orm";
 
 mock.module("server-only", () => ({}));
+mock.module("@/lib/rate-limit", () => ({
+  checkRateLimit: async () => ({ allowed: true, retryAfter: null }),
+  extractClientIp: () => "unknown",
+  rateLimitHeaders: () => ({}),
+  RATE_LIMIT_RULES: {},
+}));
 
 mock.module("next/cache", () => ({
   revalidatePath: () => {},

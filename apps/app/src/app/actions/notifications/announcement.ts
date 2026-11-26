@@ -7,6 +7,10 @@ import { z } from "zod";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { createNotifications } from "@/lib/notifications";
+import {
+  checkRateLimit,
+  RATE_LIMIT_RULES,
+} from "@/lib/rate-limit";
 import { sendWebPushToUser } from "@/lib/push-notifications";
 import { getOrganizationContext } from "@/lib/organizations";
 import { can } from "@/lib/permissions/service";
@@ -150,6 +154,16 @@ export async function sendAnnouncementAction(
   if (!context) {
     return {
       error: "Sua sessão expirou ou você não tem uma igreja ativa.",
+    };
+  }
+
+  const decision = await checkRateLimit(
+    `announcement:${context.organization.id}:${context.session.user.id}`,
+    RATE_LIMIT_RULES.announcement,
+  );
+  if (!decision.allowed) {
+    return {
+      error: `Muitos avisos enviados. Aguarde ${decision.retryAfter ?? 300} segundos.`,
     };
   }
 
