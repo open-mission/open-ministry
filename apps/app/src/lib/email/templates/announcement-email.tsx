@@ -21,7 +21,7 @@ export function AnnouncementEmail({
   title,
   body,
   authorName,
-  announcementUrl = "https://openministry.app/dashboard/notifications",
+  announcementUrl = "https://openministry.app/notifications",
 }: AnnouncementEmailProps) {
   const greeting = name ? `Olá, ${name}!` : "Olá!";
 

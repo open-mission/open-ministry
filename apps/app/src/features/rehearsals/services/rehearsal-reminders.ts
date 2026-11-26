@@ -242,7 +242,7 @@ async function dispatchRehearsalToMembers(
   );
   const eventDate = formatEventFullDate(event.startsAt);
   const eventTime = formatEventTime(event.startsAt);
-  const href = `/dashboard/events/${event.id}`;
+  const href = `/events/${event.id}`;
   const songsSummary =
     songs.length > 0 ? ` · Músicas: ${songs.join(", ")}` : "";
   const body = `Ensaio de ${department.name} em ${eventDate} às ${eventTime}${event.location ? ` · ${event.location}` : ""}${songsSummary}.`;

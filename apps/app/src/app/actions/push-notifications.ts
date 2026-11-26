@@ -85,7 +85,7 @@ export async function sendTestPushNotificationAction() {
     const res = await sendWebPushToUser(context.session.user.id, {
       title: "🔔 Teste de Notificação Push",
       body: `Olá, ${context.session.user.name}! Seu dispositivo está pronto para receber escalas e avisos.`,
-      url: "/dashboard/notifications",
+      url: "/notifications",
     });
 
     if (res.sentCount === 0) {

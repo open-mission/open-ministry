@@ -200,7 +200,7 @@ export async function saveScheduleAssignmentAction(
       type: "assignment",
       title: `Você foi escalado em ${result.event.title}`,
       body: `${departmentName} · ${targetFunction.name} · ${formatEventFullDate(result.event.startsAt)} às ${formatEventTime(result.event.startsAt)}`,
-      href: `/dashboard/events/${result.event.id}`,
+      href: `/events/${result.event.id}`,
       actorId: result.context.session.user.id,
       userId: assignedPerson.userId ?? null,
       personId: parsed.data.personId,
@@ -213,7 +213,7 @@ export async function saveScheduleAssignmentAction(
         functionName: `${departmentName} - ${targetFunction.name}`,
         eventDate: formatEventFullDate(result.event.startsAt),
         eventTime: formatEventTime(result.event.startsAt),
-        link: `/dashboard/events/${result.event.id}`,
+        link: `/events/${result.event.id}`,
       },
     }).catch((error) => {
       console.error("Erro ao notificar escala", error);
@@ -290,7 +290,7 @@ export async function removeScheduleAssignmentAction(
         type: "schedule_removed",
         title: `Você saiu da escala de ${assignment.schedule.event.title}`,
         body: `${assignment.department.name} · ${assignment.function.name} · ${formatEventFullDate(assignment.schedule.event.startsAt)} às ${formatEventTime(assignment.schedule.event.startsAt)}`,
-        href: `/dashboard/events/${assignment.schedule.event.id}`,
+        href: `/events/${assignment.schedule.event.id}`,
       });
     } catch (error) {
       console.error("Erro ao notificar remoção da escala", error);

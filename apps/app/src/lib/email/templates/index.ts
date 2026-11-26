@@ -63,7 +63,7 @@ export const EMAIL_TEMPLATES: Record<EmailTemplateKey, EmailTemplateMeta> = {
     sampleData: {
       name: "Gabriel Santos",
       churchName: "Igreja Central",
-      dashboardUrl: "https://openministry.app/dashboard",
+      dashboardUrl: "https://openministry.app/",
     },
     renderComponent: (props) =>
       React.createElement(WelcomeEmail, props as unknown as WelcomeEmailProps),
@@ -136,7 +136,7 @@ export const EMAIL_TEMPLATES: Record<EmailTemplateKey, EmailTemplateMeta> = {
       functionName: "Louvor & Adoração — Bateria",
       eventDate: "Domingo, 15 de Novembro de 2026",
       eventTime: "19:00",
-      eventUrl: "https://openministry.app/dashboard/events/sample-event-123",
+      eventUrl: "https://openministry.app/events/sample-event-123",
       notes: "Chegada dos voluntários para passagem de som às 17:30.",
     },
     renderComponent: (props) =>
@@ -158,7 +158,7 @@ export const EMAIL_TEMPLATES: Record<EmailTemplateKey, EmailTemplateMeta> = {
       title: "Ensaio Geral e Alinhamento de Equipes",
       body: "Paz a todos! Lembramos que nesta sexta-feira teremos nosso alinhamento geral com todas as equipes de louvor, mídia e recepção a partir das 20h no templo principal.",
       authorName: "Pr. Marcos Silva",
-      announcementUrl: "https://openministry.app/dashboard/notifications",
+      announcementUrl: "https://openministry.app/notifications",
     },
     renderComponent: (props) =>
       React.createElement(
@@ -182,7 +182,7 @@ export const EMAIL_TEMPLATES: Record<EmailTemplateKey, EmailTemplateMeta> = {
       location: "Templo principal",
       songs: ["Grande é o Senhor", "Teu Sangue", "Nada Além do Sangue"],
       notes: "Chegar 15 minutos antes para a passagem de som.",
-      rehearsalUrl: "https://openministry.app/dashboard/rehearsals",
+      rehearsalUrl: "https://openministry.app/rehearsals",
     },
     renderComponent: (props) =>
       React.createElement(

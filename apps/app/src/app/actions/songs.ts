@@ -139,8 +139,8 @@ export async function createSongAction(
 
     await invalidateSongCache(organization.id);
 
-    revalidatePath("/dashboard/songs");
-    revalidatePath("/dashboard/events");
+    revalidatePath("/songs");
+    revalidatePath("/events");
 
     return { ok: true, songId: id, song: inserted };
   } catch (err) {
@@ -204,7 +204,7 @@ export async function reorderSongsAction(
     }
 
     await invalidateSongCache(organization.id);
-    revalidatePath("/dashboard/songs");
+    revalidatePath("/songs");
 
     return { ok: true };
   } catch (err) {
@@ -297,9 +297,9 @@ export async function updateSongAction(
 
     await invalidateSongCache(organization.id, songId);
 
-    revalidatePath("/dashboard/songs");
-    revalidatePath(`/dashboard/songs/${songId}`);
-    revalidatePath("/dashboard/events");
+    revalidatePath("/songs");
+    revalidatePath(`/songs/${songId}`);
+    revalidatePath("/events");
 
     return { ok: true, songId, song: updated };
   } catch (err) {
@@ -374,11 +374,11 @@ export async function addSongToNextServiceAction(
       `event:${event.id}`,
     );
 
-    revalidatePath("/dashboard");
-    revalidatePath("/dashboard/songs");
-    revalidatePath(`/dashboard/songs/${songId}`);
-    revalidatePath("/dashboard/events");
-    revalidatePath(`/dashboard/events/${event.id}`);
+    revalidatePath("/");
+    revalidatePath("/songs");
+    revalidatePath(`/songs/${songId}`);
+    revalidatePath("/events");
+    revalidatePath(`/events/${event.id}`);
     revalidatePath("/calendar");
 
     return {
@@ -425,8 +425,8 @@ export async function deleteSongAction(
 
     await invalidateSongCache(organization.id, songId);
 
-    revalidatePath("/dashboard/songs");
-    revalidatePath("/dashboard/events");
+    revalidatePath("/songs");
+    revalidatePath("/events");
 
     return { ok: true };
   } catch (err) {
@@ -436,10 +436,10 @@ export async function deleteSongAction(
 }
 
 function revalidateSongArrangementPaths(songId: string) {
-  revalidatePath("/dashboard/songs");
-  revalidatePath(`/dashboard/songs/${songId}`);
-  revalidatePath("/dashboard/rehearsals");
-  revalidatePath("/dashboard/events");
+  revalidatePath("/songs");
+  revalidatePath(`/songs/${songId}`);
+  revalidatePath("/rehearsals");
+  revalidatePath("/events");
 }
 
 export async function getSongArrangementsAction(

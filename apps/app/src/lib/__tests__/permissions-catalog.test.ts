@@ -34,16 +34,16 @@ describe("Permissions and Module Catalog", () => {
     expect(availableKeys.sort()).toEqual([...expectedKeys].sort());
 
     // Verify routePrefixes on each system module
-    expect(SYSTEM_MODULES.agenda.routePrefixes).toContain("/dashboard/calendar");
-    expect(SYSTEM_MODULES.agenda.routePrefixes).toContain("/dashboard/events");
-    expect(SYSTEM_MODULES.schedules.routePrefixes).toContain("/dashboard/schedules");
-    expect(SYSTEM_MODULES.schedules.routePrefixes).toContain("/dashboard/availability");
-    expect(SYSTEM_MODULES.music.routePrefixes).toContain("/dashboard/songs");
-    expect(SYSTEM_MODULES.announcements.routePrefixes).toContain("/dashboard/announcements");
-    expect(SYSTEM_MODULES.tasks.routePrefixes).toContain("/dashboard/tasks");
+    expect(SYSTEM_MODULES.agenda.routePrefixes).toContain("/calendar");
+    expect(SYSTEM_MODULES.agenda.routePrefixes).toContain("/events");
+    expect(SYSTEM_MODULES.schedules.routePrefixes).toContain("/schedules");
+    expect(SYSTEM_MODULES.schedules.routePrefixes).toContain("/availability");
+    expect(SYSTEM_MODULES.music.routePrefixes).toContain("/songs");
+    expect(SYSTEM_MODULES.announcements.routePrefixes).toContain("/announcements");
+    expect(SYSTEM_MODULES.tasks.routePrefixes).toContain("/tasks");
     expect(SYSTEM_MODULES.rehearsals.routePrefixes).toContain("/rehearsals");
     expect(SYSTEM_MODULES.rehearsals.routePrefixes).toContain(
-      "/dashboard/rehearsals",
+      "/rehearsals",
     );
     expect(SYSTEM_MODULES.rehearsals.name).toBe("Ensaios");
     expect(SYSTEM_MODULES.rehearsals.navGroups).toHaveLength(1);

@@ -241,7 +241,7 @@ export async function createEventAction(
   }
 
   await revalidateEvents(eventIds[0], organizationId);
-  redirect(`/dashboard/events/${eventIds[0]}`);
+  redirect(`/events/${eventIds[0]}`);
 }
 
 export async function updateEventAction(

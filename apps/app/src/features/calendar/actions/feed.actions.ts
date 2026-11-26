@@ -74,8 +74,8 @@ async function requireFeedContext(): Promise<
 }
 
 function revalidateSettings() {
-  revalidatePath("/dashboard/settings");
-  revalidatePath("/dashboard/profile");
+  revalidatePath("/settings");
+  revalidatePath("/profile");
 }
 
 /**

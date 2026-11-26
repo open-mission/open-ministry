@@ -25,7 +25,7 @@ describe("RehearsalReminderEmail", () => {
         location="Templo principal"
         songs={songs}
         notes="Chegar 15 minutos antes."
-        rehearsalUrl="https://openministry.app/dashboard/rehearsals/1"
+        rehearsalUrl="https://openministry.app/rehearsals/1"
       />,
     );
   }
@@ -170,7 +170,7 @@ describe("templates de notificação repassam a logo da igreja", () => {
         functionName="Louvor"
         eventDate="Domingo"
         eventTime="19:00"
-        eventUrl="https://openministry.app/dashboard/events/1"
+        eventUrl="https://openministry.app/events/1"
       />,
     );
 

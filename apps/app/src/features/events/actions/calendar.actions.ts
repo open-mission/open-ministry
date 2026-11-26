@@ -144,7 +144,7 @@ export async function getCalendarDataAction(): Promise<{
       allDay: false,
       color: event.kind === "service" ? "primary" : "purple",
       location: event.location,
-      href: `/dashboard/events/${event.id}`,
+      href: `/events/${event.id}`,
       ...(scheduleSummary ? { scheduleSummary } : {}),
       metadata: {
         eventId: event.id,
@@ -192,7 +192,7 @@ export async function getCalendarDataAction(): Promise<{
         allDay: false,
         color: "emerald",
         location: event.location,
-        href: `/dashboard/events/${event.id}`,
+        href: `/events/${event.id}`,
         metadata: {
           eventId: event.id,
           departmentId: myAssignments[0]?.departmentId,
@@ -256,7 +256,7 @@ export async function getCalendarDataAction(): Promise<{
       endsAt,
       allDay: unavail.allDay,
       color: "amber",
-      href: isMine ? "/dashboard/availability" : null,
+      href: isMine ? "/availability" : null,
       metadata: {
         isMine,
         reason: isMine ? unavail.reason : null,
@@ -302,7 +302,7 @@ export async function getCalendarDataAction(): Promise<{
         endsAt: `${dateStr}T23:59:59.000Z`,
         allDay: true,
         color: "rose",
-        href: `/dashboard/members/${p.id}`,
+        href: `/members/${p.id}`,
         metadata: {
           personId: p.id,
           personName: pName,
@@ -343,8 +343,8 @@ export async function saveCalendarPreferencesAction(payload: {
       .where(eq(schema.user.id, context.session.user.id));
 
     revalidatePath("/calendar");
-    revalidatePath("/dashboard/settings");
-    revalidatePath("/dashboard");
+    revalidatePath("/settings");
+    revalidatePath("/");
 
     return { ok: true };
   } catch (error) {
@@ -464,7 +464,7 @@ export async function getCalendarEventPreviewAction(
     endsAt: event.endsAt.toISOString(),
     location: event.location ?? null,
     description: event.description ?? null,
-    href: `/dashboard/events/${event.id}`,
+    href: `/events/${event.id}`,
     coverage: {
       assigned: progress.filledFunctions,
       total: progress.totalFunctions,

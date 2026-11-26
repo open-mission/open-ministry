@@ -288,7 +288,7 @@ export async function dispatchNotification(
     sendWebPushToUser(userId, {
       title,
       body: body || "Você tem uma nova notificação no OpenMinistry.",
-      url: href || "/dashboard/notifications",
+      url: href || "/notifications",
     }).catch((err) => {
       console.warn("Falha no envio de push web:", err);
     });

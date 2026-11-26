@@ -107,7 +107,7 @@ export async function impersonateMemberAction(
     };
   }
 
-  revalidatePath("/dashboard");
+  revalidatePath("/");
   redirect("/");
 }
 
@@ -130,7 +130,7 @@ export async function stopImpersonatingAction(): Promise<ImpersonationActionResu
     };
   }
 
-  revalidatePath("/dashboard");
+  revalidatePath("/");
 
   return { ok: true };
 }

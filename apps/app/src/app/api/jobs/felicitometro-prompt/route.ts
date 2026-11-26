@@ -77,7 +77,7 @@ async function sendPromptToUser(
   const pushResult = await sendWebPushToUser(userId, {
     title: "Como você está hoje? ☀️",
     body: "Compartilhe com a liderança como está o seu coração no Felicitômetro.",
-    url: "/dashboard",
+    url: "/",
   });
 
   if (pushResult.sentCount > 0) {

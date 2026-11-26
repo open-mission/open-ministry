@@ -110,12 +110,12 @@ async function getAdminContext() {
 }
 
 async function revalidatePeople(organizationId?: string) {
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/members");
-  revalidatePath("/dashboard/departments");
-  revalidatePath("/dashboard/birthdays");
-  revalidatePath("/dashboard/events");
-  revalidatePath("/dashboard/schedules");
+  revalidatePath("/");
+  revalidatePath("/members");
+  revalidatePath("/departments");
+  revalidatePath("/birthdays");
+  revalidatePath("/events");
+  revalidatePath("/schedules");
 
   if (organizationId) {
     await cacheInvalidateTags(
@@ -464,8 +464,8 @@ export async function invitePersonAction(
       `people:${organizationId}`,
     );
 
-    revalidatePath("/dashboard/members");
-    revalidatePath("/dashboard");
+    revalidatePath("/members");
+    revalidatePath("/");
 
     return {
       ok: true,

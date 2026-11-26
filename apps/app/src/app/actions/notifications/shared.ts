@@ -54,9 +54,9 @@ export async function runInBatches<T>(
 }
 
 export async function revalidateNotifications(userId?: string) {
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/notifications");
-  revalidatePath("/dashboard/announcements");
+  revalidatePath("/");
+  revalidatePath("/notifications");
+  revalidatePath("/announcements");
 
   if (userId) {
     await cacheInvalidateTags(`notifications:${userId}`);

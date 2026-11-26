@@ -329,7 +329,7 @@ export async function sendAnnouncementAction(
           type: "announcement",
           title: data.title,
           body: data.body,
-          href: "/dashboard/notifications",
+          href: "/notifications",
         });
       }
     }
@@ -351,7 +351,7 @@ export async function sendAnnouncementAction(
             type: "announcement",
             title: data.title,
             body: data.body,
-            href: "/dashboard/notifications",
+            href: "/notifications",
             actorId: context.session.user.id,
             userId: recipient.userId,
             personId: recipient.id,
@@ -378,7 +378,7 @@ export async function sendAnnouncementAction(
           type: "announcement",
           title: data.title,
           body: data.body,
-          href: "/dashboard/notifications",
+          href: "/notifications",
           actorId: context.session.user.id,
           userId: recipient.userId,
           personId: recipient.id,
@@ -409,7 +409,7 @@ export async function sendAnnouncementAction(
         sendWebPushToUser(userId, {
           title: data.title,
           body: data.body,
-          url: "/dashboard/notifications",
+          url: "/notifications",
         }).catch((err) =>
           console.warn("Falha no disparo de push notification:", err),
         );

@@ -44,7 +44,7 @@ export default function manifest(): MetadataRoute.Manifest {
       {
         name: "Minhas escalas",
         short_name: "Escalas",
-        url: "/dashboard/schedules",
+        url: "/schedules",
         icons: [
           {
             src: "/icons/icon-192.png",
@@ -56,7 +56,7 @@ export default function manifest(): MetadataRoute.Manifest {
       {
         name: "Meu perfil",
         short_name: "Perfil",
-        url: "/dashboard/profile",
+        url: "/profile",
         icons: [
           {
             src: "/icons/icon-192.png",
