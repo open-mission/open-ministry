@@ -22,7 +22,7 @@ export function StopImpersonatingButton() {
       }
 
       toast.success("Você voltou para a sua conta.");
-      router.push("/dashboard/members");
+      router.push("/members");
       router.refresh();
     });
   }

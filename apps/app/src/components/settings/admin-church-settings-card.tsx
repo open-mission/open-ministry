@@ -85,7 +85,7 @@ export function AdminChurchSettingsCard({
                 </p>
                 <div className="pt-2">
                   <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs">
-                    <Link href="/dashboard/members">
+                    <Link href="/members">
                       Gerenciar pessoas
                       <ExternalLinkIcon className="size-3" />
                     </Link>
@@ -105,7 +105,7 @@ export function AdminChurchSettingsCard({
                 </p>
                 <div className="pt-2">
                   <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs">
-                    <Link href="/dashboard/departments">
+                    <Link href="/departments">
                       Gerenciar ministérios
                       <ExternalLinkIcon className="size-3" />
                     </Link>

@@ -89,8 +89,8 @@ function EventRow({
   const relativeDay = relativeDayLabel(event.startsAt);
   const href =
     status === "complete"
-      ? `/dashboard/events/${event.id}`
-      : `/dashboard/events/${event.id}?tab=teams`;
+      ? `/events/${event.id}`
+      : `/events/${event.id}?tab=teams`;
 
   return (
     <Link

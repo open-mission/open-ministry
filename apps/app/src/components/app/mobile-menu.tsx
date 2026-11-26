@@ -522,7 +522,7 @@ export function MobileMenu({
 
         <div className="relative z-10 shrink-0 border-t border-border/60 bg-popover px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <Link
-            href="/dashboard/settings"
+            href="/settings"
             prefetch={true}
             onClick={() => setOpen(false)}
             className="flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/60 active:bg-muted"

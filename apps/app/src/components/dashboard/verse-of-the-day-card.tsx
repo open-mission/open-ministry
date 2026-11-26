@@ -101,7 +101,7 @@ export function VerseOfTheDayCard({
                   className="h-8 min-h-[32px] gap-1 px-2 text-[11px] font-medium text-primary hover:bg-primary/10 hover:text-primary"
                 >
                   <Link
-                    href={`/dashboard/bible?passage=${encodeURIComponent(verse.passageId)}`}
+                    href={`/bible?passage=${encodeURIComponent(verse.passageId)}`}
                   >
                     <BookOpenIcon className="size-3.5" aria-hidden="true" />
                     <span>Abrir na Bíblia</span>
@@ -211,7 +211,7 @@ export function VerseOfTheDayCard({
                 className="group h-8 gap-1.5 px-2.5 text-xs font-medium text-primary hover:text-primary hover:bg-primary/10 ml-auto"
               >
                 <Link
-                  href={`/dashboard/bible?passage=${encodeURIComponent(verse.passageId)}`}
+                  href={`/bible?passage=${encodeURIComponent(verse.passageId)}`}
                 >
                   <BookOpenIcon className="size-3.5" aria-hidden="true" />
                   <span>Abrir na Bíblia</span>

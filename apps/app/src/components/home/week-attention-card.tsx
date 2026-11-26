@@ -77,7 +77,7 @@ export function WeekAttentionCard({
             size="sm"
             className="h-9 min-h-[44px] px-2 text-xs text-primary hover:text-primary"
           >
-            <Link href="/dashboard/schedules">
+            <Link href="/schedules">
               Ver escalas
               <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
             </Link>
@@ -91,7 +91,7 @@ export function WeekAttentionCard({
             <div key={`${item.departmentId}:${item.eventId}`}>
               {index > 0 ? <Separator className="my-1" /> : null}
               <Link
-                href={`/dashboard/events/${item.eventId}`}
+                href={`/events/${item.eventId}`}
                 className="flex min-h-[44px] items-start gap-3 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <span

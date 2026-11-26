@@ -169,7 +169,7 @@ export function QuickActions({
             />
 
             <Link
-              href="/dashboard/schedules"
+              href="/schedules"
               prefetch={true}
               className={tileClassName}
               aria-label="Gerenciar escalas"
@@ -197,7 +197,7 @@ export function QuickActions({
             </Link>
 
             <Link
-              href="/dashboard/departments"
+              href="/departments"
               prefetch={true}
               className={tileClassName}
               aria-label={`Abrir ${terminology.plural.toLowerCase()}`}
@@ -211,7 +211,7 @@ export function QuickActions({
             </Link>
 
             <Link
-              href="/dashboard/members?tab=felicitometro"
+              href="/members?tab=felicitometro"
               prefetch={true}
               className={tileClassName}
               aria-label="Abrir cuidado pastoral"
@@ -227,7 +227,7 @@ export function QuickActions({
         ) : (
           <>
             <Link
-              href="/dashboard/schedules"
+              href="/schedules"
               prefetch={true}
               className={tileClassName}
               aria-label="Ver minhas escalas"
@@ -241,7 +241,7 @@ export function QuickActions({
             </Link>
 
             <Link
-              href="/dashboard/availability"
+              href="/availability"
               prefetch={true}
               className={tileClassName}
               aria-label="Informar minha disponibilidade"
@@ -269,7 +269,7 @@ export function QuickActions({
             </Link>
 
             <Link
-              href="/dashboard/departments"
+              href="/departments"
               prefetch={true}
               className={tileClassName}
               aria-label={`Abrir ${terminology.plural.toLowerCase()}`}
@@ -283,7 +283,7 @@ export function QuickActions({
             </Link>
 
             <Link
-              href="/dashboard/members"
+              href="/members"
               prefetch={true}
               className={tileClassName}
               aria-label="Ver pessoas"
@@ -297,7 +297,7 @@ export function QuickActions({
             </Link>
 
             <Link
-              href="/dashboard/notifications"
+              href="/notifications"
               prefetch={true}
               className={tileClassName}
               aria-label="Ver avisos"
@@ -311,7 +311,7 @@ export function QuickActions({
             </Link>
 
             <Link
-              href="/dashboard/profile"
+              href="/profile"
               prefetch={true}
               className={tileClassName}
               aria-label="Abrir meu perfil"

@@ -151,7 +151,7 @@ function CreateOptionsList({
       ) : null}
       {canCreateRehearsal ? (
         <Link
-          href="/dashboard/rehearsals"
+          href="/rehearsals"
           onClick={onClose}
           className="flex min-h-11 items-center gap-2.5 rounded-lg px-3 text-left text-sm transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
         >
@@ -616,7 +616,7 @@ function DesktopCalendarActionsGroup() {
               ) : null}
               {canCreateRehearsal ? (
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard/rehearsals">
+                  <Link href="/rehearsals">
                     <Music2Icon aria-hidden="true" />
                     Novo ensaio
                   </Link>

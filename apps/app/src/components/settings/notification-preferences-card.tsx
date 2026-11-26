@@ -272,7 +272,7 @@ export function NotificationPreferencesCard() {
           </div>
 
           <Button variant="outline" size="sm" asChild className="gap-1.5 shrink-0">
-            <Link href="/dashboard/notifications">
+            <Link href="/notifications">
               <BellIcon className="size-3.5" />
               Abrir Central
               <ExternalLinkIcon className="size-3 text-muted-foreground" />

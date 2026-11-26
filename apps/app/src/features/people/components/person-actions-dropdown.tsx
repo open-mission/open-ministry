@@ -129,7 +129,7 @@ export function PersonActionsDropdown({
         <DropdownMenuContent align="end" className="w-52">
           <DropdownMenuItem asChild>
             <Link
-              href={`/dashboard/members/${person.id}`}
+              href={`/members/${person.id}`}
               className="flex items-center gap-2 cursor-pointer"
             >
               <UserIcon className="size-4 text-muted-foreground" />

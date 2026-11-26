@@ -36,7 +36,7 @@ export function DeleteDepartmentButton({
 
       if (result.ok) {
         toast.success("Departamento excluído.");
-        router.push("/dashboard/departments");
+        router.push("/departments");
         return;
       }
 

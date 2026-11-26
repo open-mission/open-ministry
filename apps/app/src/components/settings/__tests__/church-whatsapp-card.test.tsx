@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 mock.module("server-only", () => ({}));
 mock.module("next/navigation", () => ({
   useRouter: () => ({ push: () => {}, refresh: () => {} }),
-  usePathname: () => "/dashboard/settings",
+  usePathname: () => "/settings",
 }));
 mock.module("@/components/settings/evolution-message-logs", () => ({
   EvolutionMessageLogsCard: () =>

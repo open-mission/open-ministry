@@ -81,8 +81,10 @@ test.describe("Autenticação, rotas protegidas e endpoints públicos", () => {
   });
 
   for (const protectedRoute of [
-    "/dashboard",
-    "/dashboard/events",
+    "/",
+    "/calendar",
+    "/schedules",
+    "/settings",
     "/platform",
   ]) {
     test(`redireciona ${protectedRoute} para /login quando deslogado`, async ({
@@ -92,4 +94,42 @@ test.describe("Autenticação, rotas protegidas e endpoints públicos", () => {
       await expect(page).toHaveURL(/\/login(\?|$)/);
     });
   }
+
+  for (const [source, expectedPathname] of [
+    ["/dashboard", "/"],
+    ["/dashboard/songs", "/songs"],
+    ["/dashboard/avisos", "/announcements"],
+    ["/avisos", "/announcements"],
+    ["/dashboard/events", "/calendar"],
+    ["/dashboard/events/abc-123", "/events/abc-123"],
+  ] as const) {
+    test(`redireciona ${source} com 308 para ${expectedPathname}`, async ({
+      request,
+    }) => {
+      const response = await request.get(source, { maxRedirects: 0 });
+      expect(response.status()).toBe(308);
+
+      const location = response.headers()["location"] ?? "";
+      expect(location.startsWith("//")).toBe(false);
+
+      const resolved = new URL(location, "http://127.0.0.1");
+      expect(resolved.hostname).toBe("127.0.0.1");
+      expect(resolved.pathname).toBe(expectedPathname);
+    });
+  }
+
+  test("bloqueia open redirect em /dashboard//evil.com", async ({
+    request,
+  }) => {
+    const response = await request.get("/dashboard//evil.com", {
+      maxRedirects: 0,
+    });
+    const location = response.headers()["location"] ?? "";
+
+    expect(location.startsWith("//")).toBe(false);
+    if (location) {
+      const resolved = new URL(location, "http://127.0.0.1");
+      expect(resolved.hostname).toBe("127.0.0.1");
+    }
+  });
 });

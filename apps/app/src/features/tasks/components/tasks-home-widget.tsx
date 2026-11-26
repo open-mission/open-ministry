@@ -323,7 +323,7 @@ export function TasksHomeWidget({
                   asChild
                   className="h-8 gap-1 text-xs text-primary hover:bg-primary/5 hover:text-primary"
                 >
-                  <Link href="/dashboard/tasks">
+                  <Link href="/tasks">
                     Ver todas as tarefas
                     <ArrowRightIcon className="size-3.5" />
                   </Link>

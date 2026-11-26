@@ -27,7 +27,7 @@ export function AssignmentList({
         return (
           <li key={assignment.id}>
             <Link
-              href={`/dashboard/events/${event.id}`}
+              href={`/events/${event.id}`}
               className={cn(
                 "flex items-center gap-3 py-3 transition-colors hover:bg-muted/50",
                 past ? "opacity-75" : null,

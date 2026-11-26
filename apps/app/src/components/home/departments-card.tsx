@@ -59,7 +59,7 @@ export function DepartmentsCard({
             size="sm"
             className="h-9 min-h-[44px] px-2 text-xs text-primary hover:text-primary"
           >
-            <Link href="/dashboard/departments">
+            <Link href="/departments">
               Gerenciar
               <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
             </Link>

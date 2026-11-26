@@ -138,7 +138,7 @@ export function UnreadAnnouncementsWidget({
             size="sm"
             className="h-8 shrink-0 text-xs text-muted-foreground hover:text-foreground"
           >
-            <Link href="/dashboard/announcements">
+            <Link href="/announcements">
               <span>Ver todos</span>
               <ArrowRightIcon className="size-3.5" aria-hidden="true" />
             </Link>

@@ -50,7 +50,7 @@ export function DepartmentCoverageBoard({
                 <div className="min-w-0 flex-1">
                   <h3 className="truncate font-heading text-lg tracking-tight">
                     <Link
-                      href={`/dashboard/departments/${department.departmentId}`}
+                      href={`/departments/${department.departmentId}`}
                       prefetch={true}
                       className="underline-offset-4 hover:underline"
                     >
@@ -109,7 +109,7 @@ export function DepartmentCoverageBoard({
 
               {department.nextGap ? (
                 <Link
-                  href={`/dashboard/events/${department.nextGap.eventId}?tab=teams`}
+                  href={`/events/${department.nextGap.eventId}?tab=teams`}
                   prefetch={true}
                   className="mt-3 block min-w-0 rounded-lg border border-amber-500/25 bg-amber-500/10 p-2.5 transition-colors hover:bg-amber-500/15 overflow-hidden"
                 >
@@ -139,7 +139,7 @@ export function DepartmentCoverageBoard({
                 </p>
               ) : (
                 <Link
-                  href={`/dashboard/departments/${department.departmentId}`}
+                  href={`/departments/${department.departmentId}`}
                   prefetch={true}
                   className="mt-3 inline-flex items-center gap-1.5 text-[0.8125rem] font-medium text-foreground underline underline-offset-4 hover:text-primary"
                 >

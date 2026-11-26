@@ -62,7 +62,7 @@ export function BirthdaysCard({
             size="sm"
             className="h-9 min-h-[44px] px-2 text-xs text-primary hover:text-primary"
           >
-            <Link href="/dashboard/birthdays">
+            <Link href="/birthdays">
               Ver todos
               <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
             </Link>

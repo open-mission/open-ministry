@@ -15,7 +15,7 @@ export function SettingsModalProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   const openSettings = useCallback(() => {
-    router.push("/dashboard/settings");
+    router.push("/settings");
   }, [router]);
 
   const closeSettings = useCallback(() => {}, []);

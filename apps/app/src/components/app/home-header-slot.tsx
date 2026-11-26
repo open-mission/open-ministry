@@ -11,12 +11,7 @@ const HEADER_BASE_CLASS =
 /** Rotas da Agenda que ocultam a barra superior mantendo apenas notificações. */
 export function isCalendarRoute(pathname: string | null | undefined) {
   if (!pathname) return false;
-  return (
-    pathname === "/calendar" ||
-    pathname === "/dashboard/calendar" ||
-    pathname.startsWith("/calendar/") ||
-    pathname.startsWith("/dashboard/calendar/")
-  );
+  return pathname === "/calendar" || pathname.startsWith("/calendar/");
 }
 
 /** Considera rolado a partir de 4px para evitar flicker com sub-pixel scroll. */

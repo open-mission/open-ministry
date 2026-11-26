@@ -103,7 +103,7 @@ function HeroCard({ assignment }: { assignment: HomeAssignmentSummary }) {
 
       <div className="mt-4 md:mt-auto md:pt-4">
         <Link
-          href={`/dashboard/events/${event.id}`}
+          href={`/events/${event.id}`}
           className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl bg-[#faf7ee] px-4 text-[13px] font-semibold text-[#16231a] transition-colors hover:bg-[#f1eade] focus-visible:ring-2 focus-visible:ring-[#faf7ee] focus-visible:outline-none"
         >
           Abrir minha escala
@@ -144,7 +144,7 @@ function FeaturedEventCard({ event }: { event: HomeEventSummary }) {
 
       <div className="mt-4 md:mt-auto md:pt-4">
         <Link
-          href={`/dashboard/events/${event.id}`}
+          href={`/events/${event.id}`}
           className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl bg-[#faf7ee] px-4 text-[13px] font-semibold text-[#16231a] transition-colors hover:bg-[#f1eade] focus-visible:ring-2 focus-visible:ring-[#faf7ee] focus-visible:outline-none"
         >
           Ver detalhes
@@ -297,7 +297,7 @@ function UpcomingEvents({ events }: { events: HomeEventSummary[] }) {
             return (
               <Link
                 key={event.id}
-                href={`/dashboard/events/${event.id}`}
+                href={`/events/${event.id}`}
                 className="flex min-h-11 items-center gap-3 py-3 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
                 <span

@@ -66,7 +66,7 @@ export function UpcomingEventsCard({
                   }
                   trailing={
                     <Link
-                      href={`/dashboard/events/${event.id}`}
+                      href={`/events/${event.id}`}
                       className="inline-flex min-h-[44px] items-center gap-1 text-xs text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       Detalhes <span aria-hidden="true">→</span>

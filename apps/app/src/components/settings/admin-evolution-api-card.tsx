@@ -741,7 +741,7 @@ export function AdminEvolutionApiCard({
           asChild
           className="min-h-11 shrink-0 gap-1.5 text-xs sm:min-h-8"
         >
-          <Link href="/dashboard/whatsapp">
+          <Link href="/whatsapp">
             <span>Abrir página completa</span>
             <ExternalLinkIcon className="size-3.5 text-muted-foreground" />
           </Link>

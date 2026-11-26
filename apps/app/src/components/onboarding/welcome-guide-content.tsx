@@ -356,7 +356,7 @@ function SchedulesChapter() {
       </p>
 
       <Link
-        href="/dashboard/schedules"
+        href="/schedules"
         className="inline-flex min-h-9 items-center gap-1 rounded-md text-[11px] font-medium text-primary underline-offset-4 transition-colors hover:underline motion-reduce:transition-none"
       >
         Ver minhas escalas
@@ -380,7 +380,7 @@ function ProfileChapter({
   return (
     <div className="space-y-2.5">
       <Link
-        href="/dashboard/settings?scope=account&tab=profile"
+        href="/settings?scope=account&tab=profile"
         className="flex items-start gap-2.5 rounded-lg border border-border bg-background/70 p-2.5 transition-colors hover:bg-muted/40 motion-reduce:transition-none"
       >
         <span className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -467,7 +467,7 @@ function PwaShortcut({ isMobile }: { isMobile: boolean }) {
             </ol>
           ) : (
             <Link
-              href="/dashboard/settings?scope=account&tab=app"
+              href="/settings?scope=account&tab=app"
               className="mt-1 inline-flex min-h-9 items-center gap-1 text-[11px] font-medium text-primary underline-offset-4 transition-colors hover:underline motion-reduce:transition-none"
             >
               Ver como instalar

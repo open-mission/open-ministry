@@ -252,7 +252,7 @@ export function UserMenuDrawer({
 
             <DropdownMenuItem asChild>
               <Link
-                href="/login?redirect=/dashboard"
+                href="/login?redirect=/"
                 onClick={() => setDesktopMenuOpen(false)}
                 className="min-h-8 cursor-pointer text-xs text-muted-foreground hover:text-foreground"
               >
@@ -266,7 +266,7 @@ export function UserMenuDrawer({
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
                 <Link
-                  href="/dashboard/profile"
+                  href="/profile"
                   prefetch={true}
                   onClick={() => setDesktopMenuOpen(false)}
                   className="min-h-8 cursor-pointer"
@@ -277,7 +277,7 @@ export function UserMenuDrawer({
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link
-                  href="/dashboard/settings"
+                  href="/settings"
                   prefetch={true}
                   onClick={() => setDesktopMenuOpen(false)}
                   className="min-h-8 cursor-pointer"
@@ -288,7 +288,7 @@ export function UserMenuDrawer({
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link
-                  href="/dashboard/notifications"
+                  href="/notifications"
                   prefetch={true}
                   onClick={() => setDesktopMenuOpen(false)}
                   className="min-h-8 cursor-pointer"
@@ -405,7 +405,7 @@ export function UserMenuDrawer({
             <div className="space-y-4 px-5 pt-4 pb-6">
               {/* User Profile Card (Clickable link to profile) */}
               <Link
-                href="/dashboard/profile"
+                href="/profile"
                 onClick={() => setDrawerOpen(false)}
                 className="group flex w-full items-center gap-3.5 rounded-2xl border border-border/70 bg-card p-3.5 text-left shadow-2xs transition-all hover:bg-muted/50 hover:border-border active:scale-[0.99] cursor-pointer"
               >
@@ -484,7 +484,7 @@ export function UserMenuDrawer({
 
               {/* Adicionar outra conta */}
               <Link
-                href="/login?redirect=/dashboard"
+                href="/login?redirect=/"
                 onClick={() => setDrawerOpen(false)}
                 className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-dashed border-border/80 bg-muted/30 px-3.5 py-2 text-xs font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors cursor-pointer"
               >
@@ -495,7 +495,7 @@ export function UserMenuDrawer({
               {/* Main Navigation Options */}
               <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xs">
                 <Link
-                  href="/dashboard/settings"
+                  href="/settings"
                   prefetch={true}
                   onClick={() => setDrawerOpen(false)}
                   className="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-muted/50 active:bg-muted/70"
@@ -515,7 +515,7 @@ export function UserMenuDrawer({
                 </Link>
 
                 <Link
-                  href="/dashboard/notifications"
+                  href="/notifications"
                   prefetch={true}
                   onClick={() => setDrawerOpen(false)}
                   className="flex min-h-12 items-center gap-3 border-t border-border/50 px-3.5 py-2.5 transition-colors hover:bg-muted/50 active:bg-muted/70"

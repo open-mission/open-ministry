@@ -161,7 +161,7 @@ export function CalendarDayView({
             size="sm"
             className="ml-auto shrink-0 border-amber-500/30 text-xs hover:bg-amber-500/20"
           >
-            <Link href="/dashboard/availability">Ver disponibilidade</Link>
+            <Link href="/availability">Ver disponibilidade</Link>
           </Button>
         </div>
       )}

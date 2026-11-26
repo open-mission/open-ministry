@@ -349,7 +349,8 @@ describe("Calendar integration", () => {
 
   it("detects calendar routes to hide the top page header while keeping notifications", () => {
     expect(isCalendarRoute("/calendar")).toBe(true);
-    expect(isCalendarRoute("/dashboard/calendar")).toBe(true);
+    expect(isCalendarRoute("/calendar/week")).toBe(true);
+    expect(isCalendarRoute("/dashboard/calendar")).toBe(false);
     expect(isCalendarRoute("/events")).toBe(false);
     expect(isCalendarRoute("/")).toBe(false);
     expect(isCalendarRoute(null)).toBe(false);
@@ -445,7 +446,7 @@ describe("Calendar integration", () => {
       endsAt: "2026-11-22T23:30:00.000Z",
       location: "Templo Principal",
       description: null,
-      href: "/dashboard/events/evt-1",
+      href: "/events/evt-1",
       coverage: { assigned: 2, total: 12 },
       departmentCoverage: [
         { departmentId: "dept-louvor", departmentName: "Louvor", assigned: 2, total: 6 },
@@ -504,7 +505,7 @@ describe("Calendar integration", () => {
       endsAt: "2026-11-22T23:00:00.000Z",
       location: null,
       description: null,
-      href: "/dashboard/events/evt-2",
+      href: "/events/evt-2",
       coverage: { assigned: 2, total: 6 },
       departmentCoverage: [
         { departmentId: "dept-midia", departmentName: "Mídia", assigned: 2, total: 2 },

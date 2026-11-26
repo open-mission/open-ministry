@@ -90,8 +90,8 @@ function ScheduleRow({
     <Link
       href={
         status === "complete"
-          ? `/dashboard/events/${event.id}`
-          : `/dashboard/events/${event.id}?tab=teams`
+          ? `/events/${event.id}`
+          : `/events/${event.id}?tab=teams`
       }
       prefetch={true}
       className={cn(

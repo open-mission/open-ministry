@@ -371,7 +371,7 @@ export function SongDetailView({
                     </div>
                     {item.event ? (
                       <Link
-                        href={`/dashboard/events/${item.event.id}`}
+                        href={`/events/${item.event.id}`}
                         className="shrink-0 rounded-md text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         Ver culto ›

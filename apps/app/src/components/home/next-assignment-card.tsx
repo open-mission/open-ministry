@@ -33,7 +33,7 @@ export function NextAssignmentCard({
   const event = assignment.schedule.event;
   const parts = eventDateParts(event.startsAt);
   const relativeDay = relativeDayLabel(event.startsAt);
-  const eventHref = `/dashboard/events/${event.id}`;
+  const eventHref = `/events/${event.id}`;
 
   return (
     <HomeSection aria-labelledby="home-next-assignment-title">
@@ -94,7 +94,7 @@ export function NextAssignmentCard({
               variant="outline"
               className="min-h-[44px] w-full sm:w-auto"
             >
-              <Link href="/dashboard/schedules">
+              <Link href="/schedules">
                 Minhas escalas
                 <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
               </Link>

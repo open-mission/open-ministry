@@ -226,7 +226,7 @@ function RehearsalCard({
     <li className="group rounded-xl border border-border/70 bg-card p-3 transition-colors hover:border-violet-500/40 sm:p-4">
       <div className="flex items-start gap-3">
         <Link
-          href={`/dashboard/events/${rehearsal.id}`}
+          href={`/events/${rehearsal.id}`}
           prefetch={true}
           className="flex min-w-0 flex-1 items-start gap-3 rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >

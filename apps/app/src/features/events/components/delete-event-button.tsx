@@ -66,7 +66,7 @@ export function DeleteEventButton({
 
       if (result.ok) {
         toast.success("Evento excluído.");
-        router.push("/dashboard/events");
+        router.push("/calendar");
         return;
       }
 

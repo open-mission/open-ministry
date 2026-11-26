@@ -158,7 +158,7 @@ export function MessageTemplatesCard({
   const sampleVariables: Record<string, string> = {
     name: "Gabriel Silva",
     church_name: churchName,
-    link: "https://openministry.app/dashboard",
+    link: "https://openministry.app",
     church_phone: "+55 (11) 98765-4321",
     whatsapp_name: churchName,
     department_name: "Ministério de Louvor",

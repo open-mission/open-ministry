@@ -46,7 +46,7 @@ export function NextServiceCard({
             size="sm"
             className="h-9 min-h-[44px] px-2 text-xs text-primary hover:text-primary"
           >
-            <Link href="/dashboard/events">
+            <Link href="/calendar">
               Ver agenda
               <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
             </Link>
@@ -57,7 +57,7 @@ export function NextServiceCard({
       <HomeCard className="border-primary/30 transition-colors hover:border-primary/50 hover:bg-card/90">
         <HomeCardContent>
           <Link
-            href={`/dashboard/events/${event.id}`}
+            href={`/events/${event.id}`}
             className="flex min-h-[44px] items-start gap-4 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <HomeDateBadge day={parts.day} month={parts.monthShort} />
