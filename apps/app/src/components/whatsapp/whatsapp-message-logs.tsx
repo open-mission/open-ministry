@@ -297,7 +297,7 @@ export function WhatsAppMessageLogsCard() {
                       className="hover:bg-muted/30 transition-colors"
                     >
                       <td className="p-3">
-                        <div className="font-medium text-foreground truncate max-w-[150px]">
+                        <div className="font-medium text-foreground truncate max-w-37.5">
                           {log.recipientName || "Membro"}
                         </div>
                         <div className="font-mono text-[11px] text-muted-foreground">
@@ -309,7 +309,7 @@ export function WhatsAppMessageLogsCard() {
                         {typeBadge(log.type)}
                       </td>
 
-                      <td className="p-3 max-w-[280px]">
+                      <td className="p-3 max-w-70">
                         <p className="truncate text-muted-foreground font-mono text-[11px]">
                           {log.content}
                         </p>

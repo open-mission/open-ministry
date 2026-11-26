@@ -216,8 +216,8 @@ export function MobileMenu({
 
   return (
     <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerContent className="z-[60] h-[95dvh] max-h-[95dvh] data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[95dvh] gap-0 overflow-hidden border-x-0 border-b-0 p-0">
-        <DrawerHeader className="relative z-10 shrink-0 border-b border-border/60 bg-popover px-4 pt-3 pb-3 !text-left">
+      <DrawerContent className="z-60 h-[95dvh] max-h-[95dvh] data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[95dvh] gap-0 overflow-hidden border-x-0 border-b-0 p-0">
+        <DrawerHeader className="relative z-10 shrink-0 border-b border-border/60 bg-popover px-4 pt-3 pb-3 text-left!">
           <DrawerTitle className="font-heading text-lg">Explorar</DrawerTitle>
           <DrawerDescription className="text-xs">
             {organizationName ?? "Acesse as áreas do painel."}
@@ -274,7 +274,7 @@ export function MobileMenu({
                             className={cn(
                               "flex min-h-12 items-center gap-3 px-3.5 py-2.5 transition-colors active:bg-muted/60",
                               index > 0 && "border-t border-border/50",
-                              isActive && "bg-primary/[0.06]",
+                              isActive && "bg-primary/6",
                             )}
                           >
                             <span
@@ -285,7 +285,7 @@ export function MobileMenu({
                                   : "bg-muted text-muted-foreground",
                               )}
                             >
-                              <item.icon className="size-[18px]" />
+                              <item.icon className="size-4.5" />
                             </span>
                             <span
                               className={cn(
@@ -331,7 +331,7 @@ export function MobileMenu({
                           className={cn(
                             "flex min-h-11 items-center gap-3 px-3.5 py-2.5 transition-colors active:bg-muted/60",
                             index > 0 && "border-t border-border/50",
-                            isActive && "bg-primary/[0.06]",
+                            isActive && "bg-primary/6",
                           )}
                         >
                           <span
@@ -342,7 +342,7 @@ export function MobileMenu({
                                 : "bg-muted text-muted-foreground",
                             )}
                           >
-                            <Icon className="size-[18px]" />
+                            <Icon className="size-4.5" />
                           </span>
                           <span className="flex min-w-0 flex-1 flex-col">
                             <span
@@ -429,7 +429,7 @@ export function MobileMenu({
                           className={cn(
                             "flex min-h-28 flex-col gap-2 rounded-2xl border p-3 text-left transition-colors",
                             isActive
-                              ? "border-primary/40 bg-primary/[0.06]"
+                              ? "border-primary/40 bg-primary/6"
                               : "border-border/70 bg-card hover:bg-muted/40 active:bg-muted",
                           )}
                         >
@@ -442,7 +442,7 @@ export function MobileMenu({
                                   : "bg-muted text-muted-foreground",
                               )}
                             >
-                              <Icon className="size-[18px]" />
+                              <Icon className="size-4.5" />
                             </span>
                             {domain.badge ? (
                               <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
@@ -485,7 +485,7 @@ export function MobileMenu({
                           className={cn(
                             "flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
                             isActive
-                              ? "bg-primary/[0.06] text-primary"
+                              ? "bg-primary/6 text-primary"
                               : "text-foreground hover:bg-muted/60 active:bg-muted",
                           )}
                         >
@@ -516,7 +516,7 @@ export function MobileMenu({
           </div>
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-5 bg-gradient-to-t from-popover to-transparent"
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-5 bg-linear-to-t from-popover to-transparent"
           />
         </div>
 

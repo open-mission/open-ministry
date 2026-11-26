@@ -194,7 +194,7 @@ function AgendaEventCard({
       type="button"
       onClick={() => onSelect(item)}
       aria-label={`Abrir detalhes de ${item.title}`}
-      className="flex min-h-[74px] w-full items-center gap-2.5 rounded-xl border bg-card px-3 py-2.5 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.99]"
+      className="flex min-h-18.5 w-full items-center gap-2.5 rounded-xl border bg-card px-3 py-2.5 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.99]"
     >
       <div className="flex w-11 shrink-0 flex-col justify-center">
         <span className="text-[11px] font-semibold tabular-nums leading-tight text-foreground">
@@ -208,7 +208,7 @@ function AgendaEventCard({
       <span
         aria-hidden="true"
         className={cn(
-          "w-[3px] shrink-0 self-stretch rounded-full min-h-10",
+          "w-0.75 shrink-0 self-stretch rounded-full min-h-10",
           getItemAccent(item),
         )}
       />
@@ -430,7 +430,7 @@ export function MobileAgendaView({
             ) : null}
           </div>
 
-          <div className="flex shrink-0 items-center pr-[72px] sm:pr-[82px]">
+          <div className="flex shrink-0 items-center pr-18 sm:pr-20.5">
             <CalendarMobileCreateTrigger />
           </div>
         </header>
@@ -445,7 +445,7 @@ export function MobileAgendaView({
         >
           <TabsList
             aria-label="Visualizações da agenda mobile"
-            className="grid w-full grid-cols-4 gap-0.5 rounded-xl bg-muted p-1 group-data-horizontal/tabs:h-[52px]"
+            className="grid w-full grid-cols-4 gap-0.5 rounded-xl bg-muted p-1 group-data-horizontal/tabs:h-13"
           >
             {MOBILE_TABS.map((tab) => (
               <TabsTrigger
@@ -527,7 +527,7 @@ export function MobileAgendaView({
               aria-label={`Remover departamento ${activeDepartmentName}`}
               className="inline-flex min-h-7 items-center gap-1 rounded-full border border-primary/25 bg-secondary/70 px-2.5 text-[11px] font-medium text-primary"
             >
-              <span className="max-w-[150px] truncate">{activeDepartmentName}</span>
+              <span className="max-w-37.5 truncate">{activeDepartmentName}</span>
               <XIcon className="size-3" aria-hidden="true" />
             </button>
           ) : null}
@@ -611,7 +611,7 @@ export function MobileAgendaView({
                     aria-pressed={isSelected}
                     aria-label={format(day, "EEEE, d 'de' MMMM", { locale: ptBR })}
                     className={cn(
-                      "flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-[10px] border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      "flex min-h-13 flex-col items-center justify-center gap-0.5 rounded-[10px] border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       isSelected
                         ? "border-primary bg-primary text-primary-foreground"
                         : isToday
@@ -813,7 +813,7 @@ export function MobileAgendaView({
                         <span
                           aria-hidden="true"
                           className={cn(
-                            "h-6 w-[3px] shrink-0 rounded-full",
+                            "h-6 w-0.75 shrink-0 rounded-full",
                             getItemAccent(item),
                           )}
                         />
@@ -844,7 +844,7 @@ export function MobileAgendaView({
                   }
                   aria-current={isCurrentRealMonth ? "date" : undefined}
                   className={cn(
-                    "flex min-h-[84px] flex-col justify-between gap-1.5 rounded-xl border p-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    "flex min-h-21 flex-col justify-between gap-1.5 rounded-xl border p-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     isCurrentRealMonth
                       ? "border-primary bg-primary/10"
                       : "border-border bg-card hover:bg-muted/40",

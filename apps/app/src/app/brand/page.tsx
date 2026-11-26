@@ -94,7 +94,7 @@ export default function BrandPage() {
       {/* Background ambient glow */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[38rem] bg-[radial-gradient(75%_55%_at_50%_-10%,var(--color-secondary),transparent_72%)]"
+        className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-152 bg-[radial-gradient(75%_55%_at_50%_-10%,var(--color-secondary),transparent_72%)]"
       />
 
       {/* Header */}
@@ -180,7 +180,7 @@ export default function BrandPage() {
 
         {/* Hero Visual Card */}
         <div className="mt-12 overflow-hidden rounded-2xl border bg-card p-2 sm:p-3 shadow-sm">
-          <div className="relative aspect-[21/9] w-full overflow-hidden rounded-xl bg-zinc-950">
+          <div className="relative aspect-21/9 w-full overflow-hidden rounded-xl bg-zinc-950">
             <Image
               src="/brand/showcase-hero.jpg"
               alt="OpenMinistry Brand Showcase"
@@ -188,7 +188,7 @@ export default function BrandPage() {
               className="object-cover"
               priority
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+            <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
             <div className="absolute bottom-6 left-6 right-6 flex flex-col justify-between gap-2 text-white sm:flex-row sm:items-end">
               <div>
                 <p className="text-xs uppercase tracking-widest text-zinc-300">
@@ -777,7 +777,7 @@ export default function BrandPage() {
 
         <div className="grid gap-6 md:grid-cols-2">
           <div className="overflow-hidden rounded-2xl border bg-card shadow-xs group">
-            <div className="relative aspect-[16/10] w-full overflow-hidden">
+            <div className="relative aspect-16/10 w-full overflow-hidden">
               <Image
                 src="/brand/showcase-dark.jpg"
                 alt="OpenMinistry Editorial Dark Theme"
@@ -794,7 +794,7 @@ export default function BrandPage() {
           </div>
 
           <div className="overflow-hidden rounded-2xl border bg-card shadow-xs group">
-            <div className="relative aspect-[16/10] w-full overflow-hidden">
+            <div className="relative aspect-16/10 w-full overflow-hidden">
               <Image
                 src="/brand/showcase-banner.jpg"
                 alt="OpenMinistry Workspace Showcase"
@@ -814,7 +814,7 @@ export default function BrandPage() {
 
       {/* Download Kit Footer CTA */}
       <section id="downloads" className="mx-auto max-w-6xl px-5 py-16 sm:px-8">
-        <div className="rounded-3xl border bg-gradient-to-br from-primary/10 via-card to-background p-8 sm:p-12 text-center space-y-6">
+        <div className="rounded-3xl border bg-linear-to-br from-primary/10 via-card to-background p-8 sm:p-12 text-center space-y-6">
           <span className="flex size-14 mx-auto items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md">
             <OpenMinistrySymbol className="size-7" />
           </span>

@@ -447,7 +447,7 @@ export function CalendarMobileMoreTrigger() {
     <Drawer open={moreOpen} onOpenChange={handleMoreOpenChange}>
       <DrawerTrigger asChild>{trigger}</DrawerTrigger>
       <DrawerContent className="gap-0 rounded-t-xl border-x-0 border-b-0 bg-popover p-0">
-        <DrawerHeader className="space-y-1 px-5 pt-3 pb-3 !text-left">
+        <DrawerHeader className="space-y-1 px-5 pt-3 pb-3 text-left!">
           {mobileMoreTab === "filters" ? (
             <div className="flex items-center gap-2">
               <Button

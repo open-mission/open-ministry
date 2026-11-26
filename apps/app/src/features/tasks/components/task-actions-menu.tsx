@@ -148,7 +148,7 @@ export function TaskActionsMenu({
         role="alertdialog"
         className="max-h-[85dvh] data-[vaul-drawer-direction=bottom]:max-h-[85dvh] rounded-t-[24px] bg-background px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
       >
-        <DrawerHeader className="!text-left px-0">
+        <DrawerHeader className="text-left! px-0">
           <DrawerTitle className="font-heading text-lg font-bold">
             Excluir tarefa?
           </DrawerTitle>
@@ -162,7 +162,7 @@ export function TaskActionsMenu({
             variant="destructive"
             disabled={isPending}
             onClick={handleConfirmDelete}
-            className="min-h-[44px] w-full"
+            className="min-h-11 w-full"
           >
             {isPending ? (
               <Loader2Icon className="mr-2 size-4 animate-spin" />
@@ -176,7 +176,7 @@ export function TaskActionsMenu({
             variant="outline"
             disabled={isPending}
             onClick={() => setConfirmDeleteOpen(false)}
-            className="min-h-[44px] w-full"
+            className="min-h-11 w-full"
           >
             Cancelar
           </Button>
@@ -232,7 +232,7 @@ export function TaskActionsMenu({
             </Button>
           </DrawerTrigger>
           <DrawerContent className="flex h-auto max-h-[88dvh] data-[vaul-drawer-direction=bottom]:max-h-[88dvh] flex-col gap-0 rounded-t-[24px] bg-background p-0">
-            <DrawerHeader className="shrink-0 border-b px-4 pt-3 pb-2.5 !text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+            <DrawerHeader className="shrink-0 border-b px-4 pt-3 pb-2.5 text-left! group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
               <DrawerTitle className="font-heading text-lg font-bold line-clamp-1">
                 {task.title}
               </DrawerTitle>
@@ -250,7 +250,7 @@ export function TaskActionsMenu({
                   <Button
                     type="button"
                     variant="ghost"
-                    className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
+                    className="min-h-11 w-full justify-start gap-3 px-3 text-sm font-medium"
                     onClick={() => {
                       setDrawerOpen(false);
                       onView(task);
@@ -266,7 +266,7 @@ export function TaskActionsMenu({
                     <Button
                       type="button"
                       variant="ghost"
-                      className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
+                      className="min-h-11 w-full justify-start gap-3 px-3 text-sm font-medium"
                       onClick={() =>
                         handleSetStatus(isCompleted ? "todo" : "completed")
                       }
@@ -288,7 +288,7 @@ export function TaskActionsMenu({
                       <Button
                         type="button"
                         variant="ghost"
-                        className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
+                        className="min-h-11 w-full justify-start gap-3 px-3 text-sm font-medium"
                         onClick={() => handleSetStatus("in_progress")}
                       >
                         <ClockIcon className="size-4 text-amber-600" />
@@ -298,7 +298,7 @@ export function TaskActionsMenu({
                       <Button
                         type="button"
                         variant="ghost"
-                        className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
+                        className="min-h-11 w-full justify-start gap-3 px-3 text-sm font-medium"
                         onClick={() => handleSetStatus("todo")}
                       >
                         <CircleIcon className="size-4 text-muted-foreground" />
@@ -310,7 +310,7 @@ export function TaskActionsMenu({
                       <Button
                         type="button"
                         variant="ghost"
-                        className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
+                        className="min-h-11 w-full justify-start gap-3 px-3 text-sm font-medium"
                         onClick={() => handleSetStatus("canceled")}
                       >
                         <XCircleIcon className="size-4 text-muted-foreground" />
@@ -324,7 +324,7 @@ export function TaskActionsMenu({
                   <Button
                     type="button"
                     variant="ghost"
-                    className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
+                    className="min-h-11 w-full justify-start gap-3 px-3 text-sm font-medium"
                     onClick={handleTogglePin}
                   >
                     {task.isPinned ? (
@@ -345,7 +345,7 @@ export function TaskActionsMenu({
                   <Button
                     type="button"
                     variant="ghost"
-                    className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
+                    className="min-h-11 w-full justify-start gap-3 px-3 text-sm font-medium"
                     onClick={() => {
                       setDrawerOpen(false);
                       onEdit(task);
@@ -360,7 +360,7 @@ export function TaskActionsMenu({
                   <Button
                     type="button"
                     variant="ghost"
-                    className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium"
+                    className="min-h-11 w-full justify-start gap-3 px-3 text-sm font-medium"
                     onClick={() => {
                       setDrawerOpen(false);
                       onOpenAudit(task);
@@ -380,7 +380,7 @@ export function TaskActionsMenu({
                       <Button
                         type="button"
                         variant="ghost"
-                        className="min-h-[44px] w-full justify-start gap-3 px-3 text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        className="min-h-11 w-full justify-start gap-3 px-3 text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive"
                         onClick={() => setConfirmDeleteOpen(true)}
                       >
                         <Trash2Icon className="size-4" />
@@ -390,7 +390,7 @@ export function TaskActionsMenu({
                         role="alertdialog"
                         className="max-h-[85dvh] data-[vaul-drawer-direction=bottom]:max-h-[85dvh] rounded-t-[24px] bg-background px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
                       >
-                        <DrawerHeader className="!text-left px-0">
+                        <DrawerHeader className="text-left! px-0">
                           <DrawerTitle className="font-heading text-lg font-bold">
                             Excluir tarefa?
                           </DrawerTitle>
@@ -404,7 +404,7 @@ export function TaskActionsMenu({
                             variant="destructive"
                             disabled={isPending}
                             onClick={handleConfirmDelete}
-                            className="min-h-[44px] w-full"
+                            className="min-h-11 w-full"
                           >
                             {isPending ? (
                               <Loader2Icon className="mr-2 size-4 animate-spin" />
@@ -418,7 +418,7 @@ export function TaskActionsMenu({
                             variant="outline"
                             disabled={isPending}
                             onClick={() => setConfirmDeleteOpen(false)}
-                            className="min-h-[44px] w-full"
+                            className="min-h-11 w-full"
                           >
                             Cancelar
                           </Button>

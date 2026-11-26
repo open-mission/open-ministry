@@ -27,15 +27,15 @@ export function AuthShell({ children, contentClassName }: AuthShellProps) {
       <aside className="relative hidden overflow-hidden bg-primary p-10 text-primary-foreground lg:flex lg:flex-col">
         <div
           aria-hidden
-          className="pointer-events-none absolute -top-32 -left-24 size-[28rem] rounded-full border border-primary-foreground/10"
+          className="pointer-events-none absolute -top-32 -left-24 size-112 rounded-full border border-primary-foreground/10"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute top-24 -right-40 size-[32rem] rounded-full border border-primary-foreground/10"
+          className="pointer-events-none absolute top-24 -right-40 size-128 rounded-full border border-primary-foreground/10"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -bottom-44 left-10 size-[26rem] rounded-full bg-primary-foreground/5 blur-3xl"
+          className="pointer-events-none absolute -bottom-44 left-10 size-104 rounded-full bg-primary-foreground/5 blur-3xl"
         />
 
         <Link

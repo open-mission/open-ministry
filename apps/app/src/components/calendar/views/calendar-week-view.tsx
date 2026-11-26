@@ -129,14 +129,14 @@ export function CalendarWeekView({
         aria-label="Agenda semanal"
         tabIndex={0}
         ref={scrollRef}
-        className="max-h-[580px] overflow-auto overscroll-contain focus-visible:outline-none md:min-h-0 md:max-h-none md:flex-1"
+        className="max-h-145 overflow-auto overscroll-contain focus-visible:outline-none md:min-h-0 md:max-h-none md:flex-1"
       >
-        <div className="min-w-[49rem] md:min-w-0">
+        <div className="min-w-196 md:min-w-0">
           {/* Week Header */}
           <div
             className={cn(
               weekGridClassName,
-              "sticky top-0 z-40 h-[58px] border-b bg-card text-xs shadow-2xs",
+              "sticky top-0 z-40 h-14.5 border-b bg-card text-xs shadow-2xs",
             )}
           >
             <div className="sticky left-0 top-0 z-50 flex items-center justify-center border-b border-r border-border bg-muted text-center font-medium text-muted-foreground shadow-xs">
@@ -196,7 +196,7 @@ export function CalendarWeekView({
           <div
             className={cn(
               weekGridClassName,
-              "sticky top-[58px] z-30 min-h-[44px] border-b bg-card shadow-2xs",
+              "sticky top-14.5 z-30 min-h-11 border-b bg-card shadow-2xs",
             )}
           >
             <div className="sticky left-0 z-35 flex items-center justify-center border-r bg-card p-1 text-xs font-medium text-muted-foreground shadow-xs">
@@ -213,7 +213,7 @@ export function CalendarWeekView({
               return (
                 <div
                   key={`allday-${day.toISOString()}`}
-                  className="min-h-[44px] space-y-1 border-r bg-card p-1 last:border-r-0"
+                  className="min-h-11 space-y-1 border-r bg-card p-1 last:border-r-0"
                 >
                   {dayAllDayItems.map((item) => (
                     <button
@@ -283,8 +283,8 @@ export function CalendarWeekView({
                     key={day.toISOString()}
                     className={cn(
                       "relative border-r last:border-r-0 select-none",
-                      isDayToday && "bg-primary/[0.04]",
-                      isDaySelected && "bg-primary/[0.025] ring-1 ring-inset ring-primary/25",
+                      isDayToday && "bg-primary/4",
+                      isDaySelected && "bg-primary/2.5 ring-1 ring-inset ring-primary/25",
                     )}
                   >
                     {isDayToday && currentTimeTop !== null ? (
@@ -295,7 +295,7 @@ export function CalendarWeekView({
                         className="pointer-events-none absolute inset-x-0 z-20 flex items-center"
                       >
                         <span className="-ml-1 size-2 shrink-0 rounded-full bg-primary ring-2 ring-background" />
-                        <span className="h-[2px] flex-1 bg-primary" />
+                        <span className="h-0.5 flex-1 bg-primary" />
                       </div>
                     ) : null}
                     {/* Background hour slots */}

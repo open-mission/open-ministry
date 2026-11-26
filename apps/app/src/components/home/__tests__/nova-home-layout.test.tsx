@@ -113,11 +113,11 @@ describe("layout da nova home", () => {
     expect(markup).toContain('aria-selected="true"');
     expect(markup).toContain('aria-selected="false"');
     expect(markup).toContain("h-14");
-    expect(markup).toContain("min-h-[44px]");
+    expect(markup).toContain("min-h-11");
     expect(markup).toContain("gap-6 sm:gap-7");
     expect(markup).toContain("ml-3");
     expect(markup).toContain("md:ml-1");
-    expect(markup).toContain("after:h-[3px]");
+    expect(markup).toContain("after:h-0.75");
     expect(markup).toContain("after:w-full");
     expect(markup).not.toContain("after:w-9");
     expect(markup).not.toContain("after:mx-auto");
@@ -547,7 +547,7 @@ describe("cards da aba Minha Igreja", () => {
     expect(markup).toContain('aria-label="Informações da igreja"');
     expect(markup).not.toContain("<h2");
     expect(markup).toContain(
-      "border-border/70 bg-gradient-to-br from-amber-500/[0.04] via-card to-primary/[0.02]",
+      "border-border/70 bg-linear-to-br from-amber-500/4 via-card to-primary/2",
     );
     expect(markup).toContain("bg-amber-500/10 blur-3xl");
     expect(markup).toContain("border-amber-500/30 bg-amber-500/10");
@@ -578,7 +578,7 @@ describe("cards da aba Minha Igreja", () => {
     expect(markup).toContain("Ensaio");
     expect(markup).toContain('href="/events/ev-1"');
     expect(markup).toContain("Detalhes");
-    expect(markup).toContain("min-h-[44px]");
+    expect(markup).toContain("min-h-11");
   });
 
   it("UpcomingEventsCard alterna a bolinha entre primary e chart-2", () => {
@@ -740,7 +740,7 @@ describe("VerseOfTheDayWidget", () => {
       createElement(VerseOfTheDayWidget, { verse, variant: "folio" }),
     );
 
-    expect(markup).toContain("size-[52px]");
+    expect(markup).toContain("size-13");
     expect(markup).toContain("Ver arte ›");
   });
 
@@ -779,7 +779,7 @@ describe("VerseOfTheDayWidget", () => {
     expect(source).toContain("node.complete && node.naturalWidth > 0");
     expect(source).toContain("opacity-0");
     expect(source).toContain("opacity-100");
-    expect(source).toContain("sm:max-w-[700px]");
+    expect(source).toContain("sm:max-w-175");
     expect(source).toContain("sm:grid-cols-[260px_1fr]");
     expect(source).toContain("sm:aspect-square");
     expect(source).toContain("sm:items-center sm:justify-center");
@@ -801,7 +801,7 @@ describe("NextAssignmentCard", () => {
     expect(markup).toContain('href="/events/event-1"');
     expect(markup).toContain('href="/schedules"');
     expect(markup).toContain("Minhas escalas");
-    expect(markup).toContain("min-h-[44px]");
+    expect(markup).toContain("min-h-11");
     expect(markup).toContain("w-full sm:w-auto");
     expect(markup).not.toContain("Confirmar presença");
   });
@@ -920,14 +920,14 @@ describe("TodayHomeLayout", () => {
     const markup = renderLayout();
 
     expect(markup).toContain('class="order-1 lg:hidden">MOBILE_VERSE');
-    expect(markup).toContain('class="order-2 lg:order-none">NEXT_ASSIGNMENT');
-    expect(markup).toContain('class="order-3 lg:order-none">TASKS');
-    expect(markup).toContain('class="order-4 lg:order-none">NOTIFICATIONS');
-    expect(markup).toContain('class="order-5 lg:order-none">ATTENTION');
-    expect(markup).toContain('class="order-6 lg:order-none">NEXT_EVENT');
-    expect(markup).toContain('class="order-7 lg:order-none">BIRTHDAYS');
+    expect(markup).toContain('class="order-2 lg:order-0">NEXT_ASSIGNMENT');
+    expect(markup).toContain('class="order-3 lg:order-0">TASKS');
+    expect(markup).toContain('class="order-4 lg:order-0">NOTIFICATIONS');
+    expect(markup).toContain('class="order-5 lg:order-0">ATTENTION');
+    expect(markup).toContain('class="order-6 lg:order-0">NEXT_EVENT');
+    expect(markup).toContain('class="order-7 lg:order-0">BIRTHDAYS');
     expect(markup).toContain(
-      'class="hidden lg:order-none lg:block">DESKTOP_VERSE',
+      'class="hidden lg:order-0 lg:block">DESKTOP_VERSE',
     );
   });
 
@@ -1064,7 +1064,7 @@ describe("AvailabilityReminderWidget e Departamentos", () => {
     ]);
 
     expect(sheetSource).toContain(
-      "data-[side=right]:md:!w-1/2 data-[side=right]:md:!max-w-[50vw]",
+      "data-[side=right]:md:w-1/2! data-[side=right]:md:max-w-[50vw]!",
     );
     expect(sheetSource).toContain("rounded-t-xl border-x-0 border-b-0 bg-popover");
     expect(actionSource).toContain(

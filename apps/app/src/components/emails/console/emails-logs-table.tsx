@@ -39,12 +39,12 @@ export function EmailsLogsTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[200px]">Destinatário</TableHead>
+            <TableHead className="w-50">Destinatário</TableHead>
             <TableHead>Assunto</TableHead>
-            <TableHead className="w-[120px]">Tipo</TableHead>
-            <TableHead className="w-[100px]">Status</TableHead>
-            <TableHead className="w-[140px]">Data & Hora</TableHead>
-            <TableHead className="w-[110px] text-right">Ações</TableHead>
+            <TableHead className="w-30">Tipo</TableHead>
+            <TableHead className="w-25">Status</TableHead>
+            <TableHead className="w-35">Data & Hora</TableHead>
+            <TableHead className="w-27.5 text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

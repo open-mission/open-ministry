@@ -200,7 +200,7 @@ export function PlanSongPicker({
                   )}
                 >
                   <FolderIcon className="size-3 opacity-70" />
-                  <span className="truncate max-w-[110px]">
+                  <span className="truncate max-w-27.5">
                     {collectionFilter || "Grupo"}
                   </span>
                   <ChevronDownIcon className="size-3 opacity-60" />
@@ -295,7 +295,7 @@ export function PlanSongPicker({
                   )}
                 >
                   <TagIcon className="size-3 opacity-70" />
-                  <span className="truncate max-w-[100px]">
+                  <span className="truncate max-w-25">
                     {tagFilter || "Tag"}
                   </span>
                   <ChevronDownIcon className="size-3 opacity-60" />
@@ -661,7 +661,7 @@ export function PlanSongPicker({
 
           <PopoverContent
             align="start"
-            className="w-[460px] p-0 rounded-2xl shadow-xl overflow-hidden h-[420px] flex flex-col"
+            className="w-115 p-0 rounded-2xl shadow-xl overflow-hidden h-105 flex flex-col"
           >
             {pickerBody}
           </PopoverContent>

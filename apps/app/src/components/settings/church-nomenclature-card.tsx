@@ -128,7 +128,7 @@ export function ChurchNomenclatureCard({
                     className={cn(
                       "flex flex-col items-start gap-1.5 rounded-xl border p-3.5 text-left transition-all",
                       isSelected
-                        ? "border-primary bg-primary/[0.04] ring-2 ring-primary/20 shadow-xs"
+                        ? "border-primary bg-primary/4 ring-2 ring-primary/20 shadow-xs"
                         : "border-border/70 hover:border-primary/40 hover:bg-muted/30",
                     )}
                   >
@@ -163,7 +163,7 @@ export function ChurchNomenclatureCard({
                 className={cn(
                   "flex w-full items-center justify-between rounded-xl border p-3.5 text-left transition-all",
                   selectedType === "custom"
-                    ? "border-primary bg-primary/[0.04] ring-2 ring-primary/20 shadow-xs"
+                    ? "border-primary bg-primary/4 ring-2 ring-primary/20 shadow-xs"
                     : "border-border/70 hover:border-primary/40 hover:bg-muted/30",
                 )}
               >

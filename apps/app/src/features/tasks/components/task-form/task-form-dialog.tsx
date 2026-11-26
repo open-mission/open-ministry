@@ -94,7 +94,7 @@ export function TaskFormDialog({
     return (
       <Wrapper open={open} onOpenChange={(v) => !v && onClose()}>
         <DrawerContent className="flex h-auto max-h-[90dvh] data-[vaul-drawer-direction=bottom]:max-h-[90dvh] flex-col gap-0 rounded-t-[24px] bg-background p-0">
-          <DrawerHeader className="shrink-0 border-b px-4 pt-3 pb-3 !text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+          <DrawerHeader className="shrink-0 border-b px-4 pt-3 pb-3 text-left! group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
             <div className="flex items-center justify-between gap-2">
               <DrawerTitle className="font-heading text-xl font-bold">
                 {form.isEditing ? "Editar tarefa" : "Nova tarefa"}
@@ -105,7 +105,7 @@ export function TaskFormDialog({
                   variant="ghost"
                   size="sm"
                   onClick={() => form.setAuditOpen(true)}
-                  className="min-h-[44px] gap-1.5 text-muted-foreground"
+                  className="min-h-11 gap-1.5 text-muted-foreground"
                 >
                   <HistoryIcon className="size-4" />
                   Histórico
@@ -132,7 +132,7 @@ export function TaskFormDialog({
               variant="outline"
               disabled={form.submitting}
               onClick={onClose}
-              className="min-h-[44px] shrink-0 px-4"
+              className="min-h-11 shrink-0 px-4"
             >
               Cancelar
             </Button>
@@ -140,7 +140,7 @@ export function TaskFormDialog({
               type="submit"
               form="task-editor-form"
               disabled={form.submitting}
-              className="min-h-[44px] flex-1"
+              className="min-h-11 flex-1"
             >
               {submitLabel}
             </Button>

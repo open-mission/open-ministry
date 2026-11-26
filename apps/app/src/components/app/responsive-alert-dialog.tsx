@@ -68,7 +68,7 @@ export function ResponsiveAlertDialog({
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerTrigger asChild>{trigger}</DrawerTrigger>
         <DrawerContent className="max-h-[85vh]" role="alertdialog">
-          <DrawerHeader className="!text-left">
+          <DrawerHeader className="text-left!">
             <div className="flex items-start gap-3">
               {icon ? (
                 <span

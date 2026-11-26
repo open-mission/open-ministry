@@ -69,7 +69,7 @@ export function TaskTargetFieldset({
           type="button"
           variant={targetType === "self" ? "default" : "outline"}
           size="sm"
-          className="min-h-[40px] justify-start gap-1.5 sm:min-h-[36px]"
+          className="min-h-10 justify-start gap-1.5 sm:min-h-9"
           onClick={() => {
             onTargetTypeChange("self");
             onClearFieldErrors(["assigneeId", "departmentId"]);
@@ -84,7 +84,7 @@ export function TaskTargetFieldset({
             type="button"
             variant={targetType === "member" ? "default" : "outline"}
             size="sm"
-            className="min-h-[40px] justify-start gap-1.5 sm:min-h-[36px]"
+            className="min-h-10 justify-start gap-1.5 sm:min-h-9"
             onClick={() => {
               onTargetTypeChange("member");
               onClearFieldErrors(["departmentId"]);
@@ -100,7 +100,7 @@ export function TaskTargetFieldset({
             type="button"
             variant={targetType === "department" ? "default" : "outline"}
             size="sm"
-            className="min-h-[40px] justify-start gap-1.5 sm:min-h-[36px]"
+            className="min-h-10 justify-start gap-1.5 sm:min-h-9"
             onClick={() => {
               onTargetTypeChange("department");
               if (!departmentId && departments[0]?.id) {
@@ -119,7 +119,7 @@ export function TaskTargetFieldset({
             type="button"
             variant={targetType === "church" ? "default" : "outline"}
             size="sm"
-            className="min-h-[40px] justify-start gap-1.5 sm:min-h-[36px]"
+            className="min-h-10 justify-start gap-1.5 sm:min-h-9"
             onClick={() => {
               onTargetTypeChange("church");
               onClearFieldErrors(["assigneeId", "departmentId"]);
@@ -143,7 +143,7 @@ export function TaskTargetFieldset({
                 onChange={(e) => onMemberSearchChange(e.target.value)}
                 placeholder="Buscar pessoa por nome..."
                 aria-label="Filtrar pessoas por nome"
-                className="min-h-[40px] pl-9"
+                className="min-h-10 pl-9"
               />
             </div>
           ) : null}
@@ -158,7 +158,7 @@ export function TaskTargetFieldset({
             aria-describedby={
               fieldErrors.assigneeId ? "task-assignee-error" : undefined
             }
-            className="min-h-[44px] w-full"
+            className="min-h-11 w-full"
           >
             <option value="">Escolha um membro...</option>
             {filteredMembers.map((m) => (
@@ -187,7 +187,7 @@ export function TaskTargetFieldset({
                 onClearFieldErrors(["departmentId"]);
               }}
               aria-invalid={fieldErrors.departmentId ? "true" : undefined}
-              className="min-h-[44px] w-full"
+              className="min-h-11 w-full"
             >
               <option value="">Escolha um departamento...</option>
               {departments.map((d) => (
@@ -211,7 +211,7 @@ export function TaskTargetFieldset({
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <label
                   className={cn(
-                    "flex min-h-[44px] cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 text-xs transition-colors",
+                    "flex min-h-11 cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 text-xs transition-colors",
                     delegationType === "shared"
                       ? "border-primary bg-primary/5"
                       : "bg-background hover:bg-muted/40",
@@ -236,7 +236,7 @@ export function TaskTargetFieldset({
 
                 <label
                   className={cn(
-                    "flex min-h-[44px] cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 text-xs transition-colors",
+                    "flex min-h-11 cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 text-xs transition-colors",
                     delegationType === "individual"
                       ? "border-primary bg-primary/5"
                       : "bg-background hover:bg-muted/40",

@@ -740,7 +740,7 @@ export function ChordsViewer({
             <SectionBadge type={section.type} name={section.name} />
           </CardHeader>
           {sectionNotes?.[section.key] ? (
-            <div className="border-b border-border/50 bg-primary/[0.03] px-3.5 py-1.5 sm:px-4">
+            <div className="border-b border-border/50 bg-primary/3 px-3.5 py-1.5 sm:px-4">
               <SectionNoteStrip
                 note={sectionNotes[section.key]}
                 sectionKey={section.key}
@@ -769,17 +769,17 @@ export function ChordsViewer({
   );
 
   const columnsView = (
-    <div className="flex items-start gap-4 overflow-x-auto pb-4 pt-1 snap-x scroll-smooth [-ms-overflow-style:none] [scrollbar-width:thin]">
+    <div className="flex items-start gap-4 overflow-x-auto pb-4 pt-1 snap-x scroll-smooth [-ms-overflow-style:none] scrollbar-thin">
       {sections.map((section) => (
         <div
           key={section.id}
-          className="flex w-[86vw] max-w-[460px] shrink-0 snap-start flex-col rounded-xl border border-border/70 bg-card shadow-2xs sm:w-[420px] lg:w-[460px]"
+          className="flex w-[86vw] max-w-115 shrink-0 snap-start flex-col rounded-xl border border-border/70 bg-card shadow-2xs sm:w-105 lg:w-115"
         >
           <div className="flex shrink-0 items-center justify-between border-b border-border/50 bg-muted/20 px-4 py-2.5">
             <SectionBadge type={section.type} name={section.name} />
           </div>
           {sectionNotes?.[section.key] ? (
-            <div className="border-b border-border/50 bg-primary/[0.03] px-4 py-1.5">
+            <div className="border-b border-border/50 bg-primary/3 px-4 py-1.5">
               <SectionNoteStrip
                 note={sectionNotes[section.key]}
                 sectionKey={section.key}
@@ -838,7 +838,7 @@ export function ChordsViewer({
               aria-modal="true"
               aria-labelledby="chords-viewer-fullscreen-title"
               tabIndex={-1}
-              className="fixed inset-0 z-[100] flex h-dvh max-h-dvh flex-col overflow-hidden overscroll-contain bg-background text-foreground select-text focus:outline-none"
+              className="fixed inset-0 z-100 flex h-dvh max-h-dvh flex-col overflow-hidden overscroll-contain bg-background text-foreground select-text focus:outline-none"
             >
               <div className="flex shrink-0 flex-col gap-2 border-b border-border/70 bg-card/95 px-3 py-2 shadow-xs backdrop-blur-xs sm:px-5 sm:py-2.5">
                 <div className="flex items-center justify-between gap-2">
@@ -914,7 +914,7 @@ export function ChordsViewer({
           className={cn(
             "max-h-[85vh] overflow-y-auto sm:max-w-md",
             // Fica acima da sobreposição do modo palco (z-100).
-            isFullscreen && "z-[120]",
+            isFullscreen && "z-120",
           )}
         >
           <DialogHeader>

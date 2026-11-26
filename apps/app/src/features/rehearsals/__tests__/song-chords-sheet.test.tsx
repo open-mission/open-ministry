@@ -341,8 +341,8 @@ describe("SongChordsSheet — mobile", () => {
 
     expect(markup).toContain('data-slot="drawer-content"');
     expect(markup).not.toContain('data-slot="sheet-content"');
-    expect(markup).toContain("h-[100dvh]");
-    expect(markup).toContain("max-h-[100dvh]");
+    expect(markup).toContain("h-dvh");
+    expect(markup).toContain("max-h-dvh");
     expect(markup).toContain("rounded-none");
     expect(markup).toContain("data-vaul-no-drag");
     expect(markup).toContain("overflow-y-auto");

@@ -37,7 +37,7 @@ export function EmailsConsole({
 
       {/* Main Tabs */}
       <Tabs defaultValue="history" className="w-full space-y-5">
-        <TabsList className="grid w-full grid-cols-2 sm:w-[380px]">
+        <TabsList className="grid w-full grid-cols-2 sm:w-95">
           <TabsTrigger value="history" className="gap-2">
             <FileTextIcon className="size-4" />
             <span>Emails Enviados</span>

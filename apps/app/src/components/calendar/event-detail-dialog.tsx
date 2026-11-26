@@ -655,7 +655,7 @@ export function EventPreviewSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex w-full min-w-0 flex-col gap-0 p-0 data-[side=right]:md:!w-1/2 data-[side=right]:md:!max-w-[50vw]"
+        className="flex w-full min-w-0 flex-col gap-0 p-0 data-[side=right]:md:w-1/2! data-[side=right]:md:max-w-[50vw]!"
       >
         <SheetHeader className="space-y-2 border-b bg-card/50 px-6 py-5 pr-12 text-left">
           {badgeRow}

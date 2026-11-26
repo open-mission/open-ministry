@@ -151,7 +151,7 @@ describe("SettingsView — Opção A (Faixa Superior + Minha Conta / Igreja)", (
     );
 
     expect(markup).toContain("min-h-11");
-    expect(markup).toContain("min-h-[54px]");
+    expect(markup).toContain("min-h-13.5");
     expect(markup).toContain("Preferências");
     expect(markup).toContain("Segurança &amp; Sistema");
     expect(markup).toContain("1 link ativo");

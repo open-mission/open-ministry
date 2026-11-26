@@ -111,7 +111,7 @@ export function TaskFormFields({
           placeholder="Ex: Revisar lista de músicas do culto de domingo"
           aria-invalid={fieldErrors.title ? "true" : undefined}
           aria-describedby={fieldErrors.title ? "task-title-error" : undefined}
-          className="min-h-[44px]"
+          className="min-h-11"
           required
         />
         {fieldErrors.title ? (
@@ -166,7 +166,7 @@ export function TaskFormFields({
           aria-expanded={fields.showMore}
           aria-controls="task-more-details"
           onClick={() => onFieldChange("showMore", !fields.showMore)}
-          className="flex min-h-[44px] w-full items-center justify-between rounded-lg px-2 text-sm font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+          className="flex min-h-11 w-full items-center justify-between rounded-lg px-2 text-sm font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
         >
           <span>
             Mais detalhes (observações, etiquetas, prioridade, repetição)
@@ -206,7 +206,7 @@ export function TaskFormFields({
                   type="datetime-local"
                   value={fields.date}
                   onChange={(e) => onFieldChange("date", e.target.value)}
-                  className="min-h-[44px]"
+                  className="min-h-11"
                 />
               </div>
 
@@ -218,7 +218,7 @@ export function TaskFormFields({
                   onChange={(e) =>
                     onFieldChange("priority", e.target.value as TaskPriority)
                   }
-                  className="min-h-[44px] w-full"
+                  className="min-h-11 w-full"
                 >
                   <option value="none">Nenhuma</option>
                   <option value="low">Baixa</option>
@@ -249,14 +249,14 @@ export function TaskFormFields({
                     }
                   }}
                   placeholder="Ex: Culto, Compras, Som"
-                  className="min-h-[44px]"
+                  className="min-h-11"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   onClick={onAddTag}
                   aria-label="Adicionar etiqueta"
-                  className="min-h-[44px] min-w-[44px] shrink-0"
+                  className="min-h-11 min-w-11 shrink-0"
                 >
                   <PlusIcon className="size-4" />
                 </Button>
@@ -305,7 +305,7 @@ export function TaskFormFields({
                 aria-describedby={
                   fieldErrors.url ? "task-url-error" : undefined
                 }
-                className="min-h-[44px]"
+                className="min-h-11"
               />
               {fieldErrors.url ? (
                 <p id="task-url-error" className="text-xs text-destructive">
@@ -316,7 +316,7 @@ export function TaskFormFields({
 
             {/* Destaque & Repetição */}
             <div className="space-y-3 rounded-xl border bg-muted/20 p-3">
-              <label className="flex min-h-[36px] cursor-pointer items-center gap-2.5 text-sm">
+              <label className="flex min-h-9 cursor-pointer items-center gap-2.5 text-sm">
                 <input
                   type="checkbox"
                   checked={fields.isPinned}
@@ -328,7 +328,7 @@ export function TaskFormFields({
               </label>
 
               <div className="space-y-2 border-t pt-2.5">
-                <label className="flex min-h-[36px] cursor-pointer items-center gap-2.5 text-sm">
+                <label className="flex min-h-9 cursor-pointer items-center gap-2.5 text-sm">
                   <input
                     type="checkbox"
                     checked={fields.isRecurring}
@@ -353,7 +353,7 @@ export function TaskFormFields({
                         onChange={(e) =>
                           onFieldChange("recurrenceDay", e.target.value)
                         }
-                        className="min-h-[40px] w-full"
+                        className="min-h-10 w-full"
                       >
                         <option value="0">Domingo</option>
                         <option value="1">Segunda-feira</option>
@@ -375,7 +375,7 @@ export function TaskFormFields({
                         onChange={(e) =>
                           onFieldChange("recurrenceTime", e.target.value)
                         }
-                        className="min-h-[40px]"
+                        className="min-h-10"
                       />
                     </div>
                   </div>

@@ -313,7 +313,7 @@ export function RehearsalFormDialog({
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="flex h-auto max-h-[90dvh] flex-col gap-0 rounded-t-[24px] p-0 data-[vaul-drawer-direction=bottom]:max-h-[90dvh]">
-          <DrawerHeader className="shrink-0 border-b px-4 pt-3 pb-3 !text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+          <DrawerHeader className="shrink-0 border-b px-4 pt-3 pb-3 text-left! group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
             <DrawerTitle className="font-heading text-xl">{title}</DrawerTitle>
             <DrawerDescription className="text-xs text-muted-foreground">
               {description}

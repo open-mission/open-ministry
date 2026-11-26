@@ -587,9 +587,9 @@ export function AvailabilityEditor({
                   key={day.index}
                   className={cn(
                     "flex flex-col gap-3 rounded-xl border p-3.5 shadow-xs transition-colors lg:flex-row lg:items-center lg:justify-between",
-                    status === "available" && "border-primary/30 bg-primary/[0.02]",
+                    status === "available" && "border-primary/30 bg-primary/2",
                     status === "unavailable" &&
-                      "border-amber-500/25 bg-amber-500/[0.04]",
+                      "border-amber-500/25 bg-amber-500/4",
                     status === "uninformed" && "bg-card hover:bg-muted/20",
                   )}
                 >

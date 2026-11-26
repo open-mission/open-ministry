@@ -80,7 +80,7 @@ export function VerseOfTheDayCard({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-8 min-h-[32px] gap-1 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                  className="h-8 min-h-8 gap-1 px-2 text-[11px] text-muted-foreground hover:text-foreground"
                   onClick={handleCopy}
                 >
                   {copied ? (
@@ -98,7 +98,7 @@ export function VerseOfTheDayCard({
                   asChild
                   variant="ghost"
                   size="sm"
-                  className="h-8 min-h-[32px] gap-1 px-2 text-[11px] font-medium text-primary hover:bg-primary/10 hover:text-primary"
+                  className="h-8 min-h-8 gap-1 px-2 text-[11px] font-medium text-primary hover:bg-primary/10 hover:text-primary"
                 >
                   <Link
                     href={`/bible?passage=${encodeURIComponent(verse.passageId)}`}
@@ -121,7 +121,7 @@ export function VerseOfTheDayCard({
           </CardContent>
         </Card>
       ) : (
-        <Card className="relative overflow-hidden border-border/70 bg-gradient-to-br from-amber-500/[0.04] via-card to-primary/[0.02] shadow-xs transition-all hover:shadow-sm">
+        <Card className="relative overflow-hidden border-border/70 bg-linear-to-br from-amber-500/4 via-card to-primary/2 shadow-xs transition-all hover:shadow-sm">
         {/* Subtle decorative glow */}
         <div
           className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-amber-500/10 blur-3xl"
@@ -243,7 +243,7 @@ export function VerseOfTheDayCard({
               type="button"
               variant="outline"
               size="sm"
-              className="min-h-[44px] w-full sm:ml-auto sm:w-auto"
+              className="min-h-11 w-full sm:ml-auto sm:w-auto"
               onClick={handleShare}
             >
               <Share2Icon className="size-3.5 mr-1" aria-hidden="true" />

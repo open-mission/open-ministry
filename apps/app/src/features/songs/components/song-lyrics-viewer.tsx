@@ -191,7 +191,7 @@ export function SongLyricsViewer({
               <SectionBadge type={section.type} name={section.name} />
             </CardHeader>
             {sectionNotes?.[section.key] ? (
-              <div className="border-b border-border/50 bg-primary/[0.03] px-3.5 py-1.5 sm:px-4">
+              <div className="border-b border-border/50 bg-primary/3 px-3.5 py-1.5 sm:px-4">
                 <SectionNoteStrip
                   note={sectionNotes[section.key]}
                   sectionKey={section.key}

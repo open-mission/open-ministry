@@ -73,7 +73,7 @@ function HeroCard({ assignment }: { assignment: HomeAssignmentSummary }) {
   return (
     <section
       aria-labelledby="home-mobile-hero-title"
-      className="flex h-full flex-col rounded-[18px] bg-[#1e472f] p-[18px] text-[#faf7ee] dark:border dark:border-[#2c5b3f] dark:bg-[#1a3c28]"
+      className="flex h-full flex-col rounded-[18px] bg-[#1e472f] p-4.5 text-[#faf7ee] dark:border dark:border-[#2c5b3f] dark:bg-[#1a3c28]"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <HeroStatusPill label="Sua próxima escala" />
@@ -118,7 +118,7 @@ function FeaturedEventCard({ event }: { event: HomeEventSummary }) {
   return (
     <section
       aria-labelledby="home-mobile-featured-title"
-      className="flex h-full flex-col rounded-[18px] bg-[#1e472f] p-[18px] text-[#faf7ee] dark:border dark:border-[#2c5b3f] dark:bg-[#1a3c28]"
+      className="flex h-full flex-col rounded-[18px] bg-[#1e472f] p-4.5 text-[#faf7ee] dark:border dark:border-[#2c5b3f] dark:bg-[#1a3c28]"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <HeroStatusPill label="Próximo encontro da igreja" />
@@ -163,7 +163,7 @@ function FirstStepsCard({
   return (
     <section
       aria-labelledby="home-mobile-first-steps-title"
-      className="flex h-full flex-col rounded-[18px] bg-[#1e472f] p-[18px] text-[#faf7ee] dark:border dark:border-[#2c5b3f] dark:bg-[#1a3c28]"
+      className="flex h-full flex-col rounded-[18px] bg-[#1e472f] p-4.5 text-[#faf7ee] dark:border dark:border-[#2c5b3f] dark:bg-[#1a3c28]"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <HeroStatusPill label="Primeiros passos" />

@@ -380,7 +380,7 @@ function RehearsalCard({
               {visibleTitles.map((songTitle, index) => (
                 <span
                   key={`${songTitle}-${index}`}
-                  className="max-w-[14rem] truncate rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
+                  className="max-w-56 truncate rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
                 >
                   {songTitle}
                 </span>

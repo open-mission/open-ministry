@@ -270,7 +270,7 @@ function RehearsalCard({
                 {visibleTitles.map((title, index) => (
                   <span
                     key={`${title}-${index}`}
-                    className="max-w-[14rem] truncate rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
+                    className="max-w-56 truncate rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
                   >
                     {title}
                   </span>
@@ -370,7 +370,7 @@ export function RehearsalDeleteDialog({
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="p-0" role="alertdialog">
-          <DrawerHeader className="!text-left px-5 pt-4 pb-2">
+          <DrawerHeader className="text-left! px-5 pt-4 pb-2">
             <div className="flex items-start gap-3">
               <span
                 aria-hidden

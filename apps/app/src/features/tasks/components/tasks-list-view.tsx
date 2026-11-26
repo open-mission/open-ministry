@@ -243,7 +243,7 @@ export function TasksListView({
             type="button"
             aria-expanded={showCompleted}
             onClick={() => setShowCompleted((v) => !v)}
-            className="flex min-h-[44px] w-full items-center justify-between rounded-lg px-2 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors"
+            className="flex min-h-11 w-full items-center justify-between rounded-lg px-2 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors"
           >
             <span className="flex items-center gap-2">
               <CheckCircle2Icon className="size-4 text-emerald-600" />
@@ -286,7 +286,7 @@ export function TasksListView({
             type="button"
             aria-expanded={showCanceled}
             onClick={() => setShowCanceled((v) => !v)}
-            className="flex min-h-[44px] w-full items-center justify-between rounded-lg px-2 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors"
+            className="flex min-h-11 w-full items-center justify-between rounded-lg px-2 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors"
           >
             <span className="flex items-center gap-2">
               <XCircleIcon className="size-4 text-muted-foreground" />

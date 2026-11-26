@@ -326,10 +326,10 @@ export function MessageTemplatesCard({
             </div>
 
             {/* WhatsApp Chat Bubble Mockup */}
-            <div className="relative rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-[#E5DDD5] dark:bg-zinc-950 p-4 min-h-[300px] flex flex-col justify-end shadow-inner">
+            <div className="relative rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-[#E5DDD5] dark:bg-zinc-950 p-4 min-h-75 flex flex-col justify-end shadow-inner">
               {/* WhatsApp message balloon */}
               <div className="max-w-[92%] self-start rounded-2xl rounded-tl-xs bg-[#E7FFDB] dark:bg-[#005C4B] p-3.5 text-zinc-900 dark:text-zinc-100 shadow-xs space-y-2">
-                <div className="text-xs leading-relaxed whitespace-pre-wrap font-sans break-words">
+                <div className="text-xs leading-relaxed whitespace-pre-wrap font-sans wrap-break-word">
                   {formatWhatsAppText(simulatedText)}
                 </div>
 

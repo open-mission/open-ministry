@@ -41,7 +41,7 @@ export function TaskDeadlineSection({
             type="button"
             size="sm"
             variant={deadlinePreset === chip.key ? "default" : "outline"}
-            className="min-h-[38px] sm:min-h-[32px]"
+            className="min-h-9.5 sm:min-h-8"
             onClick={() => onSelectPreset(chip.key)}
           >
             {chip.label}
@@ -62,7 +62,7 @@ export function TaskDeadlineSection({
             type="datetime-local"
             value={deadline}
             onChange={(e) => onDeadlineChange(e.target.value)}
-            className="mt-1 min-h-[44px]"
+            className="mt-1 min-h-11"
           />
         </div>
       ) : null}

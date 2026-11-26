@@ -363,7 +363,7 @@ export function ChurchInfoCard({
   return (
     <div className="space-y-6">
       {/* 1. Identidade Visual */}
-      <Card className="border-primary/20 bg-primary/[0.01]">
+      <Card className="border-primary/20 bg-primary/1">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Badge className="bg-primary text-primary-foreground gap-1 font-normal">

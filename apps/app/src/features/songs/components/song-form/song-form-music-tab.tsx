@@ -115,7 +115,7 @@ export function SongFormMusicTab({
             onChange={(e) => onFieldChange("chords", e.target.value)}
             placeholder="Cole aqui a cifra do Cifra Club ou do seu arquivo .txt...&#10;&#10;[Intro] D  A6  D  A6&#10;&#10;[Primeira Parte]&#10;D         A6&#10;Os meus olhos viram a salvação&#10;D         A6&#10;A luz para o mundo, esperança da terra&#10;&#10;[Refrão]&#10;G           D&#10;Glória nas alturas"
             style={{ fieldSizing: "fixed" as never }}
-            className="h-full min-h-0 flex-1 resize-none overflow-y-auto font-mono text-xs leading-relaxed sm:text-sm [field-sizing:fixed]"
+            className="h-full min-h-0 flex-1 resize-none overflow-y-auto font-mono text-xs leading-relaxed sm:text-sm field-sizing-fixed"
           />
           <p className="shrink-0 text-[11px] leading-relaxed text-muted-foreground">
             Dica: Use <code>[Intro]</code>, <code>[Primeira Parte]</code>,{" "}
@@ -160,7 +160,7 @@ export function SongFormMusicTab({
             onChange={(e) => onFieldChange("lyrics", e.target.value)}
             placeholder="A letra cantada limpa sem acordes (para projeção de slides no culto e ensaios)...&#10;&#10;[Primeira Parte]&#10;Os meus olhos viram a salvação&#10;A luz para o mundo, esperança da terra&#10;&#10;[Refrão]&#10;Glória nas alturas"
             style={{ fieldSizing: "fixed" as never }}
-            className="h-full min-h-0 flex-1 resize-none overflow-y-auto font-sans text-xs leading-relaxed sm:text-sm [field-sizing:fixed]"
+            className="h-full min-h-0 flex-1 resize-none overflow-y-auto font-sans text-xs leading-relaxed sm:text-sm field-sizing-fixed"
           />
           <p className="shrink-0 text-[11px] leading-relaxed text-muted-foreground">
             Texto limpo sem acordes, ideal para projeção no telão e leitura dos

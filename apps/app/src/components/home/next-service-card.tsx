@@ -44,7 +44,7 @@ export function NextServiceCard({
             asChild
             variant="ghost"
             size="sm"
-            className="h-9 min-h-[44px] px-2 text-xs text-primary hover:text-primary"
+            className="h-9 min-h-11 px-2 text-xs text-primary hover:text-primary"
           >
             <Link href="/calendar">
               Ver agenda
@@ -58,7 +58,7 @@ export function NextServiceCard({
         <HomeCardContent>
           <Link
             href={`/events/${event.id}`}
-            className="flex min-h-[44px] items-start gap-4 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex min-h-11 items-start gap-4 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <HomeDateBadge day={parts.day} month={parts.monthShort} />
 

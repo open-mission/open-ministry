@@ -55,7 +55,7 @@ export function HomeHeaderTabs() {
     <div
       role="tablist"
       aria-label="Visões da página inicial"
-      className="flex h-14 min-h-[44px] items-stretch gap-6 sm:gap-7 ml-3 md:ml-1"
+      className="flex h-14 min-h-11 items-stretch gap-6 sm:gap-7 ml-3 md:ml-1"
     >
       {TABS.map((tab, index) => {
         const selected = activeTab === tab.value;
@@ -75,7 +75,7 @@ export function HomeHeaderTabs() {
             onClick={() => selectTab(tab.value, index)}
             onKeyDown={(event) => handleKeyDown(event, index)}
             className={cn(
-              "relative flex h-14 min-h-[44px] flex-none items-center rounded-none px-0.5 text-lg font-medium tracking-tight after:absolute after:bottom-0 after:inset-x-0 after:h-[3px] after:w-full after:rounded-full after:bg-primary after:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-xl",
+              "relative flex h-14 min-h-11 flex-none items-center rounded-none px-0.5 text-lg font-medium tracking-tight after:absolute after:bottom-0 after:inset-x-0 after:h-0.75 after:w-full after:rounded-full after:bg-primary after:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-xl",
               selected
                 ? "font-semibold text-foreground after:opacity-100"
                 : "text-muted-foreground hover:text-foreground after:opacity-0",

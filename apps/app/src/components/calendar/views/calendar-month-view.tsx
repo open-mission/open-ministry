@@ -163,7 +163,7 @@ export function CalendarMonthView({
               data-calendar-today={isDayToday ? "true" : undefined}
               data-calendar-selected={isDaySelected ? "true" : undefined}
               className={cn(
-                "group relative flex min-h-[84px] flex-col p-1.5 transition-colors sm:min-h-[125px] md:min-h-0 md:overflow-hidden",
+                "group relative flex min-h-21 flex-col p-1.5 transition-colors sm:min-h-31.25 md:min-h-0 md:overflow-hidden",
                 !isCurrentMonth && "bg-muted/15 text-muted-foreground/60",
                 isDayToday && "bg-primary/[0.07] ring-1 ring-inset ring-primary/45",
                 isDaySelected && "bg-secondary/50 ring-1 ring-inset ring-primary/35",

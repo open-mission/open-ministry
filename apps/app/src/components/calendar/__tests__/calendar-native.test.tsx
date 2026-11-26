@@ -298,7 +298,7 @@ describe("Calendar integration", () => {
     ]);
 
     expect(layoutSource).toContain(
-      "has-[[data-calendar-active]]:md:h-dvh has-[[data-calendar-active]]:md:overflow-hidden",
+      "has-data-calendar-active:md:h-dvh has-data-calendar-active:md:overflow-hidden",
     );
     expect(layoutSource).not.toContain("has-[[data-calendar-container]]");
     expect(nativeCalendarSource).toContain(
@@ -400,7 +400,7 @@ describe("Calendar integration", () => {
       new URL("../event-detail-dialog.tsx", import.meta.url),
     ).text();
 
-    expect(source).toContain("data-[side=right]:md:!w-1/2 data-[side=right]:md:!max-w-[50vw]");
+    expect(source).toContain("data-[side=right]:md:w-1/2! data-[side=right]:md:max-w-[50vw]!");
     expect(source).not.toContain("sm:max-w-md md:max-w-lg");
     expect(source).toContain("<Drawer open={open} onOpenChange={onOpenChange}>");
     expect(source).toContain("rounded-t-xl border-x-0 border-b-0 bg-popover");
@@ -429,7 +429,7 @@ describe("Calendar integration", () => {
     expect(pageSource).toContain('can("schedules", "read")');
     expect(pageSource).toContain("canViewSchedules={canViewSchedules}");
     expect(panelSource).toContain("if (!canViewSchedules) return null;");
-    expect(panelSource).toContain("data-[side=right]:md:!w-1/2 data-[side=right]:md:!max-w-[50vw]");
+    expect(panelSource).toContain("data-[side=right]:md:w-1/2! data-[side=right]:md:max-w-[50vw]!");
     expect(panelSource).toContain("rounded-t-xl border-x-0 border-b-0 bg-popover");
     expect(panelSource).toContain("Abrir página completa");
     // A checagem de permissão também acontece na origem dos dados.

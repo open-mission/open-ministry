@@ -34,7 +34,7 @@ type PersonOption = {
 };
 
 const tileClassName = cn(
-  "group flex min-w-[196px] shrink-0 snap-start items-center gap-3 rounded-2xl border border-border/60 bg-card p-3.5 text-left shadow-xs",
+  "group flex min-w-49 shrink-0 snap-start items-center gap-3 rounded-2xl border border-border/60 bg-card p-3.5 text-left shadow-xs",
   "transition-[transform,border-color,box-shadow] duration-150 active:scale-[0.99]",
   "hover:border-primary/35 hover:shadow-sm sm:min-w-0",
   "motion-reduce:transition-none motion-reduce:active:scale-100",

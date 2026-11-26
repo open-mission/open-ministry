@@ -607,7 +607,7 @@ describe("Guia de boas-vindas — painéis responsivos", () => {
     expect(source).toContain("max-h-[85dvh]");
     expect(source).toContain("rounded-t-xl");
     expect(source).toContain("bg-popover");
-    expect(source).toContain("!text-left");
+    expect(source).toContain("text-left!");
     expect(source).toContain("min-h-11 min-w-11");
     expect(source).toContain("BOAS-VINDAS · 3 CAPÍTULOS");
     expect(contentSource).toContain("env(safe-area-inset-bottom)");

@@ -51,7 +51,7 @@ export function PlanRemoveDrawer({
       </Button>
       <DrawerNestedRoot open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="max-h-[85vh] p-0" role="alertdialog">
-          <DrawerHeader className="!text-left px-5 pt-4 pb-2">
+          <DrawerHeader className="text-left! px-5 pt-4 pb-2">
             <DrawerTitle className="font-heading text-lg leading-snug">
               Remover momento?
             </DrawerTitle>

@@ -115,7 +115,7 @@ export function DepartmentCoverageBoard({
                 >
                   <div className="flex items-start gap-1.5 text-[0.8125rem] font-medium text-amber-900 dark:text-amber-200 min-w-0">
                     <ClipboardListIcon className="mt-0.5 size-3.5 shrink-0" />
-                    <span className="min-w-0 flex-1 break-words leading-snug">
+                    <span className="min-w-0 flex-1 wrap-break-word leading-snug">
                       Faltam {department.nextGap.missingFunctions.length}{" "}
                       {department.nextGap.missingFunctions.length === 1
                         ? "função"

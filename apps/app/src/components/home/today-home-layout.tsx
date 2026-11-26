@@ -39,35 +39,35 @@ export function TodayHomeLayout({
 
       <div className="contents lg:col-span-7 lg:flex lg:flex-col lg:gap-6">
         {nextAssignment ? (
-          <div className="order-2 lg:order-none">{nextAssignment}</div>
+          <div className="order-2 lg:order-0">{nextAssignment}</div>
         ) : null}
 
         {availabilityReminder ? (
-          <div className="order-2 lg:order-none">{availabilityReminder}</div>
+          <div className="order-2 lg:order-0">{availabilityReminder}</div>
         ) : null}
 
         {weekAttention ? (
-          <div className="order-5 lg:order-none">{weekAttention}</div>
+          <div className="order-5 lg:order-0">{weekAttention}</div>
         ) : null}
 
         {notifications ? (
-          <div className="order-4 lg:order-none">{notifications}</div>
+          <div className="order-4 lg:order-0">{notifications}</div>
         ) : null}
 
         {nextEvent ? (
-          <div className="order-6 lg:order-none">{nextEvent}</div>
+          <div className="order-6 lg:order-0">{nextEvent}</div>
         ) : null}
       </div>
 
       <div className="contents lg:col-span-5 lg:flex lg:flex-col lg:gap-6">
-        {tasks ? <div className="order-3 lg:order-none">{tasks}</div> : null}
+        {tasks ? <div className="order-3 lg:order-0">{tasks}</div> : null}
 
         {desktopVerse ? (
-          <div className="hidden lg:order-none lg:block">{desktopVerse}</div>
+          <div className="hidden lg:order-0 lg:block">{desktopVerse}</div>
         ) : null}
 
         {birthdays ? (
-          <div className="order-7 lg:order-none">{birthdays}</div>
+          <div className="order-7 lg:order-0">{birthdays}</div>
         ) : null}
       </div>
     </div>

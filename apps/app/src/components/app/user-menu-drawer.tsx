@@ -631,7 +631,7 @@ export function UserMenuDrawer({
                         <div className="relative flex items-center justify-center">
                           <Icon className="size-4.5" />
                           {isSelected ? (
-                            <CheckIcon className="absolute -top-1 -right-2 size-2.5 stroke-[3]" />
+                            <CheckIcon className="absolute -top-1 -right-2 size-2.5 stroke-3" />
                           ) : null}
                         </div>
                         <span>{opt.label}</span>

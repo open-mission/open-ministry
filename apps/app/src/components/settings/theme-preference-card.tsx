@@ -87,7 +87,7 @@ export function ThemePreferenceCard() {
                 className={cn(
                   "relative flex flex-col items-start rounded-xl border p-4 text-left transition-all hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                   isSelected
-                    ? "border-primary bg-primary/[0.03] ring-1 ring-primary shadow-xs"
+                    ? "border-primary bg-primary/3 ring-1 ring-primary shadow-xs"
                     : "border-border bg-card hover:bg-muted/30",
                 )}
               >
@@ -104,7 +104,7 @@ export function ThemePreferenceCard() {
                   </div>
                   {isSelected ? (
                     <span className="hidden sm:flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                      <CheckIcon className="size-3 stroke-[3]" />
+                      <CheckIcon className="size-3 stroke-3" />
                     </span>
                   ) : null}
                 </div>

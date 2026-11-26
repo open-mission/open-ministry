@@ -302,7 +302,7 @@ function KanbanColumn({
     <div
       ref={setNodeRef}
       className={cn(
-        "flex flex-col rounded-xl border bg-muted/25 p-3 transition-colors min-h-[300px]",
+        "flex flex-col rounded-xl border bg-muted/25 p-3 transition-colors min-h-75",
         isOver && "bg-primary/5 ring-2 ring-primary/30",
       )}
     >

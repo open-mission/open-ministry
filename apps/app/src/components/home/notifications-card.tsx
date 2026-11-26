@@ -198,7 +198,7 @@ export function NotificationsCard({
                   key={item.id}
                   type="button"
                   onClick={() => handleOpen(item)}
-                  className="flex min-h-[44px] w-full items-center rounded-lg text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  className="flex min-h-11 w-full items-center rounded-lg text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   aria-label={`Abrir aviso: ${item.title}`}
                 >
                   <HomeListItem

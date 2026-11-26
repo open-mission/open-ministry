@@ -264,7 +264,7 @@ export function ManagePlanTemplatesDialog({
       <>
         <Drawer open={open} onOpenChange={handleOpenChange}>
           <DrawerContent className="flex max-h-[85vh] flex-col p-0">
-            <DrawerHeader className="shrink-0 border-b px-5 pt-4 pb-3 !text-left text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+            <DrawerHeader className="shrink-0 border-b px-5 pt-4 pb-3 text-left! text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
               <DrawerTitle className="font-heading text-xl tracking-tight">
                 Modelos de Cronograma
               </DrawerTitle>

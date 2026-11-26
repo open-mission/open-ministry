@@ -97,17 +97,17 @@ function CalendarSkeleton() {
           <Skeleton className="h-6 w-24" />
           <Skeleton className="h-3.5 w-36" />
         </div>
-        <div className="flex items-center gap-2 pr-[84px]">
+        <div className="flex items-center gap-2 pr-21">
           <Skeleton className="size-11 rounded-xl" />
           <Skeleton className="size-11 rounded-xl" />
         </div>
       </div>
-      <Skeleton className="h-[52px] w-full rounded-xl md:hidden" />
+      <Skeleton className="h-13 w-full rounded-xl md:hidden" />
       <div className="hidden md:flex md:items-center md:justify-between md:gap-4">
         <Skeleton className="h-10 w-72" />
         <Skeleton className="h-9 w-48" />
       </div>
-      <Skeleton className="min-h-0 flex-1 rounded-xl md:h-[600px]" />
+      <Skeleton className="min-h-0 flex-1 rounded-xl md:h-150" />
     </div>
   );
 }
