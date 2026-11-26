@@ -1,5 +1,5 @@
 import type { SVGProps } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@openministry/ui/utils";
 
 export interface OpenMinistryLogoProps extends SVGProps<SVGSVGElement> {
   variant?: "symbol" | "minimal" | "full";

@@ -1,9 +1,20 @@
 import { NextResponse } from "next/server";
+import { eq, inArray } from "drizzle-orm";
+
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { verifyQueueEndpointAuth } from "@/lib/queue";
 import { dispatchNotification } from "@/lib/notification-service";
-import { eq } from "drizzle-orm";
+import { verifyQueueEndpointAuth } from "@/lib/queue";
+
+const BATCH_SIZE = 10;
+
+type DispatchPerson = {
+  id: string;
+  userId: string | null;
+  phone: string | null;
+  name: string | null;
+  organizationId: string;
+};
 
 export async function POST(req: Request) {
   try {
@@ -19,44 +30,87 @@ export async function POST(req: Request) {
       );
     }
 
-    // Find all organizations with active WhatsApp notification channel
     const channels = await db.query.organizationNotificationChannel.findMany({
       where: eq(schema.organizationNotificationChannel.isActive, true),
       with: {
         organization: true,
       },
+      limit: 500,
     });
 
-    let totalDispatched = 0;
+    const activeChannels = channels.filter((channel) =>
+      Boolean(channel.organizationId),
+    );
+    const organizationIds = [
+      ...new Set(activeChannels.map((channel) => channel.organizationId)),
+    ];
 
-    for (const channel of channels) {
-      if (!channel.organizationId) continue;
-
-      // Find people with phone in this church
+    // Antes havia um `person.findMany` por organização dentro do loop.
+    const peopleByOrg = new Map<string, DispatchPerson[]>();
+    if (organizationIds.length > 0) {
       const people = await db.query.person.findMany({
-        where: eq(schema.person.organizationId, channel.organizationId),
+        where: inArray(schema.person.organizationId, organizationIds),
+        columns: {
+          id: true,
+          organizationId: true,
+          userId: true,
+          phone: true,
+          name: true,
+        },
+        limit: 2000,
       });
 
       for (const person of people) {
+        const list = peopleByOrg.get(person.organizationId) ?? [];
+        list.push(person);
+        peopleByOrg.set(person.organizationId, list);
+      }
+    }
+
+    const dispatches: Array<() => Promise<unknown>> = [];
+    for (const channel of activeChannels) {
+      const churchName = channel.organization?.name || "Igreja";
+
+      for (const person of peopleByOrg.get(channel.organizationId) ?? []) {
         if (!person.phone) continue;
 
-        await dispatchNotification({
-          organizationId: channel.organizationId,
-          type: "monthly_availability",
-          title: "Preencha sua disponibilidade para servir este mês",
-          body: "Ajude os líderes a organizarem a escala dos cultos informando seus dias disponíveis.",
-          href: "/dashboard/schedules",
-          personId: person.id,
-          userId: person.userId,
-          phone: person.phone,
-          name: person.name,
-          metadata: {
-            churchName: channel.organization?.name || "Igreja",
-            link: "/dashboard/schedules",
-          },
-        });
+        dispatches.push(() =>
+          dispatchNotification({
+            organizationId: channel.organizationId,
+            type: "monthly_availability",
+            title: "Preencha sua disponibilidade para servir este mês",
+            body: "Ajude os líderes a organizarem a escala dos cultos informando seus dias disponíveis.",
+            href: "/dashboard/schedules",
+            personId: person.id,
+            userId: person.userId,
+            phone: person.phone,
+            name: person.name,
+            metadata: {
+              churchName,
+              link: "/dashboard/schedules",
+            },
+          }),
+        );
+      }
+    }
 
-        totalDispatched++;
+    // Lotes com concorrência limitada: não dispara centenas de requests em
+    // sequência, nem todos ao mesmo tempo.
+    let totalDispatched = 0;
+    for (let start = 0; start < dispatches.length; start += BATCH_SIZE) {
+      const batch = dispatches.slice(start, start + BATCH_SIZE);
+      const settled = await Promise.allSettled(batch.map((dispatch) => dispatch()));
+
+      for (const result of settled) {
+        if (result.status === "fulfilled") {
+          totalDispatched++;
+          continue;
+        }
+
+        console.error(
+          "[monthly-availability] Falha ao despachar notificação:",
+          result.reason,
+        );
       }
     }
 

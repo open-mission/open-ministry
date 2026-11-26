@@ -13,7 +13,7 @@ import {
 } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 
-import type { AvailabilityPeriod } from "@/db/schema/people";
+import type { AvailabilityPeriod } from "@/db/schema";
 
 export type CalendarItemType = "event" | "assignment" | "unavailability" | "birthday";
 

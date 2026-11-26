@@ -138,6 +138,15 @@ describe("buildSecurityHeaders", () => {
     );
   });
 
+  it("libera blob: no worker-src para o worker do Sentry Replay", () => {
+    const value = getCspValue({ nodeEnv: "production" });
+    const directive =
+      value.split("; ").find((item) => item.startsWith("worker-src")) ?? "";
+
+    expect(directive).toBe("worker-src 'self' blob:");
+    expect(value).not.toContain("worker-src 'self';");
+  });
+
   it("emite os headers de segurança clássicos", () => {
     const headers = buildSecurityHeaders({ nodeEnv: "production" });
     const byKey = Object.fromEntries(headers.map((h) => [h.key, h.value]));

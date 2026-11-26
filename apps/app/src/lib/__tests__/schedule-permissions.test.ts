@@ -196,6 +196,9 @@ mock.module("@/db", () => ({
     }),
     insert: () => ({
       values: () => ({
+        onConflictDoUpdate: () => ({
+          returning: async () => [],
+        }),
         returning: async () => [{ id: "res-1" }],
       }),
     }),

@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@openministry/ui/components/button";
 import {
   Drawer,
   DrawerContent,
@@ -16,9 +16,9 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from "@/components/ui/drawer";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
+} from "@openministry/ui/components/drawer";
+import { useIsMobile } from "@openministry/ui/hooks/use-mobile";
+import { cn } from "@openministry/ui/utils";
 
 const subscribe = () => () => {};
 const getClientSnapshot = () => true;

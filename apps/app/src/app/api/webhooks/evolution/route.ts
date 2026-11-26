@@ -4,6 +4,12 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { authenticateEvolutionWebhook } from "@/lib/evolution-webhook";
 import { formatPhoneNumberForEvolution } from "@/lib/evolution-api";
+import {
+  checkRateLimit,
+  extractClientIp,
+  rateLimitHeaders,
+  RATE_LIMIT_RULES,
+} from "@/lib/rate-limit";
 import { sentryLogger } from "@/lib/telemetry/sentry";
 
 type EvolutionUpdateItem = {
@@ -28,9 +34,43 @@ type EvolutionUpsertItem = {
   messageTimestamp?: number;
 };
 
+type EvolutionStatus = "sent" | "delivered" | "read";
+
+function buildStatusUpdateFields(status: EvolutionStatus): Record<string, unknown> {
+  const updateFields: Record<string, unknown> = {
+    status,
+    updatedAt: new Date(),
+  };
+
+  if (status === "sent") {
+    updateFields.sentAt = sql`COALESCE(${schema.whatsappMessageLog.sentAt}, NOW())`;
+  } else if (status === "delivered") {
+    updateFields.deliveredAt = sql`COALESCE(${schema.whatsappMessageLog.deliveredAt}, NOW())`;
+    updateFields.sentAt = sql`COALESCE(${schema.whatsappMessageLog.sentAt}, NOW())`;
+  } else {
+    updateFields.readAt = sql`COALESCE(${schema.whatsappMessageLog.readAt}, NOW())`;
+    updateFields.deliveredAt = sql`COALESCE(${schema.whatsappMessageLog.deliveredAt}, NOW())`;
+    updateFields.sentAt = sql`COALESCE(${schema.whatsappMessageLog.sentAt}, NOW())`;
+  }
+
+  return updateFields;
+}
+
 export async function POST(req: Request) {
   let instanceName = "";
   try {
+    // Antes de qualquer leitura no banco: limita flood por IP do remetente.
+    const decision = await checkRateLimit(
+      `evolution-webhook:${extractClientIp(req.headers)}`,
+      RATE_LIMIT_RULES.evolutionWebhook,
+    );
+    if (!decision.allowed) {
+      return NextResponse.json(
+        { error: "Muitas requisições. Tente novamente em instantes." },
+        { status: 429, headers: rateLimitHeaders(decision) },
+      );
+    }
+
     const url = new URL(req.url);
     // Header dedicado primeiro: a query string mantém-se apenas como fallback
     // de compatibilidade com a Evolution Go, sem logar o token em nenhum ponto.
@@ -175,6 +215,13 @@ export async function POST(req: Request) {
           ? [rawData]
           : [];
 
+      const groupedUpdates = new Map<EvolutionStatus, string[]>();
+      const phoneFallbacks: Array<{
+        messageId?: string;
+        cleanPhone: string | null;
+        status: EvolutionStatus;
+      }> = [];
+
       for (const item of items) {
         const messageId = item.key?.id;
         const statusValue = String(item.update?.status ?? item.status ?? "").toUpperCase();
@@ -185,7 +232,7 @@ export async function POST(req: Request) {
 
         if (!statusValue) continue;
 
-        let mappedStatus: "sent" | "delivered" | "read" | null = null;
+        let mappedStatus: EvolutionStatus | null = null;
         if (statusValue === "SERVER_ACK" || statusValue === "2" || statusValue === "SENT") {
           mappedStatus = "sent";
         } else if (
@@ -205,66 +252,76 @@ export async function POST(req: Request) {
 
         if (!mappedStatus) continue;
 
-        const updateFields: Record<string, unknown> = {
-          status: mappedStatus,
-          updatedAt: new Date(),
-        };
-
-        if (mappedStatus === "sent") {
-          updateFields.sentAt = sql`COALESCE(${schema.whatsappMessageLog.sentAt}, NOW())`;
-        } else if (mappedStatus === "delivered") {
-          updateFields.deliveredAt = sql`COALESCE(${schema.whatsappMessageLog.deliveredAt}, NOW())`;
-          updateFields.sentAt = sql`COALESCE(${schema.whatsappMessageLog.sentAt}, NOW())`;
-        } else if (mappedStatus === "read") {
-          updateFields.readAt = sql`COALESCE(${schema.whatsappMessageLog.readAt}, NOW())`;
-          updateFields.deliveredAt = sql`COALESCE(${schema.whatsappMessageLog.deliveredAt}, NOW())`;
-          updateFields.sentAt = sql`COALESCE(${schema.whatsappMessageLog.sentAt}, NOW())`;
-        }
-
-        // Try updating by Evolution Message ID first (escopado pela organização
-        // do token; sem organização, apenas em dev local)
+        // Agrupa por status: um UPDATE por status com inArray, em vez de um
+        // UPDATE por mensagem dentro do loop.
         if (messageId) {
-          const res = await db
-            .update(schema.whatsappMessageLog)
-            .set(updateFields)
-            .where(
-              and(
-                eq(schema.whatsappMessageLog.evolutionMessageId, messageId),
-                orgScopeId
-                  ? eq(schema.whatsappMessageLog.organizationId, orgScopeId)
-                  : undefined,
-              ),
-            );
-
-          if (res.rowCount && res.rowCount > 0) {
-            continue;
-          }
+          const ids = groupedUpdates.get(mappedStatus) ?? [];
+          ids.push(messageId);
+          groupedUpdates.set(mappedStatus, ids);
         }
+        phoneFallbacks.push({ messageId, cleanPhone, status: mappedStatus });
+      }
 
-        // Fallback: match by phone number for the most recent pending log of
-        // the token's organization (nunca cruza organizações)
-        if (cleanPhone && orgScopeId) {
-          const whereClause = and(
-            eq(schema.whatsappMessageLog.organizationId, orgScopeId),
-            eq(schema.whatsappMessageLog.recipientPhone, cleanPhone),
-            inArray(schema.whatsappMessageLog.status, ["pending", "sending", "sent", "delivered"]),
+      const allMessageIds = [...new Set([...groupedUpdates.values()].flat())];
+      const matchedIds = new Set<string>();
+
+      if (allMessageIds.length > 0) {
+        const matched = await db
+          .select({ evolutionMessageId: schema.whatsappMessageLog.evolutionMessageId })
+          .from(schema.whatsappMessageLog)
+          .where(
+            and(
+              inArray(schema.whatsappMessageLog.evolutionMessageId, allMessageIds),
+              orgScopeId
+                ? eq(schema.whatsappMessageLog.organizationId, orgScopeId)
+                : undefined,
+            ),
           );
 
-          const recentLog = await db.query.whatsappMessageLog.findFirst({
-            where: whereClause,
-            orderBy: [desc(schema.whatsappMessageLog.createdAt)],
-          });
-
-          if (recentLog) {
-            if (messageId && !recentLog.evolutionMessageId) {
-              updateFields.evolutionMessageId = messageId;
-            }
-            await db
-              .update(schema.whatsappMessageLog)
-              .set(updateFields)
-              .where(eq(schema.whatsappMessageLog.id, recentLog.id));
-          }
+        for (const row of matched) {
+          if (row.evolutionMessageId) matchedIds.add(row.evolutionMessageId);
         }
+      }
+
+      for (const [status, ids] of groupedUpdates) {
+        await db
+          .update(schema.whatsappMessageLog)
+          .set(buildStatusUpdateFields(status))
+          .where(
+            and(
+              inArray(schema.whatsappMessageLog.evolutionMessageId, ids),
+              orgScopeId
+                ? eq(schema.whatsappMessageLog.organizationId, orgScopeId)
+                : undefined,
+            ),
+          );
+      }
+
+      // Fallback por telefone apenas para mensagens que não foram encontradas
+      // pelo ID (nunca cruza organizações).
+      for (const candidate of phoneFallbacks) {
+        if (candidate.messageId && matchedIds.has(candidate.messageId)) continue;
+        if (!candidate.cleanPhone || !orgScopeId) continue;
+
+        const recentLog = await db.query.whatsappMessageLog.findFirst({
+          where: and(
+            eq(schema.whatsappMessageLog.organizationId, orgScopeId),
+            eq(schema.whatsappMessageLog.recipientPhone, candidate.cleanPhone),
+            inArray(schema.whatsappMessageLog.status, ["pending", "sending", "sent", "delivered"]),
+          ),
+          orderBy: [desc(schema.whatsappMessageLog.createdAt)],
+        });
+
+        if (!recentLog) continue;
+
+        const updateFields = buildStatusUpdateFields(candidate.status);
+        if (candidate.messageId && !recentLog.evolutionMessageId) {
+          updateFields.evolutionMessageId = candidate.messageId;
+        }
+        await db
+          .update(schema.whatsappMessageLog)
+          .set(updateFields)
+          .where(eq(schema.whatsappMessageLog.id, recentLog.id));
       }
     }
 
@@ -275,6 +332,9 @@ export async function POST(req: Request) {
         : rawData
           ? [rawData]
           : [];
+
+      const outboundIds: string[] = [];
+      const phoneFallbacks: string[] = [];
 
       for (const item of items) {
         // We only care about outbound messages sent from this instance
@@ -287,45 +347,55 @@ export async function POST(req: Request) {
           : null;
 
         if (messageId) {
-          // If message already exists by ID, mark it sent
+          outboundIds.push(messageId);
+        } else if (cleanPhone && orgScopeId) {
+          phoneFallbacks.push(cleanPhone);
+        }
+      }
+
+      if (outboundIds.length > 0) {
+        await db
+          .update(schema.whatsappMessageLog)
+          .set({
+            status: "sent",
+            sentAt: sql`COALESCE(${schema.whatsappMessageLog.sentAt}, NOW())`,
+            lastError: null,
+          })
+          .where(
+            and(
+              inArray(
+                schema.whatsappMessageLog.evolutionMessageId,
+                [...new Set(outboundIds)],
+              ),
+              inArray(schema.whatsappMessageLog.status, ["pending", "sending"]),
+              orgScopeId
+                ? eq(schema.whatsappMessageLog.organizationId, orgScopeId)
+                : undefined,
+            ),
+          );
+      }
+
+      // Sem ID, mark the most recent pending log for that phone as sent. O
+      // ramo antigo exigia `messageId` aqui, mas ele é sempre falsy neste else.
+      for (const cleanPhone of phoneFallbacks) {
+        const pending = await db.query.whatsappMessageLog.findFirst({
+          where: and(
+            eq(schema.whatsappMessageLog.organizationId, orgScopeId!),
+            eq(schema.whatsappMessageLog.recipientPhone, cleanPhone),
+            inArray(schema.whatsappMessageLog.status, ["pending", "sending"]),
+          ),
+          orderBy: [desc(schema.whatsappMessageLog.createdAt)],
+        });
+
+        if (pending) {
           await db
             .update(schema.whatsappMessageLog)
             .set({
               status: "sent",
-              sentAt: sql`COALESCE(${schema.whatsappMessageLog.sentAt}, NOW())`,
+              sentAt: new Date(),
               lastError: null,
             })
-            .where(
-              and(
-                eq(schema.whatsappMessageLog.evolutionMessageId, messageId),
-                inArray(schema.whatsappMessageLog.status, ["pending", "sending"]),
-                orgScopeId
-                  ? eq(schema.whatsappMessageLog.organizationId, orgScopeId)
-                  : undefined,
-              ),
-            );
-        } else if (cleanPhone && orgScopeId) {
-          // Try to link with latest pending message to that phone
-          const pending = await db.query.whatsappMessageLog.findFirst({
-            where: and(
-              eq(schema.whatsappMessageLog.organizationId, orgScopeId),
-              eq(schema.whatsappMessageLog.recipientPhone, cleanPhone),
-              inArray(schema.whatsappMessageLog.status, ["pending", "sending"]),
-            ),
-            orderBy: [desc(schema.whatsappMessageLog.createdAt)],
-          });
-
-          if (pending && messageId) {
-            await db
-              .update(schema.whatsappMessageLog)
-              .set({
-                status: "sent",
-                evolutionMessageId: messageId,
-                sentAt: new Date(),
-                lastError: null,
-              })
-              .where(eq(schema.whatsappMessageLog.id, pending.id));
-          }
+            .where(eq(schema.whatsappMessageLog.id, pending.id));
         }
       }
     }

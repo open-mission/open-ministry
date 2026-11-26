@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/drawer";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { AvailabilityPeriod } from "@/db/schema/people";
+import type { AvailabilityPeriod } from "@/db/schema";
 import { cn } from "@/lib/utils";
 
 type AvailabilityEditorProps = {

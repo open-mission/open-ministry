@@ -10,10 +10,10 @@ import {
   UsersIcon,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@openministry/ui/components/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@openministry/ui/components/button";
+import { Card, CardContent } from "@openministry/ui/components/card";
 import { OpenMinistrySymbol } from "@/components/brand/openministry-logo";
 
 const APP_URL =

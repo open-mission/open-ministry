@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, gte } from "drizzle-orm";
+import { and, eq, gte, inArray } from "drizzle-orm";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
@@ -206,21 +206,29 @@ export async function getOfflineBundle(
 
   // 4. Contatos de Emergência (Liderança e Administração com telefones)
   if (roleLevel === "admin" || roleLevel === "leader") {
-    // Buscar membros da liderança
+    // Buscar membros da liderança da organização direto no SQL. O filtro
+    // anterior trazia líderes de TODAS as organizações e descartava em JS.
     const deptMembers = await db.query.departmentMember.findMany({
       where: and(
         eq(schema.departmentMember.isLeader, true),
+        inArray(
+          schema.departmentMember.departmentId,
+          db
+            .select({ id: schema.department.id })
+            .from(schema.department)
+            .where(eq(schema.department.organizationId, organizationId)),
+        ),
       ),
       with: {
         person: { with: { user: true } },
         department: true,
       },
+      limit: 500,
     });
 
     const contactMap = new Map<string, OfflineContact>();
 
     for (const dm of deptMembers) {
-      if (dm.department.organizationId !== organizationId) continue;
       const phone = dm.person.phone ?? dm.person.user?.phone ?? null;
 
       contactMap.set(dm.person.id, {
@@ -237,6 +245,7 @@ export async function getOfflineBundle(
     const allPeople = await db.query.person.findMany({
       where: eq(schema.person.organizationId, organizationId),
       with: { user: true },
+      limit: 500,
     });
 
     for (const p of allPeople) {
