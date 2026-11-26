@@ -365,12 +365,10 @@ describe("Calendar integration", () => {
       Bun.file(
         new URL("../../../app/(app)/calendar/page.tsx", import.meta.url),
       ).text(),
-      Bun.file(
-        new URL("../../../app/(app)/dashboard/calendar/page.tsx", import.meta.url),
-      ).text(),
+      Bun.file(new URL("../../../../next.config.ts", import.meta.url)).text(),
       Bun.file(
         new URL(
-          "../../../app/(app)/dashboard/calendar/preview/page.tsx",
+          "../../../app/(app)/calendar/preview/page.tsx",
           import.meta.url,
         ),
       ).exists(),
@@ -385,7 +383,10 @@ describe("Calendar integration", () => {
     expect(calendarPageSource).not.toContain("CalendarCN");
     expect(calendarPageSource).not.toContain("Prévia temporária");
     expect(calendarPageSource).not.toContain("md:pl-10");
-    expect(legacyCalendarPageSource).toContain('redirect("/calendar")');
+    expect(legacyCalendarPageSource).toContain(
+      'source: "/dashboard/:section([a-z0-9-]+)"',
+    );
+    expect(legacyCalendarPageSource).toContain('destination: "/:section"');
     expect(previewPageExists).toBe(false);
     expect(dialogSource).not.toContain("Prévia · Modo leitura");
     expect(dialogSource).toContain(
@@ -418,7 +419,7 @@ describe("Calendar integration", () => {
         ).text(),
         Bun.file(
           new URL(
-            "../../../app/(app)/dashboard/events/page.tsx",
+            "../../../app/(app)/events/page.tsx",
             import.meta.url,
           ),
         ).text(),

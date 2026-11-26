@@ -462,7 +462,7 @@ async function MemberPageContent({
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <Link
-                          href={`/dashboard/events/${item.schedule.event.id}`}
+                          href={`/events/${item.schedule.event.id}`}
                           className="font-medium text-sm text-foreground hover:underline"
                         >
                           {item.schedule.event.title}
@@ -486,7 +486,7 @@ async function MemberPageContent({
                         {item.function.name}
                       </Badge>
                       <Button size="sm" variant="outline" asChild className="h-8 text-xs">
-                        <Link href={`/dashboard/events/${item.schedule.event.id}`}>
+                        <Link href={`/events/${item.schedule.event.id}`}>
                           Ver Culto
                         </Link>
                       </Button>

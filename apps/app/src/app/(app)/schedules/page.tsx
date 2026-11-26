@@ -224,7 +224,7 @@ async function SchedulesContent({
                 </p>
                 {coverage !== "all" || departmentId || query ? (
                   <Button asChild variant="outline" size="sm">
-                    <Link href="/dashboard/schedules?coverage=all">
+                    <Link href="/schedules?coverage=all">
                       Ver todas as escalas
                     </Link>
                   </Button>

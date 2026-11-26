@@ -1057,7 +1057,7 @@ describe("AvailabilityReminderWidget e Departamentos", () => {
       ).text(),
       Bun.file(
         new URL(
-          "../../../app/(app)/dashboard/departments/page.tsx",
+          "../../../app/(app)/departments/page.tsx",
           import.meta.url,
         ),
       ).text(),

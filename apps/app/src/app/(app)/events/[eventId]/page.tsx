@@ -128,7 +128,7 @@ async function EventContent({
         <EventHeader
           event={event}
           parts={parts}
-          backHref={`/dashboard/departments/${departmentId}`}
+          backHref={`/departments/${departmentId}`}
           backLabel={rehearsalDepartment.department.name}
         />
 
@@ -244,7 +244,7 @@ async function EventContent({
       <EventHeader
         event={event}
         parts={parts}
-        backHref="/dashboard/events"
+        backHref="/events"
         backLabel="Cultos e eventos"
         actions={actions}
       />
@@ -390,7 +390,7 @@ function EventHeader({
             {event.departments.map((item) => (
               <Link
                 key={item.id}
-                href={`/dashboard/departments/${item.departmentId}`}
+                href={`/departments/${item.departmentId}`}
                 prefetch={true}
                 className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-secondary-foreground"
               >
