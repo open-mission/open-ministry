@@ -14,6 +14,8 @@ import {
   type EventActionResult,
 } from "@/lib/events/action-helpers";
 
+const MAX_IMPORT_PLAN_ITEMS = 500;
+
 const planItemSchema = z.object({
   eventId: z.string().min(1, "ID do evento é obrigatório."),
   type: z.enum(["header", "item"]).default("item"),
@@ -301,6 +303,10 @@ export async function importPlanItemsAction(
 
   if (!Array.isArray(items) || items.length === 0) {
     return { ok: false, error: "Arquivo de cronograma vazio ou inválido." };
+  }
+
+  if (items.length > MAX_IMPORT_PLAN_ITEMS) {
+    return { ok: false, error: "Limite máximo de 500 itens por cronograma." };
   }
 
   try {

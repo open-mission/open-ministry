@@ -42,12 +42,14 @@ function normalizeIp(raw: string | null): string | null {
 
 /**
  * Never trusts arbitrary header content as a cache key: only valid IPs are
- * accepted, and the first trusted hop wins. Missing/invalid headers collapse
- * to a single "unknown" bucket.
+ * accepted, and the first hop overwritten by the Vercel edge wins. The
+ * `cf-connecting-ip` header is intentionally ignored — on Vercel without a
+ * Cloudflare proxy it is client-controlled and could bypass the limit.
+ * Missing/invalid headers collapse to a single "unknown" bucket.
  */
 export function extractClientIp(headers: Headers): string {
   return (
-    normalizeIp(headers.get("cf-connecting-ip")) ??
+    normalizeIp(headers.get("x-vercel-forwarded-for")) ??
     normalizeIp(headers.get("x-real-ip")) ??
     normalizeIp(headers.get("x-forwarded-for")) ??
     "unknown"

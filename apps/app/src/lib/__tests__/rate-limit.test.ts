@@ -16,12 +16,34 @@ describe("extractClientIp", () => {
     expect(extractClientIp(headers)).toBe("203.0.113.7");
   });
 
-  it("prefere o IP do provedor quando presente", () => {
+  it("prefere x-vercel-forwarded-for sobre x-real-ip e x-forwarded-for", () => {
     const headers = new Headers({
-      "cf-connecting-ip": "198.51.100.4",
-      "x-forwarded-for": "203.0.113.7",
+      "x-vercel-forwarded-for": "203.0.113.1, 10.0.0.1",
+      "x-real-ip": "198.51.100.4",
+      "x-forwarded-for": "192.0.2.9",
+    });
+    expect(extractClientIp(headers)).toBe("203.0.113.1");
+  });
+
+  it("usa x-real-ip quando não há header da Vercel", () => {
+    const headers = new Headers({
+      "x-real-ip": "198.51.100.4",
+      "x-forwarded-for": "192.0.2.9",
     });
     expect(extractClientIp(headers)).toBe("198.51.100.4");
+  });
+
+  it("ignora cf-connecting-ip, mesmo quando é o único header presente", () => {
+    expect(
+      extractClientIp(new Headers({ "cf-connecting-ip": "198.51.100.4" })),
+    ).toBe("unknown");
+
+    const headers = new Headers({
+      "cf-connecting-ip": "198.51.100.4",
+      "x-vercel-forwarded-for": "203.0.113.1",
+      "x-real-ip": "192.0.2.9",
+    });
+    expect(extractClientIp(headers)).toBe("203.0.113.1");
   });
 
   it("normaliza IPv6 entre colchetes", () => {

@@ -114,6 +114,23 @@ describe("importPlanItemsAction — insert em lote", () => {
     });
   });
 
+  it("rejeita mais de 500 itens antes de apagar ou inserir no banco", async () => {
+    const { importPlanItemsAction } = await loadActions();
+    const items = Array.from({ length: 501 }, (_, index) => ({
+      type: "item" as const,
+      title: `Item ${index}`,
+    }));
+
+    const result = await importPlanItemsAction("event-1", items);
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Limite máximo de 500 itens por cronograma.",
+    });
+    expect(deleteCalls).toHaveLength(0);
+    expect(insertCalls).toHaveLength(0);
+  });
+
   it("bloqueia sessão ausente, permissão insuficiente e lista vazia", async () => {
     const { importPlanItemsAction } = await loadActions();
     hasContext = false;
