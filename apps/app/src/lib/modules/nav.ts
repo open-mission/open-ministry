@@ -410,6 +410,7 @@ const mobileExploreQuickLinkHrefs = [
   "/announcements",
   "/calendar",
   "/songs",
+  "/rehearsals",
 ];
 
 /**
