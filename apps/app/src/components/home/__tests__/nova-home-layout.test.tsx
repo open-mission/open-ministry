@@ -369,6 +369,19 @@ describe("header integrado da home", () => {
     expect(onHome).not.toContain("data-calendar-active");
   });
 
+  it("HomeAwareHeader usa max-md:relative em /songs para rolar junto com o topo sem sobrepor o conteúdo", () => {
+    currentPathname = "/songs";
+    const onSongs = renderToStaticMarkup(
+      createElement(
+        HomeAwareHeader,
+        null,
+        createElement("span", null, "ACTIONS"),
+      ),
+    );
+    expect(onSongs).toContain("max-md:relative");
+    expect(onSongs).not.toContain("data-calendar-active");
+  });
+
   it("HeaderUserSlot mantém avatar visível no header em todas as rotas (inclusive desktop e agenda)", () => {
     for (const path of ["/", "/events", "/calendar"]) {
       currentPathname = path;

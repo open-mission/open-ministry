@@ -6,6 +6,18 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.11.1] - 2026-11-27
+
+### Melhorado
+- **Busca e filtros no Repertório:** campo de busca, botão de limpar e botão de filtros reunidos em um único bloco visual; no celular, os filtros passam a abrir em gaveta inferior com toque confortável, mantendo o menu flutuante no computador.
+- **Cabeçalho do Repertório no celular:** alinhado ao padrão visual da Agenda (título, nome da igreja e botão rápido de adicionar), sem o bloco "Como funciona" nem a faixa de sub-abas no topo.
+
+### Adicionado
+- **Atalho de Ensaios no menu Explorar:** incluído acesso rápido direto para `/rehearsals` nos atalhos do menu Explorar no celular.
+
+### Corrigido
+- **Sobreposição ao rolar no Repertório mobile:** ajustado o posicionamento do cabeçalho no celular para que os ícones de notificações e perfil acompanhem a rolagem sem ficar sobre a lista de músicas.
+
 ## [1.11.0] - 2026-11-27
 
 ### Adicionado

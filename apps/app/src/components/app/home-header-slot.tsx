@@ -14,6 +14,11 @@ export function isCalendarRoute(pathname: string | null | undefined) {
   return pathname === "/calendar" || pathname.startsWith("/calendar/");
 }
 
+/** Rota principal de Repertório que usa cabeçalho próprio no mobile igual ao da Agenda. */
+export function isSongsListRoute(pathname: string | null | undefined) {
+  return pathname === "/songs";
+}
+
 /** Considera rolado a partir de 4px para evitar flicker com sub-pixel scroll. */
 export function isHeaderScrolled(scrollY: number) {
   return scrollY > 4;
@@ -40,6 +45,7 @@ export function HomeAwareHeader({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
   const isCalendar = isCalendarRoute(pathname);
+  const isSongsList = isSongsListRoute(pathname);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -60,6 +66,19 @@ export function HomeAwareHeader({ children }: { children: ReactNode }) {
       <header
         data-calendar-active=""
         className="pointer-events-none sticky top-0 z-20 -mb-[calc(3.5rem+env(safe-area-inset-top))] flex h-[calc(3.5rem+env(safe-area-inset-top))] shrink-0 items-center justify-between overflow-visible border-0 bg-transparent px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 md:mb-0 md:h-11 md:pt-1.5 lg:px-8"
+      >
+        {children}
+      </header>
+    );
+  }
+
+  if (isSongsList) {
+    return (
+      <header
+        className={cn(
+          getHeaderClassName(isHome, scrolled),
+          "max-md:pointer-events-none max-md:relative max-md:top-auto max-md:-mb-[calc(3.5rem+env(safe-area-inset-top))] max-md:justify-end max-md:bg-transparent max-md:pt-[max(0.75rem,env(safe-area-inset-top))] max-md:backdrop-blur-none",
+        )}
       >
         {children}
       </header>
@@ -113,6 +132,9 @@ export function HomeAwareHeaderFallback() {
 export function CalendarHiddenSlot({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   if (isCalendarRoute(pathname)) return null;
+  if (isSongsListRoute(pathname)) {
+    return <div className="hidden md:contents">{children}</div>;
+  }
   return <>{children}</>;
 }
 
@@ -128,6 +150,10 @@ export function HeaderCenterSlot({ children }: { children: ReactNode }) {
 
   if (isCalendarRoute(pathname) || pathname === "/") {
     return null;
+  }
+
+  if (isSongsListRoute(pathname)) {
+    return <div className="hidden md:block lg:hidden">{children}</div>;
   }
 
   return <div className="lg:hidden">{children}</div>;

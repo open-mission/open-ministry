@@ -16,10 +16,11 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { reorderSongsAction } from "@/app/actions/songs";
-import { PageInfo } from "@/components/app/page-info";
+import { Button } from "@/components/ui/button";
 import { songKeys, useSongsQuery } from "@/hooks/use-songs";
 import {
   getManualSongOrderIds,
@@ -43,6 +44,7 @@ import {
 type SongsListViewProps = {
   songs: SongWithUsage[];
   existingCollections?: string[];
+  organizationName?: string;
   canManage?: boolean;
   canAddToNextService?: boolean;
   canReorder?: boolean;
@@ -56,6 +58,7 @@ const songReorderInstructions = {
 export function SongsListView({
   songs: initialSongs,
   existingCollections = [],
+  organizationName,
   canManage = true,
   canAddToNextService = false,
   canReorder = false,
@@ -274,7 +277,39 @@ export function SongsListView({
 
   return (
     <div className="flex min-w-0 max-w-full flex-col gap-4">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <header className="flex h-11 shrink-0 items-center justify-between gap-2 md:hidden">
+        <div className="min-w-0 flex-1">
+          <h1 className="font-heading text-xl leading-6 font-semibold tracking-tight text-foreground">
+            Repertório
+          </h1>
+          {organizationName ? (
+            <p className="truncate text-[11px] leading-tight text-muted-foreground">
+              {organizationName}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="flex shrink-0 items-center pr-18 sm:pr-20.5">
+          {canManage ? (
+            <AddSongChoiceDialog
+              existingCollections={collections}
+              trigger={
+                <Button
+                  size="icon"
+                  className="relative size-9 rounded-full shadow-xs after:absolute after:-inset-1.5 after:content-['']"
+                  aria-label="Adicionar música"
+                >
+                  <PlusIcon className="size-4" aria-hidden="true" />
+                </Button>
+              }
+            />
+          ) : null}
+        </div>
+      </header>
+
+      <div aria-hidden="true" className="h-px shrink-0 bg-border/70 md:hidden" />
+
+      <header className="hidden md:flex md:items-end md:justify-between">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <h1 className="line-clamp-2 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
             Repertório de Músicas
@@ -285,22 +320,6 @@ export function SongsListView({
           >
             {songs.length} {songs.length === 1 ? "música" : "músicas"}
           </span>
-          <PageInfo
-            title="Repertório de Músicas"
-            description={
-              <>
-                <p>
-                  Use a busca e os filtros para encontrar músicas por título,
-                  artista, tom, grupo ou pendência (sem cifra ou sem letra).
-                </p>
-                <p className="mt-2">
-                  Em cada música você pode abrir a cifra, transpor o tom,
-                  definir capotraste, adicionar ao próximo culto e consultar em
-                  quais cultos ela já foi usada.
-                </p>
-              </>
-            }
-          />
         </div>
 
         {canManage ? (
