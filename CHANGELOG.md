@@ -6,6 +6,22 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.11.0] - 2026-11-27
+
+### Adicionado
+- **Área da plataforma:** espaço exclusivo para administradores gerenciarem igrejas, planos e integrações, com segredos sempre mascarados.
+- **Processamento em segundo plano:** PDFs e avisos multicanal passam a ser preparados por etapas recuperáveis, com armazenamento distribuído dos arquivos.
+- **Rotas limpas:** endereços diretos na raiz (`/songs`, `/calendar`, `/schedules`), com redirecionamento permanente dos links antigos.
+
+### Melhorado
+- **Carregamento mais rápido:** funções na região de São Paulo, sessão em cookie por cinco minutos, consultas paralelas e pré-carregamento dos detalhes de eventos na Agenda.
+- **Repertório e cifras:** listagem e detalhe reorganizados, com leitura contínua durante recarregamentos e esqueletos de carregamento nas rotas principais.
+- **Avisos:** envio de WhatsApp, e-mail e notificações em segundo plano, com confirmação imediata e atualização automática da tela de tarefas.
+
+### Corrigido
+- **Isolamento entre igrejas:** filtros por igreja nas tarefas em segundo plano e nos fluxos de avisos.
+- **Sessão e cookies:** leitura fresca em operações sensíveis e expiração correta do cache de sessão, inclusive em conexões HTTPS.
+
 ## [1.10.1] - 2026-11-24
 
 ### Melhorado

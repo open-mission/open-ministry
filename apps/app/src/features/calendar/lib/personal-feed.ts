@@ -40,7 +40,7 @@ export function buildPersonalFeedItems({
     if (event.description?.trim()) {
       details.push(event.description.trim());
     }
-    details.push(`${baseUrl}/dashboard/events/${event.id}`);
+    details.push(`${baseUrl}/events/${event.id}`);
 
     return {
       id: `event-${event.id}`,
@@ -52,7 +52,7 @@ export function buildPersonalFeedItems({
       allDay: false,
       color: isAssigned ? "emerald" : "primary",
       location: event.location,
-      href: `/dashboard/events/${event.id}`,
+      href: `/events/${event.id}`,
       metadata: { eventId: event.id, eventKind: event.kind, isMyAssignment: isAssigned },
       sequence: Math.floor(event.updatedAt.getTime() / 1000),
       lastModified: event.updatedAt.toISOString(),

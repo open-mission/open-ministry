@@ -112,7 +112,7 @@ export function DashboardOnboardingModal({
     return (
       <Drawer open={isOpen} onOpenChange={handleOpenChange}>
         <DrawerContent className="max-h-[85dvh] gap-0 rounded-t-xl bg-popover">
-          <DrawerHeader className="!text-left gap-1 border-b border-border px-4 pt-1 pb-3">
+          <DrawerHeader className="text-left! gap-1 border-b border-border px-4 pt-1 pb-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 space-y-1">
                 <p className="text-[11px] font-semibold tracking-[0.14em] text-primary uppercase">

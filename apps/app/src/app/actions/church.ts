@@ -129,11 +129,11 @@ export async function updateChurchBrandingAction(
     return { error: "Não foi possível salvar a identidade da igreja." };
   }
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/church");
-  revalidatePath("/dashboard/settings");
-  revalidatePath("/dashboard/members");
-  revalidatePath("/dashboard/profile");
+  revalidatePath("/");
+  revalidatePath("/church");
+  revalidatePath("/settings");
+  revalidatePath("/members");
+  revalidatePath("/profile");
 
   return { success: true };
 }
@@ -204,11 +204,11 @@ export async function updateChurchDetailsAction(
     return { error: "Não foi possível salvar os dados da igreja." };
   }
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/church");
-  revalidatePath("/dashboard/settings");
-  revalidatePath("/dashboard/members");
-  revalidatePath("/dashboard/profile");
+  revalidatePath("/");
+  revalidatePath("/church");
+  revalidatePath("/settings");
+  revalidatePath("/members");
+  revalidatePath("/profile");
 
   return { success: true };
 }
@@ -267,10 +267,10 @@ export async function updateChurchNomenclatureAction(input: {
     return { error: "Não foi possível salvar a nomenclatura." };
   }
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/church");
-  revalidatePath("/dashboard/settings");
-  revalidatePath("/dashboard/departments");
+  revalidatePath("/");
+  revalidatePath("/church");
+  revalidatePath("/settings");
+  revalidatePath("/departments");
 
   return { success: true };
 }

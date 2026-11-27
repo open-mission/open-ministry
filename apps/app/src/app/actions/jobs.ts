@@ -39,7 +39,7 @@ export async function enqueueEventPlanPdfJobAction(eventId: string) {
     userId: context.session.user.id,
   });
 
-  revalidatePath("/dashboard/jobs");
+  revalidatePath("/jobs");
 
   return { ok: true, jobId: job.id };
 }
@@ -65,7 +65,7 @@ export async function retryBackgroundJobAction(jobId: string) {
     return { error: "Não foi possível reiniciar a tarefa." };
   }
 
-  revalidatePath("/dashboard/jobs");
+  revalidatePath("/jobs");
   return { ok: true };
 }
 
@@ -77,6 +77,6 @@ export async function deleteBackgroundJobAction(jobId: string) {
 
   await deleteBackgroundJob(jobId, context.organization.id);
 
-  revalidatePath("/dashboard/jobs");
+  revalidatePath("/jobs");
   return { ok: true };
 }

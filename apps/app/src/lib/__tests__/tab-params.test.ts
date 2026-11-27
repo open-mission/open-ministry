@@ -74,51 +74,51 @@ describe("resolveAllowedTab", () => {
 describe("buildTabHref", () => {
   it("preserves other query params", () => {
     expect(
-      buildTabHref("/dashboard/tasks", "delegated", {
+      buildTabHref("/tasks", "delegated", {
         searchParams: "?taskId=123",
       }),
-    ).toBe("/dashboard/tasks?taskId=123&tab=delegated");
+    ).toBe("/tasks?taskId=123&tab=delegated");
   });
 
   it("updates an existing tab while preserving other params", () => {
     expect(
-      buildTabHref("/dashboard/emails", "templates", {
+      buildTabHref("/emails", "templates", {
         searchParams: "?tab=history&status=failed",
       }),
-    ).toBe("/dashboard/emails?tab=templates&status=failed");
+    ).toBe("/emails?tab=templates&status=failed");
   });
 
   it("removes the tab when it matches the default tab", () => {
     expect(
-      buildTabHref("/dashboard/tasks", "personal", {
+      buildTabHref("/tasks", "personal", {
         defaultTab: "personal",
         searchParams: "?tab=delegated&taskId=123",
       }),
-    ).toBe("/dashboard/tasks?taskId=123");
+    ).toBe("/tasks?taskId=123");
   });
 
   it("removes an empty tab and leaves a clean pathname", () => {
-    expect(buildTabHref("/dashboard/tasks", "")).toBe("/dashboard/tasks");
+    expect(buildTabHref("/tasks", "")).toBe("/tasks");
   });
 
   it("returns a clean pathname when removing the default tab leaves no params", () => {
     expect(
-      buildTabHref("/dashboard/members", "list", {
+      buildTabHref("/members", "list", {
         defaultTab: "list",
         searchParams: "?tab=list",
       }),
-    ).toBe("/dashboard/members");
+    ).toBe("/members");
   });
 
   it("accepts URLSearchParams without mutating the input", () => {
     const searchParams = new URLSearchParams("tab=history&taskId=123");
 
     expect(
-      buildTabHref("/dashboard/tasks", "personal", {
+      buildTabHref("/tasks", "personal", {
         defaultTab: "personal",
         searchParams,
       }),
-    ).toBe("/dashboard/tasks?taskId=123");
+    ).toBe("/tasks?taskId=123");
     expect(searchParams.get("tab")).toBe("history");
   });
 });

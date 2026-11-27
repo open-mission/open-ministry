@@ -77,8 +77,8 @@ export function SongQuickDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="h-[92dvh] max-h-[92dvh] flex flex-col gap-0 rounded-t-[28px] border-x-0 border-b-0 bg-background p-0">
-        <DrawerHeader className="relative px-5 pt-3.5 pb-3 border-b text-left">
+      <DrawerContent className="flex max-h-[85dvh] flex-col gap-0 rounded-t-xl border-x-0 border-b-0 bg-popover p-0">
+        <DrawerHeader className="relative border-b px-5 pt-3.5 pb-3 text-left! group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
           <div className="flex items-center gap-2">
             <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <Music2Icon className="size-4" />
@@ -98,17 +98,17 @@ export function SongQuickDrawer({
               </Badge>
             ) : null}
             {song.capo && song.capo > 0 ? (
-              <Badge variant="secondary" className="text-[10px]">
+              <Badge variant="secondary" className="text-[11px]">
                 Capo {song.capo}
               </Badge>
             ) : null}
             {song.bpm ? (
-              <Badge variant="secondary" className="font-mono text-[10px]">
+              <Badge variant="secondary" className="font-mono text-[11px]">
                 {song.bpm} BPM
               </Badge>
             ) : null}
             {song.timeSignature ? (
-              <Badge variant="secondary" className="text-[10px]">
+              <Badge variant="secondary" className="text-[11px]">
                 {song.timeSignature}
               </Badge>
             ) : null}
@@ -120,7 +120,7 @@ export function SongQuickDrawer({
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-7 gap-1 px-2.5 text-[10px]"
+                    className="min-h-11 gap-1.5 px-3 text-xs"
                     aria-label="Links de áudio da música"
                   >
                     <HeadphonesIcon className="size-3" />
@@ -169,7 +169,7 @@ export function SongQuickDrawer({
           ) : null}
         </DrawerHeader>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 [-webkit-overflow-scrolling:touch] sm:p-6">
           <Tabs defaultValue={song.chords ? "cifra" : "letra"} className="w-full">
             <TabsList className="mb-3 h-9 w-full justify-start overflow-x-auto scrollbar-none sm:w-fit">
               <TabsTrigger
@@ -215,15 +215,17 @@ export function SongQuickDrawer({
           </Tabs>
         </div>
 
-        <DrawerFooter className="flex flex-row items-center justify-between border-t bg-background px-4 py-3">
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/dashboard/songs/${song.id}`} prefetch={true}>
+        <DrawerFooter className="flex flex-col-reverse gap-2 border-t bg-popover px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <Button variant="outline" size="sm" className="min-h-11" asChild>
+            <Link href={`/songs/${song.id}`} prefetch={true}>
               Ver página completa da música ›
             </Link>
           </Button>
 
           <DrawerClose asChild>
-            <Button size="sm">Fechar</Button>
+            <Button size="sm" className="min-h-11">
+              Fechar
+            </Button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>

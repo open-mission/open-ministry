@@ -1,8 +1,8 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="public/brand/openministry-logo-full-white.svg">
-    <source media="(prefers-color-scheme: light)" srcset="public/brand/openministry-logo-full-black.svg">
-    <img alt="OpenMinistry - Organize. Planeje. Sirva." src="public/brand/openministry-logo-full-black.svg" width="460">
+    <source media="(prefers-color-scheme: dark)" srcset="apps/app/public/brand/openministry-logo-full-white.svg">
+    <source media="(prefers-color-scheme: light)" srcset="apps/app/public/brand/openministry-logo-full-black.svg">
+    <img alt="OpenMinistry - Organize. Planeje. Sirva." src="apps/app/public/brand/openministry-logo-full-black.svg" width="460">
   </picture>
 </p>
 
@@ -50,11 +50,11 @@ O OpenMinistry possui uma página oficial de diretrizes de marca acessível em [
 
 | Variação | Aplicação | Arquivos |
 | :--- | :--- | :--- |
-| **Logo Completo** | Institucional com tagline (*ORGANIZE. PLANEJE. SIRVA.*) | [`SVG Preto`](public/brand/openministry-logo-full-black.svg) • [`SVG Branco`](public/brand/openministry-logo-full-white.svg) • [`PNG`](public/brand/openministry-logo-full-black.png) |
-| **Logo Minimal** | Cabeçalhos e barras de navegação (Símbolo + Nome) | [`SVG Preto`](public/brand/openministry-logo-black.svg) • [`SVG Branco`](public/brand/openministry-logo-white.svg) • [`PNG`](public/brand/openministry-logo-black.png) |
-| **Ícone Minimal** | Símbolo isolado (Livro aberto com cruz) | [`SVG Preto`](public/brand/openministry-symbol-black.svg) • [`SVG Branco`](public/brand/openministry-symbol-white.svg) • [`PNG`](public/brand/openministry-symbol-black.png) |
-| **App Icons** | Ícones de app mobile (iOS / Android / PWA) | [`Dark PNG`](public/brand/openministry-app-icon-dark.png) • [`Light PNG`](public/brand/openministry-app-icon-light.png) • [`SVG PWA`](public/icons/icon.svg) |
-| **Brand Kit (.zip)** | Pacote completo com todos os vetores e PNGs 4K | [`openministry-brand-assets.zip`](public/brand/openministry-brand-assets.zip) |
+| **Logo Completo** | Institucional com tagline (*ORGANIZE. PLANEJE. SIRVA.*) | [`SVG Preto`](apps/app/public/brand/openministry-logo-full-black.svg) • [`SVG Branco`](apps/app/public/brand/openministry-logo-full-white.svg) • [`PNG`](apps/app/public/brand/openministry-logo-full-black.png) |
+| **Logo Minimal** | Cabeçalhos e barras de navegação (Símbolo + Nome) | [`SVG Preto`](apps/app/public/brand/openministry-logo-black.svg) • [`SVG Branco`](apps/app/public/brand/openministry-logo-white.svg) • [`PNG`](apps/app/public/brand/openministry-logo-black.png) |
+| **Ícone Minimal** | Símbolo isolado (Livro aberto com cruz) | [`SVG Preto`](apps/app/public/brand/openministry-symbol-black.svg) • [`SVG Branco`](apps/app/public/brand/openministry-symbol-white.svg) • [`PNG`](apps/app/public/brand/openministry-symbol-black.png) |
+| **App Icons** | Ícones de app mobile (iOS / Android / PWA) | [`Dark PNG`](apps/app/public/brand/openministry-app-icon-dark.png) • [`Light PNG`](apps/app/public/brand/openministry-app-icon-light.png) • [`SVG PWA`](apps/app/public/icons/icon.svg) |
+| **Brand Kit (.zip)** | Pacote completo com todos os vetores e PNGs 4K | [`openministry-brand-assets.zip`](apps/app/public/brand/openministry-brand-assets.zip) |
 
 ### Paleta Oficial
 

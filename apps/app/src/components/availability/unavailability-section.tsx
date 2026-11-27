@@ -52,7 +52,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { AvailabilityPeriod } from "@/db/schema/people";
+import type { AvailabilityPeriod } from "@/db/schema";
 import type { PersonUnavailabilityItem } from "@/lib/availability";
 import { cn } from "@/lib/utils";
 

@@ -3,9 +3,10 @@ import type { NextRequest } from "next/server";
 
 import { requireApiOrganizationContext } from "@/lib/api-auth";
 import { listEvents, splitEvents } from "@/lib/events";
+import { clampPageLimit } from "@/lib/pagination";
 import { can } from "@/lib/permissions/service";
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   await connection();
 
   try {
@@ -21,7 +22,12 @@ export async function GET(_request: NextRequest) {
       );
     }
 
-    const events = await listEvents(organization.id);
+    const limit = clampPageLimit(
+      request.nextUrl.searchParams.get("limit"),
+      500,
+      500,
+    );
+    const events = await listEvents(organization.id, limit);
     const { upcoming, past } = splitEvents(events);
 
     return Response.json({ events, upcoming, past });

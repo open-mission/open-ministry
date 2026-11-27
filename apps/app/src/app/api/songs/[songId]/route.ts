@@ -120,9 +120,9 @@ export async function PATCH(
 
     await invalidateSongCache(organization.id, songId);
 
-    revalidatePath("/dashboard/songs");
-    revalidatePath(`/dashboard/songs/${songId}`);
-    revalidatePath("/dashboard/events");
+    revalidatePath("/songs");
+    revalidatePath(`/songs/${songId}`);
+    revalidatePath("/events");
 
     // Recarregar os relacionamentos (histórico de cultos e uso)
     const refreshedSong = await getSong(organization.id, songId);
@@ -177,8 +177,8 @@ export async function DELETE(
 
     await invalidateSongCache(organization.id, songId);
 
-    revalidatePath("/dashboard/songs");
-    revalidatePath("/dashboard/events");
+    revalidatePath("/songs");
+    revalidatePath("/events");
 
     return Response.json({ ok: true, songId });
   } catch (error) {

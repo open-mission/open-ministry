@@ -34,6 +34,7 @@ type CalendarMonthViewProps = {
   timeZone?: string | null;
   onSelectDate: (date: Date) => void;
   onSelectItem: (item: CalendarItem) => void;
+  onPrefetchItem?: (item: CalendarItem) => void;
 };
 
 function isRehearsalItem(item: CalendarItem): boolean {
@@ -88,6 +89,7 @@ export function CalendarMonthView({
   timeZone,
   onSelectDate,
   onSelectItem,
+  onPrefetchItem,
 }: CalendarMonthViewProps) {
   const { days, weekDays } = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
@@ -163,7 +165,7 @@ export function CalendarMonthView({
               data-calendar-today={isDayToday ? "true" : undefined}
               data-calendar-selected={isDaySelected ? "true" : undefined}
               className={cn(
-                "group relative flex min-h-[84px] flex-col p-1.5 transition-colors sm:min-h-[125px] md:min-h-0 md:overflow-hidden",
+                "group relative flex min-h-21 flex-col p-1.5 transition-colors sm:min-h-31.25 md:min-h-0 md:overflow-hidden",
                 !isCurrentMonth && "bg-muted/15 text-muted-foreground/60",
                 isDayToday && "bg-primary/[0.07] ring-1 ring-inset ring-primary/45",
                 isDaySelected && "bg-secondary/50 ring-1 ring-inset ring-primary/35",
@@ -245,6 +247,8 @@ export function CalendarMonthView({
                       key={item.id}
                       type="button"
                       onClick={() => onSelectItem(item)}
+                      onMouseEnter={() => onPrefetchItem?.(item)}
+                      onFocus={() => onPrefetchItem?.(item)}
                       className={cn(
                         "flex w-full cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-left text-xs font-medium transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                         item.type === "assignment" &&

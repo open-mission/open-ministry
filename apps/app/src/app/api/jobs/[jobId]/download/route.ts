@@ -6,6 +6,22 @@ import * as schema from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getJobFile } from "@/lib/jobs/storage";
 
+/** Aceita apenas URLs HTTPS do domínio oficial do UploadThing. */
+export function isAllowedUploadThingUrl(rawUrl: string): boolean {
+  try {
+    const url = new URL(rawUrl);
+    if (url.protocol !== "https:" || url.username || url.password) return false;
+    const host = url.hostname.toLowerCase();
+    return host === "utfs.io" || host === "ufs.sh" || host.endsWith(".ufs.sh");
+  } catch {
+    return false;
+  }
+}
+
+function safeFileName(value: string): string {
+  return value.replace(/[^a-zA-Z0-9._-]/g, "-").slice(0, 120);
+}
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ jobId: string }> },
@@ -49,6 +65,43 @@ export async function GET(
       );
     }
 
+    const result = (job.result ?? {}) as {
+      fileName?: string;
+      fileUrl?: string;
+    };
+    const fileName = safeFileName(
+      result.fileName || `download-${jobId}.pdf`,
+    );
+    const headers = {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="${fileName}"`,
+      "Cache-Control": "private, no-store",
+      "X-Content-Type-Options": "nosniff",
+    };
+
+    if (result.fileUrl) {
+      if (!isAllowedUploadThingUrl(result.fileUrl)) {
+        return NextResponse.json(
+          { error: "Endereço de arquivo inválido." },
+          { status: 400 },
+        );
+      }
+
+      const remote = await fetch(result.fileUrl, {
+        redirect: "error",
+        cache: "no-store",
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!remote.ok) {
+        return NextResponse.json(
+          { error: "Não foi possível carregar o arquivo." },
+          { status: 502 },
+        );
+      }
+
+      return new Response(remote.body, { headers });
+    }
+
     const buffer = await getJobFile(jobId, "pdf");
     if (!buffer) {
       return NextResponse.json(
@@ -60,16 +113,7 @@ export async function GET(
       );
     }
 
-    const fileName =
-      (job.result as { fileName?: string })?.fileName ||
-      `download-${jobId}.pdf`;
-
-    return new Response(new Uint8Array(buffer), {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${fileName}"`,
-      },
-    });
+    return new Response(new Uint8Array(buffer), { headers });
   } catch (error) {
     console.error("Erro ao baixar arquivo da tarefa:", error);
     return NextResponse.json(

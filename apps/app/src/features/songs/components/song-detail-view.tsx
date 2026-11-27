@@ -1,42 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
-  CalendarDaysIcon,
-  ExternalLinkIcon,
   FileMusicIcon,
   FileTextIcon,
-  HeadphonesIcon,
+  InfoIcon,
   Music2Icon,
-  SearchIcon,
-  UserRoundIcon,
-  UsersRoundIcon,
+  PlusIcon,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { DepartmentArrangement } from "@/features/songs/lib/song-arrangements";
 import { useSongQuery } from "@/hooks/use-songs";
-import { formatDate } from "@/lib/format";
-import { isStreamingSearchUrl } from "@/lib/music/lyrics-service";
 import { EMPTY_SONG_USAGE } from "@/lib/song-usage";
 import type { SongWithDetails } from "@/lib/songs";
 import { ChordsViewer } from "./chords-viewer";
-import { DepartmentArrangementPicker } from "./department-arrangement-picker";
+import { SongDetailContextPanel } from "./song-detail/song-detail-context-panel";
 import { SongDetailHeaderActions } from "./song-detail-header-actions";
 import { SongFormDialog } from "./song-form-dialog";
 import { SongLyricsViewer } from "./song-lyrics-viewer";
-import { getStreamingLinks, streamingLinkLabel } from "./song-streaming-links";
-import { SongTagsList } from "./song-tags-list";
 
 type SongDetailViewProps = {
   initialSong: SongWithDetails;
@@ -62,21 +54,19 @@ export function SongDetailView({
 
   const song = data?.song ?? initialSong;
   const usage = song.usage ?? EMPTY_SONG_USAGE;
-  const streamingLinks = getStreamingLinks(song);
-  const planItems = song.planItems ?? [];
-  const nextEvent = usage.nextEvent;
-  const lastEvent = usage.lastEvent;
-  const hasHistory = planItems.length > 0 || usage.eventCount > 0;
-  const serviceCount = usage.eventCount || planItems.length;
-  const defaultTab = song.chords?.trim()
-    ? "cifra"
-    : song.lyrics?.trim()
-      ? "letra"
-      : hasHistory
-        ? "cultos"
-        : "cifra";
+  const hasChords = Boolean(song.chords?.trim());
+  const hasLyrics = Boolean(song.lyrics?.trim());
 
+  const [activeTab, setActiveTab] = useState<string>(
+    hasChords ? "cifra" : hasLyrics ? "letra" : "cifra",
+  );
   const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
+  const [infoDrawerOpen, setInfoDrawerOpen] = useState(false);
+  const [editorState, setEditorState] = useState<{
+    open: boolean;
+    tab: "notas-banda" | "cifra";
+  }>({ open: false, tab: "notas-banda" });
+
   const selectedDepartment =
     initialArrangements.find(
       (department) => department.departmentId === selectedDepartmentId,
@@ -84,313 +74,212 @@ export function SongDetailView({
     initialArrangements[0] ??
     null;
 
-  const [noteEditorOpen, setNoteEditorOpen] = useState(false);
-  const handleEditNote = () => setNoteEditorOpen(true);
+  const handleEditNote = () =>
+    setEditorState({ open: true, tab: "notas-banda" });
+
+  const handleAddChords = () => setEditorState({ open: true, tab: "cifra" });
 
   const sectionNotes = selectedDepartment?.notes;
   const formationNames = (selectedDepartment?.functions ?? [])
     .filter((fn) => selectedDepartment?.selectedFunctionIds.includes(fn.id))
     .map((fn) => fn.name);
 
+  const contextPanel = (
+    <SongDetailContextPanel
+      song={song}
+      usage={usage}
+      initialArrangements={initialArrangements}
+      selectedDepartment={selectedDepartment}
+      onSelectDepartment={setSelectedDepartmentId}
+      formationNames={formationNames}
+      canUpdate={canUpdate}
+      onEditNote={() => {
+        setInfoDrawerOpen(false);
+        handleEditNote();
+      }}
+    />
+  );
+
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 min-w-0">
-      {/* HEADER DA MÚSICA */}
-      <header className="flex flex-col gap-4 border-b border-border/70 pb-6 min-w-0">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-2.5 min-w-0 flex-1">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <Music2Icon className="size-4" />
+    <div className="mx-auto flex w-full max-w-6xl min-w-0 flex-col gap-4">
+      {/* CABEÇALHO COMPACTO — ACORDES ACIMA DA DOBRA */}
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border/70 pb-3.5">
+        <div className="flex min-w-0 flex-1 items-start gap-2.5">
+          <span className="mt-0.5 hidden size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:flex">
+            <Music2Icon className="size-4" />
+          </span>
+          <div className="min-w-0 flex-1 space-y-1">
+            <h1 className="line-clamp-2 font-heading text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
+              {song.title}
+            </h1>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground sm:text-sm">
+              <span className="truncate font-medium">
+                {song.artist || "Artista não informado"}
               </span>
-              <h1 className="line-clamp-2 font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
-                {song.title}
-              </h1>
-            </div>
-
-            <p className="truncate text-sm text-muted-foreground sm:text-base">
-              {song.artist || "Artista não informado"}
-            </p>
-
-            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
               {song.tone ? (
-                <Badge variant="outline" className="font-semibold text-primary">
-                  Tom: {song.tone}
+                <Badge
+                  variant="outline"
+                  className="text-[11px] font-semibold text-primary"
+                >
+                  Tom {song.tone}
                 </Badge>
-              ) : null}
-              {song.capo > 0 ? (
-                <Badge variant="secondary">Capo {song.capo}</Badge>
               ) : null}
               {song.bpm ? (
-                <Badge variant="secondary" className="font-mono">
-                  {song.bpm} BPM
-                </Badge>
+                <span className="font-mono text-xs">{song.bpm} BPM</span>
               ) : null}
               {song.timeSignature ? (
-                <Badge variant="secondary">Compasso: {song.timeSignature}</Badge>
+                <span className="text-xs">· {song.timeSignature}</span>
               ) : null}
             </div>
-
-            {/* HISTÓRICO DE USO NOS CULTOS */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
-              <span className="inline-flex min-w-0 items-center gap-1.5">
-                <CalendarDaysIcon className="size-3.5 shrink-0" />
-                {nextEvent ? (
-                  <span className="truncate">
-                    Próximo:{" "}
-                    <span className="font-medium text-foreground">
-                      {formatDate(nextEvent.startsAt)}
-                    </span>{" "}
-                    · {nextEvent.eventTitle}
-                  </span>
-                ) : lastEvent ? (
-                  <span className="truncate">
-                    Último:{" "}
-                    <span className="font-medium text-foreground">
-                      {formatDate(lastEvent.startsAt)}
-                    </span>{" "}
-                    · {lastEvent.eventTitle}
-                  </span>
-                ) : (
-                  <span>Nunca usada em cultos</span>
-                )}
-              </span>
-
-              {nextEvent && lastEvent ? (
-                <span className="inline-flex min-w-0 items-center gap-1.5">
-                  <CalendarDaysIcon className="size-3.5 shrink-0 opacity-60" />
-                  <span className="truncate">
-                    Último: {formatDate(lastEvent.startsAt)} ·{" "}
-                    {lastEvent.eventTitle}
-                  </span>
-                </span>
-              ) : null}
-
-              {serviceCount > 0 ? (
-                <span>
-                  {serviceCount} culto{serviceCount === 1 ? "" : "s"} distinto
-                  {serviceCount === 1 ? "" : "s"}
-                </span>
-              ) : null}
-
-              {nextEvent?.responsible ? (
-                <span className="inline-flex min-w-0 items-center gap-1.5">
-                  <UserRoundIcon className="size-3.5 shrink-0" />
-                  <span className="truncate">
-                    Responsável: {nextEvent.responsible}
-                  </span>
-                </span>
-              ) : null}
-            </div>
-
-            {/* TAGS DA MÚSICA (MAX 3 + DIALOG/DRAWER) */}
-            <SongTagsList tags={song.tags ?? []} />
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <SongDetailHeaderActions
-              song={song}
-              canUpdate={canUpdate}
-              canDelete={canDelete}
-              canAddToNextService={canAddToNextService}
-            />
           </div>
         </div>
 
-        {/* LINKS DE STREAMING CONSOLIDADOS */}
-        {streamingLinks.length > 0 ? (
-          <div className="flex flex-wrap items-center gap-2 pt-1">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-9 gap-1.5 text-xs font-medium"
-                  aria-label="Links de áudio da música"
-                >
-                  <HeadphonesIcon className="size-3.5" />
-                  Ouvir
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                {streamingLinks.map((link) => (
-                  <DropdownMenuItem key={link.platform} asChild>
-                    <a
-                      href={link.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="gap-2"
-                    >
-                      {isStreamingSearchUrl(link.url) ? (
-                        <SearchIcon className="size-4 text-muted-foreground" />
-                      ) : (
-                        <ExternalLinkIcon className="size-4 text-muted-foreground" />
-                      )}
-                      <span>{streamingLinkLabel(link)}</span>
-                    </a>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        ) : null}
+        <div className="flex shrink-0 items-center gap-1.5">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setInfoDrawerOpen(true)}
+            aria-label="Ver informações, referências e histórico da música"
+            className="min-h-11 gap-1.5 px-3 text-xs font-medium lg:hidden"
+          >
+            <InfoIcon className="size-3.5" />
+            <span>Info</span>
+          </Button>
+
+          <SongDetailHeaderActions
+            song={song}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
+            canAddToNextService={canAddToNextService}
+          />
+        </div>
       </header>
 
-      {/* NOTAS E FORMAÇÃO POR DEPARTAMENTO */}
-      {selectedDepartment ? (
-        <div className="flex flex-col gap-2 rounded-xl border border-border/70 bg-card px-3 py-2.5 shadow-2xs sm:flex-row sm:items-center sm:justify-between sm:px-4">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <UsersRoundIcon className="size-3.5" aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-foreground sm:text-sm">
-                Notas &amp; Banda
-              </p>
-              {formationNames.length > 0 ? (
-                <p className="truncate text-[11px] text-muted-foreground sm:text-xs">
-                  Formação: {formationNames.join(", ")}
-                </p>
-              ) : null}
-            </div>
-          </div>
-
-          {initialArrangements.length > 1 ? (
-            <div className="flex items-center gap-2 sm:shrink-0">
-              <span className="text-[11px] text-muted-foreground sm:text-xs">
-                Departamento
-              </span>
-              <DepartmentArrangementPicker
-                id="song-viewer-department"
-                departments={initialArrangements.map((department) => ({
-                  id: department.departmentId,
-                  name: department.departmentName,
-                }))}
-                value={selectedDepartment.departmentId}
-                onChange={setSelectedDepartmentId}
-                className="sm:w-52"
-              />
-            </div>
-          ) : (
-            <Badge variant="secondary" className="w-fit shrink-0 text-[11px]">
-              {selectedDepartment.departmentName}
-            </Badge>
-          )}
-        </div>
-      ) : null}
-
-      {/* ABAS DE CIFRA, LETRA E HISTÓRICO */}
-      <Tabs defaultValue={defaultTab} className="w-full min-w-0">
-        <TabsList className="h-10 w-full max-w-full justify-start overflow-x-auto scrollbar-none sm:w-fit">
-          <TabsTrigger
-            value="cifra"
-            className="shrink-0 gap-1.5 px-2.5 text-xs sm:text-sm"
+      {/* LAYOUT 2 COLUNAS NO DESKTOP (LEITOR PROTAGONISTA + CONTEXTO LATERAL) */}
+      <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+        <div className="min-w-0">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full min-w-0"
           >
-            <FileMusicIcon className="size-4 shrink-0" />
-            <span>Cifra &amp; Transposição</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="letra"
-            className="shrink-0 gap-1.5 px-2.5 text-xs sm:text-sm"
-          >
-            <FileTextIcon className="size-4 shrink-0" />
-            <span>Letra</span>
-            <span className="hidden sm:inline">Completa</span>
-          </TabsTrigger>
-          {hasHistory ? (
-            <TabsTrigger
-              value="cultos"
-              className="shrink-0 gap-1.5 px-2.5 text-xs sm:text-sm"
-            >
-              <CalendarDaysIcon className="size-4 shrink-0" />
-              <span>Cultos ({serviceCount})</span>
-            </TabsTrigger>
-          ) : null}
-        </TabsList>
+            <TabsList className="h-10 w-full justify-start sm:w-fit">
+              <TabsTrigger
+                value="cifra"
+                className="flex-1 gap-1.5 px-3 text-xs sm:flex-initial sm:text-sm"
+              >
+                <FileMusicIcon className="size-4 shrink-0" />
+                <span>Cifra</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="letra"
+                className="flex-1 gap-1.5 px-3 text-xs sm:flex-initial sm:text-sm"
+              >
+                <FileTextIcon className="size-4 shrink-0" />
+                <span>Letra</span>
+                <span className="hidden sm:inline text-muted-foreground">
+                  (com Palco)
+                </span>
+              </TabsTrigger>
+            </TabsList>
 
-        {/* CONTEÚDO DA CIFRA */}
-        <TabsContent value="cifra" className="pt-4">
-          {song.chords?.trim() ? (
-            <ChordsViewer
-              chords={song.chords}
-              originalTone={song.tone}
-              capo={song.capo}
-              songTitle={song.title}
-              songArtist={song.artist ?? undefined}
-              sectionNotes={sectionNotes}
-              canEditNotes={canUpdate}
-              onEditNote={canUpdate ? handleEditNote : undefined}
-            />
-          ) : (
-            <Card className="p-8 text-center">
-              <FileMusicIcon className="mx-auto size-8 text-muted-foreground/60" />
-              <p className="mt-2 text-sm font-medium">Nenhuma cifra cadastrada</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Clique em Editar para colar a cifra com acordes e tablaturas.
-              </p>
-            </Card>
-          )}
-        </TabsContent>
-
-        {/* CONTEÚDO DA LETRA */}
-        <TabsContent value="letra" className="pt-4">
-          <SongLyricsViewer
-            lyrics={song.lyrics ?? ""}
-            sectionNotes={sectionNotes}
-          />
-        </TabsContent>
-
-        {/* CONTEÚDO DOS CULTOS RECENTES */}
-        {hasHistory ? (
-          <TabsContent value="cultos" className="pt-4">
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">
-                {usage.planItemCount > planItems.length
-                  ? `Exibindo os ${planItems.length} momentos mais recentes de ${usage.eventCount} cultos distintos.`
-                  : "Cultos e momentos recentes em que esta música foi agendada no cronograma:"}
-              </p>
-              <div className="divide-y divide-border/60 rounded-xl border border-border/80 bg-card">
-                {planItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between gap-3 p-3.5"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {item.event?.title ?? "Culto"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.event?.startsAt
-                          ? formatDate(item.event.startsAt)
-                          : ""}{" "}
-                        · Momento: {item.title}
-                        {item.responsible
-                          ? ` · Responsável: ${item.responsible}`
-                          : ""}
-                      </p>
-                    </div>
-                    {item.event ? (
-                      <Link
-                        href={`/dashboard/events/${item.event.id}`}
-                        className="shrink-0 rounded-md text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            <TabsContent value="cifra" className="pt-3">
+              {hasChords ? (
+                <ChordsViewer
+                  chords={song.chords ?? ""}
+                  originalTone={song.tone}
+                  capo={song.capo}
+                  songTitle={song.title}
+                  songArtist={song.artist ?? undefined}
+                  sectionNotes={sectionNotes}
+                  canEditNotes={canUpdate}
+                  onEditNote={canUpdate ? handleEditNote : undefined}
+                />
+              ) : (
+                <Card className="space-y-3 p-6 text-center">
+                  <FileMusicIcon className="mx-auto size-8 text-muted-foreground/60" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-foreground">
+                      Cifra ainda não adicionada
+                    </p>
+                    <p className="mx-auto max-w-md text-xs text-muted-foreground">
+                      {hasLyrics
+                        ? "A letra já está disponível para cantores. Cole ou importe a cifra para liberar transposição e modo palco."
+                        : "Adicione a cifra com acordes para liberar transposição, 2 colunas e modo palco."}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                    {canUpdate ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleAddChords}
+                        className="min-h-11 gap-1.5 px-3.5 text-xs font-semibold sm:min-h-9"
                       >
-                        Ver culto ›
-                      </Link>
+                        <PlusIcon className="size-3.5" />
+                        <span>Adicionar cifra</span>
+                      </Button>
+                    ) : null}
+                    {hasLyrics ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setActiveTab("letra")}
+                        className="min-h-11 px-3.5 text-xs font-medium sm:min-h-9"
+                      >
+                        Ver Letra
+                      </Button>
                     ) : null}
                   </div>
-                ))}
-              </div>
-            </div>
-          </TabsContent>
-        ) : null}
-      </Tabs>
+                </Card>
+              )}
+            </TabsContent>
 
-      {canUpdate && noteEditorOpen ? (
+            <TabsContent value="letra" className="pt-3">
+              <SongLyricsViewer
+                lyrics={song.lyrics ?? ""}
+                sectionNotes={sectionNotes}
+                songTitle={song.title}
+                songArtist={song.artist ?? undefined}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* LATERAL STICKY NO DESKTOP */}
+        <aside className="hidden lg:sticky lg:top-4 lg:block">
+          {contextPanel}
+        </aside>
+      </div>
+
+      {/* DRAWER INFO NO MOBILE (PADRÃO @openministry/ui) */}
+      <Drawer open={infoDrawerOpen} onOpenChange={setInfoDrawerOpen}>
+        <DrawerContent className="max-h-[85dvh] rounded-t-xl bg-popover">
+          <DrawerHeader className="border-b border-border/60 pb-3 text-left! group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+            <DrawerTitle className="font-heading text-base font-bold">
+              Detalhes &amp; Referências
+            </DrawerTitle>
+            <DrawerDescription className="text-xs">
+              {song.title}
+              {song.artist ? ` · ${song.artist}` : ""}
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 [-webkit-overflow-scrolling:touch]">
+            {contextPanel}
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {canUpdate && editorState.open ? (
         <SongFormDialog
-          open={noteEditorOpen}
-          onOpenChange={setNoteEditorOpen}
+          open={editorState.open}
+          onOpenChange={(open) =>
+            setEditorState((prev) => ({ ...prev, open }))
+          }
           songId={song.id}
-          initialTab="notas-banda"
+          initialTab={editorState.tab}
           initialDepartmentId={selectedDepartment?.departmentId}
           canUpdate={canUpdate}
           initialData={{

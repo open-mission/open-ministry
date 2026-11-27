@@ -5,6 +5,7 @@ export * from "./events";
 export * from "./modules";
 export * from "./notifications";
 export * from "./people";
+export * from "./platform";
 export * from "./songs";
 export * from "./jobs";
 export * from "./permissions";

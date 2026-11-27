@@ -83,7 +83,7 @@ function HeroCard({ assignment }: { assignment: HomeAssignmentSummary }) {
 
       <div className="mt-5 flex flex-wrap items-center gap-4">
         <Link
-          href={`/dashboard/events/${event.id}`}
+          href={`/events/${event.id}`}
           className="inline-flex min-h-9 items-center justify-between gap-6 rounded-xl bg-[#faf7ee] px-4 text-sm font-semibold text-[#16231a] transition-colors hover:bg-[#f1eade] focus-visible:ring-2 focus-visible:ring-[#faf7ee] focus-visible:outline-none"
         >
           Abrir minha escala
@@ -131,7 +131,7 @@ function FeaturedEventCard({ event }: { event: HomeEventSummary }) {
       ) : null}
 
       <Link
-        href={`/dashboard/events/${event.id}`}
+        href={`/events/${event.id}`}
         className="mt-5 inline-flex min-h-9 items-center justify-between gap-6 rounded-xl bg-[#faf7ee] px-4 text-sm font-semibold text-[#16231a] transition-colors hover:bg-[#f1eade] focus-visible:ring-2 focus-visible:ring-[#faf7ee] focus-visible:outline-none"
       >
         Ver detalhes
@@ -237,7 +237,7 @@ function WeekAttention({
               </p>
             </div>
             <Link
-              href={`/dashboard/events/${item.eventId}`}
+              href={`/events/${item.eventId}`}
               className="inline-flex min-h-6 shrink-0 items-center gap-1 text-[11px] font-medium text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               Preencher
@@ -285,7 +285,7 @@ function UpcomingEvents({ events }: { events: HomeEventSummary[] }) {
             return (
               <Link
                 key={event.id}
-                href={`/dashboard/events/${event.id}`}
+                href={`/events/${event.id}`}
                 className="flex min-h-11 items-center gap-3 py-2.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
                 <span
@@ -349,7 +349,7 @@ function BirthdaysFolio({
           Aniversariantes do mês
         </h2>
         <Link
-          href="/dashboard/birthdays"
+          href="/birthdays"
           className="inline-flex min-h-6 items-center gap-1 text-[11px] font-medium text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           Ver todos

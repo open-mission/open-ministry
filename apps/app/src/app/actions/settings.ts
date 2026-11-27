@@ -1,6 +1,5 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { and, eq, inArray, ne } from "drizzle-orm";
 import { z } from "zod";
@@ -8,14 +7,12 @@ import { z } from "zod";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import {
-  checkEvolutionConnection,
-  configureEvolutionWebhook,
   formatPhoneNumberForEvolution,
   sendEvolutionTextMessage,
 } from "@/lib/evolution-api";
-import { getAppBaseUrl } from "@/lib/app-url";
 import { loadCalendarFeedViews } from "@/lib/calendar-feed-data";
 import {
+  getOrganizationEvolutionConfig,
   listEvolutionMessageLogs,
   retryWhatsAppMessage,
   retryFailedWhatsAppMessages,
@@ -31,7 +28,6 @@ import {
 import { getOrganizationMessageTemplates } from "@/lib/message-templates-server";
 import { birthdayFieldSchema, updateBirthday } from "@/lib/profile";
 import { getSession } from "@/lib/session";
-import { decryptSecret, encryptSecret } from "@/lib/secret-crypto";
 import { getOrganizationPermissionSettingsAction } from "@/app/actions/permissions";
 
 export type SessionItem = {
@@ -41,6 +37,15 @@ export type SessionItem = {
   createdAt: string;
   isCurrent: boolean;
 };
+
+function isImpersonatedSession(
+  session: { session: { impersonatedBy?: string | null } } | null,
+): boolean {
+  return Boolean(session?.session.impersonatedBy);
+}
+
+const IMPERSONATION_ACCOUNT_ERROR =
+  "Não é possível alterar credenciais ou sessões durante uma impersonação.";
 
 export type PasskeyViewItem = {
   id: string;
@@ -75,6 +80,9 @@ export async function deletePasskeyAction(
   if (!session) {
     return { success: false, error: "Não autorizado." };
   }
+  if (isImpersonatedSession(session)) {
+    return { success: false, error: IMPERSONATION_ACCOUNT_ERROR };
+  }
 
   try {
     await db
@@ -86,7 +94,7 @@ export async function deletePasskeyAction(
         ),
       );
 
-    revalidatePath("/dashboard/settings");
+    revalidatePath("/settings");
     return { success: true };
   } catch (error) {
     console.error("Erro ao excluir passkey", error);
@@ -119,6 +127,9 @@ export async function revokeSessionAction(
   if (!current) {
     return { success: false, error: "Sessão não autorizada." };
   }
+  if (isImpersonatedSession(current)) {
+    return { success: false, error: IMPERSONATION_ACCOUNT_ERROR };
+  }
 
   if (sessionId === current.session.id) {
     return {
@@ -137,7 +148,7 @@ export async function revokeSessionAction(
         ),
       );
 
-    revalidatePath("/dashboard/settings");
+    revalidatePath("/settings");
     return { success: true };
   } catch (error) {
     console.error("Erro ao revogar sessão", error);
@@ -153,6 +164,9 @@ export async function revokeOtherSessionsAction(): Promise<{
   if (!current) {
     return { success: false, error: "Sessão não autorizada." };
   }
+  if (isImpersonatedSession(current)) {
+    return { success: false, error: IMPERSONATION_ACCOUNT_ERROR };
+  }
 
   try {
     await db
@@ -164,7 +178,7 @@ export async function revokeOtherSessionsAction(): Promise<{
         ),
       );
 
-    revalidatePath("/dashboard/settings");
+    revalidatePath("/settings");
     return { success: true };
   } catch (error) {
     console.error("Erro ao revogar outras sessões", error);
@@ -248,6 +262,9 @@ export async function updateAccountSettingsAction(
   if (!session) {
     return { error: "Sua sessão expirou. Entre novamente para continuar." };
   }
+  if (isImpersonatedSession(session)) {
+    return { error: IMPERSONATION_ACCOUNT_ERROR };
+  }
 
   const cleanUsername = parsed.data.username
     ? parsed.data.username.replace(/^@/, "").trim().toLowerCase()
@@ -301,195 +318,13 @@ export async function updateAccountSettingsAction(
     return { error: "Não foi possível atualizar as configurações da conta." };
   }
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/settings");
-  revalidatePath("/dashboard/profile");
-  revalidatePath("/dashboard/members");
-  revalidatePath("/dashboard/birthdays");
+  revalidatePath("/");
+  revalidatePath("/settings");
+  revalidatePath("/profile");
+  revalidatePath("/members");
+  revalidatePath("/birthdays");
 
   return { success: true };
-}
-
-export type EvolutionSettingsView = {
-  id: string | null;
-  apiUrl: string;
-  apiKey: string;
-  instanceName: string;
-  isActive: boolean;
-  webhookSecret?: string | null;
-  webhookUrl?: string;
-};
-
-export async function getEvolutionSettingsAction(): Promise<EvolutionSettingsView> {
-  const context = await getOrganizationContext();
-  if (!context) {
-    return {
-      id: null,
-      apiUrl: "",
-      apiKey: "",
-      instanceName: "",
-      isActive: false,
-    };
-  }
-
-  // Gate no servidor: a UI filtra por papel, mas a action é um endpoint
-  // chamável — sem esse check, qualquer membro receberia a apiKey do gateway
-  // de WhatsApp e a URL de webhook com segredo.
-  if (!context.isAdmin) {
-    return {
-      id: null,
-      apiUrl: "",
-      apiKey: "",
-      instanceName: "",
-      isActive: false,
-    };
-  }
-
-  const channel = await db.query.organizationNotificationChannel.findFirst({
-    where: and(
-      eq(schema.organizationNotificationChannel.organizationId, context.organization.id),
-      eq(schema.organizationNotificationChannel.channel, "evolution_whatsapp"),
-    ),
-  });
-
-  let secret = channel?.webhookSecret;
-  if (channel && !secret) {
-    secret = randomUUID();
-    await db
-      .update(schema.organizationNotificationChannel)
-      .set({ webhookSecret: secret })
-      .where(eq(schema.organizationNotificationChannel.id, channel.id));
-  }
-
-  const baseUrl = getAppBaseUrl();
-  const webhookUrl = secret
-    ? `${baseUrl.replace(/\/+$/, "")}/api/webhooks/evolution?token=${secret}`
-    : `${baseUrl.replace(/\/+$/, "")}/api/webhooks/evolution`;
-
-  // apiKey é cifrada em repouso (SECRETS_ENCRYPTION_KEY); valores legados sem
-  // prefixo passam direto até serem re-salvos.
-  const apiKey = channel ? (decryptSecret(channel.apiKey) ?? "") : "";
-
-  return {
-    id: channel?.id ?? null,
-    apiUrl: channel?.apiUrl ?? "",
-    apiKey,
-    instanceName: channel?.instanceName ?? "",
-    isActive: channel?.isActive ?? true,
-    webhookSecret: secret ?? null,
-    webhookUrl,
-  };
-}
-
-const evolutionSettingsSchema = z.object({
-  apiUrl: z.string().trim().url("Informe uma URL válida (ex.: https://api.evolution.exemplo.com)"),
-  apiKey: z.string().trim().min(1, "Informe a chave de API (apikey)"),
-  instanceName: z.string().trim().min(1, "Informe o nome da instância"),
-  isActive: z.boolean(),
-});
-
-export type EvolutionSettingsFormState =
-  | {
-      error?: string;
-      fieldErrors?: {
-        apiUrl?: string[];
-        apiKey?: string[];
-        instanceName?: string[];
-      };
-      success?: boolean;
-    }
-  | undefined;
-
-export async function saveEvolutionSettingsAction(
-  _state: EvolutionSettingsFormState,
-  formData: FormData,
-): Promise<EvolutionSettingsFormState> {
-  const context = await getOrganizationContext();
-  if (!context) {
-    return { error: "Sua sessão expirou." };
-  }
-
-  if (!context.isAdmin) {
-    return { error: "Apenas administradores podem configurar canais de notificação." };
-  }
-
-  const parsed = evolutionSettingsSchema.safeParse({
-    apiUrl: formData.get("apiUrl"),
-    apiKey: formData.get("apiKey"),
-    instanceName: formData.get("instanceName"),
-    isActive: formData.get("isActive") === "on" || formData.get("isActive") === "true",
-  });
-
-  if (!parsed.success) {
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
-  }
-
-  try {
-    const existing = await db.query.organizationNotificationChannel.findFirst({
-      where: and(
-        eq(schema.organizationNotificationChannel.organizationId, context.organization.id),
-        eq(schema.organizationNotificationChannel.channel, "evolution_whatsapp"),
-      ),
-    });
-
-    const encryptedApiKey = encryptSecret(parsed.data.apiKey);
-
-    if (existing) {
-      await db
-        .update(schema.organizationNotificationChannel)
-        .set({
-          apiUrl: parsed.data.apiUrl,
-          apiKey: encryptedApiKey,
-          instanceName: parsed.data.instanceName,
-          isActive: parsed.data.isActive,
-        })
-        .where(eq(schema.organizationNotificationChannel.id, existing.id));
-    } else {
-      await db.insert(schema.organizationNotificationChannel).values({
-        id: randomUUID(),
-        organizationId: context.organization.id,
-        channel: "evolution_whatsapp",
-        apiUrl: parsed.data.apiUrl,
-        apiKey: encryptedApiKey,
-        instanceName: parsed.data.instanceName,
-        webhookSecret: randomUUID(),
-        isActive: parsed.data.isActive,
-      });
-    }
-
-    revalidatePath("/dashboard/settings");
-    return { success: true };
-  } catch (error) {
-    console.error("Erro ao salvar configurações da Evolution API", error);
-    return { error: "Não foi possível salvar as configurações da Evolution API." };
-  }
-}
-
-export async function testEvolutionConnectionAction(
-  apiUrl: string,
-  apiKey: string,
-  instanceName: string,
-): Promise<{
-  ok: boolean;
-  state?: string;
-  error?: string;
-  details?: {
-    instanceName?: string;
-    whatsappName?: string;
-    phoneJid?: string;
-    authType?: "global" | "instance";
-  };
-}> {
-  const context = await getOrganizationContext();
-  if (!context || !context.isAdmin) {
-    return { ok: false, error: "Apenas administradores podem testar a conexão." };
-  }
-
-  return checkEvolutionConnection({
-    apiUrl,
-    apiKey,
-    instanceName,
-  });
 }
 
 export async function sendTestEvolutionMessageAction(
@@ -500,15 +335,14 @@ export async function sendTestEvolutionMessageAction(
     return { ok: false, error: "Apenas administradores podem enviar mensagens de teste." };
   }
 
-  const channel = await db.query.organizationNotificationChannel.findFirst({
-    where: and(
-      eq(schema.organizationNotificationChannel.organizationId, context.organization.id),
-      eq(schema.organizationNotificationChannel.channel, "evolution_whatsapp"),
-    ),
-  });
+  // Usa o mesmo resolvedor de envio (respeita entitlements e instâncias
+  // gerenciadas pela plataforma); mantém a assinatura para compatibilidade.
+  const { config: evolutionConfig } = await getOrganizationEvolutionConfig(
+    context.organization.id,
+  );
 
-  if (!channel || !channel.apiUrl || !channel.apiKey || !channel.instanceName) {
-    return { ok: false, error: "Configure e salve as credenciais da Evolution API primeiro." };
+  if (!evolutionConfig) {
+    return { ok: false, error: "Canal do WhatsApp indisponível para a igreja." };
   }
 
   const formatted = formatPhoneNumberForEvolution(recipientPhone);
@@ -522,46 +356,12 @@ export async function sendTestEvolutionMessageAction(
     `Enviado em: ${new Date().toLocaleString("pt-BR")}`;
 
   const result = await sendEvolutionTextMessage({
-    config: {
-      apiUrl: channel.apiUrl,
-      apiKey: decryptSecret(channel.apiKey) ?? "",
-      instanceName: channel.instanceName,
-    },
+    config: evolutionConfig,
     to: formatted,
     text: messageText,
   });
 
   return result;
-}
-
-export async function configureEvolutionWebhookAction(): Promise<{
-  ok: boolean;
-  error?: string;
-}> {
-  const context = await getOrganizationContext();
-  if (!context || !context.isAdmin) {
-    return { ok: false, error: "Apenas administradores podem configurar webhooks." };
-  }
-
-  const settings = await getEvolutionSettingsAction();
-  if (!settings.apiUrl || !settings.apiKey || !settings.instanceName || !settings.webhookUrl) {
-    return { ok: false, error: "Salve as configurações da Evolution API primeiro." };
-  }
-
-  const res = await configureEvolutionWebhook({
-    config: {
-      apiUrl: settings.apiUrl,
-      apiKey: settings.apiKey,
-      instanceName: settings.instanceName,
-    },
-    webhookUrl: settings.webhookUrl,
-  });
-
-  if (res.ok) {
-    revalidatePath("/dashboard/settings");
-  }
-
-  return res;
 }
 
 export async function getEvolutionMessageLogsAction(options?: {
@@ -675,9 +475,9 @@ export async function retryEvolutionMessageAction(
   }
 
   const res = await retryWhatsAppMessage(logId, context.organization.id);
-  revalidatePath("/dashboard/whatsapp");
-  revalidatePath("/dashboard/settings");
-  revalidatePath("/dashboard/announcements");
+  revalidatePath("/whatsapp");
+  revalidatePath("/settings");
+  revalidatePath("/announcements");
   return res;
 }
 
@@ -721,9 +521,9 @@ export async function retryAllFailedEvolutionMessagesAction(
     batchId,
     departmentIds,
   );
-  revalidatePath("/dashboard/whatsapp");
-  revalidatePath("/dashboard/settings");
-  revalidatePath("/dashboard/announcements");
+  revalidatePath("/whatsapp");
+  revalidatePath("/settings");
+  revalidatePath("/announcements");
   return res;
 }
 
@@ -744,13 +544,12 @@ export async function getSettingsDialogDataAction() {
       loadCalendarFeedViews(),
     ]);
 
-  const [evolutionSettings, messageTemplates, permissionSettingsResult] = isAdmin
+  const [messageTemplates, permissionSettingsResult] = isAdmin
     ? await Promise.all([
-        getEvolutionSettingsAction(),
         getOrganizationMessageTemplates(organization.id),
         getOrganizationPermissionSettingsAction(),
       ])
-    : [null, [], null];
+    : [[], null];
 
   const permissionSettings =
     permissionSettingsResult && permissionSettingsResult.ok
@@ -785,7 +584,6 @@ export async function getSettingsDialogDataAction() {
     initialPasskeys,
     peopleCount: people.length,
     departmentsCount: departments.length,
-    evolutionSettings,
     messageTemplates,
     permissionSettings,
   };

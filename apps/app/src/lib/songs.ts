@@ -15,6 +15,12 @@ import {
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { cacheInvalidateTags, remember } from "@/lib/cache";
+import {
+  clampOffset,
+  clampPageLimit,
+  paginationCacheSuffix,
+  type PaginationOptions,
+} from "@/lib/pagination";
 import { can } from "@/lib/permissions/service";
 import {
   buildSongUsageMap,
@@ -22,6 +28,9 @@ import {
   type SongUsageRow,
   type SongUsageSummary,
 } from "@/lib/song-usage";
+
+const SONG_LIMIT_DEFAULT = 500;
+const SONG_LIMIT_MAX = 1000;
 
 export type SongRecord = typeof schema.song.$inferSelect;
 export type SongWithUsage = SongRecord & { usage: SongUsageSummary };
@@ -51,9 +60,13 @@ export async function getNextSongSortOrder(
  * Histórico de uso de todas as músicas da organização em cronogramas de cultos.
  * É cacheado por 60s e invalidado por alterações de músicas ou eventos.
  */
-async function listSongUsageRows(organizationId: string): Promise<SongUsageRow[]> {
+async function listSongUsageRows(
+  organizationId: string,
+  requestedLimit = SONG_LIMIT_DEFAULT,
+): Promise<SongUsageRow[]> {
+  const limit = clampPageLimit(requestedLimit, SONG_LIMIT_DEFAULT, SONG_LIMIT_MAX);
   const rows = await remember(
-    `org:${organizationId}:songs:usage`,
+    `org:${organizationId}:songs:usage${paginationCacheSuffix(limit, 0, SONG_LIMIT_DEFAULT)}`,
     60,
     async () => {
       return db
@@ -84,7 +97,8 @@ async function listSongUsageRows(organizationId: string): Promise<SongUsageRow[]
             isNotNull(schema.eventPlanItem.songId),
           ),
         )
-        .orderBy(asc(schema.event.startsAt));
+        .orderBy(asc(schema.event.startsAt))
+        .limit(limit);
     },
     [`songs:${organizationId}`, `events:${organizationId}`],
   );
@@ -117,8 +131,11 @@ async function getUsageMap(
 export async function listSongs(
   organizationId: string,
   search?: string,
+  options?: PaginationOptions,
 ): Promise<SongWithUsage[]> {
   const cleanSearch = search?.trim();
+  const limit = clampPageLimit(options?.limit, SONG_LIMIT_DEFAULT, SONG_LIMIT_MAX);
+  const offset = clampOffset(options?.offset);
   const usageMap = await getUsageMap(organizationId);
 
   const songs = cleanSearch
@@ -132,14 +149,18 @@ export async function listSongs(
           ),
         ),
         orderBy: [asc(schema.song.title)],
+        limit,
+        offset,
       })
     : await remember(
-        `org:${organizationId}:songs:all`,
+        `org:${organizationId}:songs:all${paginationCacheSuffix(limit, offset, SONG_LIMIT_DEFAULT)}`,
         60,
         async () => {
           return db.query.song.findMany({
             where: eq(schema.song.organizationId, organizationId),
             orderBy: [asc(schema.song.title)],
+            limit,
+            offset,
           });
         },
         [`songs:${organizationId}`],

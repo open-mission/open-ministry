@@ -222,7 +222,7 @@ function NotificationPanel({
       <div
         className={cn(
           "divide-y divide-border/40 overflow-y-auto",
-          isDrawer ? "flex-1 min-h-0" : "max-h-[340px]",
+          isDrawer ? "flex-1 min-h-0" : "max-h-85",
         )}
       >
         {loading && items.length === 0 ? (
@@ -250,7 +250,7 @@ function NotificationPanel({
             <p className="text-xs font-medium text-foreground">
               Tudo em dia por aqui!
             </p>
-            <p className="max-w-[200px] text-xs text-muted-foreground">
+            <p className="max-w-50 text-xs text-muted-foreground">
               Nenhuma notificação nova no momento.
             </p>
           </div>
@@ -263,7 +263,7 @@ function NotificationPanel({
               className={cn(
                 "group flex w-full items-start gap-3 text-left transition-colors hover:bg-muted/50",
                 isDrawer ? "min-h-16 p-4" : "p-3",
-                !item.read && "bg-primary/[0.03]",
+                !item.read && "bg-primary/3",
               )}
             >
               <div
@@ -331,7 +331,7 @@ function NotificationPanel({
             isDrawer ? "h-11 text-sm" : "h-8",
           )}
         >
-          <Link href="/dashboard/notifications" prefetch={true} onClick={onClose}>
+          <Link href="/notifications" prefetch={true} onClick={onClose}>
             <span>Ver todas as notificações</span>
             <ArrowRightIcon className="size-3.5" />
           </Link>

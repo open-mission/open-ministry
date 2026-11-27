@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ClockIcon, FolderPlusIcon, Music2Icon, PlusIcon, UserIcon } from "lucide-react";
@@ -207,7 +207,7 @@ export function PlanItemDialog({
       if (refreshTimer.current !== null) clearTimeout(refreshTimer.current);
       refreshTimer.current = setTimeout(() => {
         refreshTimer.current = null;
-        router.refresh();
+        startTransition(() => router.refresh());
       }, isMobile ? 550 : 220);
     } else if (res?.error) {
       toast.error(res.error);

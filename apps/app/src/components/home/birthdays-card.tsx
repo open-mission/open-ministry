@@ -60,9 +60,9 @@ export function BirthdaysCard({
             asChild
             variant="ghost"
             size="sm"
-            className="h-9 min-h-[44px] px-2 text-xs text-primary hover:text-primary"
+            className="h-9 min-h-11 px-2 text-xs text-primary hover:text-primary"
           >
-            <Link href="/dashboard/birthdays">
+            <Link href="/birthdays">
               Ver todos
               <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
             </Link>
@@ -75,7 +75,7 @@ export function BirthdaysCard({
           {monthEntries.map((entry, index) => (
             <div key={entry.personId}>
               {index > 0 ? <Separator className="my-1" /> : null}
-              <div className="flex min-h-[44px] items-center gap-3 py-2">
+              <div className="flex min-h-11 items-center gap-3 py-2">
                 <Avatar className="size-10 shrink-0">
                   <AvatarImage src={entry.image ?? undefined} alt={entry.name} />
                   <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">

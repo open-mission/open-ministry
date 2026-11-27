@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import type { listEvents } from "@/lib/events";
 
@@ -32,6 +32,7 @@ export function useEventsQuery(options?: { initialData?: EventsApiResponse }) {
     queryKey: eventKeys.lists(),
     queryFn: fetchEvents,
     initialData: options?.initialData,
-    staleTime: 60 * 1000,
+    placeholderData: keepPreviousData,
+    staleTime: 2 * 60 * 1000,
   });
 }

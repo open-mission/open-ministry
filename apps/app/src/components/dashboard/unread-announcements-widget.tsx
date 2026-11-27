@@ -107,7 +107,7 @@ export function UnreadAnnouncementsWidget({
 
   return (
     <>
-      <Card className="border-amber-500/20 bg-gradient-to-br from-amber-500/[0.04] via-card to-card shadow-xs transition-all">
+      <Card className="border-amber-500/20 bg-linear-to-br from-amber-500/4 via-card to-card shadow-xs transition-all">
         <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
           <div className="flex items-center gap-2.5">
             <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400">
@@ -138,7 +138,7 @@ export function UnreadAnnouncementsWidget({
             size="sm"
             className="h-8 shrink-0 text-xs text-muted-foreground hover:text-foreground"
           >
-            <Link href="/dashboard/announcements">
+            <Link href="/announcements">
               <span>Ver todos</span>
               <ArrowRightIcon className="size-3.5" aria-hidden="true" />
             </Link>
@@ -150,7 +150,7 @@ export function UnreadAnnouncementsWidget({
             <div
               key={item.id}
               className={cn(
-                "group flex w-full items-start justify-between gap-3 rounded-xl border border-border/60 bg-background/80 p-3 text-left transition-all hover:border-amber-500/30 hover:bg-amber-500/[0.02] hover:shadow-xs",
+                "group flex w-full items-start justify-between gap-3 rounded-xl border border-border/60 bg-background/80 p-3 text-left transition-all hover:border-amber-500/30 hover:bg-amber-500/2 hover:shadow-xs",
               )}
             >
               <button

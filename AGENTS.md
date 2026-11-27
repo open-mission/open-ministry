@@ -19,6 +19,19 @@ Read `docs/README.md` inside that installed package first, then read the relevan
 This block is written and re-added by `turbo` before repository-scoped commands when an AI agent is detected. In the Turborepo source repository, its template is defined in `crates/turborepo-cli/src/cli/agent_guidance.rs`. Removing the managed block while updates are enabled means a later qualifying invocation will add it again. Set `"agentGuidance": true` in the root `turbo.json` or `turbo.jsonc` to opt in; this does not remove an existing block. Keep the block committed with your work to avoid an uncommitted change on the next agent invocation.
 <!-- END:turborepo-agent-rules -->
 
+## Arquitetura & Fonte Única
+
+- **Nunca mantenha duas cópias reais do mesmo arquivo** entre `features/` e
+  `app/actions/`, `lib/` ou `components/`. Escolha um local canônico por domínio
+  e, somente quando estritamente necessário para compatibilidade, deixe um
+  re-export fino (1–5 linhas) apontando para ele. Antes de apagar uma cópia,
+  confirme com `grep` que não há imports ativos; se houver, redirecione-os.
+- **Schema e migrations** vivem exclusivamente em `packages/db`
+  (`@openministry/db`); `apps/app/src/db` apenas re-exporta. **Componentes base
+  de UI** vivem exclusivamente em `packages/ui` (`@openministry/ui`).
+- **Tamanho:** fatie novos arquivos/componentes antes de ultrapassar ~450–500
+  linhas ou acumular estado excessivo (muitos `useState`/responsabilidades).
+
 ## Git Flow
 
 Este projeto segue o Git Flow. Respeite estas regras em qualquer alteração:
@@ -33,9 +46,15 @@ Este projeto segue o Git Flow. Respeite estas regras em qualquer alteração:
   - `chore/<nome>` para manutenção, ferramentas e documentação.
 - Ao terminar, faça merge da branch na `develop` com `--no-ff` e remova a branch
   de trabalho.
-- **Commits seguem Conventional Commits** (`feat:`, `fix:`, `chore:`, `docs:` etc.).
-- **Antes de finalizar**, rode `bun run lint`, `bun run typecheck` e
-  `bun run build`.
+- **Commits e PRs são sempre em inglês**, mesmo que a conversa do time seja em
+  português. A convenção completa está em `CONTRIBUTING.md`.
+- **Commits seguem Conventional Commits** (`feat:`, `fix:`, `chore:`, `docs:` etc.),
+  com sujeito em inglês, no imperativo e sem ponto final. Nunca reescreva o
+  histórico já publicado para traduzi-lo.
+- **Título e descrição de PR em inglês**, no formato Conventional Commits, usando
+  o template `.github/pull_request_template.md`. O CI valida o título.
+- **Antes de finalizar**, rode `bun run lint`, `bun run typecheck`,
+  `bun run test` e, quando a mudança afetar build/configuração, `bun run build`.
 - **Para publicar uma release:** faça merge da `develop` na `main` com `--no-ff`
   e, se possível, crie uma tag de versão (`vX.Y.Z`).
 

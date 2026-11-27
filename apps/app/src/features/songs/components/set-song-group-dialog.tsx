@@ -50,7 +50,7 @@ export function SetSongGroupDialog({
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="p-0">
-          <DrawerHeader className="border-b px-5 pt-4 pb-3 !text-left text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+          <DrawerHeader className="border-b px-5 pt-4 pb-3 text-left! text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
             <div className="flex items-center gap-2">
               <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <FolderIcon className="size-4" />

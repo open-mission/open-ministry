@@ -245,7 +245,7 @@ export function TasksTableView({
                 <button
                   type="button"
                   onClick={() => toggleSort("title")}
-                  className="inline-flex min-h-[32px] items-center font-medium text-foreground hover:text-primary"
+                  className="inline-flex min-h-8 items-center font-medium text-foreground hover:text-primary"
                 >
                   Tarefa
                   {renderSortIcon("title")}
@@ -265,7 +265,7 @@ export function TasksTableView({
                 <button
                   type="button"
                   onClick={() => toggleSort("status")}
-                  className="inline-flex min-h-[32px] items-center font-medium text-foreground hover:text-primary"
+                  className="inline-flex min-h-8 items-center font-medium text-foreground hover:text-primary"
                 >
                   Situação
                   {renderSortIcon("status")}
@@ -285,7 +285,7 @@ export function TasksTableView({
                 <button
                   type="button"
                   onClick={() => toggleSort("priority")}
-                  className="inline-flex min-h-[32px] items-center font-medium text-foreground hover:text-primary"
+                  className="inline-flex min-h-8 items-center font-medium text-foreground hover:text-primary"
                 >
                   Prioridade
                   {renderSortIcon("priority")}
@@ -306,7 +306,7 @@ export function TasksTableView({
                 <button
                   type="button"
                   onClick={() => toggleSort("date")}
-                  className="inline-flex min-h-[32px] items-center font-medium text-foreground hover:text-primary"
+                  className="inline-flex min-h-8 items-center font-medium text-foreground hover:text-primary"
                 >
                   Planejada
                   {renderSortIcon("date")}
@@ -325,7 +325,7 @@ export function TasksTableView({
                 <button
                   type="button"
                   onClick={() => toggleSort("deadline")}
-                  className="inline-flex min-h-[32px] items-center font-medium text-foreground hover:text-primary"
+                  className="inline-flex min-h-8 items-center font-medium text-foreground hover:text-primary"
                 >
                   Prazo
                   {renderSortIcon("deadline")}
@@ -353,7 +353,7 @@ export function TasksTableView({
                   key={task.id}
                   className={cn(
                     "transition-colors",
-                    task.isPinned && "bg-primary/[0.02]",
+                    task.isPinned && "bg-primary/2",
                     isCompleted && "opacity-75",
                   )}
                 >
@@ -381,7 +381,7 @@ export function TasksTableView({
                         )}
                       >
                         {isCompleted ? (
-                          <CheckIcon className="size-3 stroke-[3]" />
+                          <CheckIcon className="size-3 stroke-3" />
                         ) : null}
                       </span>
                     </button>
@@ -396,7 +396,7 @@ export function TasksTableView({
                     ) : null}
                   </TableCell>
 
-                  <TableCell className="max-w-[300px]">
+                  <TableCell className="max-w-75">
                     <div className="flex flex-col gap-0.5">
                       <div className="flex items-center gap-1.5">
                         <button
@@ -504,7 +504,7 @@ export function TasksTableView({
                             {getInitials(task.assignee.name ?? "M")}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="max-w-[120px] truncate text-xs font-medium">
+                        <span className="max-w-30 truncate text-xs font-medium">
                           {task.assignee.name}
                         </span>
                       </div>

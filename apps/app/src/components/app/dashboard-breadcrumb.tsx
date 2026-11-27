@@ -16,7 +16,6 @@ import {
 import { cn } from "@/lib/utils";
 
 const routeLabels: Record<string, string> = {
-  dashboard: "Início",
   tasks: "Tarefas",
   events: "Cultos e eventos",
   schedules: "Escalas",
@@ -51,13 +50,14 @@ export function DashboardBreadcrumbFallback() {
 }
 
 export function DashboardBreadcrumb() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const segments = pathname.split("/").filter(Boolean);
+  const normalized = segments[0] === "dashboard" ? segments.slice(1) : segments;
   const breadcrumbClassName = cn(
     isMobileNavRoute(pathname) && "hidden lg:block",
   );
 
-  if (segments.length <= 1) {
+  if (normalized.length === 0) {
     return (
       <Breadcrumb className={breadcrumbClassName}>
         <BreadcrumbList>
@@ -69,27 +69,31 @@ export function DashboardBreadcrumb() {
     );
   }
 
-  const items = segments.map((seg, idx) => {
-    const rawHref = "/" + segments.slice(0, idx + 1).join("/");
-    const href = rawHref === "/dashboard" ? "/" : rawHref;
-    const isLast = idx === segments.length - 1;
-    let label = routeLabels[seg];
+  const items = [
+    { href: "/", label: "Início", isLast: false },
+    ...normalized.map((seg, idx) => {
+      const href = "/" + normalized.slice(0, idx + 1).join("/");
+      const isLast = idx === normalized.length - 1;
+      let label = routeLabels[seg];
 
-    if (!label) {
-      const prev = segments[idx - 1];
-      if (prev === "events") {
-        label = "Detalhes do culto";
-      } else if (prev === "departments") {
-        label = "Detalhes da equipe";
-      } else if (prev === "songs") {
-        label = "Detalhes da música";
-      } else {
-        label = "Detalhes";
+      if (!label) {
+        const prev = normalized[idx - 1];
+        if (prev === "events") {
+          label = "Detalhes do culto";
+        } else if (prev === "departments") {
+          label = "Detalhes da equipe";
+        } else if (prev === "songs") {
+          label = "Detalhes da música";
+        } else if (prev === "members") {
+          label = "Detalhes da pessoa";
+        } else {
+          label = "Detalhes";
+        }
       }
-    }
 
-    return { href, label, isLast };
-  });
+      return { href, label, isLast };
+    }),
+  ];
 
   const isNav = isMobileNavRoute(pathname);
   const currentLabel = items[items.length - 1]?.label ?? "Detalhes";

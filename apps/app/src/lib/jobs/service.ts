@@ -9,6 +9,10 @@ import * as schema from "@/db/schema";
 import type { BackgroundJobRecord, JobType } from "./types";
 import { runBackgroundJob } from "./runner";
 import { deleteJobFile } from "./storage";
+import {
+  isWorkflowEnabled,
+  triggerJobsWorkflow,
+} from "@/lib/workflows/client";
 
 export async function createBackgroundJob(params: {
   organizationId: string;
@@ -16,6 +20,8 @@ export async function createBackgroundJob(params: {
   title: string;
   payload?: Record<string, unknown>;
   userId?: string | null;
+  /** Avisos em background disparam o workflow de anúncios separadamente. */
+  autoStart?: boolean;
 }): Promise<BackgroundJobRecord> {
   const jobId = `job_${randomUUID().replace(/-/g, "").slice(0, 16)}`;
 
@@ -33,14 +39,26 @@ export async function createBackgroundJob(params: {
     })
     .returning();
 
-  // Executa em segundo plano após o envio da resposta HTTP
-  after(async () => {
-    try {
-      await runBackgroundJob(jobId);
-    } catch (error) {
-      console.error(`Erro ao rodar tarefa ${jobId} via after():`, error);
+  if (params.autoStart !== false) {
+    const queued = isWorkflowEnabled()
+      ? await triggerJobsWorkflow({
+          jobId,
+          organizationId: params.organizationId,
+        })
+      : null;
+
+    // Sem workflow (ou se o disparo falhou), mantém o fallback durável da
+    // plataforma: executa após a resposta HTTP.
+    if (!queued) {
+      after(async () => {
+        try {
+          await runBackgroundJob(jobId);
+        } catch (error) {
+          console.error(`Erro ao rodar tarefa ${jobId} via after():`, error);
+        }
+      });
     }
-  });
+  }
 
   return record as unknown as BackgroundJobRecord;
 }
@@ -76,7 +94,18 @@ export async function deleteBackgroundJob(
   jobId: string,
   organizationId: string,
 ): Promise<boolean> {
-  await deleteJobFile(jobId);
+  const existing = await db.query.backgroundJob.findFirst({
+    where: and(
+      eq(schema.backgroundJob.id, jobId),
+      eq(schema.backgroundJob.organizationId, organizationId),
+    ),
+    columns: { result: true },
+  });
+  await deleteJobFile(
+    jobId,
+    "pdf",
+    (existing?.result as { fileKey?: string } | null)?.fileKey,
+  );
 
   const res = await db
     .delete(schema.backgroundJob)
@@ -114,9 +143,15 @@ export async function retryBackgroundJob(
     })
     .where(eq(schema.backgroundJob.id, jobId));
 
-  after(async () => {
-    await runBackgroundJob(jobId);
-  });
+  const queued = isWorkflowEnabled()
+    ? await triggerJobsWorkflow({ jobId, organizationId })
+    : null;
+
+  if (!queued) {
+    after(async () => {
+      await runBackgroundJob(jobId);
+    });
+  }
 
   return true;
 }

@@ -498,7 +498,7 @@ export function CalendarHeader({
               aria-label={`Remover departamento ${activeDepartment.name}`}
               className="inline-flex h-7 items-center gap-1.5 rounded-full border border-primary/25 bg-secondary/70 px-2.5 text-xs font-medium text-primary transition-colors hover:bg-secondary"
             >
-              <span className="max-w-[160px] truncate">{activeDepartment.name}</span>
+              <span className="max-w-40 truncate">{activeDepartment.name}</span>
               <XIcon className="size-3.5" aria-hidden="true" />
             </button>
           ) : null}

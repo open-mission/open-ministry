@@ -49,22 +49,23 @@ async function CalendarContent() {
     );
   }
 
-  const [data, departments] = await Promise.all([
+  const [data, departments, canViewSchedules] = await Promise.all([
     getCalendarDataAction(),
     listDepartmentOptions(organization.id),
+    // Checado também no servidor na server action de escalas; aqui apenas
+    // controla a visibilidade do botão "Ver escalas".
+    can("schedules", "read"),
   ]);
   const departmentIds = departments.map((department) => department.id);
 
   // The create action is delegable per department, so an admin check is not
   // enough: a department leader with the grant must see the button too.
-  const canCreateEvent =
-    isAdmin || (await canAnyDepartment("agenda", "createEvent", departmentIds));
-  const canCreateRehearsal =
-    isAdmin ||
-    (await canAnyDepartment("rehearsals", "createRehearsal", departmentIds));
-  // Checado também no servidor na server action de escalas; aqui apenas
-  // controla a visibilidade do botão "Ver escalas".
-  const canViewSchedules = await can("schedules", "read");
+  const [canCreateEvent, canCreateRehearsal] = await Promise.all([
+    isAdmin ? true : canAnyDepartment("agenda", "createEvent", departmentIds),
+    isAdmin
+      ? true
+      : canAnyDepartment("rehearsals", "createRehearsal", departmentIds),
+  ]);
 
   return (
     <div
@@ -97,17 +98,17 @@ function CalendarSkeleton() {
           <Skeleton className="h-6 w-24" />
           <Skeleton className="h-3.5 w-36" />
         </div>
-        <div className="flex items-center gap-2 pr-[84px]">
+        <div className="flex items-center gap-2 pr-21">
           <Skeleton className="size-11 rounded-xl" />
           <Skeleton className="size-11 rounded-xl" />
         </div>
       </div>
-      <Skeleton className="h-[52px] w-full rounded-xl md:hidden" />
+      <Skeleton className="h-13 w-full rounded-xl md:hidden" />
       <div className="hidden md:flex md:items-center md:justify-between md:gap-4">
         <Skeleton className="h-10 w-72" />
         <Skeleton className="h-9 w-48" />
       </div>
-      <Skeleton className="min-h-0 flex-1 rounded-xl md:h-[600px]" />
+      <Skeleton className="min-h-0 flex-1 rounded-xl md:h-150" />
     </div>
   );
 }

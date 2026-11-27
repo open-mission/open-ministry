@@ -22,11 +22,16 @@ export const backgroundJob = pgTable(
     status: text("status").notNull().default("pending"),
     progress: integer("progress").notNull().default(0),
     payload: jsonb("payload").$type<Record<string, unknown>>(),
+    // Apenas o tipo TypeScript é estendido (jsonb não exige migration SQL).
     result: jsonb("result").$type<{
       downloadUrl?: string;
       fileName?: string;
       fileSize?: number;
       error?: string;
+      storageProvider?: "uploadthing" | "local";
+      fileKey?: string;
+      fileUrl?: string;
+      recipients?: number;
     }>(),
     error: text("error"),
     createdById: text("created_by_id").references(() => user.id, {

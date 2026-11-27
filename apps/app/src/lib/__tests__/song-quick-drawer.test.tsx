@@ -31,7 +31,7 @@ mock.module("next/navigation", () => ({
   useRouter: () => ({ push: () => undefined, refresh: () => undefined }),
   redirect: () => undefined,
   notFound: () => undefined,
-  usePathname: () => "/dashboard/songs/song-1",
+  usePathname: () => "/songs/song-1",
   useSearchParams: () => new URLSearchParams(),
 }));
 mock.module("sonner", () => ({

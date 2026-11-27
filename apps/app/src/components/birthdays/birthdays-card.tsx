@@ -42,7 +42,7 @@ export function BirthdaysCard({ entries }: { entries: BirthdayEntry[] }) {
           </CardDescription>
         </div>
         <Button asChild variant="ghost" size="sm" className="h-9 shrink-0 text-xs">
-          <Link href="/dashboard/birthdays">
+          <Link href="/birthdays">
             Ver todos
             <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
           </Link>
@@ -62,7 +62,7 @@ export function BirthdaysCard({ entries }: { entries: BirthdayEntry[] }) {
               </p>
             </div>
             <Button asChild variant="outline" size="sm">
-              <Link href="/dashboard/birthdays">Completar as datas</Link>
+              <Link href="/birthdays">Completar as datas</Link>
             </Button>
           </div>
         ) : (

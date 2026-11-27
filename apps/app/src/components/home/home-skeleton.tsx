@@ -82,7 +82,7 @@ export function HomeSkeleton() {
           <div className="flex flex-col divide-y divide-border/70 rounded-[18px] border border-border/80 bg-muted/65 p-5 dark:bg-card">
             <div className="py-4 first:pt-0">
               <div className="flex items-center gap-3">
-                <Skeleton className="size-[52px] shrink-0 rounded-lg" />
+                <Skeleton className="size-13 shrink-0 rounded-lg" />
                 <div className="flex flex-1 flex-col gap-1.5">
                   <Skeleton className="h-3 w-32" />
                   <Skeleton className="h-4 w-full" />
@@ -131,7 +131,7 @@ export function VerseCardSkeleton({
       className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-3"
       aria-hidden="true"
     >
-      <Skeleton className="size-[52px] shrink-0 rounded-lg" />
+      <Skeleton className="size-13 shrink-0 rounded-lg" />
       <div className="flex flex-1 flex-col gap-1.5">
         <Skeleton className="h-3 w-36" />
         <Skeleton className="h-4 w-full" />

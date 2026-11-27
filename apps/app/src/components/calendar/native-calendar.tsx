@@ -35,7 +35,10 @@ import {
   Music2Icon,
   UsersIcon,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+
+import { prefetchCalendarEventPreview } from "@/components/calendar/calendar-event-preview-query";
 
 import {
   buildFilterOptions,
@@ -428,12 +431,14 @@ function UpcomingItems({
   items,
   timeZone,
   onSelectItem,
+  onPrefetchItem,
   onOpenAgenda,
 }: {
   now: Date | null;
   items: CalendarItem[];
   timeZone: string;
   onSelectItem: (item: CalendarItem) => void;
+  onPrefetchItem?: (item: CalendarItem) => void;
   onOpenAgenda: () => void;
 }) {
   const upcomingItems = useMemo(
@@ -497,6 +502,8 @@ function UpcomingItems({
                 <button
                   type="button"
                   onClick={() => onSelectItem(item)}
+                  onMouseEnter={() => onPrefetchItem?.(item)}
+                  onFocus={() => onPrefetchItem?.(item)}
                   aria-label={`Abrir detalhes de ${item.title}`}
                   className="flex min-h-14 w-full items-start gap-2.5 py-3 text-left outline-none transition-colors hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring"
                 >
@@ -554,6 +561,7 @@ function NativeCalendarSidebar({
   weekStartsOn,
   onDateSelect,
   onItemSelect,
+  onPrefetchItem,
   onOpenAgenda,
 }: {
   currentDate: Date;
@@ -563,10 +571,11 @@ function NativeCalendarSidebar({
   weekStartsOn: 0 | 1;
   onDateSelect: (date: Date) => void;
   onItemSelect: (item: CalendarItem) => void;
+  onPrefetchItem?: (item: CalendarItem) => void;
   onOpenAgenda: () => void;
 }) {
   return (
-    <aside className="hidden w-[232px] shrink-0 flex-col gap-5 border-r border-border/70 pr-4 md:min-h-0 xl:flex">
+    <aside className="hidden w-58 shrink-0 flex-col gap-5 border-r border-border/70 pr-4 md:min-h-0 xl:flex">
       <MiniCalendar
         currentDate={currentDate}
         now={now}
@@ -580,6 +589,7 @@ function NativeCalendarSidebar({
         items={items}
         timeZone={timeZone}
         onSelectItem={onItemSelect}
+        onPrefetchItem={onPrefetchItem}
         onOpenAgenda={onOpenAgenda}
       />
     </aside>
@@ -596,6 +606,11 @@ export function NativeCalendar({
   canViewSchedules = false,
   departments = [],
 }: NativeCalendarProps) {
+  const queryClient = useQueryClient();
+  const handlePrefetchItem = useCallback(
+    (item: CalendarItem) => prefetchCalendarEventPreview(queryClient, item),
+    [queryClient],
+  );
   const now = useCurrentTime();
   const preferences = initialPreferences;
   const [currentDateOverride, setCurrentDateOverride] = useState<Date | null>(null);
@@ -884,6 +899,7 @@ export function NativeCalendar({
               weekStartsOn={preferences.weekStartsOn}
               onDateSelect={handleMiniDateSelect}
               onItemSelect={handleSelectItem}
+              onPrefetchItem={handlePrefetchItem}
               onOpenAgenda={handleOpenAgenda}
             />
 
@@ -897,6 +913,7 @@ export function NativeCalendar({
                   timeZone={preferences.timezone}
                   onSelectDate={handleSelectDate}
                   onSelectItem={handleSelectItem}
+                  onPrefetchItem={handlePrefetchItem}
                 />
               ) : null}
               {viewMode === "week" ? (
@@ -908,6 +925,7 @@ export function NativeCalendar({
                   timeZone={preferences.timezone}
                   onSelectDate={handleSelectDate}
                   onSelectItem={handleSelectItem}
+                  onPrefetchItem={handlePrefetchItem}
                 />
               ) : null}
               {viewMode === "day" ? (
@@ -916,6 +934,7 @@ export function NativeCalendar({
                   items={visibleFilteredItems}
                   timeZone={preferences.timezone}
                   onSelectItem={handleSelectItem}
+                  onPrefetchItem={handlePrefetchItem}
                   onSwitchToMonth={() => setChosenView("month")}
                 />
               ) : null}
@@ -925,6 +944,7 @@ export function NativeCalendar({
                   items={visibleFilteredItems}
                   timeZone={preferences.timezone}
                   onSelectItem={handleSelectItem}
+                  onPrefetchItem={handlePrefetchItem}
                   onToday={handleToday}
                 />
               ) : null}

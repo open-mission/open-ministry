@@ -14,7 +14,8 @@ import {
  * Chave: variável de ambiente `SECRETS_ENCRYPTION_KEY` — qualquer valor não
  * vazio é aceito e normalizado com SHA-256 para 32 bytes; use uma sequência
  * aleatória longa (ex.: `openssl rand -base64 32`). Sem a variável, grava em
- * claro (fail-open, mesmo comportamento atual) — não derruba o fluxo da igreja.
+ * claro apenas fora de produção (dev/testes). Em produção, a ausência da chave
+ * gera erro explícito (fail-closed) para nunca persistir segredos em claro.
  *
  * Formato cifrado: `enc:v1:<iv>:<ciphertext>:<tag>` (base64url). Valores sem o
  * prefixo são considerados legados e passam direto no decrypt — a migração
@@ -33,6 +34,11 @@ function getKey(): Buffer | null {
 export function encryptSecret(plain: string): string {
   const key = getKey();
   if (!key) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "SECRETS_ENCRYPTION_KEY não configurada: segredos não podem ser gravados em texto claro em produção.",
+      );
+    }
     return plain;
   }
 

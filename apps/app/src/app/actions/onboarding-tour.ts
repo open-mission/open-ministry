@@ -97,7 +97,7 @@ export async function saveOnboardingProfileInfoAction(
       telemetryMetrics.count("onboarding.profile_saved", 1);
     }
 
-    revalidatePath("/dashboard", "layout");
+    revalidatePath("/", "layout");
 
     return {
       ok: true,
@@ -136,7 +136,7 @@ export async function completeOnboardingTourAction(): Promise<{ ok: boolean }> {
       userId: session.user.id,
     });
 
-    revalidatePath("/dashboard", "layout");
+    revalidatePath("/", "layout");
     return { ok: true };
   } catch (error) {
     telemetryLogger.error(

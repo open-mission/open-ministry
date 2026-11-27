@@ -33,7 +33,7 @@ export function NextAssignmentCard({
   const event = assignment.schedule.event;
   const parts = eventDateParts(event.startsAt);
   const relativeDay = relativeDayLabel(event.startsAt);
-  const eventHref = `/dashboard/events/${event.id}`;
+  const eventHref = `/events/${event.id}`;
 
   return (
     <HomeSection aria-labelledby="home-next-assignment-title">
@@ -47,7 +47,7 @@ export function NextAssignmentCard({
         <HomeCardContent className="flex flex-col gap-4">
           <Link
             href={eventHref}
-            className="flex min-h-[44px] items-start gap-4 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex min-h-11 items-start gap-4 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <HomeDateBadge day={parts.day} month={parts.monthShort} />
 
@@ -86,15 +86,15 @@ export function NextAssignmentCard({
           </Link>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Button asChild className="min-h-[44px] w-full sm:w-auto">
+            <Button asChild className="min-h-11 w-full sm:w-auto">
               <Link href={eventHref}>Ver minha escala</Link>
             </Button>
             <Button
               asChild
               variant="outline"
-              className="min-h-[44px] w-full sm:w-auto"
+              className="min-h-11 w-full sm:w-auto"
             >
-              <Link href="/dashboard/schedules">
+              <Link href="/schedules">
                 Minhas escalas
                 <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
               </Link>

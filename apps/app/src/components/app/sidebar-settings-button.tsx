@@ -19,7 +19,7 @@ export function SidebarSettingsButton() {
           size="default"
           className="cursor-pointer text-muted-foreground hover:text-foreground"
         >
-          <Link href="/dashboard/settings" prefetch={true}>
+          <Link href="/settings" prefetch={true}>
             <SettingsIcon className="size-4 shrink-0" />
             <span>Configurações</span>
           </Link>

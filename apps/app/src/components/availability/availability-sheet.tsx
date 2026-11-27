@@ -183,7 +183,7 @@ export function AvailabilitySheet({
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="flex max-h-[85dvh] flex-col rounded-t-xl border-x-0 border-b-0 bg-popover p-0">
-          <DrawerHeader className="border-b bg-card/50 px-5 pt-4 pb-3 !text-left">
+          <DrawerHeader className="border-b bg-card/50 px-5 pt-4 pb-3 text-left!">
             <DrawerTitle className="font-heading text-xl leading-snug tracking-tight">
               Disponibilidade do dia a dia
             </DrawerTitle>
@@ -215,7 +215,7 @@ export function AvailabilitySheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex w-full min-w-0 flex-col gap-0 p-0 data-[side=right]:md:!w-1/2 data-[side=right]:md:!max-w-[50vw]"
+        className="flex w-full min-w-0 flex-col gap-0 p-0 data-[side=right]:md:w-1/2! data-[side=right]:md:max-w-[50vw]!"
       >
         <SheetHeader className="space-y-1.5 border-b bg-card/50 px-6 py-4 pr-12 text-left">
           <SheetTitle className="font-heading text-2xl leading-snug tracking-tight text-foreground">

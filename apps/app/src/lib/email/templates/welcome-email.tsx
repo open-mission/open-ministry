@@ -15,7 +15,7 @@ export function WelcomeEmail({
   churchName,
   churchLogo,
   appLogoUrl,
-  dashboardUrl = "https://openministry.app/dashboard",
+  dashboardUrl = "https://openministry.app/",
 }: WelcomeEmailProps) {
   const greeting = name ? `Olá, ${name}!` : "Olá!";
 

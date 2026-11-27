@@ -63,7 +63,7 @@ export function VerseCardActions({
           type="button"
           variant="ghost"
           size="sm"
-          className="h-9 min-h-[44px] gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+          className="h-9 min-h-11 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground"
           onClick={handleCopy}
         >
           {copied ? (
@@ -78,7 +78,7 @@ export function VerseCardActions({
           type="button"
           variant="ghost"
           size="sm"
-          className="h-9 min-h-[44px] gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+          className="h-9 min-h-11 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground"
           onClick={handleShare}
         >
           <Share2Icon className="size-3.5" aria-hidden="true" />
@@ -90,7 +90,7 @@ export function VerseCardActions({
             type="button"
             variant="ghost"
             size="sm"
-            className="h-9 min-h-[44px] gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+            className="h-9 min-h-11 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground"
             onClick={() => setImageOpen(true)}
           >
             <ImageIcon className="size-3.5" aria-hidden="true" />
@@ -113,7 +113,7 @@ export function VerseCardActions({
               type="button"
               variant="outline"
               size="sm"
-              className="min-h-[44px] w-full sm:ml-auto sm:w-auto"
+              className="min-h-11 w-full sm:ml-auto sm:w-auto"
               onClick={handleShare}
             >
               <Share2Icon className="size-3.5 mr-1" aria-hidden="true" />

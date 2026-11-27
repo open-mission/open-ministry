@@ -363,7 +363,7 @@ export function ChurchInfoCard({
   return (
     <div className="space-y-6">
       {/* 1. Identidade Visual */}
-      <Card className="border-primary/20 bg-primary/[0.01]">
+      <Card className="border-primary/20 bg-primary/1">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Badge className="bg-primary text-primary-foreground gap-1 font-normal">
@@ -540,7 +540,7 @@ export function ChurchInfoCard({
                 </p>
                 <div className="pt-2">
                   <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs">
-                    <Link href="/dashboard/members">
+                    <Link href="/members">
                       Gerenciar pessoas
                       <ExternalLinkIcon className="size-3" />
                     </Link>
@@ -560,7 +560,7 @@ export function ChurchInfoCard({
                 </p>
                 <div className="pt-2">
                   <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs">
-                    <Link href="/dashboard/departments">
+                    <Link href="/departments">
                       Gerenciar departamentos
                       <ExternalLinkIcon className="size-3" />
                     </Link>

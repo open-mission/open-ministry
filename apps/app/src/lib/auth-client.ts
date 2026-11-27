@@ -11,6 +11,10 @@ import { createAuthClient } from "better-auth/react";
 import { sentinelClient } from "@better-auth/infra/client";
 
 import { resolveClientIdentifyUrl } from "@/lib/better-auth-infra";
+import {
+  platformAc,
+  platformRoles,
+} from "@/lib/platform/access-control";
 
 // O plugin só é registrado quando o endpoint do Sentinel/identify está
 // configurado; sem ele, requisições de identify seriam feitas sem destino.
@@ -27,7 +31,7 @@ const sentinelIdentifyUrl = resolveClientIdentifyUrl({
 export const authClient = createAuthClient({
   plugins: [
     organizationClient(),
-    adminClient(),
+    adminClient({ ac: platformAc, roles: platformRoles }),
     usernameClient(),
     passkeyClient(),
     multiSessionClient(),

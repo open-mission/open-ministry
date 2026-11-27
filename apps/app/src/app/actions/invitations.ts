@@ -193,8 +193,8 @@ export async function inviteMemberAction(
 
     await cacheInvalidateTags(`org:${orgId}`, `people:${orgId}`);
 
-    revalidatePath("/dashboard");
-    revalidatePath("/dashboard/members");
+    revalidatePath("/");
+    revalidatePath("/members");
 
     sentryLogger.info("Convite emitido com sucesso", {
       organizationId: orgId,
@@ -327,8 +327,8 @@ export async function cancelInvitationAction(
     return { ok: false, error: actionErrorMessage(error) };
   }
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/members");
+  revalidatePath("/");
+  revalidatePath("/members");
 
   return { ok: true };
 }
@@ -375,8 +375,8 @@ export async function resendInvitationAction(
     });
 
     await cacheInvalidateTags(`org:${orgId}`, `people:${orgId}`);
-    revalidatePath("/dashboard");
-    revalidatePath("/dashboard/members");
+    revalidatePath("/");
+    revalidatePath("/members");
 
     return { ok: true };
   } catch (error) {
@@ -438,7 +438,7 @@ export async function acceptInvitationAction(
     return { error: actionErrorMessage(error) };
   }
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/members");
+  revalidatePath("/");
+  revalidatePath("/members");
   redirect("/");
 }

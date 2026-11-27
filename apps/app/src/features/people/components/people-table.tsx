@@ -398,7 +398,7 @@ export function PeopleTable({
                         <TableRow key={person.id} className="group hover:bg-muted/30">
                           <TableCell>
                             <Link
-                              href={`/dashboard/members/${person.id}`}
+                              href={`/members/${person.id}`}
                               prefetch={true}
                               className="flex min-w-56 items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg p-1"
                             >
@@ -543,7 +543,7 @@ export function PeopleTable({
                   >
                     <div className="flex items-start justify-between gap-3">
                       <Link
-                        href={`/dashboard/members/${person.id}`}
+                        href={`/members/${person.id}`}
                         prefetch={true}
                         className="group flex items-start gap-3 flex-1 min-w-0"
                       >

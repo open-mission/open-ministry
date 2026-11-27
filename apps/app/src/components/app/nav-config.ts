@@ -176,37 +176,29 @@ export function isNavItemActive(
   pathname: string,
 ) {
   if (item.href === "/") {
-    return pathname === "/" || pathname === "/dashboard";
+    return pathname === "/";
   }
   if (item.exact) {
-    return pathname === item.href || pathname === `/dashboard${item.href}`;
+    return pathname === item.href;
   }
-  return (
-    pathname === item.href ||
-    pathname.startsWith(`${item.href}/`) ||
-    pathname === `/dashboard${item.href}` ||
-    pathname.startsWith(`/dashboard${item.href}/`)
-  );
+  return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
 export function isMobileNavRoute(pathname: string) {
   return (
     pathname === "/" ||
-    pathname === "/dashboard" ||
-    mobileNavItems.some(
-      (item) =>
-        pathname === item.href ||
-        pathname === `/dashboard${item.href}`,
-    )
+    mobileNavItems.some((item) => pathname === item.href)
   );
 }
 
 export function getParentHref(pathname: string) {
   const segments = pathname.split("/").filter(Boolean);
+  const normalized = segments[0] === "dashboard" ? segments.slice(1) : segments;
 
-  if (segments.length <= 2) {
+  if (normalized.length <= 1) {
     return "/";
   }
 
-  return `/${segments.slice(0, -1).join("/")}`;
+  const parent = `/${normalized.slice(0, -1).join("/")}`;
+  return parent === "/events" ? "/calendar" : parent;
 }

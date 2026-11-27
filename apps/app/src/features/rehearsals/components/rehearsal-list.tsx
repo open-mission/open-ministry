@@ -226,7 +226,7 @@ function RehearsalCard({
     <li className="group rounded-xl border border-border/70 bg-card p-3 transition-colors hover:border-violet-500/40 sm:p-4">
       <div className="flex items-start gap-3">
         <Link
-          href={`/dashboard/events/${rehearsal.id}`}
+          href={`/events/${rehearsal.id}`}
           prefetch={true}
           className="flex min-w-0 flex-1 items-start gap-3 rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
@@ -270,7 +270,7 @@ function RehearsalCard({
                 {visibleTitles.map((title, index) => (
                   <span
                     key={`${title}-${index}`}
-                    className="max-w-[14rem] truncate rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
+                    className="max-w-56 truncate rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
                   >
                     {title}
                   </span>
@@ -370,7 +370,7 @@ export function RehearsalDeleteDialog({
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="p-0" role="alertdialog">
-          <DrawerHeader className="!text-left px-5 pt-4 pb-2">
+          <DrawerHeader className="text-left! px-5 pt-4 pb-2">
             <div className="flex items-start gap-3">
               <span
                 aria-hidden

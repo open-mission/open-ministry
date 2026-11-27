@@ -4,6 +4,12 @@ import { connection } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { loadPersonalCalendarFeed } from "@/features/calendar/services/personal-feed";
+import {
+  checkRateLimit,
+  extractClientIp,
+  rateLimitHeaders,
+  RATE_LIMIT_RULES,
+} from "@/lib/rate-limit";
 
 const NOT_FOUND_HEADERS = {
   "content-type": "text/plain; charset=utf-8",
@@ -22,6 +28,19 @@ export async function GET(
   context: { params: Promise<{ token: string }> },
 ) {
   await connection();
+
+  // Link privado é credencial: limita tentativas por IP antes de tocar o
+  // banco e nunca cacheia a resposta de "muitas requisições".
+  const decision = await checkRateLimit(
+    `calendar-feed:${extractClientIp(request.headers)}`,
+    RATE_LIMIT_RULES.calendarFeed,
+  );
+  if (!decision.allowed) {
+    return new Response("Muitas requisições. Tente novamente em instantes.", {
+      status: 429,
+      headers: { ...NOT_FOUND_HEADERS, ...rateLimitHeaders(decision) },
+    });
+  }
 
   const { token } = await context.params;
 

@@ -53,9 +53,9 @@ export async function toggleDepartmentModuleAction(
       enabled,
     );
 
-    revalidatePath(`/dashboard/departments/${departmentId}`);
-    revalidatePath("/dashboard");
-    revalidatePath("/dashboard/departments");
+    revalidatePath(`/departments/${departmentId}`);
+    revalidatePath("/");
+    revalidatePath("/departments");
 
     return { ok: true };
   } catch (error) {

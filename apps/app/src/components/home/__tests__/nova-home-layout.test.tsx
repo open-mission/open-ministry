@@ -113,11 +113,11 @@ describe("layout da nova home", () => {
     expect(markup).toContain('aria-selected="true"');
     expect(markup).toContain('aria-selected="false"');
     expect(markup).toContain("h-14");
-    expect(markup).toContain("min-h-[44px]");
+    expect(markup).toContain("min-h-11");
     expect(markup).toContain("gap-6 sm:gap-7");
     expect(markup).toContain("ml-3");
     expect(markup).toContain("md:ml-1");
-    expect(markup).toContain("after:h-[3px]");
+    expect(markup).toContain("after:h-0.75");
     expect(markup).toContain("after:w-full");
     expect(markup).not.toContain("after:w-9");
     expect(markup).not.toContain("after:mx-auto");
@@ -244,7 +244,7 @@ describe("header integrado da home", () => {
   });
 
   it("HomeAwareHeader mantém header minimalista sem borda e sem margem extra fora da home", () => {
-    currentPathname = "/dashboard";
+    currentPathname = "/settings";
 
     const markup = renderToStaticMarkup(
       createElement(
@@ -266,13 +266,13 @@ describe("header integrado da home", () => {
   it("HomeAwareHeaderFallback é um header estático, sem pathname e sem conteúdo de loaders", () => {
     currentPathname = "/";
     const onHome = renderToStaticMarkup(createElement(HomeAwareHeaderFallback));
-    currentPathname = "/dashboard";
-    const onDashboard = renderToStaticMarkup(
+    currentPathname = "/settings";
+    const onSettings = renderToStaticMarkup(
       createElement(HomeAwareHeaderFallback),
     );
 
     // O fallback não consulta o pathname: o markup é idêntico em qualquer rota.
-    expect(onDashboard).toBe(onHome);
+    expect(onSettings).toBe(onHome);
     expect(onHome).toContain("<header");
     expect(onHome).toContain("sticky");
     expect(onHome).toContain("border-0");
@@ -325,7 +325,7 @@ describe("header integrado da home", () => {
     expect(onHome).not.toContain("Hoje");
     expect(onHome).not.toContain("Minha Igreja");
 
-    currentPathname = "/dashboard/events";
+    currentPathname = "/events";
     const onEvents = renderToStaticMarkup(
       createElement(
         HeaderCenterSlot,
@@ -336,7 +336,7 @@ describe("header integrado da home", () => {
     expect(onEvents).toContain("lg:hidden");
     expect(onEvents).toContain("BREADCRUMB");
 
-    currentPathname = "/dashboard/calendar";
+    currentPathname = "/calendar";
     const onCalendar = renderToStaticMarkup(
       createElement(
         HeaderCenterSlot,
@@ -370,7 +370,7 @@ describe("header integrado da home", () => {
   });
 
   it("HeaderUserSlot mantém avatar visível no header em todas as rotas (inclusive desktop e agenda)", () => {
-    for (const path of ["/", "/dashboard/events", "/dashboard/calendar"]) {
+    for (const path of ["/", "/events", "/calendar"]) {
       currentPathname = path;
       const markup = renderToStaticMarkup(
         createElement(
@@ -404,7 +404,7 @@ describe("cards da aba Hoje", () => {
       createElement(NextServiceCard, { event }),
     );
 
-    expect(markup).toContain('href="/dashboard/events/event-1"');
+    expect(markup).toContain('href="/events/event-1"');
     expect(markup).toContain("border-primary/30");
     expect(markup).toContain("hover:border-primary/50");
     expect(markup).toContain("Culto de domingo");
@@ -547,7 +547,7 @@ describe("cards da aba Minha Igreja", () => {
     expect(markup).toContain('aria-label="Informações da igreja"');
     expect(markup).not.toContain("<h2");
     expect(markup).toContain(
-      "border-border/70 bg-gradient-to-br from-amber-500/[0.04] via-card to-primary/[0.02]",
+      "border-border/70 bg-linear-to-br from-amber-500/4 via-card to-primary/2",
     );
     expect(markup).toContain("bg-amber-500/10 blur-3xl");
     expect(markup).toContain("border-amber-500/30 bg-amber-500/10");
@@ -576,9 +576,9 @@ describe("cards da aba Minha Igreja", () => {
     expect(markup).toContain('aria-labelledby="home-upcoming-events-title"');
     expect(markup).toContain("1 próximo");
     expect(markup).toContain("Ensaio");
-    expect(markup).toContain('href="/dashboard/events/ev-1"');
+    expect(markup).toContain('href="/events/ev-1"');
     expect(markup).toContain("Detalhes");
-    expect(markup).toContain("min-h-[44px]");
+    expect(markup).toContain("min-h-11");
   });
 
   it("UpcomingEventsCard alterna a bolinha entre primary e chart-2", () => {
@@ -633,7 +633,7 @@ describe("cards da aba Minha Igreja", () => {
       }),
     );
 
-    expect(markup).toContain('href="/dashboard/departments/dep-1"');
+    expect(markup).toContain('href="/departments/dep-1"');
     expect(markup).toContain("grid gap-4 sm:grid-cols-2");
     expect(markup).toContain("ring-1 ring-foreground/10");
     expect(markup).toContain("bg-secondary");
@@ -740,7 +740,7 @@ describe("VerseOfTheDayWidget", () => {
       createElement(VerseOfTheDayWidget, { verse, variant: "folio" }),
     );
 
-    expect(markup).toContain("size-[52px]");
+    expect(markup).toContain("size-13");
     expect(markup).toContain("Ver arte ›");
   });
 
@@ -779,7 +779,7 @@ describe("VerseOfTheDayWidget", () => {
     expect(source).toContain("node.complete && node.naturalWidth > 0");
     expect(source).toContain("opacity-0");
     expect(source).toContain("opacity-100");
-    expect(source).toContain("sm:max-w-[700px]");
+    expect(source).toContain("sm:max-w-175");
     expect(source).toContain("sm:grid-cols-[260px_1fr]");
     expect(source).toContain("sm:aspect-square");
     expect(source).toContain("sm:items-center sm:justify-center");
@@ -798,10 +798,10 @@ describe("NextAssignmentCard", () => {
     expect(markup).toContain("Vocal");
     expect(markup).toContain("Sede");
     expect(markup).toContain("Ver minha escala");
-    expect(markup).toContain('href="/dashboard/events/event-1"');
-    expect(markup).toContain('href="/dashboard/schedules"');
+    expect(markup).toContain('href="/events/event-1"');
+    expect(markup).toContain('href="/schedules"');
     expect(markup).toContain("Minhas escalas");
-    expect(markup).toContain("min-h-[44px]");
+    expect(markup).toContain("min-h-11");
     expect(markup).toContain("w-full sm:w-auto");
     expect(markup).not.toContain("Confirmar presença");
   });
@@ -856,7 +856,7 @@ describe("WeekAttentionCard", () => {
     expect(markup).toContain("Louvor");
     expect(markup).toContain("Culto de domingo");
     expect(markup).toContain("Teclado, Bateria");
-    expect(markup).toContain('href="/dashboard/events/event-1"');
+    expect(markup).toContain('href="/events/event-1"');
     expect(markup).not.toContain("Informe sua disponibilidade");
   });
 
@@ -880,7 +880,7 @@ describe("WeekAttentionCard", () => {
       }),
     );
 
-    expect(markup.match(/href="\/dashboard\/events\/event-/g) ?? []).toHaveLength(
+    expect(markup.match(/href="\/events\/event-/g) ?? []).toHaveLength(
       3,
     );
   });
@@ -920,14 +920,14 @@ describe("TodayHomeLayout", () => {
     const markup = renderLayout();
 
     expect(markup).toContain('class="order-1 lg:hidden">MOBILE_VERSE');
-    expect(markup).toContain('class="order-2 lg:order-none">NEXT_ASSIGNMENT');
-    expect(markup).toContain('class="order-3 lg:order-none">TASKS');
-    expect(markup).toContain('class="order-4 lg:order-none">NOTIFICATIONS');
-    expect(markup).toContain('class="order-5 lg:order-none">ATTENTION');
-    expect(markup).toContain('class="order-6 lg:order-none">NEXT_EVENT');
-    expect(markup).toContain('class="order-7 lg:order-none">BIRTHDAYS');
+    expect(markup).toContain('class="order-2 lg:order-0">NEXT_ASSIGNMENT');
+    expect(markup).toContain('class="order-3 lg:order-0">TASKS');
+    expect(markup).toContain('class="order-4 lg:order-0">NOTIFICATIONS');
+    expect(markup).toContain('class="order-5 lg:order-0">ATTENTION');
+    expect(markup).toContain('class="order-6 lg:order-0">NEXT_EVENT');
+    expect(markup).toContain('class="order-7 lg:order-0">BIRTHDAYS');
     expect(markup).toContain(
-      'class="hidden lg:order-none lg:block">DESKTOP_VERSE',
+      'class="hidden lg:order-0 lg:block">DESKTOP_VERSE',
     );
   });
 
@@ -1057,14 +1057,14 @@ describe("AvailabilityReminderWidget e Departamentos", () => {
       ).text(),
       Bun.file(
         new URL(
-          "../../../app/(app)/dashboard/departments/page.tsx",
+          "../../../app/(app)/departments/page.tsx",
           import.meta.url,
         ),
       ).text(),
     ]);
 
     expect(sheetSource).toContain(
-      "data-[side=right]:md:!w-1/2 data-[side=right]:md:!max-w-[50vw]",
+      "data-[side=right]:md:w-1/2! data-[side=right]:md:max-w-[50vw]!",
     );
     expect(sheetSource).toContain("rounded-t-xl border-x-0 border-b-0 bg-popover");
     expect(actionSource).toContain(
@@ -1126,7 +1126,7 @@ describe("MobileHomeView (Direção A)", () => {
     expect(markup).toContain("dark:bg-[#1a3c28]");
     expect(markup).toContain("text-[#faf7ee]");
     expect(markup).toContain("Abrir minha escala");
-    expect(markup).toContain('href="/dashboard/events/event-1"');
+    expect(markup).toContain('href="/events/event-1"');
     expect(markup).toContain("min-h-11");
     expect(markup).toContain("Louvor · Vocal");
   });
@@ -1326,7 +1326,7 @@ describe("DesktopHomeView (Opção A — Caderno Pastoral)", () => {
     expect(markup).toContain("Disponibilidade pendente · Configurar");
     expect(markup).toContain("Aniversariantes do mês");
     expect(markup).toContain("Maria Silva");
-    expect(markup).toContain('href="/dashboard/birthdays"');
+    expect(markup).toContain('href="/birthdays"');
   });
 
   it("oculta avisos e aniversariantes quando não há dados", () => {

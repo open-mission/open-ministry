@@ -64,7 +64,7 @@ export function ResponsiveDialog({
       <Drawer open={open} onOpenChange={onOpenChange}>
         {trigger ? <DrawerTrigger asChild>{trigger}</DrawerTrigger> : null}
         <DrawerContent className="flex max-h-[85vh] flex-col">
-          <DrawerHeader className="shrink-0 !text-left">
+          <DrawerHeader className="shrink-0 text-left!">
             <DrawerTitle className={titleStyles}>{title}</DrawerTitle>
             {description ? (
               <DrawerDescription>{description}</DrawerDescription>

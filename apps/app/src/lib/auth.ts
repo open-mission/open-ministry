@@ -20,6 +20,10 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { getAppBaseUrl } from "@/lib/app-url";
 import { resolveServerKvUrl } from "@/lib/better-auth-infra";
+import {
+  platformAc,
+  platformRoles,
+} from "@/lib/platform/access-control";
 import { sendTransactionalEmail } from "@/lib/email/service";
 import { getRedisClient, isRedisConfigured } from "@/lib/queue";
 import {
@@ -93,6 +97,15 @@ export const auth = betterAuth({
   baseURL: getAppBaseUrl(),
   trustedOrigins: getTrustedOrigins,
   secret: process.env.BETTER_AUTH_SECRET,
+  // Sessão assinada no cookie por 5 min: evita uma ida ao Neon a cada clique.
+  // Checagens sensíveis (plataforma, impersonação) leem com
+  // `query: { disableCookieCache: true }` para não usar dados stale.
+  session: {
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60,
+    },
+  },
   rateLimit: {
     // Limites por IP; o better-auth habilita o limiter em produção e deixa
     // desligado em desenvolvimento (default). Janela global: default 10s/100.
@@ -264,9 +277,16 @@ export const auth = betterAuth({
       invitationExpiresIn: 60 * 60 * 24 * 7,
     }),
     admin({
-      // A autorização real é feita por igreja nas server actions; os endpoints
-      // HTTP do plugin admin ficam bloqueados em /api/auth/admin/*.
-      allowImpersonatingAdmins: true,
+      // Controle de acesso nativo (better-auth@1.7.18). `super_admin` é o dono
+      // do SaaS; `admin` continua sendo apenas o papel técnico dos admins de
+      // igreja, sem nenhuma permissão de plataforma. Os endpoints HTTP do
+      // plugin admin ficam bloqueados em /api/auth/admin/*.
+      ac: platformAc,
+      roles: platformRoles,
+      adminRoles: ["super_admin", "admin"],
+      defaultRole: "user",
+      // Importante: NÃO configurar `adminUserIds` — ele ignora `adminRoles` e
+      // quebra a impersonação de admins de igreja em `impersonateMemberAction`.
     }),
     username(),
     passkey(),

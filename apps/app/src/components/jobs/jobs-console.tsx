@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   AlertCircleIcon,
@@ -30,38 +35,43 @@ type JobsConsoleProps = {
   initialJobs: BackgroundJobRecord[];
 };
 
+const BACKGROUND_JOBS_QUERY_KEY = ["background-jobs"] as const;
+
+type BackgroundJobsQueryData = {
+  jobs: BackgroundJobRecord[];
+};
+
 export function JobsConsole({ initialJobs }: JobsConsoleProps) {
-  const [jobs, setJobs] = useState<BackgroundJobRecord[]>(initialJobs);
+  const queryClient = useQueryClient();
   const [filter, setFilter] = useState<"all" | "active" | "completed" | "failed">("all");
   const [isPending, startTransition] = useTransition();
 
-  const hasActiveJobs = jobs.some(
-    (j) => j.status === "pending" || j.status === "processing",
-  );
-
-  // Polling reativo enquanto houver tarefas em execução
-  useEffect(() => {
-    if (!hasActiveJobs) return;
-
-    const interval = setInterval(async () => {
-      try {
-        const res = await getBackgroundJobsAction();
-        if (res.ok && res.jobs) {
-          setJobs(res.jobs);
-        }
-      } catch (err) {
-        console.error("Erro ao atualizar tarefas em background:", err);
+  const { data, isFetching, refetch } = useQuery<BackgroundJobsQueryData>({
+    queryKey: BACKGROUND_JOBS_QUERY_KEY,
+    queryFn: async () => {
+      const res = await getBackgroundJobsAction();
+      if (!res.ok) {
+        throw new Error(res.error || "Erro ao carregar tarefas em background.");
       }
-    }, 2500);
+      return { jobs: res.jobs ?? [] };
+    },
+    initialData: { jobs: initialJobs },
+    placeholderData: keepPreviousData,
+    staleTime: 15 * 1000,
+    refetchInterval: (query) =>
+      query.state.data?.jobs?.some(
+        (j) => j.status === "pending" || j.status === "processing",
+      )
+        ? 3000
+        : false,
+  });
 
-    return () => clearInterval(interval);
-  }, [hasActiveJobs]);
+  const jobs = data?.jobs ?? initialJobs;
 
   const handleRefresh = () => {
     startTransition(async () => {
-      const res = await getBackgroundJobsAction();
-      if (res.ok && res.jobs) {
-        setJobs(res.jobs);
+      const result = await refetch();
+      if (!result.error) {
         toast.success("Lista de tarefas atualizada.");
       }
     });
@@ -75,19 +85,31 @@ export function JobsConsole({ initialJobs }: JobsConsoleProps) {
         return;
       }
       toast.success("Tarefa reiniciada na fila!");
-      const refresh = await getBackgroundJobsAction();
-      if (refresh.ok && refresh.jobs) setJobs(refresh.jobs);
+      await queryClient.invalidateQueries({
+        queryKey: BACKGROUND_JOBS_QUERY_KEY,
+      });
     });
   };
 
   const handleDelete = (jobId: string) => {
     startTransition(async () => {
+      const previous = queryClient.getQueryData<BackgroundJobsQueryData>(
+        BACKGROUND_JOBS_QUERY_KEY,
+      );
+      queryClient.setQueryData<BackgroundJobsQueryData>(
+        BACKGROUND_JOBS_QUERY_KEY,
+        (current) => ({
+          jobs: (current?.jobs ?? jobs).filter((j) => j.id !== jobId),
+        }),
+      );
       const res = await deleteBackgroundJobAction(jobId);
       if (res.error) {
+        if (previous) {
+          queryClient.setQueryData(BACKGROUND_JOBS_QUERY_KEY, previous);
+        }
         toast.error(res.error);
         return;
       }
-      setJobs((prev) => prev.filter((j) => j.id !== jobId));
       toast.success("Tarefa removida.");
     });
   };
@@ -124,7 +146,7 @@ export function JobsConsole({ initialJobs }: JobsConsoleProps) {
             <TabsTrigger value="active" className="text-xs gap-1">
               Ativas
               {activeCount > 0 ? (
-                <span className="flex size-4 items-center justify-center rounded-full bg-primary/20 text-[10px] font-bold text-primary">
+                <span className="flex size-4 items-center justify-center rounded-full bg-primary/20 text-[11px] font-bold text-primary">
                   {activeCount}
                 </span>
               ) : null}
@@ -142,11 +164,11 @@ export function JobsConsole({ initialJobs }: JobsConsoleProps) {
           variant="outline"
           size="sm"
           onClick={handleRefresh}
-          disabled={isPending}
+          disabled={isPending || isFetching}
           className="gap-1.5 h-9 shrink-0 self-end sm:self-auto"
         >
           <RefreshCwIcon
-            className={`size-3.5 ${isPending ? "animate-spin" : ""}`}
+            className={`size-3.5 ${isPending || isFetching ? "animate-spin" : ""}`}
           />
           <span>Atualizar</span>
         </Button>

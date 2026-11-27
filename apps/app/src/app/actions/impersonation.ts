@@ -2,14 +2,51 @@
 
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getOrganizationContext } from "@/lib/organizations";
-import { getSession } from "@/lib/session";
+import { isBootstrapSuperAdminEmail, isSuperAdminRole } from "@/lib/platform/super-admin-emails";
+/**
+ * Expira o cookieCache (`session_data`) para que o próximo request reconstrua
+ * a sessão a partir do banco com o novo session_token. Não chamamos getSession
+ * depois de mutar a sessão: os headers da requisição ainda trazem o token
+ * antigo e gravariam a sessão anterior no cookie da resposta.
+ */
+async function clearSessionCookieCache(): Promise<void> {
+  const cookieStore = await cookies();
+  const names = new Set<string>([
+    "better-auth.session_data",
+    "__Secure-better-auth.session_data",
+  ]);
+
+  for (const cookie of cookieStore.getAll()) {
+    if (
+      cookie.name.includes("session_data") ||
+      cookie.name.endsWith(".session_data")
+    ) {
+      names.add(cookie.name);
+    }
+  }
+
+  for (const name of names) {
+    cookieStore.set({
+      name,
+      value: "",
+      path: "/",
+      maxAge: 0,
+      httpOnly: true,
+      sameSite: "lax",
+      // Navegadores ignoram Set-Cookie de __Secure-*/__Host-* sem Secure.
+      ...(name.startsWith("__Secure-") || name.startsWith("__Host-")
+        ? { secure: true }
+        : {}),
+    });
+  }
+}
 
 export type ImpersonationActionResult = {
   ok: boolean;
@@ -21,6 +58,18 @@ export async function impersonateMemberAction(
 ): Promise<ImpersonationActionResult> {
   if (!userId) {
     return { ok: false, error: "Pessoa inválida." };
+  }
+
+  // Leitura fresca: o cookieCache pode estar defasado em até 5 minutos.
+  const currentSession = await auth.api.getSession({
+    headers: await headers(),
+    query: { disableCookieCache: true },
+  });
+  if (currentSession?.session.impersonatedBy) {
+    return {
+      ok: false,
+      error: "Não é possível entrar como outra pessoa durante uma impersonação.",
+    };
   }
 
   const context = await getOrganizationContext();
@@ -55,10 +104,27 @@ export async function impersonateMemberAction(
     };
   }
 
+  // Defesa em profundidade: nunca impersonar operadores da plataforma, mesmo
+  // que sejam membros da igreja ativa.
+  const target = await db.query.user.findFirst({
+    where: eq(schema.user.id, userId),
+    columns: { role: true, email: true },
+  });
+  if (
+    isSuperAdminRole(target?.role) ||
+    isBootstrapSuperAdminEmail(target?.email)
+  ) {
+    return {
+      ok: false,
+      error: "Esta pessoa não pode ser acessada por impersonação.",
+    };
+  }
+
   try {
+    const requestHeaders = await headers();
     const impersonation = await auth.api.impersonateUser({
       body: { userId },
-      headers: await headers(),
+      headers: requestHeaders,
     });
 
     // Mantém a igreja ativa do administrador mesmo quando a pessoa vista
@@ -74,6 +140,10 @@ export async function impersonateMemberAction(
         error,
       );
     }
+
+    // impersonateUser já trocou o session_token; expiramos o session_data
+    // antigo para não reconstruir o cache com a sessão do administrador.
+    await clearSessionCookieCache();
   } catch (error) {
     console.error("Erro ao acessar como membro", error);
     return {
@@ -82,21 +152,28 @@ export async function impersonateMemberAction(
     };
   }
 
-  revalidatePath("/dashboard");
+  revalidatePath("/");
   redirect("/");
 }
 
 export async function stopImpersonatingAction(): Promise<ImpersonationActionResult> {
-  const session = await getSession();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+    query: { disableCookieCache: true },
+  });
 
   if (!session?.session.impersonatedBy) {
     return { ok: false, error: "Você não está vendo como outra pessoa." };
   }
 
   try {
+    const requestHeaders = await headers();
     await auth.api.stopImpersonating({
-      headers: await headers(),
+      headers: requestHeaders,
     });
+    // stopImpersonating restaura o session_token do admin; o session_data da
+    // sessão impersonada precisa ser descartado para não vazar para o admin.
+    await clearSessionCookieCache();
   } catch (error) {
     console.error("Erro ao sair da visualização como membro", error);
     return {
@@ -105,7 +182,7 @@ export async function stopImpersonatingAction(): Promise<ImpersonationActionResu
     };
   }
 
-  revalidatePath("/dashboard");
+  revalidatePath("/");
 
   return { ok: true };
 }

@@ -109,7 +109,7 @@ export function ThemeToggle() {
                 }}
                 className={cn(
                   "flex min-h-14 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors active:bg-muted/60",
-                  selected ? "bg-primary/[0.06]" : "hover:bg-muted/50",
+                  selected ? "bg-primary/6" : "hover:bg-muted/50",
                 )}
               >
                 <span

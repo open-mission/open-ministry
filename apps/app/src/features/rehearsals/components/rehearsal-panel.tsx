@@ -411,7 +411,7 @@ export function RehearsalPanel({
         onOpenChange={setDeleteOpen}
         canDelete={canDelete}
         onDeleted={() =>
-          router.push(`/dashboard/departments/${departmentId}`)
+          router.push(`/departments/${departmentId}`)
         }
       />
     </div>

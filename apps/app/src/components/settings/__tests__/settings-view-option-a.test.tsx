@@ -82,12 +82,14 @@ function buildProps(overrides: Partial<SettingsViewProps> = {}): SettingsViewPro
     ],
     peopleCount: 248,
     departmentsCount: 8,
-    evolutionSettings: {
-      id: "evo-1",
-      apiUrl: "https://evo.example.com",
-      apiKey: "masked",
-      instanceName: "igreja-esperanca",
-      webhookUrl: "https://openministry.online/api/webhooks/evolution",
+    churchWhatsapp: {
+      state: "connected",
+      organizationId: "org-1",
+      instanceName: "om-igreja-esperanca",
+      connectionStatus: "connected",
+      connectedPhone: "+55 11 99812-3400",
+      connectedProfileName: "Secretaria Esperança",
+      lastError: null,
       isActive: true,
     },
     messageTemplates: [
@@ -149,7 +151,7 @@ describe("SettingsView — Opção A (Faixa Superior + Minha Conta / Igreja)", (
     );
 
     expect(markup).toContain("min-h-11");
-    expect(markup).toContain("min-h-[54px]");
+    expect(markup).toContain("min-h-13.5");
     expect(markup).toContain("Preferências");
     expect(markup).toContain("Segurança &amp; Sistema");
     expect(markup).toContain("1 link ativo");
@@ -183,7 +185,7 @@ describe("SettingsView — Opção A (Faixa Superior + Minha Conta / Igreja)", (
         buildProps({
           role: "member",
           isAdmin: false,
-          evolutionSettings: null,
+          churchWhatsapp: null,
           messageTemplates: [],
           initialScope: "church",
         }),
@@ -194,7 +196,7 @@ describe("SettingsView — Opção A (Faixa Superior + Minha Conta / Igreja)", (
     expect(memberMarkup).not.toContain("Módulos &amp; Permissões");
   });
 
-  it("unifica os links do app para abrir /dashboard/settings como página dedicada", async () => {
+  it("unifica os links do app para abrir /settings como página dedicada", async () => {
     const [navUser, drawer, mobileMenu, modalProvider] = await Promise.all([
       Bun.file(
         new URL("../../app/nav-user.tsx", import.meta.url),
@@ -210,10 +212,10 @@ describe("SettingsView — Opção A (Faixa Superior + Minha Conta / Igreja)", (
       ).text(),
     ]);
 
-    expect(navUser).toContain('href="/dashboard/settings"');
-    expect(drawer).toContain('href="/dashboard/settings"');
-    expect(mobileMenu).toContain('href="/dashboard/settings"');
-    expect(modalProvider).toContain('router.push("/dashboard/settings")');
+    expect(navUser).toContain('href="/settings"');
+    expect(drawer).toContain('href="/settings"');
+    expect(mobileMenu).toContain('href="/settings"');
+    expect(modalProvider).toContain('router.push("/settings")');
     expect(modalProvider).not.toContain("Configurações do Sistema");
   });
 });

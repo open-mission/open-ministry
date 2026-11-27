@@ -3,14 +3,16 @@ import { connection } from "next/server";
 import { UserMenuDrawer } from "@/components/app/user-menu-drawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getOrganizationContext } from "@/lib/organizations";
+import { getSuperAdminSession } from "@/lib/platform/auth";
 import { getSession } from "@/lib/session";
 
 export async function UserMenuLoader() {
   await connection();
 
-  const [session, orgContext] = await Promise.all([
+  const [session, orgContext, superAdminSession] = await Promise.all([
     getSession(),
     getOrganizationContext(),
+    getSuperAdminSession(),
   ]);
 
   if (!session?.user) {
@@ -26,6 +28,7 @@ export async function UserMenuLoader() {
       }}
       role={orgContext?.role ?? "member"}
       organizationName={orgContext?.organization.name}
+      isSuperAdmin={Boolean(superAdminSession)}
     />
   );
 }

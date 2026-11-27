@@ -53,7 +53,7 @@ export function FeaturedServiceCard({
           </div>
           {isAdmin ? (
             <Button asChild variant="outline" size="sm" className="mt-2">
-              <Link href="/dashboard/events" prefetch={true}>
+              <Link href="/calendar" prefetch={true}>
                 Ver todos os cultos
                 <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
               </Link>
@@ -227,7 +227,7 @@ export function FeaturedServiceCard({
               size="sm"
               className="h-10 flex-1 sm:h-9 sm:flex-initial"
             >
-              <Link href={`/dashboard/events/${event.id}?tab=teams`} prefetch={true}>
+              <Link href={`/events/${event.id}?tab=teams`} prefetch={true}>
                 Ver escalas
               </Link>
             </Button>
@@ -236,7 +236,7 @@ export function FeaturedServiceCard({
               size="sm"
               className="h-10 flex-1 sm:h-9 sm:flex-initial"
             >
-              <Link href={`/dashboard/events/${event.id}`} prefetch={true}>
+              <Link href={`/events/${event.id}`} prefetch={true}>
                 Ver cronograma
                 <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
               </Link>

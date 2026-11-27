@@ -332,7 +332,7 @@ export function TasksView({
         if (res.data.task) {
           setTasks((prev) => [res.data.task!, ...prev]);
         } else {
-          router.refresh();
+          startQuickTransition(() => router.refresh());
         }
         toast.success("Tarefa adicionada.");
       } else {
@@ -383,7 +383,7 @@ export function TasksView({
         <Button
           type="button"
           onClick={() => handleNewTask("todo")}
-          className="min-h-[44px] gap-1.5 self-start shadow-xs sm:min-h-[38px] sm:self-auto"
+          className="min-h-11 gap-1.5 self-start shadow-xs sm:min-h-9.5 sm:self-auto"
         >
           <PlusIcon className="size-4" />
           Nova tarefa
@@ -409,14 +409,14 @@ export function TasksView({
                 : "Adicionar tarefa rápida para mim..."
             }
             aria-label="Título da tarefa rápida"
-            className="min-h-[44px] bg-card pl-10"
+            className="min-h-11 bg-card pl-10"
           />
         </div>
         <Button
           type="submit"
           variant="secondary"
           disabled={!quickTitle.trim() || isQuickPending}
-          className="min-h-[44px] shrink-0 sm:px-5"
+          className="min-h-11 shrink-0 sm:px-5"
         >
           {isQuickPending ? (
             <>
@@ -472,7 +472,7 @@ export function TasksView({
               size="sm"
               aria-pressed={viewMode === "list"}
               onClick={() => handleChangeViewMode("list")}
-              className="min-h-[38px] gap-1.5 px-3 text-xs sm:min-h-[32px]"
+              className="min-h-9.5 gap-1.5 px-3 text-xs sm:min-h-8"
             >
               <ListIcon className="size-3.5" />
               <span>Lista</span>
@@ -483,7 +483,7 @@ export function TasksView({
               size="sm"
               aria-pressed={viewMode === "kanban"}
               onClick={() => handleChangeViewMode("kanban")}
-              className="min-h-[38px] gap-1.5 px-3 text-xs sm:min-h-[32px]"
+              className="min-h-9.5 gap-1.5 px-3 text-xs sm:min-h-8"
             >
               <KanbanIcon className="size-3.5" />
               <span>Quadro</span>
@@ -494,7 +494,7 @@ export function TasksView({
               size="sm"
               aria-pressed={viewMode === "table"}
               onClick={() => handleChangeViewMode("table")}
-              className="min-h-[38px] gap-1.5 px-3 text-xs sm:min-h-[32px]"
+              className="min-h-9.5 gap-1.5 px-3 text-xs sm:min-h-8"
             >
               <TableIcon className="size-3.5" />
               <span>Tabela</span>
@@ -512,7 +512,7 @@ export function TasksView({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               aria-label="Buscar tarefas"
-              className="min-h-[44px] bg-card pl-9 sm:min-h-[38px]"
+              className="min-h-11 bg-card pl-9 sm:min-h-9.5"
             />
           </div>
 
@@ -521,7 +521,7 @@ export function TasksView({
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
               aria-label="Filtrar por situação"
-              className="min-h-[44px] w-full bg-card text-xs sm:min-h-[38px] sm:w-auto"
+              className="min-h-11 w-full bg-card text-xs sm:min-h-9.5 sm:w-auto"
             >
               <option value="active">Situação: Ativas</option>
               <option value="completed">Situação: Concluídas</option>
@@ -537,7 +537,7 @@ export function TasksView({
                   value={selectedDeptId}
                   onChange={(e) => setSelectedDeptId(e.target.value)}
                   aria-label="Filtrar por departamento"
-                  className="min-h-[44px] w-full bg-card text-xs sm:min-h-[38px] sm:w-auto"
+                  className="min-h-11 w-full bg-card text-xs sm:min-h-9.5 sm:w-auto"
                 >
                   <option value="all">Todos departamentos</option>
                   {departments.map((d) => (
@@ -574,7 +574,7 @@ export function TasksView({
                 type="button"
                 variant="outline"
                 onClick={handleClearFilters}
-                className="min-h-[44px] sm:min-h-[36px]"
+                className="min-h-11 sm:min-h-9"
               >
                 Limpar filtros
               </Button>
@@ -582,7 +582,7 @@ export function TasksView({
             <Button
               type="button"
               onClick={() => handleNewTask("todo")}
-              className="min-h-[44px] gap-1.5 sm:min-h-[36px]"
+              className="min-h-11 gap-1.5 sm:min-h-9"
             >
               <PlusIcon className="size-4" />
               Criar tarefa
@@ -639,7 +639,7 @@ export function TasksView({
             });
           }
           if ((count ?? 1) > 1 || !savedTask) {
-            router.refresh();
+            startQuickTransition(() => router.refresh());
           }
         }}
         taskToEdit={taskToEdit}

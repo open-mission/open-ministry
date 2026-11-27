@@ -79,7 +79,7 @@ export function BibleView({
                 <BibleReader.Toolbar border="bottom" />
               </div>
 
-              <CardContent className="p-4 sm:p-8 min-h-[500px]">
+              <CardContent className="p-4 sm:p-8 min-h-125">
                 <BibleReader.Content />
               </CardContent>
             </BibleReader.Root>

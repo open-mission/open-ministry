@@ -48,7 +48,7 @@ export function AboutCard() {
   return (
     <div className="space-y-6">
       {/* Hero Card */}
-      <Card className="overflow-hidden border-primary/20 bg-gradient-to-b from-primary/[0.04] to-transparent">
+      <Card className="overflow-hidden border-primary/20 bg-linear-to-b from-primary/4 to-transparent">
         <CardHeader className="pb-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gte, inArray } from "drizzle-orm";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
@@ -77,7 +77,7 @@ async function sendPromptToUser(
   const pushResult = await sendWebPushToUser(userId, {
     title: "Como você está hoje? ☀️",
     body: "Compartilhe com a liderança como está o seu coração no Felicitômetro.",
-    url: "/dashboard",
+    url: "/",
   });
 
   if (pushResult.sentCount > 0) {
@@ -137,31 +137,38 @@ export async function POST(req: Request) {
           },
         },
       },
+      limit: 500,
     });
 
+    // Uma única consulta para todas as organizações (antes havia uma por
+    // organização dentro do loop). Índice composto permite buscar em lote.
+    const orgIds = orgs.map((organization) => organization.id);
+    const todayStart = new Date(`${today}T00:00:00-03:00`);
+    const answeredRows = orgIds.length
+      ? await db
+          .select({
+            organizationId: schema.personMood.organizationId,
+            userId: schema.personMood.userId,
+          })
+          .from(schema.personMood)
+          .where(
+            and(
+              inArray(schema.personMood.organizationId, orgIds),
+              gte(schema.personMood.createdAt, todayStart),
+            ),
+          )
+      : [];
+    const answeredKeys = new Set(
+      answeredRows
+        .filter((row) => Boolean(row.userId))
+        .map((row) => `${row.organizationId}:${row.userId}`),
+    );
+
     for (const org of orgs) {
-      // Pessoas que já responderam hoje na organização
-      const answeredToday = await db.query.personMood.findMany({
-        where: and(
-          eq(schema.personMood.organizationId, org.id),
-          eq(schema.personMood.date, today),
-        ),
-        columns: {
-          personId: true,
-          userId: true,
-        },
-      });
-
-      const answeredUserIds = new Set(
-        answeredToday
-          .map((m) => m.userId)
-          .filter((id): id is string => Boolean(id)),
-      );
-
       // Usuários da organização que ainda NÃO responderam hoje
       const pendingUsers = org.members
         .map((m) => m.user)
-        .filter((u) => Boolean(u?.id) && !answeredUserIds.has(u.id));
+        .filter((u) => Boolean(u?.id) && !answeredKeys.has(`${org.id}:${u.id}`));
 
       if (pendingUsers.length === 0) continue;
 

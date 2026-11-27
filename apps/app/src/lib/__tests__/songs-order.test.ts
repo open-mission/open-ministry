@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { getTableConfig } from "drizzle-orm/pg-core";
 
-import { song } from "@/db/schema/songs";
+import { song } from "@/db/schema";
 import * as songsOrder from "@/lib/songs-order";
 
 type MoveSongId = (

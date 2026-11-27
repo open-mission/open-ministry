@@ -204,7 +204,7 @@ describe("MobileMenu — variante A+C (Explorar)", () => {
     const markup = renderMenu();
 
     expect(markup).toContain(
-      "z-[60] h-[95dvh] max-h-[95dvh] data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[95dvh] gap-0 overflow-hidden border-x-0 border-b-0 p-0",
+      "z-60 h-[95dvh] max-h-[95dvh] data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[95dvh] gap-0 overflow-hidden border-x-0 border-b-0 p-0",
     );
     expect(markup).toContain(
       'data-drawer-header="true" class="relative z-10 shrink-0 border-b border-border/60 bg-popover',
@@ -267,7 +267,7 @@ describe("MobileMenu — variante A+C (Explorar)", () => {
 
     const peopleCard = anchorFor(markup, "Pessoas");
     expect(peopleCard).toContain('aria-current="page"');
-    expect(peopleCard).toContain("bg-primary/[0.06]");
+    expect(peopleCard).toContain("bg-primary/6");
 
     const bibleCard = anchorFor(markup, "Bíblia");
     expect(bibleCard).not.toContain('aria-current="page"');
@@ -364,7 +364,7 @@ describe("MobileMenu — variante A+C (Explorar)", () => {
     );
 
     expect(homeMarkup).toContain("lg:hidden");
-    expect(homeMarkup).toContain("size-[34px]");
+    expect(homeMarkup).toContain("size-8.5");
     expect(homeMarkup).toContain("Igreja Esperança Central");
     expect(homeMarkup).toContain("Boa tarde, Maria");
     expect(homeMarkup).toContain("bg-[#1e472f]");

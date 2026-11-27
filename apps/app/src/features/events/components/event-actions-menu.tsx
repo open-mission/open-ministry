@@ -85,7 +85,7 @@ export function EventActionsMenu({
 
           <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
             <DrawerContent className="p-0">
-              <DrawerHeader className="border-b px-5 pt-4 pb-3 !text-left text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+              <DrawerHeader className="border-b px-5 pt-4 pb-3 text-left! text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
                 <DrawerTitle className="font-heading text-base font-bold truncate">
                   {event.title}
                 </DrawerTitle>

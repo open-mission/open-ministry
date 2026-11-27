@@ -71,8 +71,18 @@ export const organizationNotificationChannel = pgTable(
     apiUrl: text("api_url"),
     apiKey: text("api_key"),
     instanceName: text("instance_name"),
+    /** Token individual da instância, cifrado em repouso (encryptSecret). */
+    instanceToken: text("instance_token"),
     webhookSecret: text("webhook_secret"),
     isActive: boolean("is_active").default(true).notNull(),
+    /** Estado do pareamento informado pelo webhook connection.update. */
+    connectionStatus: text("connection_status").default("disconnected").notNull(),
+    connectedPhone: text("connected_phone"),
+    connectedProfileName: text("connected_profile_name"),
+    lastConnectedAt: timestamp("last_connected_at"),
+    lastError: text("last_error"),
+    /** false = registro legado com URL/chave próprios da igreja. */
+    managedByPlatform: boolean("managed_by_platform").default(true).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

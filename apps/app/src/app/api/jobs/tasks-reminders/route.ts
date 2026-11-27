@@ -156,7 +156,7 @@ async function handleTasksReminders(req: Request) {
           body:
             task.description ||
             "Você tem uma tarefa agendada no OpenMinistry.",
-          href: `/dashboard/tasks?tab=${tab}&taskId=${encodeURIComponent(task.id)}`,
+          href: `/tasks?tab=${tab}&taskId=${encodeURIComponent(task.id)}`,
           userId: targetUserId,
           personId: task.assigneePersonId ?? undefined,
           channels: ["in_app", "push"],

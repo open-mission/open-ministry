@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import type { listPeople } from "@/lib/people";
 
@@ -30,6 +30,7 @@ export function usePeopleQuery(options?: { initialData?: PeopleApiResponse }) {
     queryKey: peopleKeys.lists(),
     queryFn: fetchPeople,
     initialData: options?.initialData,
-    staleTime: 60 * 1000,
+    placeholderData: keepPreviousData,
+    staleTime: 2 * 60 * 1000,
   });
 }

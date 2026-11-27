@@ -6,6 +6,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { requireApiOrganizationContext } from "@/lib/api-auth";
 import { songInputSchema } from "@/lib/music/songs-schema";
+import { readPaginationParams } from "@/lib/pagination";
 import { can } from "@/lib/permissions/service";
 import {
   getNextSongSortOrder,
@@ -32,9 +33,10 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = request.nextUrl;
     const search = searchParams.get("search") ?? undefined;
+    const pagination = readPaginationParams(searchParams, 500, 1000);
 
     const [songs, collections] = await Promise.all([
-      listSongs(organization.id, search),
+      listSongs(organization.id, search, pagination),
       listSongCollections(organization.id),
     ]);
 
@@ -106,8 +108,8 @@ export async function POST(request: NextRequest) {
 
     await invalidateSongCache(organization.id);
 
-    revalidatePath("/dashboard/songs");
-    revalidatePath("/dashboard/events");
+    revalidatePath("/songs");
+    revalidatePath("/events");
 
     return Response.json({ song: inserted }, { status: 201 });
   } catch (error) {
