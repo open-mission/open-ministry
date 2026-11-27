@@ -82,12 +82,14 @@ function buildProps(overrides: Partial<SettingsViewProps> = {}): SettingsViewPro
     ],
     peopleCount: 248,
     departmentsCount: 8,
-    evolutionSettings: {
-      id: "evo-1",
-      apiUrl: "https://evo.example.com",
-      apiKey: "masked",
-      instanceName: "igreja-esperanca",
-      webhookUrl: "https://openministry.online/api/webhooks/evolution",
+    churchWhatsapp: {
+      state: "connected",
+      organizationId: "org-1",
+      instanceName: "om-igreja-esperanca",
+      connectionStatus: "connected",
+      connectedPhone: "+55 11 99812-3400",
+      connectedProfileName: "Secretaria Esperança",
+      lastError: null,
       isActive: true,
     },
     messageTemplates: [
@@ -183,7 +185,7 @@ describe("SettingsView — Opção A (Faixa Superior + Minha Conta / Igreja)", (
         buildProps({
           role: "member",
           isAdmin: false,
-          evolutionSettings: null,
+          churchWhatsapp: null,
           messageTemplates: [],
           initialScope: "church",
         }),

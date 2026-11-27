@@ -88,7 +88,8 @@ function buildCsp(options: BuildOptions): string {
     "img-src 'self' data: blob: https:",
     "font-src 'self'",
     `connect-src ${uniqueConnectSources.join(" ")}`,
-    "worker-src 'self'",
+    // blob: é usado pelo worker instanciado pelo Sentry.replayIntegration.
+    "worker-src 'self' blob:",
     "manifest-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",

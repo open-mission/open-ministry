@@ -13,6 +13,7 @@ import {
   MoonIcon,
   RocketIcon,
   SettingsIcon,
+  ShieldCheckIcon,
   SparklesIcon,
   SunIcon,
   UserIcon,
@@ -78,12 +79,14 @@ export type UserMenuDrawerProps = {
   };
   role: string;
   organizationName?: string;
+  isSuperAdmin?: boolean;
 };
 
 export function UserMenuDrawer({
   user,
   role,
   organizationName,
+  isSuperAdmin = false,
 }: UserMenuDrawerProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [desktopMenuOpen, setDesktopMenuOpen] = useState(false);
@@ -294,6 +297,19 @@ export function UserMenuDrawer({
                   Notificações
                 </Link>
               </DropdownMenuItem>
+              {isSuperAdmin ? (
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/platform"
+                    prefetch={false}
+                    onClick={() => setDesktopMenuOpen(false)}
+                    className="min-h-8 cursor-pointer"
+                  >
+                    <ShieldCheckIcon className="size-4 text-primary" />
+                    Painel da Plataforma
+                  </Link>
+                </DropdownMenuItem>
+              ) : null}
               <DropdownMenuItem
                 onClick={() => {
                   setDesktopMenuOpen(false);
@@ -517,6 +533,28 @@ export function UserMenuDrawer({
                   </div>
                   <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40" />
                 </Link>
+
+                {isSuperAdmin ? (
+                  <Link
+                    href="/platform"
+                    prefetch={false}
+                    onClick={() => setDrawerOpen(false)}
+                    className="flex min-h-12 items-center gap-3 border-t border-border/50 px-3.5 py-2.5 transition-colors hover:bg-muted/50 active:bg-muted/70"
+                  >
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <ShieldCheckIcon className="size-4.5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground">
+                        Painel da Plataforma
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Operação global, planos e integrações
+                      </p>
+                    </div>
+                    <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40" />
+                  </Link>
+                ) : null}
 
                 <button
                   type="button"

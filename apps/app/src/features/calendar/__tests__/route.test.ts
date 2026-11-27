@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import * as nextServer from "next/server";
 
+mock.module("@/lib/rate-limit", () => ({
+  checkRateLimit: async () => ({ allowed: true, retryAfter: null }),
+  extractClientIp: () => "unknown",
+  rateLimitHeaders: () => ({}),
+  RATE_LIMIT_RULES: {},
+}));
+
 mock.module("next/server", () => ({
   ...nextServer,
   connection: async () => undefined,

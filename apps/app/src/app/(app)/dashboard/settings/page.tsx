@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
+import { getChurchWhatsAppViewAction } from "@/app/actions/church-whatsapp";
 import { getOrganizationPermissionSettingsAction } from "@/app/actions/permissions";
 import {
-  getEvolutionSettingsAction,
   getUserPasskeysAction,
   getUserSessionsAction,
 } from "@/app/actions/settings";
@@ -68,9 +68,9 @@ async function SettingsContent({
     loadCalendarFeedViews(),
   ]);
 
-  const [evolutionSettings, messageTemplates, permissionSettingsResult] = isAdmin
+  const [churchWhatsapp, messageTemplates, permissionSettingsResult] = isAdmin
     ? await Promise.all([
-        getEvolutionSettingsAction(),
+        getChurchWhatsAppViewAction().catch(() => null),
         getOrganizationMessageTemplates(organization.id),
         getOrganizationPermissionSettingsAction(),
       ])
@@ -112,7 +112,7 @@ async function SettingsContent({
       initialPasskeys={initialPasskeys}
       peopleCount={people.length}
       departmentsCount={departments.length}
-      evolutionSettings={evolutionSettings}
+      churchWhatsapp={churchWhatsapp}
       messageTemplates={messageTemplates}
       permissionSettings={permissionSettings}
       initialScope={initialScope}

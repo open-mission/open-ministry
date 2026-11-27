@@ -23,6 +23,20 @@ import {
   type EmailTemplateKey,
 } from "@/lib/email/templates";
 import { getOrganizationContext } from "@/lib/organizations";
+import { checkRateLimit, RATE_LIMIT_RULES } from "@/lib/rate-limit";
+
+async function checkEmailDispatchLimit(
+  organizationId: string,
+  userId: string,
+  action: string,
+): Promise<string | null> {
+  const decision = await checkRateLimit(
+    `email:${action}:${organizationId}:${userId}`,
+    RATE_LIMIT_RULES.emailDispatch,
+  );
+  if (decision.allowed) return null;
+  return `Muitos envios de email. Aguarde ${decision.retryAfter ?? 60} segundos.`;
+}
 
 export type EmailLogItem = {
   id: string;
@@ -153,6 +167,13 @@ export async function resendEmailAction(
   if (!context) {
     return { ok: false, error: "Sessão inválida." };
   }
+
+  const rateLimitError = await checkEmailDispatchLimit(
+    context.organization.id,
+    context.session.user.id,
+    "resend",
+  );
+  if (rateLimitError) return { ok: false, error: rateLimitError };
 
   const isLeader = !context.isAdmin
     ? await isUserLeaderInAnyDepartment(
@@ -346,6 +367,13 @@ export async function sendTestEmailAction(
   if (!context) {
     return { ok: false, error: "Sessão inválida." };
   }
+
+  const rateLimitError = await checkEmailDispatchLimit(
+    context.organization.id,
+    context.session.user.id,
+    "test",
+  );
+  if (rateLimitError) return { ok: false, error: rateLimitError };
 
   const isLeader = !context.isAdmin
     ? await isUserLeaderInAnyDepartment(

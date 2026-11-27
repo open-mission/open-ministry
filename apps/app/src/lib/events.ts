@@ -3,6 +3,7 @@ import { and, eq, gte, ne } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { remember } from "@/lib/cache";
+import { clampPageLimit, paginationCacheSuffix } from "@/lib/pagination";
 
 export * from "./recurrence-utils";
 
@@ -46,9 +47,10 @@ export async function listUpcomingEvents(organizationId: string, limit = 12) {
   );
 }
 
-export async function listEvents(organizationId: string) {
+export async function listEvents(organizationId: string, requestedLimit = 500) {
+  const limit = clampPageLimit(requestedLimit, 500, 500);
   return remember(
-    `org:${organizationId}:events:all`,
+    `org:${organizationId}:events:all${paginationCacheSuffix(limit, 0, 500)}`,
     60,
     async () => {
       return db.query.event.findMany({
@@ -79,7 +81,7 @@ export async function listEvents(organizationId: string) {
           },
         },
         orderBy: (events, { asc }) => [asc(events.startsAt)],
-        limit: 500,
+        limit,
       });
     },
     [`events:${organizationId}`],

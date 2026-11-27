@@ -102,12 +102,40 @@ async function main() {
       );
       const users = await app.query(`select id, email from "user"`);
       const invitations = await app.query(`select id from invitation`);
+
+      // Tabelas internas da plataforma são default-deny para app_authenticated:
+      // nenhum GRANT e nenhuma policy. Qualquer leitura deve falhar.
+      const platformDenied = {};
+      for (const table of [
+        "platform_integration_config",
+        "platform_audit_log",
+        "platform_plan",
+        "organization_platform_settings",
+      ]) {
+        try {
+          await app.query(`select * from public.${table} limit 1`);
+          platformDenied[table] = false;
+        } catch {
+          platformDenied[table] = true;
+        }
+      }
+      let notificationChannelDenied = false;
+      try {
+        await app.query(
+          `select * from public.organization_notification_channel limit 1`,
+        );
+      } catch {
+        notificationChannelDenied = true;
+      }
+
       await app.query("rollback");
       return {
         organizations: organizations.rows,
         members: members.rows,
         users: users.rows,
         invitations: invitations.rows.length,
+        platformDenied,
+        notificationChannelDenied,
       };
     }
 
@@ -145,6 +173,29 @@ async function main() {
       assert.equal(viewUnknown.organizations.length, 0);
       assert.equal(viewUnknown.members.length, 0);
       assert.equal(viewUnknown.users.length, 0);
+
+      for (const table of [
+        "platform_integration_config",
+        "platform_audit_log",
+        "platform_plan",
+        "organization_platform_settings",
+      ]) {
+        assert.equal(
+          viewA.platformDenied[table],
+          true,
+          `app_authenticated must not read ${table}`,
+        );
+        assert.equal(
+          viewB.platformDenied[table],
+          true,
+          `app_authenticated must not read ${table}`,
+        );
+      }
+      assert.equal(
+        viewA.notificationChannelDenied,
+        true,
+        "app_authenticated must not read organization_notification_channel secrets",
+      );
 
       console.log("RLS smoke test passed");
       console.log({

@@ -7,6 +7,7 @@ import { sendNotification, setVapidDetails } from "web-push";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { sentryLogger } from "@/lib/telemetry/sentry";
+import { getPlatformWebPushConfig } from "@/lib/platform/integrations-config";
 
 export function getVapidConfig() {
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() || "";
@@ -108,11 +109,49 @@ export type SendPushOptions = {
   icon?: string;
 };
 
+export type EffectivePushConfig = {
+  publicKey: string;
+  privateKey: string;
+  subject: string;
+  oneSignalAppId: string;
+  oneSignalRestApiKey: string;
+  isEnabled: boolean;
+};
+
+/** Configuração efetiva: .env + banco, resolvida fora de qualquer cache. */
+export async function getEffectivePushConfig(): Promise<EffectivePushConfig> {
+  const platform = await getPlatformWebPushConfig();
+  const env = getVapidConfig();
+  return {
+    publicKey: platform.vapidPublicKey || env.publicKey,
+    privateKey: platform.vapidPrivateKey || env.privateKey,
+    subject: platform.vapidSubject || env.subject,
+    oneSignalAppId:
+      platform.oneSignalAppId ||
+      process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID?.trim() ||
+      "",
+    oneSignalRestApiKey: platform.oneSignalRestApiKey || "",
+    isEnabled: platform.isEnabled,
+  };
+}
+
 export async function sendWebPushToUser(
   userId: string,
   options: SendPushOptions,
 ): Promise<{ sentCount: number; errors: number }> {
-  const config = getVapidConfig();
+  const resolved = await getEffectivePushConfig();
+  const config = {
+    publicKey: resolved.publicKey,
+    privateKey: resolved.privateKey,
+    subject: resolved.subject,
+  };
+
+  if (!resolved.isEnabled) {
+    console.warn("[push-notifications] Web Push desativado pela plataforma.", {
+      userId,
+    });
+    return { sentCount: 0, errors: 0 };
+  }
 
   if (!isVapidConfigured(config)) {
     sentryLogger.error(
@@ -123,7 +162,7 @@ export async function sendWebPushToUser(
       "[push-notifications] Chaves VAPID não configuradas; tentando OneSignal.",
       { userId },
     );
-    await maybeSendOneSignal(userId, options);
+    await maybeSendOneSignal(userId, options, resolved);
     return { sentCount: 0, errors: 1 };
   }
 
@@ -135,7 +174,7 @@ export async function sendWebPushToUser(
 
   if (subscriptions.length === 0) {
     // Optionally check if OneSignal is configured
-    await maybeSendOneSignal(userId, options);
+    await maybeSendOneSignal(userId, options, resolved);
     return { sentCount: 0, errors: 0 };
   }
 
@@ -195,9 +234,15 @@ export async function sendWebPushToUser(
 async function maybeSendOneSignal(
   userId: string,
   options: SendPushOptions,
+  resolved?: EffectivePushConfig,
 ) {
-  const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
-  const apiKey = process.env.ONESIGNAL_REST_API_KEY;
+  const config = resolved ?? (await getEffectivePushConfig());
+  if (!config.isEnabled) return;
+
+  const appId =
+    config.oneSignalAppId || process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID?.trim();
+  const apiKey =
+    config.oneSignalRestApiKey || process.env.ONESIGNAL_REST_API_KEY?.trim();
 
   if (!appId || !apiKey) {
     return;

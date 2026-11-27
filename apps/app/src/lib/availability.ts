@@ -1,4 +1,4 @@
-import type { AvailabilityPeriod } from "@/db/schema/people";
+import type { AvailabilityPeriod } from "@/db/schema";
 
 export type DayAvailability = {
   dayOfWeek: number; // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado

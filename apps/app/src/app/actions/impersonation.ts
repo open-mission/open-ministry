@@ -9,6 +9,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getOrganizationContext } from "@/lib/organizations";
+import { isBootstrapSuperAdminEmail, isSuperAdminRole } from "@/lib/platform/super-admin-emails";
 import { getSession } from "@/lib/session";
 
 export type ImpersonationActionResult = {
@@ -21,6 +22,14 @@ export async function impersonateMemberAction(
 ): Promise<ImpersonationActionResult> {
   if (!userId) {
     return { ok: false, error: "Pessoa inválida." };
+  }
+
+  const currentSession = await getSession();
+  if (currentSession?.session.impersonatedBy) {
+    return {
+      ok: false,
+      error: "Não é possível entrar como outra pessoa durante uma impersonação.",
+    };
   }
 
   const context = await getOrganizationContext();
@@ -52,6 +61,22 @@ export async function impersonateMemberAction(
     return {
       ok: false,
       error: "Essa pessoa não faz parte da igreja ativa.",
+    };
+  }
+
+  // Defesa em profundidade: nunca impersonar operadores da plataforma, mesmo
+  // que sejam membros da igreja ativa.
+  const target = await db.query.user.findFirst({
+    where: eq(schema.user.id, userId),
+    columns: { role: true, email: true },
+  });
+  if (
+    isSuperAdminRole(target?.role) ||
+    isBootstrapSuperAdminEmail(target?.email)
+  ) {
+    return {
+      ok: false,
+      error: "Esta pessoa não pode ser acessada por impersonação.",
     };
   }
 
