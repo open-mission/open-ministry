@@ -39,7 +39,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     title: "OpenMinistry Mais Rápido e Organizado",
     subtitle:
       "As telas abrem mais depressa, os avisos e arquivos pesados continuam sendo preparados em segundo plano e a navegação ficou mais simples.",
-    releaseDate: "26 de novembro de 2026",
+    releaseDate: "27 de novembro de 2026",
     isLatest: true,
     moduleGroups: [
       {

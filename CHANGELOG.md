@@ -6,7 +6,7 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
-## [1.11.0] - 2026-11-26
+## [1.11.0] - 2026-11-27
 
 ### Adicionado
 - **Área da plataforma:** espaço exclusivo para administradores gerenciarem igrejas, planos e integrações, com segredos sempre mascarados.
