@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   CheckIcon,
   CopyIcon,
   FileTextIcon,
+  Maximize2Icon,
+  PauseIcon,
+  PlayIcon,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -24,11 +27,21 @@ import {
 import { cn } from "@/lib/utils";
 import { SectionBadge } from "./section-badge";
 import { SectionNoteStrip } from "./section-note-strip";
+import { SectionJumpPills } from "./viewer/section-jump-pills";
+import { StageShell } from "./viewer/stage-shell";
+import {
+  AUTO_SCROLL_SPEEDS,
+  useAutoScroll,
+  type AutoScrollSpeed,
+} from "./viewer/use-auto-scroll";
 
 type SongLyricsViewerProps = {
   lyrics: string;
   /** Notas por seção, chaveadas por `SongSection.key` (ex.: `refrao#1`). */
   sectionNotes?: SongSectionNoteMap;
+  songTitle?: string;
+  songArtist?: string;
+  hideFullscreenButton?: boolean;
 };
 
 const LYRICS_FONT_CLASS: Record<ViewerFontSize, string> = {
@@ -38,7 +51,13 @@ const LYRICS_FONT_CLASS: Record<ViewerFontSize, string> = {
   xl: "text-lg leading-loose sm:text-xl",
 };
 
-/** O "A" central cresce junto com a preferência, mostrando o tamanho ativo. */
+const STAGE_LYRICS_FONT_CLASS: Record<ViewerFontSize, string> = {
+  sm: "text-base leading-relaxed",
+  base: "text-lg leading-relaxed",
+  lg: "text-xl leading-loose",
+  xl: "text-2xl leading-loose",
+};
+
 const LYRICS_FONT_PREVIEW_CLASS: Record<ViewerFontSize, string> = {
   sm: "text-xs",
   base: "text-sm",
@@ -49,15 +68,21 @@ const LYRICS_FONT_PREVIEW_CLASS: Record<ViewerFontSize, string> = {
 export function SongLyricsViewer({
   lyrics,
   sectionNotes,
+  songTitle,
+  songArtist,
+  hideFullscreenButton = false,
 }: SongLyricsViewerProps) {
   const [copied, setCopied] = useState(false);
   const [fontSize, setFontSize] = useState<ViewerFontSize>("base");
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [autoScrollActive, setAutoScrollActive] = useState(false);
+  const [autoScrollSpeed, setAutoScrollSpeed] = useState<AutoScrollSpeed>(1);
 
-  const sections = useMemo(() => {
-    return parseSongSections(lyrics);
-  }, [lyrics]);
+  const stageScrollRef = useRef<HTMLDivElement>(null);
+  const inlineRootRef = useRef<HTMLDivElement>(null);
 
-  // Preferência do vocalista persiste entre músicas e sessões.
+  const sections = useMemo(() => parseSongSections(lyrics), [lyrics]);
+
   useEffect(() => {
     const stored = readStoredPreference(
       LYRICS_FONT_SIZE_KEY,
@@ -65,7 +90,6 @@ export function SongLyricsViewer({
     );
     if (!stored) return;
 
-    // Aplica após o primeiro paint para não bloquear a renderização inicial.
     const frame = window.requestAnimationFrame(() => setFontSize(stored));
     return () => window.cancelAnimationFrame(frame);
   }, []);
@@ -74,9 +98,41 @@ export function SongLyricsViewer({
     persistPreference(LYRICS_FONT_SIZE_KEY, fontSize);
   }, [fontSize]);
 
+  useAutoScroll({
+    active: autoScrollActive,
+    speed: autoScrollSpeed,
+    containerRef: isFullscreen ? stageScrollRef : undefined,
+  });
+
   const moveFontSize = (direction: 1 | -1) => {
     setFontSize((current) => shiftFontSize(current, direction));
   };
+
+  const closeFullscreen = useCallback(() => {
+    setIsFullscreen(false);
+    setAutoScrollActive(false);
+  }, []);
+
+  const cycleAutoScrollSpeed = useCallback(() => {
+    setAutoScrollSpeed((current) => {
+      const idx = AUTO_SCROLL_SPEEDS.indexOf(current);
+      return AUTO_SCROLL_SPEEDS[(idx + 1) % AUTO_SCROLL_SPEEDS.length] ?? 1;
+    });
+  }, []);
+
+  const handleJumpSection = useCallback(
+    (sectionKey: string) => {
+      const scope = isFullscreen
+        ? stageScrollRef.current
+        : inlineRootRef.current;
+      const escaped = sectionKey.replace(/"/g, '\\"');
+      const target = scope?.querySelector<HTMLElement>(
+        `[data-section-key="${escaped}"]`,
+      );
+      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+    },
+    [isFullscreen],
+  );
 
   const handleCopy = async () => {
     try {
@@ -103,70 +159,97 @@ export function SongLyricsViewer({
 
   const fontIndex = VIEWER_FONT_SIZES.indexOf(fontSize);
 
-  return (
-    <div className="space-y-3">
-      {/* TOOLBAR DA LETRA COMPACTA */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-border/70 bg-card px-3 py-2 text-xs shadow-2xs">
-        <div className="flex min-w-0 items-center gap-2">
-          <FileTextIcon className="size-3.5 shrink-0 text-primary" />
-          <span className="font-medium text-foreground">
-            Letra Estruturada
-          </span>
-          <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-            {sections.length} {sections.length === 1 ? "seção" : "seções"}
-          </span>
-        </div>
+  const toolbar = (
+    <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+      <div className="flex min-w-0 items-center gap-2">
+        <FileTextIcon className="size-3.5 shrink-0 text-primary" />
+        <span className="font-medium text-foreground">Letra</span>
+        <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+          {sections.length} {sections.length === 1 ? "seção" : "seções"}
+        </span>
+      </div>
 
-        <div className="flex items-center gap-2">
-          <div
-            className="inline-flex items-center rounded-lg border border-border/80 bg-muted/40 p-0.5"
-            role="group"
-            aria-label="Tamanho da letra"
+      <div className="flex flex-wrap items-center gap-1.5">
+        <div
+          className="inline-flex items-center rounded-lg border border-border/80 bg-muted/40 p-0.5"
+          role="group"
+          aria-label="Tamanho da letra"
+        >
+          <button
+            type="button"
+            onClick={() => moveFontSize(-1)}
+            disabled={fontIndex === 0}
+            aria-label="Diminuir tamanho da letra"
+            title="Diminuir letra"
+            className="flex size-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40 sm:size-8"
           >
-            <button
-              type="button"
-              onClick={() => moveFontSize(-1)}
-              disabled={fontIndex === 0}
-              aria-label="Diminuir tamanho da letra"
-              title="Diminuir letra"
-              className="flex size-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40 sm:size-8"
-            >
-              <span className="text-[11px] font-semibold tracking-tight">
-                A−
-              </span>
-            </button>
-            <span
-              aria-hidden="true"
-              className={cn(
-                "flex min-w-7 items-baseline justify-center font-heading font-semibold text-foreground",
-                LYRICS_FONT_PREVIEW_CLASS[fontSize],
-              )}
-            >
-              A
-            </span>
-            <button
-              type="button"
-              onClick={() => moveFontSize(1)}
-              disabled={fontIndex === VIEWER_FONT_SIZES.length - 1}
-              aria-label="Aumentar tamanho da letra"
-              title="Aumentar letra"
-              className="flex size-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40 sm:size-8"
-            >
-              <span className="text-[11px] font-semibold tracking-tight">
-                A+
-              </span>
-            </button>
-          </div>
-          <span className="sr-only" aria-live="polite">
-            Tamanho da letra: {VIEWER_FONT_SIZE_LABELS[fontSize]}
+            <span className="text-[11px] font-semibold tracking-tight">A−</span>
+          </button>
+          <span
+            aria-hidden="true"
+            className={cn(
+              "flex min-w-7 items-baseline justify-center font-heading font-semibold text-foreground",
+              LYRICS_FONT_PREVIEW_CLASS[fontSize],
+            )}
+          >
+            A
           </span>
+          <button
+            type="button"
+            onClick={() => moveFontSize(1)}
+            disabled={fontIndex === VIEWER_FONT_SIZES.length - 1}
+            aria-label="Aumentar tamanho da letra"
+            title="Aumentar letra"
+            className="flex size-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40 sm:size-8"
+          >
+            <span className="text-[11px] font-semibold tracking-tight">A+</span>
+          </button>
+        </div>
+        <span className="sr-only" aria-live="polite">
+          Tamanho da letra: {VIEWER_FONT_SIZE_LABELS[fontSize]}
+        </span>
 
+        <Button
+          type="button"
+          variant={autoScrollActive ? "secondary" : "outline"}
+          size="sm"
+          onClick={() => setAutoScrollActive((active) => !active)}
+          aria-pressed={autoScrollActive}
+          aria-label={
+            autoScrollActive
+              ? "Pausar rolagem automática"
+              : "Iniciar rolagem automática"
+          }
+          className="min-h-11 gap-1.5 px-2.5 text-xs font-medium shadow-2xs sm:min-h-9"
+        >
+          {autoScrollActive ? (
+            <PauseIcon className="size-3.5 text-primary" />
+          ) : (
+            <PlayIcon className="size-3.5" />
+          )}
+          <span className="hidden sm:inline">Auto-scroll</span>
+        </Button>
+
+        {autoScrollActive ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={cycleAutoScrollSpeed}
+            aria-label={`Velocidade da rolagem: ${autoScrollSpeed}x`}
+            className="min-h-11 px-2 font-mono text-[11px] font-semibold text-primary sm:min-h-9"
+          >
+            {autoScrollSpeed}×
+          </Button>
+        ) : null}
+
+        {!isFullscreen ? (
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={handleCopy}
-            className="h-11 gap-1.5 px-3 text-xs font-medium shadow-2xs sm:h-8"
+            className="min-h-11 gap-1.5 px-2.5 text-xs font-medium shadow-2xs sm:min-h-9"
           >
             {copied ? (
               <CheckIcon className="size-3.5 text-emerald-600" />
@@ -174,18 +257,37 @@ export function SongLyricsViewer({
               <CopyIcon className="size-3.5" />
             )}
             <span className="hidden sm:inline">
-              {copied ? "Copiado!" : "Copiar letra"}
+              {copied ? "Copiado!" : "Copiar"}
             </span>
           </Button>
-        </div>
-      </div>
+        ) : null}
 
-      {/* SEÇÕES EM CARDS MINIMALISTAS (MENOS PADDING E MARGEM) */}
+        {!isFullscreen && !hideFullscreenButton ? (
+          <Button
+            type="button"
+            variant="default"
+            size="sm"
+            onClick={() => setIsFullscreen(true)}
+            aria-label="Abrir letra no modo palco"
+            className="min-h-11 gap-1.5 px-3 text-xs font-semibold shadow-2xs sm:min-h-9"
+          >
+            <Maximize2Icon className="size-3.5" />
+            <span>Modo Palco</span>
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  const renderSections = (stageMode: boolean) => (
+    <div className="space-y-3">
+      <SectionJumpPills sections={sections} onJump={handleJumpSection} />
       <div className="space-y-2.5">
         {sections.map((section) => (
           <Card
             key={section.id}
-            className="overflow-hidden border border-border/70 bg-card shadow-2xs transition-colors hover:border-border"
+            data-section-key={section.key}
+            className="scroll-mt-4 overflow-hidden border border-border/70 bg-card shadow-2xs transition-colors hover:border-border"
           >
             <CardHeader className="flex flex-row items-center justify-between border-b border-border/50 bg-muted/15 px-3.5 py-1.5 sm:px-4 sm:py-2">
               <SectionBadge type={section.type} name={section.name} />
@@ -203,7 +305,9 @@ export function SongLyricsViewer({
               <div
                 className={cn(
                   "whitespace-pre-line font-sans text-foreground",
-                  LYRICS_FONT_CLASS[fontSize],
+                  stageMode
+                    ? STAGE_LYRICS_FONT_CLASS[fontSize]
+                    : LYRICS_FONT_CLASS[fontSize],
                 )}
               >
                 {section.content}
@@ -212,6 +316,27 @@ export function SongLyricsViewer({
           </Card>
         ))}
       </div>
+    </div>
+  );
+
+  return (
+    <div ref={inlineRootRef} className="space-y-3">
+      <div className="rounded-xl border border-border/70 bg-card px-3 py-2 shadow-2xs">
+        {toolbar}
+      </div>
+
+      {renderSections(false)}
+
+      <StageShell
+        open={isFullscreen}
+        onClose={closeFullscreen}
+        title={songTitle ? `${songTitle} · Letra` : "Letra no Modo Palco"}
+        artist={songArtist}
+        toolbar={toolbar}
+        contentRef={stageScrollRef}
+      >
+        <div className="mx-auto max-w-3xl pb-16">{renderSections(true)}</div>
+      </StageShell>
     </div>
   );
 }

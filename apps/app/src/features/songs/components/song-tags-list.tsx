@@ -59,7 +59,7 @@ export function SongTagsList({ tags, maxVisible = 3 }: SongTagsListProps) {
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="inline-flex h-5 items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 text-[10px] font-semibold text-primary transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex h-5 items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             title="Ver todas as tags desta música"
           >
             +{hiddenCount}
