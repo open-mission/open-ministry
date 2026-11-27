@@ -5,6 +5,9 @@ type CookieInput = {
   value: string;
   path?: string;
   maxAge?: number;
+  httpOnly?: boolean;
+  sameSite?: "lax" | "strict" | "none";
+  secure?: boolean;
 };
 
 let currentSession: {
@@ -22,6 +25,7 @@ const existingCookies = [
   { name: "better-auth.session_data", value: "cache" },
   { name: "better-auth.session_data.0", value: "chunk" },
   { name: "__Secure-better-auth.session_data", value: "secure-cache" },
+  { name: "__Secure-better-auth.session_data.0", value: "secure-chunk" },
   { name: "theme", value: "dark" },
 ];
 
@@ -110,6 +114,7 @@ function expectSessionDataExpired() {
     "better-auth.session_data",
     "better-auth.session_data.0",
     "__Secure-better-auth.session_data",
+    "__Secure-better-auth.session_data.0",
   ]) {
     expect(names).toContain(name);
   }
@@ -119,6 +124,27 @@ function expectSessionDataExpired() {
     expect(cookie.value).toBe("");
     expect(cookie.path).toBe("/");
     expect(cookie.maxAge).toBe(0);
+    expect(cookie.httpOnly).toBe(true);
+    expect(cookie.sameSite).toBe("lax");
+  }
+
+  // RFC 6265bis: __Secure-*/__Host-* sem Secure são ignorados pelo navegador.
+  const secureCookies = cookieWrites.filter((cookie) =>
+    cookie.name.startsWith("__Secure-"),
+  );
+  expect(secureCookies).toHaveLength(2);
+  for (const cookie of secureCookies) {
+    expect(cookie.secure).toBe(true);
+    expect(cookie.httpOnly).toBe(true);
+    expect(cookie.sameSite).toBe("lax");
+    expect(cookie.path).toBe("/");
+    expect(cookie.maxAge).toBe(0);
+  }
+
+  for (const cookie of cookieWrites.filter(
+    (item) => !item.name.startsWith("__Secure-") && !item.name.startsWith("__Host-"),
+  )) {
+    expect(cookie.secure).toBeUndefined();
   }
 }
 

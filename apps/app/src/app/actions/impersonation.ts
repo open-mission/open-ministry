@@ -33,7 +33,18 @@ async function clearSessionCookieCache(): Promise<void> {
   }
 
   for (const name of names) {
-    cookieStore.set({ name, value: "", path: "/", maxAge: 0 });
+    cookieStore.set({
+      name,
+      value: "",
+      path: "/",
+      maxAge: 0,
+      httpOnly: true,
+      sameSite: "lax",
+      // Navegadores ignoram Set-Cookie de __Secure-*/__Host-* sem Secure.
+      ...(name.startsWith("__Secure-") || name.startsWith("__Host-")
+        ? { secure: true }
+        : {}),
+    });
   }
 }
 
