@@ -77,7 +77,7 @@ export function HomeAwareHeader({ children }: { children: ReactNode }) {
       <header
         className={cn(
           getHeaderClassName(isHome, scrolled),
-          "max-md:pointer-events-none max-md:-mb-[calc(3.5rem+env(safe-area-inset-top))] max-md:justify-end max-md:bg-transparent max-md:pt-[max(0.75rem,env(safe-area-inset-top))] max-md:backdrop-blur-none",
+          "max-md:pointer-events-none max-md:relative max-md:top-auto max-md:-mb-[calc(3.5rem+env(safe-area-inset-top))] max-md:justify-end max-md:bg-transparent max-md:pt-[max(0.75rem,env(safe-area-inset-top))] max-md:backdrop-blur-none",
         )}
       >
         {children}
