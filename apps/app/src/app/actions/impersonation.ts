@@ -81,9 +81,10 @@ export async function impersonateMemberAction(
   }
 
   try {
+    const requestHeaders = await headers();
     const impersonation = await auth.api.impersonateUser({
       body: { userId },
-      headers: await headers(),
+      headers: requestHeaders,
     });
 
     // Mantém a igreja ativa do administrador mesmo quando a pessoa vista
@@ -99,6 +100,14 @@ export async function impersonateMemberAction(
         error,
       );
     }
+
+    // O impersonateUser grava o cookieCache com a sessão recém-criada; como a
+    // igreja ativa foi alterada direto no banco, reemitimos o cookie com uma
+    // leitura sem cache para não deixar a sessão stale.
+    await auth.api.getSession({
+      headers: requestHeaders,
+      query: { disableCookieCache: true },
+    });
   } catch (error) {
     console.error("Erro ao acessar como membro", error);
     return {
@@ -119,8 +128,15 @@ export async function stopImpersonatingAction(): Promise<ImpersonationActionResu
   }
 
   try {
+    const requestHeaders = await headers();
     await auth.api.stopImpersonating({
-      headers: await headers(),
+      headers: requestHeaders,
+    });
+    // O stopImpersonating já troca o cookie da sessão; forçamos uma leitura
+    // sem cache para garantir que o cookieCache não mantenha a impersonação.
+    await auth.api.getSession({
+      headers: requestHeaders,
+      query: { disableCookieCache: true },
     });
   } catch (error) {
     console.error("Erro ao sair da visualização como membro", error);

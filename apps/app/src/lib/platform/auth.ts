@@ -59,9 +59,12 @@ export async function requireSuperAdmin(
   permission: PlatformPermission = "access",
 ): Promise<SessionLike> {
   const requestHeaders = await headers();
-  let session = (await auth.api.getSession({ headers: requestHeaders })) as
-    | SessionLike
-    | null;
+  // Nunca confiar em papel/permissão vindos do cookieCache: o bootstrap e a
+  // revogação de super_admin precisam refletir o banco imediatamente.
+  let session = (await auth.api.getSession({
+    headers: requestHeaders,
+    query: { disableCookieCache: true },
+  })) as SessionLike | null;
 
   if (!session) {
     throw new PlatformAccessError("Faça login para acessar a plataforma.");
@@ -99,7 +102,10 @@ export async function requireSuperAdmin(
       console.error("Falha ao auditar bootstrap de Super Admin", error);
     }
 
-    session = (await auth.api.getSession({ headers: requestHeaders })) as SessionLike;
+    session = (await auth.api.getSession({
+      headers: requestHeaders,
+      query: { disableCookieCache: true },
+    })) as SessionLike;
   }
 
   if (!isSuperAdminRole(session.user.role)) {

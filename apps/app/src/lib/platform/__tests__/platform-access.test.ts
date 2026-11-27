@@ -13,6 +13,7 @@ let currentSession: {
 } | null = null;
 let permissionResult = { success: true };
 const setRoleCalls: { userId: string; role: string }[] = [];
+const getSessionCalls: Array<{ query?: { disableCookieCache?: boolean } }> = [];
 
 mock.module("next/headers", () => ({
   headers: async () => new Headers(),
@@ -21,7 +22,10 @@ mock.module("next/headers", () => ({
 mock.module("@/lib/auth", () => ({
   auth: {
     api: {
-      getSession: async () => currentSession,
+      getSession: async (args: { query?: { disableCookieCache?: boolean } }) => {
+        getSessionCalls.push(args ?? {});
+        return currentSession;
+      },
       setRole: async ({ body }: { body: { userId: string; role: string } }) => {
         setRoleCalls.push(body);
         currentSession = currentSession
@@ -171,6 +175,12 @@ describe("requireSuperAdmin", () => {
     // set-role): promove direto no banco e registra auditoria.
     expect(setRoleCalls).toEqual([]);
     expect(roleUpdates).toEqual([{ id: "user-1", role: "super_admin" }]);
+    // Tanto a leitura inicial quanto a releitura após o bootstrap ignoram o
+    // cookieCache, senão o papel antigo continuaria valendo por 5 minutos.
+    expect(getSessionCalls.length).toBeGreaterThanOrEqual(2);
+    for (const call of getSessionCalls) {
+      expect(call.query?.disableCookieCache).toBe(true);
+    }
     process.env.PLATFORM_SUPER_ADMIN_EMAILS = "";
   });
 

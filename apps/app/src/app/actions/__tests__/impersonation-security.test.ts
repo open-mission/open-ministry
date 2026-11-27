@@ -15,6 +15,9 @@ let currentSession: {
 } | null = { user: { id: "admin-1" }, session: {} };
 let targetUser: { role: string | null; email: string } | null = null;
 let impersonateCalls = 0;
+let stopImpersonatingCalls = 0;
+const sessionRefreshCalls: Array<{ query?: { disableCookieCache?: boolean } }> =
+  [];
 
 mock.module("@/lib/session", () => ({
   getSession: async () => currentSession,
@@ -52,11 +55,20 @@ mock.module("@/lib/auth", () => ({
         impersonateCalls += 1;
         return { session: { id: "session-1" } };
       },
+      stopImpersonating: async () => {
+        stopImpersonatingCalls += 1;
+        currentSession = { user: { id: "admin-1" }, session: {} };
+        return { success: true };
+      },
+      getSession: async (args: { query?: { disableCookieCache?: boolean } }) => {
+        sessionRefreshCalls.push(args ?? {});
+        return currentSession;
+      },
     },
   },
 }));
 
-const { impersonateMemberAction } = await import(
+const { impersonateMemberAction, stopImpersonatingAction } = await import(
   "@/app/actions/impersonation"
 );
 
@@ -99,6 +111,7 @@ describe("impersonação segura", () => {
   it("permite impersonar membro comum", async () => {
     currentSession = { user: { id: "admin-1" }, session: {} };
     impersonateCalls = 0;
+    sessionRefreshCalls.length = 0;
     targetUser = { role: "user", email: "membro@igreja.test" };
     let redirected = false;
     try {
@@ -108,5 +121,25 @@ describe("impersonação segura", () => {
     }
     expect(impersonateCalls).toBe(1);
     expect(redirected).toBe(true);
+    // Após alterar activeOrganizationId direto no banco, o cookieCache precisa
+    // ser reemitido com uma leitura sem cache.
+    expect(sessionRefreshCalls).toHaveLength(1);
+    expect(sessionRefreshCalls[0].query?.disableCookieCache).toBe(true);
+  });
+
+  it("reemite a sessão sem cookieCache ao sair da impersonação", async () => {
+    currentSession = {
+      user: { id: "user-2" },
+      session: { impersonatedBy: "admin-1" },
+    };
+    stopImpersonatingCalls = 0;
+    sessionRefreshCalls.length = 0;
+
+    const result = await stopImpersonatingAction();
+
+    expect(result).toEqual({ ok: true });
+    expect(stopImpersonatingCalls).toBe(1);
+    expect(sessionRefreshCalls).toHaveLength(1);
+    expect(sessionRefreshCalls[0].query?.disableCookieCache).toBe(true);
   });
 });
