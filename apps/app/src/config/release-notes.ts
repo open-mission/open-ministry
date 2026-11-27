@@ -31,16 +31,45 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.11.1";
+export const CURRENT_APP_VERSION = "1.11.2";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.11.2",
+    title: "Cabeçalho Inteligente no Celular e no Computador",
+    subtitle:
+      "O topo das telas agora se adapta ao contexto de onde você está: mais foco nas páginas internas no celular e navegação clara no computador.",
+    releaseDate: "27 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Navegação & Experiência",
+        badge: "Melhoria",
+        features: [
+          {
+            title: "Topo adaptado por nível da tela",
+            description:
+              "Nas abas principais do celular o título e o nome da igreja ficam em destaque; nas áreas abertas pelo Explorar aparece o botão de voltar; e nas páginas internas o topo fica livre só para o retorno e as ações da página.",
+            iconName: "SmartphoneIcon",
+            badge: "Mobile",
+          },
+          {
+            title: "Mais clareza ao navegar no Repertório",
+            description:
+              "A página de Repertório já usa o novo padrão de cabeçalho unificado, deixando títulos, ações e retorno mais consistentes entre o celular e o computador.",
+            iconName: "LayoutDashboardIcon",
+            badge: "Padronização",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.11.1",
     title: "Repertório Mais Limpo e Prático no Celular",
     subtitle:
       "A busca e os filtros das músicas agora ficam juntos, o menu de filtros abre de forma mais confortável no celular e o topo da página não atrapalha a leitura ao rolar.",
     releaseDate: "27 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Músicas & Repertório",

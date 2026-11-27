@@ -20,6 +20,7 @@ import { PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { reorderSongsAction } from "@/app/actions/songs";
+import { PageHeaderScaffold } from "@/components/app/page-header-scaffold";
 import { Button } from "@/components/ui/button";
 import { songKeys, useSongsQuery } from "@/hooks/use-songs";
 import {
@@ -277,20 +278,21 @@ export function SongsListView({
 
   return (
     <div className="flex min-w-0 max-w-full flex-col gap-4">
-      <header className="flex h-11 shrink-0 items-center justify-between gap-2 md:hidden">
-        <div className="min-w-0 flex-1">
-          <h1 className="font-heading text-xl leading-6 font-semibold tracking-tight text-foreground">
-            Repertório
-          </h1>
-          {organizationName ? (
-            <p className="truncate text-[11px] leading-tight text-muted-foreground">
-              {organizationName}
-            </p>
-          ) : null}
-        </div>
-
-        <div className="flex shrink-0 items-center pr-18 sm:pr-20.5">
-          {canManage ? (
+      <PageHeaderScaffold
+        title="Repertório"
+        desktopTitle="Repertório de Músicas"
+        subtitle={organizationName}
+        level="root-tab"
+        badge={
+          <span
+            className="inline-flex h-6 items-center rounded-full bg-muted px-2 text-[11px] font-medium tabular-nums text-muted-foreground"
+            title={`${songs.length} músicas no repertório`}
+          >
+            {songs.length} {songs.length === 1 ? "música" : "músicas"}
+          </span>
+        }
+        mobileAction={
+          canManage ? (
             <AddSongChoiceDialog
               existingCollections={collections}
               trigger={
@@ -303,29 +305,14 @@ export function SongsListView({
                 </Button>
               }
             />
-          ) : null}
-        </div>
-      </header>
-
-      <div aria-hidden="true" className="h-px shrink-0 bg-border/70 md:hidden" />
-
-      <header className="hidden md:flex md:items-end md:justify-between">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <h1 className="line-clamp-2 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
-            Repertório de Músicas
-          </h1>
-          <span
-            className="inline-flex h-6 items-center rounded-full bg-muted px-2 text-[11px] font-medium tabular-nums text-muted-foreground"
-            title={`${songs.length} músicas no repertório`}
-          >
-            {songs.length} {songs.length === 1 ? "música" : "músicas"}
-          </span>
-        </div>
-
-        {canManage ? (
-          <AddSongChoiceDialog existingCollections={collections} />
-        ) : null}
-      </header>
+          ) : null
+        }
+        desktopActions={
+          canManage ? (
+            <AddSongChoiceDialog existingCollections={collections} />
+          ) : null
+        }
+      />
 
       <div className="flex flex-col gap-2.5">
         <SongsToolbar
