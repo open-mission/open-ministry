@@ -221,7 +221,7 @@ export function usePlanEditor({
         setHasUnsavedReorder(false);
         setMobileEditDrawerOpen(false);
         setShowDiscardAlert(false);
-        router.refresh();
+        startTransition(() => router.refresh());
       } else {
         toast.error(res.error || "Erro ao salvar cronograma.");
       }
@@ -282,7 +282,7 @@ export function usePlanEditor({
       const res = await deletePlanItemAction(id, eventId);
       if (res.ok) {
         toast.success("Item removido do cronograma.");
-        router.refresh();
+        startTransition(() => router.refresh());
       } else {
         toast.error(res.error || "Erro ao excluir.");
         setItems(planItems); // Rollback em caso de erro

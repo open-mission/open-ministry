@@ -362,7 +362,7 @@ export function TasksHomeWidget({
             });
           }
           if ((count ?? 1) > 1 || !savedTask) {
-            router.refresh();
+            startTransition(() => router.refresh());
           }
         }}
         taskToEdit={editingTask}

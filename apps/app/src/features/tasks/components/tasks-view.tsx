@@ -332,7 +332,7 @@ export function TasksView({
         if (res.data.task) {
           setTasks((prev) => [res.data.task!, ...prev]);
         } else {
-          router.refresh();
+          startQuickTransition(() => router.refresh());
         }
         toast.success("Tarefa adicionada.");
       } else {
@@ -639,7 +639,7 @@ export function TasksView({
             });
           }
           if ((count ?? 1) > 1 || !savedTask) {
-            router.refresh();
+            startQuickTransition(() => router.refresh());
           }
         }}
         taskToEdit={taskToEdit}
