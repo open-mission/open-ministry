@@ -1,6 +1,6 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 
 import { db } from "@/db";
@@ -38,7 +38,12 @@ export async function runBackgroundJob(jobId: string): Promise<void> {
       }
 
       const eventRow = await db.query.event.findFirst({
-        where: eq(schema.event.id, eventId),
+        // Defesa em profundidade: o evento precisa pertencer à mesma igreja
+        // do job, mesmo que o payload venha de um step anterior.
+        where: and(
+          eq(schema.event.id, eventId),
+          eq(schema.event.organizationId, job.organizationId),
+        ),
         with: {
           organization: true,
           planItems: {

@@ -2,14 +2,18 @@ import { describe, expect, it, mock } from "bun:test";
 
 let impersonated = false;
 let handlerCalls = 0;
+const getSessionCalls: Array<{ query?: { disableCookieCache?: boolean } }> = [];
 
 mock.module("@/lib/auth", () => ({
   auth: {
     api: {
-      getSession: async () => ({
-        user: { id: "user-1" },
-        session: { impersonatedBy: impersonated ? "admin-1" : null },
-      }),
+      getSession: async (args: { query?: { disableCookieCache?: boolean } }) => {
+        getSessionCalls.push(args ?? {});
+        return {
+          user: { id: "user-1" },
+          session: { impersonatedBy: impersonated ? "admin-1" : null },
+        };
+      },
     },
   },
 }));
@@ -37,9 +41,15 @@ describe("rotas sensíveis de credenciais", () => {
   it("bloqueia passkey em sessão impersonada", async () => {
     impersonated = true;
     handlerCalls = 0;
+    getSessionCalls.length = 0;
+
     const response = await POST(request("/api/auth/passkey/add-passkey"));
+
     expect(response.status).toBe(403);
     expect(handlerCalls).toBe(0);
+    // A checagem de impersonação nunca pode ler `impersonatedBy` do cookieCache.
+    expect(getSessionCalls).toHaveLength(1);
+    expect(getSessionCalls[0].query?.disableCookieCache).toBe(true);
   });
 
   it("bloqueia troca de senha, e-mail e 2FA em sessão impersonada", async () => {

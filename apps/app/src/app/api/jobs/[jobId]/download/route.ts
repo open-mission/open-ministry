@@ -90,6 +90,7 @@ export async function GET(
       const remote = await fetch(result.fileUrl, {
         redirect: "error",
         cache: "no-store",
+        signal: AbortSignal.timeout(15_000),
       });
       if (!remote.ok) {
         return NextResponse.json(

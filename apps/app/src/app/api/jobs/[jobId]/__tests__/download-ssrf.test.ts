@@ -102,6 +102,7 @@ describe("GET /api/jobs/[jobId]/download", () => {
     expect(fetchCalls).toHaveLength(1);
     expect(fetchCalls[0].init?.redirect).toBe("error");
     expect(fetchCalls[0].init?.cache).toBe("no-store");
+    expect(fetchCalls[0].init?.signal).toBeInstanceOf(AbortSignal);
   });
 
   it("bloqueia fileUrl fora do domínio antes de fazer fetch", async () => {

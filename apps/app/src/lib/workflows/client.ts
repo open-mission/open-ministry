@@ -7,7 +7,7 @@ import { isQStashConfigured, verifyQueueEndpointAuth } from "@/lib/queue";
 
 export type JobsWorkflowPayload = {
   jobId: string;
-  organizationId?: string;
+  organizationId: string;
 };
 
 export type AnnouncementWorkflowPayload = {

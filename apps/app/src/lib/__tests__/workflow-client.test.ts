@@ -115,13 +115,13 @@ describe("triggerJobsWorkflow / triggerAnnouncementWorkflow", () => {
   it("falha graciosamente quando o QStash rejeita o disparo", async () => {
     configureQstash(true);
     shouldThrow = true;
-    expect(await workflows.triggerJobsWorkflow({ jobId: "job-3" })).toBeNull();
+    expect(await workflows.triggerJobsWorkflow({ jobId: "job-3", organizationId: "org-1" })).toBeNull();
   });
 
   it("não dispara nada quando o workflow está desabilitado", async () => {
     configureQstash(false);
     delete process.env.QSTASH_DEV;
-    expect(await workflows.triggerJobsWorkflow({ jobId: "job-4" })).toBeNull();
+    expect(await workflows.triggerJobsWorkflow({ jobId: "job-4", organizationId: "org-1" })).toBeNull();
     expect(triggers).toHaveLength(0);
   });
 });

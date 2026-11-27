@@ -1,5 +1,5 @@
 import { serve } from "@upstash/workflow/nextjs";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
@@ -11,6 +11,10 @@ import {
 import { sendWebPushToUser } from "@/lib/push-notifications";
 import type { AnnouncementWorkflowPayload } from "@/lib/workflows/client";
 import { authorizeWorkflowRequest } from "@/lib/workflows/client";
+import {
+  departmentBelongsToOrganization,
+  jobInOrganizationWhere,
+} from "@/lib/workflows/tenant";
 
 type Recipient = {
   id: string;
@@ -57,6 +61,15 @@ async function resolveRecipients(
   }
 
   if (payload.targetType === "department" && payload.departmentId) {
+    // Fail-closed: departamento de outra igreja não pode receber o aviso.
+    const departmentExists = await departmentBelongsToOrganization(
+      payload.departmentId,
+      payload.organizationId,
+    );
+    if (!departmentExists) {
+      return { churchName: organization?.name ?? "Igreja", recipients: [] };
+    }
+
     const members = await db.query.departmentMember.findMany({
       where: eq(schema.departmentMember.departmentId, payload.departmentId),
       with: {
@@ -66,7 +79,11 @@ async function resolveRecipients(
     return {
       churchName: organization?.name ?? "Igreja",
       recipients: members
-        .filter((member) => member.person.userId !== payload.actorId)
+        .filter(
+          (member) =>
+            member.person.organizationId === payload.organizationId &&
+            member.person.userId !== payload.actorId,
+        )
         .map((member) => toRecipient(member.person)),
     };
   }
@@ -87,6 +104,27 @@ async function resolveRecipients(
 const workflow = serve<AnnouncementWorkflowPayload>(
   async (context) => {
     const payload = context.requestPayload;
+
+    await context.run("validate-or-resolve", async () => {
+      if (!payload?.organizationId) {
+        throw new Error("organizationId é obrigatório no payload");
+      }
+
+      if (payload.jobId) {
+        const job = await db.query.backgroundJob.findFirst({
+          where: jobInOrganizationWhere(
+            payload.jobId,
+            payload.organizationId,
+          ),
+          columns: { id: true },
+        });
+        if (!job) {
+          throw new Error("Job de aviso não encontrado nesta organização");
+        }
+      }
+
+      return { organizationId: payload.organizationId, jobId: payload.jobId };
+    });
 
     const resolved = await context.run("resolve-recipients", () =>
       resolveRecipients(payload),
@@ -189,14 +227,14 @@ const workflow = serve<AnnouncementWorkflowPayload>(
           completedAt: new Date(),
           result: { recipients: resolved.recipients.length },
         })
-        .where(eq(schema.backgroundJob.id, payload.jobId));
+        .where(jobInOrganizationWhere(payload.jobId, payload.organizationId));
       return { jobId: payload.jobId };
     });
   },
   {
     failureFunction: async ({ context, failStatus, failResponse }) => {
-      const jobId = context.requestPayload?.jobId;
-      if (!jobId) return;
+      const { jobId, organizationId } = context.requestPayload ?? {};
+      if (!jobId || !organizationId) return;
 
       await db
         .update(schema.backgroundJob)
@@ -205,7 +243,7 @@ const workflow = serve<AnnouncementWorkflowPayload>(
           error: `${failStatus}: ${failResponse}`.slice(0, 500),
           completedAt: new Date(),
         })
-        .where(eq(schema.backgroundJob.id, jobId));
+        .where(jobInOrganizationWhere(jobId, organizationId));
     },
   },
 );

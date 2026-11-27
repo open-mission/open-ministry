@@ -28,7 +28,12 @@ function isSensitiveCredentialRequest(pathname: string) {
 
 async function isImpersonated(request: Request): Promise<boolean> {
   try {
-    const session = await auth.api.getSession({ headers: request.headers });
+    // Nunca confiar em `impersonatedBy` vindos do cookieCache: mutações de
+    // credenciais precisam refletir a sessão real do banco.
+    const session = await auth.api.getSession({
+      headers: request.headers,
+      query: { disableCookieCache: true },
+    });
     return Boolean(session?.session.impersonatedBy);
   } catch {
     // Fail-closed: sem sessão confiável, não liberamos mutações de credenciais.
