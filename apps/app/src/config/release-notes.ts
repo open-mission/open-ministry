@@ -31,16 +31,111 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.10.1";
+export const CURRENT_APP_VERSION = "1.11.0";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.11.0",
+    title: "OpenMinistry Mais Rápido e Organizado",
+    subtitle:
+      "As telas abrem mais depressa, os avisos e arquivos pesados continuam sendo preparados em segundo plano e a navegação ficou mais simples.",
+    releaseDate: "26 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Agenda & Escalas",
+        badge: "Mais ágil",
+        features: [
+          {
+            title: "Detalhes do evento sem espera",
+            description:
+              "Ao passar o mouse ou focar em um compromisso da Agenda, os detalhes já começam a ser preparados. Ao clicar, eles aparecem na hora — inclusive em cliques seguidos.",
+            iconName: "CalendarDaysIcon",
+            badge: "Prévia rápida",
+          },
+          {
+            title: "Progresso que se atualiza sozinho",
+            description:
+              "Na tela de tarefas em andamento, o andamento da escala e dos envios atualiza automaticamente e para quando tudo termina.",
+            iconName: "CheckSquare2Icon",
+            badge: "Atualização automática",
+          },
+        ],
+      },
+      {
+        moduleName: "Músicas & Repertório",
+        badge: "Melhoria",
+        features: [
+          {
+            title: "Cifra e letra prontas para o palco",
+            description:
+              "A lista e os detalhes das músicas mantêm o conteúdo anterior visível enquanto carregam, e mostram uma prévia de tela enquanto a próxima página chega.",
+            iconName: "MusicIcon",
+            badge: "Leitura contínua",
+          },
+          {
+            title: "Novo repertório em duas colunas",
+            description:
+              "No computador, a cifra ganhou mais espaço e as referências e notas da banda ficam ao lado. No celular, a música aparece primeiro e os detalhes ficam a um toque.",
+            iconName: "SmartphoneIcon",
+            badge: "Tela de leitura",
+          },
+        ],
+      },
+      {
+        moduleName: "Comunicação",
+        badge: "Novidade",
+        features: [
+          {
+            title: "Avisos enviados em segundo plano",
+            description:
+              "Depois de publicar um aviso, você recebe a confirmação na hora. O envio de WhatsApp, e-mail e notificações continua em segundo plano, sem prender a tela.",
+            iconName: "BellIcon",
+            badge: "Envio em background",
+          },
+        ],
+      },
+      {
+        moduleName: "Configurações & Igreja",
+        badge: "Organização",
+        features: [
+          {
+            title: "Endereços mais simples",
+            description:
+              "As páginas da igreja agora usam endereços diretos, como /songs e /calendar. Links antigos continuam funcionando e levam automaticamente ao endereço novo.",
+            iconName: "LayoutDashboardIcon",
+            badge: "Navegação",
+          },
+          {
+            title: "Área de administração da plataforma",
+            description:
+              "Quem administra a plataforma agora tem um espaço próprio para cuidar das igrejas, dos planos e das integrações, com senhas sempre protegidas.",
+            iconName: "ShieldCheckIcon",
+            badge: "Somente administradores",
+          },
+        ],
+      },
+      {
+        moduleName: "Desempenho",
+        badge: "Melhoria",
+        features: [
+          {
+            title: "Carregamento mais leve",
+            description:
+              "O aplicativo agora fica mais perto do banco de dados, guarda a sessão no navegador por alguns minutos e faz várias consultas ao mesmo tempo. A primeira abertura e a navegação ficam mais fluidas.",
+            iconName: "SparklesIcon",
+            badge: "Menos espera",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.10.1",
     title: "Equipe dos Eventos Mais Organizada",
     subtitle:
       "A equipe escalada dos eventos agora é organizada por departamento, e ficou mais fácil de ler no celular e no computador.",
     releaseDate: "24 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Eventos & Escalas",
