@@ -31,16 +31,58 @@ export interface ReleaseNote {
   moduleGroups: ReleaseModuleGroup[];
 }
 
-export const CURRENT_APP_VERSION = "1.11.0";
+export const CURRENT_APP_VERSION = "1.11.1";
 
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: "1.11.1",
+    title: "Repertório Mais Limpo e Prático no Celular",
+    subtitle:
+      "A busca e os filtros das músicas agora ficam juntos, o menu de filtros abre de forma mais confortável no celular e o topo da página não atrapalha a leitura ao rolar.",
+    releaseDate: "27 de novembro de 2026",
+    isLatest: true,
+    moduleGroups: [
+      {
+        moduleName: "Músicas & Repertório",
+        badge: "Melhoria",
+        features: [
+          {
+            title: "Busca e filtros no mesmo lugar",
+            description:
+              "O campo de pesquisa e o botão de filtros agora formam uma única barra. No celular, os filtros abrem em uma gaveta na parte de baixo da tela, mais fácil de alcançar com uma mão.",
+            iconName: "MusicIcon",
+            badge: "Visual unificado",
+          },
+          {
+            title: "Topo mais limpo no celular",
+            description:
+              "O cabeçalho de Repertório agora segue o padrão da Agenda, com acesso rápido para adicionar música e sem sobrepor os ícones do topo ao rolar a lista.",
+            iconName: "SmartphoneIcon",
+            badge: "Mobile",
+          },
+        ],
+      },
+      {
+        moduleName: "Navegação",
+        badge: "Atalho",
+        features: [
+          {
+            title: "Ensaios no menu Explorar",
+            description:
+              "Os ensaios ganharam um acesso rápido no menu Explorar do celular, enquanto a tela de músicas ficou mais enxuta sem abas extras.",
+            iconName: "LayoutDashboardIcon",
+            badge: "Acesso rápido",
+          },
+        ],
+      },
+    ],
+  },
   {
     version: "1.11.0",
     title: "OpenMinistry Mais Rápido e Organizado",
     subtitle:
       "As telas abrem mais depressa, os avisos e arquivos pesados continuam sendo preparados em segundo plano e a navegação ficou mais simples.",
     releaseDate: "27 de novembro de 2026",
-    isLatest: true,
     moduleGroups: [
       {
         moduleName: "Agenda & Escalas",
