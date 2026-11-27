@@ -183,7 +183,7 @@ export function TasksHomeWidget({
               setEditingTask(null);
               setFormOpen(true);
             }}
-            className="min-h-[36px] shrink-0 gap-1.5"
+            className="min-h-9 shrink-0 gap-1.5"
           >
             <PlusIcon className="size-3.5" />
             Nova
@@ -208,7 +208,7 @@ export function TasksHomeWidget({
                   setEditingTask(null);
                   setFormOpen(true);
                 }}
-                className="mt-3 min-h-[36px] gap-1.5 text-xs"
+                className="mt-3 min-h-9 gap-1.5 text-xs"
               >
                 <PlusIcon className="size-3.5" />
                 Adicionar tarefa
@@ -226,7 +226,7 @@ export function TasksHomeWidget({
                     key={task.id}
                     className={cn(
                       "flex items-center gap-2.5 rounded-xl border bg-background p-2.5 transition-colors hover:border-border/80",
-                      task.isPinned && "border-primary/25 bg-primary/[0.03]",
+                      task.isPinned && "border-primary/25 bg-primary/3",
                     )}
                   >
                     <button
@@ -250,7 +250,7 @@ export function TasksHomeWidget({
                         )}
                       >
                         {isDone ? (
-                          <CheckIcon className="size-3 stroke-[3]" />
+                          <CheckIcon className="size-3 stroke-3" />
                         ) : null}
                       </span>
                     </button>
@@ -323,7 +323,7 @@ export function TasksHomeWidget({
                   asChild
                   className="h-8 gap-1 text-xs text-primary hover:bg-primary/5 hover:text-primary"
                 >
-                  <Link href="/dashboard/tasks">
+                  <Link href="/tasks">
                     Ver todas as tarefas
                     <ArrowRightIcon className="size-3.5" />
                   </Link>

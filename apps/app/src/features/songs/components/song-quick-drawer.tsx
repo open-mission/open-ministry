@@ -217,7 +217,7 @@ export function SongQuickDrawer({
 
         <DrawerFooter className="flex flex-row items-center justify-between border-t bg-background px-4 py-3">
           <Button variant="outline" size="sm" asChild>
-            <Link href={`/dashboard/songs/${song.id}`} prefetch={true}>
+            <Link href={`/songs/${song.id}`} prefetch={true}>
               Ver página completa da música ›
             </Link>
           </Button>

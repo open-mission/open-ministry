@@ -215,7 +215,7 @@ export function OnlineSearchDialog({
             </Button>
           </form>
 
-          <div className="max-h-72 min-h-[160px] overflow-y-auto pt-2">
+          <div className="max-h-72 min-h-40 overflow-y-auto pt-2">
             {isSearching ? (
               <div className="flex h-36 flex-col items-center justify-center gap-2 text-muted-foreground">
                 <Loader2Icon className="size-6 animate-spin text-primary" />

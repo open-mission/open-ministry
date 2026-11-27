@@ -416,7 +416,7 @@ export function RehearsalAlertsDialog({
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="flex h-[88dvh] max-h-[88dvh] flex-col gap-0 rounded-t-[24px] p-0">
-          <DrawerHeader className="shrink-0 border-b px-4 pt-3 pb-3 !text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+          <DrawerHeader className="shrink-0 border-b px-4 pt-3 pb-3 text-left! group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
             <DrawerTitle className="flex items-center gap-2 font-heading text-xl">
               <BellRingIcon className="size-5 text-primary" />
               Lembretes de ensaio

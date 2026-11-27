@@ -75,7 +75,7 @@ self.addEventListener("push", (event) => {
   let data = {
     title: "OpenMinistry",
     body: "Você tem uma nova notificação na igreja.",
-    url: "/dashboard/notifications",
+    url: "/notifications",
     icon: "/icons/icon-192.png",
   };
 
@@ -93,7 +93,7 @@ self.addEventListener("push", (event) => {
     badge: "/icons/icon-192.png",
     vibrate: [100, 50, 100],
     data: {
-      url: data.url || data.href || "/dashboard/notifications",
+      url: data.url || data.href || "/notifications",
     },
   };
 
@@ -104,7 +104,7 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const targetUrl =
-    event.notification.data?.url || "/dashboard/notifications";
+    event.notification.data?.url || "/notifications";
 
   event.waitUntil(
     clients

@@ -107,8 +107,8 @@ export async function submitDailyMoodAction(
     return { error: "Não foi possível registrar seu sentimento. Tente novamente." };
   }
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/members");
+  revalidatePath("/");
+  revalidatePath("/members");
   return { success: true };
 }
 
@@ -187,7 +187,7 @@ export async function sendFelicitometroPromptAction(): Promise<{
         const res = await sendWebPushToUser(member.userId, {
           title: "Como você está hoje? ☀️",
           body: "Compartilhe com a liderança como está o seu coração hoje no Felicitômetro.",
-          url: "/dashboard",
+          url: "/",
         });
         if (res.sentCount > 0) sentCount += res.sentCount;
       } catch (error) {

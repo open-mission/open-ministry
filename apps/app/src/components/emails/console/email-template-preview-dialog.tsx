@@ -83,7 +83,7 @@ export function EmailTemplatePreviewDialog({
         </div>
       </div>
 
-      <div className="min-h-[420px] flex-1 rounded-lg border bg-muted/20 flex items-center justify-center overflow-auto p-4">
+      <div className="min-h-105 flex-1 rounded-lg border bg-muted/20 flex items-center justify-center overflow-auto p-4">
         {preview.loading ? (
           <div className="flex flex-col items-center gap-2">
             <RefreshCwIcon className="size-6 animate-spin text-primary" />
@@ -95,14 +95,14 @@ export function EmailTemplatePreviewDialog({
           <div
             className={`transition-all duration-200 h-full rounded-xl shadow-lg border overflow-hidden bg-white ${
               preview.previewMode === "mobile"
-                ? "w-[380px] max-w-full"
-                : "w-full max-w-[620px]"
+                ? "w-95 max-w-full"
+                : "w-full max-w-155"
             }`}
           >
             <iframe
               title="Prévia do Modelo React Email"
               srcDoc={preview.html}
-              className="w-full h-full min-h-[460px] border-0"
+              className="w-full h-full min-h-115 border-0"
               sandbox="allow-same-origin"
             />
           </div>

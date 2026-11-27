@@ -138,7 +138,7 @@ async function ProfileContent() {
                 asChild
                 className="h-10 w-full gap-1.5"
               >
-                <Link href="/dashboard/settings">
+                <Link href="/settings">
                   <SettingsIcon className="size-4" />
                   Configurações e Segurança
                 </Link>

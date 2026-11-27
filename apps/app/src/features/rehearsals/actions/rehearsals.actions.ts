@@ -39,13 +39,13 @@ async function getContext() {
 }
 
 function revalidateRehearsalPaths(eventId?: string) {
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/rehearsals");
-  revalidatePath("/dashboard/events");
+  revalidatePath("/");
+  revalidatePath("/rehearsals");
+  revalidatePath("/events");
   revalidatePath("/calendar");
   if (eventId) {
-    revalidatePath(`/dashboard/rehearsals/${eventId}`);
-    revalidatePath(`/dashboard/events/${eventId}`);
+    revalidatePath(`/rehearsals/${eventId}`);
+    revalidatePath(`/events/${eventId}`);
   }
 }
 

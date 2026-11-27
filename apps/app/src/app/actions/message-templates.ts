@@ -98,7 +98,7 @@ export async function saveMessageTemplateAction(
     }
 
     revalidateTag(`templates:${organizationId}`, "max");
-    revalidatePath("/dashboard/settings");
+    revalidatePath("/settings");
 
     return {
       ok: true,
@@ -140,7 +140,7 @@ export async function resetMessageTemplateAction(
       );
 
     revalidateTag(`templates:${organizationId}`, "max");
-    revalidatePath("/dashboard/settings");
+    revalidatePath("/settings");
 
     return {
       ok: true,
@@ -184,7 +184,7 @@ export async function sendTestTemplateMessageAction(input: {
     const sampleVariables: Record<string, string> = {
       name: "João da Silva (Teste)",
       church_name: context.organization.name,
-      link: "https://openministry.app/dashboard",
+      link: "https://openministry.app/",
       church_phone: config.instanceName,
       whatsapp_name: config.instanceName,
       department_name: "Ministério de Louvor",

@@ -20,7 +20,7 @@ type RouteModule = {
   GET: (request: Request) => Promise<Response>;
 };
 
-type NextConfigSource = {
+type RedirectRule = {
   source: string;
   destination: string;
 };
@@ -65,60 +65,62 @@ describe("API routes without an active organization", () => {
   }
 });
 
-describe("next.config.ts rewrites", () => {
+describe("next.config.ts redirects", () => {
   const source = readFileSync(
     new URL("../../../next.config.ts", import.meta.url),
     "utf8",
   );
+  const block = source.slice(
+    source.indexOf("async redirects()"),
+    source.indexOf("turbopack:"),
+  );
+  const rules = [
+    ...block.matchAll(
+      /\{\s*source: "([^"]+)",\s*destination: "([^"]+)",\s*permanent: true,?\s*\}/g,
+    ),
+  ].map((match) => ({
+    source: match[1],
+    destination: match[2],
+  })) as RedirectRule[];
 
-  it("não usa mais o padrão :path*", () => {
+  it("substitui os rewrites por redirecionamentos e não usa :path*", () => {
+    expect(source).not.toContain("async rewrites()");
+    expect(block).not.toContain('destination: "/dashboard');
     expect(source).not.toContain(":path*");
   });
 
-  it("usa :path+ em todas as rotas com subpath", () => {
-    expect(source).toContain('{ source: "/events/:path+", destination: "/dashboard/events/:path+" }');
-    expect(source).toContain('{ source: "/songs/:path+", destination: "/dashboard/songs/:path+" }');
-    expect(source).toContain('{ source: "/members/:path+", destination: "/dashboard/members/:path+" }');
+  it("mantém todas as regras como permanentes (308)", () => {
+    expect(rules).toHaveLength(6);
+    expect(block.match(/permanent: true/g)).toHaveLength(6);
+    expect(rules.every((rule) => !rule.destination.startsWith("//"))).toBe(true);
   });
 
-  it("declara a rota exata antes da rota curinga", () => {
-    const bases = [
-      "events",
-      "schedules",
-      "members",
-      "departments",
-      "announcements",
-      "songs",
-      "whatsapp",
-      "emails",
-      "jobs",
-      "settings",
-      "profile",
-      "church",
-      "notifications",
-    ];
+  it("declara as regras específicas antes dos curingas", () => {
+    const indices = (fragment: string) => block.indexOf(fragment);
 
-    for (const base of bases) {
-      const exactIndex = source.indexOf(`{ source: "/${base}", destination:`);
-      const wildcardIndex = source.indexOf(
-        `{ source: "/${base}/:path+", destination:`,
-      );
-
-      expect(exactIndex).toBeGreaterThan(-1);
-      expect(wildcardIndex).toBeGreaterThan(exactIndex);
-    }
+    expect(indices('source: "/dashboard"')).toBeGreaterThan(-1);
+    expect(indices('source: "/dashboard/avisos"')).toBeGreaterThan(-1);
+    expect(indices('source: "/avisos"')).toBeGreaterThan(-1);
+    expect(indices('source: "/dashboard/events"')).toBeGreaterThan(
+      indices('source: "/dashboard/avisos"'),
+    );
+    expect(indices('source: "/dashboard/:section')).toBeGreaterThan(
+      indices('source: "/dashboard/events"'),
+    );
+    expect(indices('source: "/dashboard/:section([a-z0-9-]+)/:path+"')).toBeGreaterThan(
+      indices('source: "/dashboard/:section([a-z0-9-]+)"'),
+    );
   });
 
-  it("mantém cada regra de rewrite com source e destination coerentes", () => {
-    const rules = [
-      ...source.matchAll(
-        /\{ source: "([^"]+)", destination: "([^"]+)" \}/g,
-      ),
-    ].map((match) => ({ source: match[1], destination: match[2] })) as NextConfigSource[];
+  it("restringe o primeiro segmento para evitar open redirect", () => {
+    const withSection = rules.filter((rule) => rule.source.includes(":section"));
 
-    expect(rules.length).toBeGreaterThan(20);
-    for (const rule of rules) {
-      expect(rule.destination).toBe(`/dashboard${rule.source}`);
+    expect(withSection).toHaveLength(2);
+    for (const rule of withSection) {
+      expect(rule.source).toContain(":section([a-z0-9-]+)");
+      expect(rule.destination).toMatch(/^\/:section/);
     }
+    expect(block).toContain('destination: "/:section"');
+    expect(block).toContain('destination: "/:section/:path+"');
   });
 });

@@ -181,7 +181,7 @@ export async function sendWebPushToUser(
   const payload = JSON.stringify({
     title: options.title,
     body: options.body,
-    url: options.url || "/dashboard/notifications",
+    url: options.url || "/notifications",
     icon: options.icon || "/icons/icon-192.png",
   });
 
@@ -263,7 +263,7 @@ async function maybeSendOneSignal(
         target_channel: "push",
         headings: { en: options.title, pt: options.title },
         contents: { en: options.body, pt: options.body },
-        url: options.url || "/dashboard/notifications",
+        url: options.url || "/notifications",
       }),
     });
   } catch (e) {

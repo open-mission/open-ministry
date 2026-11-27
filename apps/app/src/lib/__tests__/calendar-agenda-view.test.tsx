@@ -13,7 +13,7 @@ const baseItem: CalendarItem = {
   endsAt: "2026-11-20T23:30:00.000Z",
   allDay: false,
   color: "purple",
-  href: "/dashboard/events/item-1",
+  href: "/events/item-1",
   metadata: { eventKind: "rehearsal" },
 };
 

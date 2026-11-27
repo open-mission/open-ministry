@@ -166,7 +166,7 @@ export function SongFormShell({
         <SheetContent
           side="bottom"
           showCloseButton={false}
-          className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full flex-col overflow-hidden rounded-none border-0 bg-background p-0"
+          className="flex h-dvh max-h-dvh min-h-0 w-full flex-col overflow-hidden rounded-none border-0 bg-background p-0"
           onPointerDownOutside={(e) => {
             if (isDirty) {
               e.preventDefault();
@@ -199,7 +199,7 @@ export function SongFormShell({
         className={cn(
           "flex flex-col gap-0 overflow-hidden bg-background p-0 duration-150",
           isMaximized
-            ? "fixed top-0 left-0 translate-x-0 translate-y-0 h-[100dvh] max-h-[100dvh] w-screen max-w-none sm:max-w-none xl:max-w-none rounded-none border-0 ring-0"
+            ? "fixed top-0 left-0 translate-x-0 translate-y-0 h-dvh max-h-dvh w-screen max-w-none sm:max-w-none xl:max-w-none rounded-none border-0 ring-0"
             : "h-[92vh] max-h-[92vh] min-h-0 sm:max-w-5xl xl:max-w-6xl rounded-2xl border border-border/80 shadow-2xl",
         )}
         onPointerDownOutside={(e) => {

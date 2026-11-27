@@ -60,10 +60,7 @@ export function SidebarNav({
     if (item.matchPrefixes?.length) {
       return item.matchPrefixes.some(
         (prefix) =>
-          pathname === prefix ||
-          pathname.startsWith(`${prefix}/`) ||
-          pathname === `/dashboard${prefix}` ||
-          pathname.startsWith(`/dashboard${prefix}/`),
+          pathname === prefix || pathname.startsWith(`${prefix}/`),
       );
     }
     return isNavItemActive(item, pathname);

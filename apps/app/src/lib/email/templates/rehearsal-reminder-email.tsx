@@ -27,7 +27,7 @@ export function RehearsalReminderEmail({
   songs = [],
   notes,
   body,
-  rehearsalUrl = "https://openministry.app/dashboard/rehearsals",
+  rehearsalUrl = "https://openministry.app/rehearsals",
   churchLogo,
   appLogoUrl,
 }: RehearsalReminderEmailProps) {

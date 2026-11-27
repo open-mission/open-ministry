@@ -210,9 +210,9 @@ async function revalidateDepartment(
   departmentId: string,
   organizationId: string,
 ) {
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/departments");
-  revalidatePath(`/dashboard/departments/${departmentId}`);
+  revalidatePath("/");
+  revalidatePath("/departments");
+  revalidatePath(`/departments/${departmentId}`);
 
   await cacheInvalidateTags(`departments:${organizationId}`);
 }
@@ -260,7 +260,7 @@ export async function createDepartmentAction(
   }
 
   await revalidateDepartment(departmentId, result.context.organization.id);
-  redirect(`/dashboard/departments/${departmentId}`);
+  redirect(`/departments/${departmentId}`);
 }
 
 export async function updateDepartmentAction(
@@ -345,8 +345,8 @@ export async function deleteDepartmentAction(
   }
 
   await cacheInvalidateTags(`departments:${result.context.organization.id}`);
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/departments");
+  revalidatePath("/");
+  revalidatePath("/departments");
 
   return { ok: true };
 }
@@ -825,7 +825,7 @@ export async function getDepartmentWhatsAppInviteMessageAction(
   );
 
   const baseUrl = getAppBaseUrl();
-  const link = `${baseUrl}/dashboard/departments/${dept.id}`;
+  const link = `${baseUrl}/departments/${dept.id}`;
 
   const message = await renderOrganizationMessageText({
     organizationId: result.context.organization.id,

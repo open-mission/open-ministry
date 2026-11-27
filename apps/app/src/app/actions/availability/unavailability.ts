@@ -150,9 +150,9 @@ export async function saveUnavailabilityAction(payload: {
       };
     }
 
-    revalidatePath("/dashboard/availability");
-    revalidatePath("/dashboard/events");
-    revalidatePath("/dashboard/schedules");
+    revalidatePath("/availability");
+    revalidatePath("/events");
+    revalidatePath("/schedules");
     revalidatePath("/calendar");
 
     return {
@@ -206,9 +206,9 @@ export async function deleteUnavailabilityAction(
       )
       .returning({ id: schema.personUnavailability.id });
 
-    revalidatePath("/dashboard/availability");
-    revalidatePath("/dashboard/events");
-    revalidatePath("/dashboard/schedules");
+    revalidatePath("/availability");
+    revalidatePath("/events");
+    revalidatePath("/schedules");
     revalidatePath("/calendar");
 
     return { ok: true, deleted: deleted.length > 0 };

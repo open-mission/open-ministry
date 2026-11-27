@@ -100,7 +100,7 @@ export function EditEventDialog({
           </DrawerTrigger>
         )}
         <DrawerContent className="p-0">
-          <DrawerHeader className="border-b px-5 pt-4 pb-3 !text-left text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+          <DrawerHeader className="border-b px-5 pt-4 pb-3 text-left! text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
             <DrawerTitle className="font-heading text-xl tracking-tight">
               Editar culto ou evento
             </DrawerTitle>

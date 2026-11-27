@@ -180,7 +180,7 @@ export function FelicitometroCard({
                     onClick={() => setSelectedScore(score)}
                     aria-pressed={isSelected}
                     aria-label={`Sentimento: ${item.label}`}
-                    className={`group flex min-h-[72px] flex-col items-center justify-center rounded-xl p-2.5 text-center transition-[transform,background-color,border-color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 ${
+                    className={`group flex min-h-18 flex-col items-center justify-center rounded-xl p-2.5 text-center transition-[transform,background-color,border-color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 ${
                       isSelected
                         ? `${item.bg} ${item.border} border-2 shadow-xs ring-1 ring-primary/40 scale-[1.03]`
                         : "border border-border/60 bg-card text-muted-foreground hover:bg-muted/40"

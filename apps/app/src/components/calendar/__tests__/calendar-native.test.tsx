@@ -298,7 +298,7 @@ describe("Calendar integration", () => {
     ]);
 
     expect(layoutSource).toContain(
-      "has-[[data-calendar-active]]:md:h-dvh has-[[data-calendar-active]]:md:overflow-hidden",
+      "has-data-calendar-active:md:h-dvh has-data-calendar-active:md:overflow-hidden",
     );
     expect(layoutSource).not.toContain("has-[[data-calendar-container]]");
     expect(nativeCalendarSource).toContain(
@@ -349,7 +349,8 @@ describe("Calendar integration", () => {
 
   it("detects calendar routes to hide the top page header while keeping notifications", () => {
     expect(isCalendarRoute("/calendar")).toBe(true);
-    expect(isCalendarRoute("/dashboard/calendar")).toBe(true);
+    expect(isCalendarRoute("/calendar/week")).toBe(true);
+    expect(isCalendarRoute("/dashboard/calendar")).toBe(false);
     expect(isCalendarRoute("/events")).toBe(false);
     expect(isCalendarRoute("/")).toBe(false);
     expect(isCalendarRoute(null)).toBe(false);
@@ -365,12 +366,10 @@ describe("Calendar integration", () => {
       Bun.file(
         new URL("../../../app/(app)/calendar/page.tsx", import.meta.url),
       ).text(),
-      Bun.file(
-        new URL("../../../app/(app)/dashboard/calendar/page.tsx", import.meta.url),
-      ).text(),
+      Bun.file(new URL("../../../../next.config.ts", import.meta.url)).text(),
       Bun.file(
         new URL(
-          "../../../app/(app)/dashboard/calendar/preview/page.tsx",
+          "../../../app/(app)/calendar/preview/page.tsx",
           import.meta.url,
         ),
       ).exists(),
@@ -385,7 +384,10 @@ describe("Calendar integration", () => {
     expect(calendarPageSource).not.toContain("CalendarCN");
     expect(calendarPageSource).not.toContain("Prévia temporária");
     expect(calendarPageSource).not.toContain("md:pl-10");
-    expect(legacyCalendarPageSource).toContain('redirect("/calendar")');
+    expect(legacyCalendarPageSource).toContain(
+      'source: "/dashboard/:section([a-z0-9-]+)"',
+    );
+    expect(legacyCalendarPageSource).toContain('destination: "/:section"');
     expect(previewPageExists).toBe(false);
     expect(dialogSource).not.toContain("Prévia · Modo leitura");
     expect(dialogSource).toContain(
@@ -398,7 +400,7 @@ describe("Calendar integration", () => {
       new URL("../event-detail-dialog.tsx", import.meta.url),
     ).text();
 
-    expect(source).toContain("data-[side=right]:md:!w-1/2 data-[side=right]:md:!max-w-[50vw]");
+    expect(source).toContain("data-[side=right]:md:w-1/2! data-[side=right]:md:max-w-[50vw]!");
     expect(source).not.toContain("sm:max-w-md md:max-w-lg");
     expect(source).toContain("<Drawer open={open} onOpenChange={onOpenChange}>");
     expect(source).toContain("rounded-t-xl border-x-0 border-b-0 bg-popover");
@@ -418,7 +420,7 @@ describe("Calendar integration", () => {
         ).text(),
         Bun.file(
           new URL(
-            "../../../app/(app)/dashboard/events/page.tsx",
+            "../../../app/(app)/events/page.tsx",
             import.meta.url,
           ),
         ).text(),
@@ -427,7 +429,7 @@ describe("Calendar integration", () => {
     expect(pageSource).toContain('can("schedules", "read")');
     expect(pageSource).toContain("canViewSchedules={canViewSchedules}");
     expect(panelSource).toContain("if (!canViewSchedules) return null;");
-    expect(panelSource).toContain("data-[side=right]:md:!w-1/2 data-[side=right]:md:!max-w-[50vw]");
+    expect(panelSource).toContain("data-[side=right]:md:w-1/2! data-[side=right]:md:max-w-[50vw]!");
     expect(panelSource).toContain("rounded-t-xl border-x-0 border-b-0 bg-popover");
     expect(panelSource).toContain("Abrir página completa");
     // A checagem de permissão também acontece na origem dos dados.
@@ -444,7 +446,7 @@ describe("Calendar integration", () => {
       endsAt: "2026-11-22T23:30:00.000Z",
       location: "Templo Principal",
       description: null,
-      href: "/dashboard/events/evt-1",
+      href: "/events/evt-1",
       coverage: { assigned: 2, total: 12 },
       departmentCoverage: [
         { departmentId: "dept-louvor", departmentName: "Louvor", assigned: 2, total: 6 },
@@ -503,7 +505,7 @@ describe("Calendar integration", () => {
       endsAt: "2026-11-22T23:00:00.000Z",
       location: null,
       description: null,
-      href: "/dashboard/events/evt-2",
+      href: "/events/evt-2",
       coverage: { assigned: 2, total: 6 },
       departmentCoverage: [
         { departmentId: "dept-midia", departmentName: "Mídia", assigned: 2, total: 2 },

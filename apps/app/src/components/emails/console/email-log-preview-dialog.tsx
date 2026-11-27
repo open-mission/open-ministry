@@ -113,11 +113,11 @@ export function EmailLogPreviewDialog({
           ) : null}
 
           {/* Sandboxed Iframe Preview */}
-          <div className="min-h-[350px] flex-1 overflow-hidden rounded-lg border bg-white">
+          <div className="min-h-87.5 flex-1 overflow-hidden rounded-lg border bg-white">
             <iframe
               title="Conteúdo do Email"
               srcDoc={log.htmlContent}
-              className="w-full h-full min-h-[350px] border-0"
+              className="w-full h-full min-h-87.5 border-0"
               sandbox="allow-same-origin"
             />
           </div>

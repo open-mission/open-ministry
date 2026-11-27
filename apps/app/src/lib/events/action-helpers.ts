@@ -245,13 +245,13 @@ async function validateDepartments(
 }
 
 async function revalidateEvents(eventId?: string, organizationId?: string) {
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/events");
-  revalidatePath("/dashboard/schedules");
+  revalidatePath("/");
+  revalidatePath("/events");
+  revalidatePath("/schedules");
   revalidatePath("/calendar");
 
   if (eventId) {
-    revalidatePath(`/dashboard/events/${eventId}`);
+    revalidatePath(`/events/${eventId}`);
   }
 
   if (organizationId) {

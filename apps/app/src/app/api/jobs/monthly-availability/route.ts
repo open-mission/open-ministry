@@ -80,14 +80,14 @@ export async function POST(req: Request) {
             type: "monthly_availability",
             title: "Preencha sua disponibilidade para servir este mês",
             body: "Ajude os líderes a organizarem a escala dos cultos informando seus dias disponíveis.",
-            href: "/dashboard/schedules",
+            href: "/schedules",
             personId: person.id,
             userId: person.userId,
             phone: person.phone,
             name: person.name,
             metadata: {
               churchName,
-              link: "/dashboard/schedules",
+              link: "/schedules",
             },
           }),
         );

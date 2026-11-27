@@ -258,7 +258,7 @@ export function PlatformOrganizationsView({
           }}
         >
           <DrawerContent className="flex max-h-[85dvh] flex-col rounded-t-xl border-x-0 border-b-0 bg-popover p-0">
-            <DrawerHeader className="shrink-0 border-b border-border/60 !text-left">
+            <DrawerHeader className="shrink-0 border-b border-border/60 text-left!">
               <DrawerTitle className="font-heading text-xl tracking-tight">
                 {detail?.organization?.name ?? "Detalhes da igreja"}
               </DrawerTitle>

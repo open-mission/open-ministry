@@ -139,7 +139,7 @@ export async function grantDepartmentPermissionAction({
     `department:${departmentId}`,
   );
 
-  revalidatePath(`/dashboard/departments/${departmentId}`);
+  revalidatePath(`/departments/${departmentId}`);
 
   return { ok: true, data: { id: grantId } };
 }
@@ -197,7 +197,7 @@ export async function revokeDepartmentPermissionAction({
     `department:${grant.departmentId}`,
   );
 
-  revalidatePath(`/dashboard/departments/${grant.departmentId}`);
+  revalidatePath(`/departments/${grant.departmentId}`);
 
   return { ok: true, data: undefined };
 }

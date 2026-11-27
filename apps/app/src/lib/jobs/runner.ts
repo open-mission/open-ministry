@@ -125,7 +125,7 @@ export async function runBackgroundJob(jobId: string): Promise<void> {
             type: "job_completed",
             title: "Cronograma em PDF pronto!",
             body: `O PDF de "${eventRow.title}" foi gerado em segundo plano e está pronto para download.`,
-            href: "/dashboard/jobs",
+            href: "/jobs",
           });
         } catch {
           // Ignora se notificação falhar

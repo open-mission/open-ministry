@@ -232,7 +232,7 @@ export function SongFormDialog({
         >
           {/* TABS LIST FIXO NO TOPO COM SUPORTE A ROLAGEM HORIZONTAL NO MOBILE */}
           <div className="shrink-0 border-b border-border/70 bg-muted/20 px-3 py-2 sm:px-6">
-            <div className="w-full overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="w-full overflow-x-auto [-ms-overflow-style:none] scrollbar-none [&::-webkit-scrollbar]:hidden">
               <TabsList className="inline-flex h-9.5 w-max min-w-full items-center justify-start gap-1 rounded-lg bg-muted/80 p-1 sm:grid sm:h-10 sm:w-full sm:grid-cols-4">
                 <TabsTrigger
                   value="dados"

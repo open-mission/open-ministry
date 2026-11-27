@@ -303,7 +303,7 @@ export function OfflineViewerDialog({
                                   </span>
                                 ) : null}
                                 {item.responsibleName ? (
-                                  <p className="text-[0.65rem] font-medium text-primary truncate max-w-[100px] mt-0.5">
+                                  <p className="text-[0.65rem] font-medium text-primary truncate max-w-25 mt-0.5">
                                     {item.responsibleName}
                                   </p>
                                 ) : null}

@@ -64,7 +64,7 @@ export async function updateUserWhatsAppAction(
     });
 
     // 3. Revalidate dashboard layout so new phone is reflected across the app
-    revalidatePath("/dashboard", "layout");
+    revalidatePath("/", "layout");
 
     return {
       ok: true,

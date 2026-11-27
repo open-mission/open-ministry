@@ -209,7 +209,7 @@ export function TaskDetailDialog({
             value={task.status}
             disabled={isPending}
             onChange={(e) => handleStatusChange(e.target.value as TaskStatus)}
-            className="min-h-[44px] w-full sm:min-h-[38px]"
+            className="min-h-11 w-full sm:min-h-9.5"
           >
             <option value="todo">A Fazer</option>
             <option value="in_progress">Em Andamento</option>
@@ -221,7 +221,7 @@ export function TaskDetailDialog({
 
       {/* Descrição / Notas */}
       {task.description ? (
-        <div className="rounded-xl border bg-card p-3.5 text-sm whitespace-pre-wrap break-words leading-relaxed text-foreground">
+        <div className="rounded-xl border bg-card p-3.5 text-sm whitespace-pre-wrap wrap-break-word leading-relaxed text-foreground">
           {task.description}
         </div>
       ) : (
@@ -286,7 +286,7 @@ export function TaskDetailDialog({
               <UserIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">Responsável</p>
-                <p className="font-medium break-words text-foreground">
+                <p className="font-medium wrap-break-word text-foreground">
                   {assigneeName}
                 </p>
               </div>
@@ -322,7 +322,7 @@ export function TaskDetailDialog({
           href={task.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex min-h-[44px] items-center justify-between rounded-xl border bg-background px-3.5 py-2 text-sm font-medium text-primary hover:bg-muted/40 transition-colors"
+          className="flex min-h-11 items-center justify-between rounded-xl border bg-background px-3.5 py-2 text-sm font-medium text-primary hover:bg-muted/40 transition-colors"
         >
           <span className="truncate">Abrir link de apoio</span>
           <ExternalLinkIcon className="ml-2 size-4 shrink-0" />
@@ -340,7 +340,7 @@ export function TaskDetailDialog({
         type="button"
         variant="outline"
         onClick={() => setAuditOpen(true)}
-        className="min-h-[44px] flex-1 gap-1.5"
+        className="min-h-11 flex-1 gap-1.5"
       >
         <HistoryIcon className="size-4" />
         Histórico
@@ -352,7 +352,7 @@ export function TaskDetailDialog({
           variant="outline"
           onClick={() => setConfirmDeleteOpen(true)}
           disabled={isPending}
-          className="min-h-[44px] flex-1 gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          className="min-h-11 flex-1 gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
         >
           <Trash2Icon className="size-4" />
           Excluir
@@ -368,7 +368,7 @@ export function TaskDetailDialog({
           type="button"
           variant="outline"
           onClick={() => setAuditOpen(true)}
-          className="min-h-[36px] gap-1.5"
+          className="min-h-9 gap-1.5"
         >
           <HistoryIcon className="size-4" />
           Histórico
@@ -380,7 +380,7 @@ export function TaskDetailDialog({
             variant="outline"
             onClick={() => setConfirmDeleteOpen(true)}
             disabled={isPending}
-            className="min-h-[36px] gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            className="min-h-9 gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
           >
             <Trash2Icon className="size-4" />
             Excluir
@@ -397,7 +397,7 @@ export function TaskDetailDialog({
               onClose();
               onEdit?.(task);
             }}
-            className="min-h-[36px] gap-1.5"
+            className="min-h-9 gap-1.5"
           >
             <EditIcon className="size-4" />
             Editar
@@ -409,7 +409,7 @@ export function TaskDetailDialog({
             type="button"
             onClick={() => handleStatusChange(isCompleted ? "todo" : "completed")}
             disabled={isPending}
-            className="min-h-[36px] gap-1.5"
+            className="min-h-9 gap-1.5"
           >
             {isPending ? (
               <Loader2Icon className="size-4 animate-spin" />
@@ -428,12 +428,12 @@ export function TaskDetailDialog({
       <>
         <Drawer open={open} onOpenChange={(v) => !v && onClose()}>
           <DrawerContent className="flex h-auto max-h-[90dvh] data-[vaul-drawer-direction=bottom]:max-h-[90dvh] flex-col gap-0 rounded-t-[24px] bg-background p-0">
-            <DrawerHeader className="shrink-0 border-b px-4 pt-3 pb-3 !text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+            <DrawerHeader className="shrink-0 border-b px-4 pt-3 pb-3 text-left! group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <DrawerTitle
                     className={cn(
-                      "font-heading text-lg font-bold leading-snug break-words",
+                      "font-heading text-lg font-bold leading-snug wrap-break-word",
                       isCompleted && "line-through text-muted-foreground",
                     )}
                   >
@@ -478,7 +478,7 @@ export function TaskDetailDialog({
                     onClose();
                     onEdit?.(task);
                   }}
-                  className="min-h-[44px] shrink-0 gap-1.5 px-4"
+                  className="min-h-11 shrink-0 gap-1.5 px-4"
                 >
                   <EditIcon className="size-4" />
                   Editar
@@ -492,7 +492,7 @@ export function TaskDetailDialog({
                     handleStatusChange(isCompleted ? "todo" : "completed")
                   }
                   disabled={isPending}
-                  className="min-h-[44px] flex-1 gap-1.5"
+                  className="min-h-11 flex-1 gap-1.5"
                 >
                   {isPending ? (
                     <Loader2Icon className="size-4 animate-spin" />
@@ -508,7 +508,7 @@ export function TaskDetailDialog({
                   <Button
                     type="button"
                     variant="outline"
-                    className="min-h-[44px] w-full"
+                    className="min-h-11 w-full"
                   >
                     Fechar
                   </Button>
@@ -533,7 +533,7 @@ export function TaskDetailDialog({
                 role="alertdialog"
                 className="max-h-[85dvh] data-[vaul-drawer-direction=bottom]:max-h-[85dvh] rounded-t-[24px] bg-background px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
               >
-                <DrawerHeader className="!text-left px-0">
+                <DrawerHeader className="text-left! px-0">
                   <DrawerTitle className="font-heading text-lg font-bold">
                     Excluir tarefa?
                   </DrawerTitle>
@@ -547,7 +547,7 @@ export function TaskDetailDialog({
                     variant="destructive"
                     disabled={isPending}
                     onClick={handleDeleteConfirm}
-                    className="min-h-[44px] w-full"
+                    className="min-h-11 w-full"
                   >
                     {isPending ? (
                       <Loader2Icon className="mr-2 size-4 animate-spin" />
@@ -561,7 +561,7 @@ export function TaskDetailDialog({
                     variant="outline"
                     disabled={isPending}
                     onClick={() => setConfirmDeleteOpen(false)}
-                    className="min-h-[44px] w-full"
+                    className="min-h-11 w-full"
                   >
                     Cancelar
                   </Button>
@@ -581,7 +581,7 @@ export function TaskDetailDialog({
           <DialogHeader className="shrink-0 border-b px-6 pt-6 pb-4">
             <DialogTitle
               className={cn(
-                "font-heading text-xl font-bold pr-6 break-words",
+                "font-heading text-xl font-bold pr-6 wrap-break-word",
                 isCompleted && "line-through text-muted-foreground",
               )}
             >

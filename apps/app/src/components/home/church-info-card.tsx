@@ -59,7 +59,7 @@ export function ChurchInfoCard({
 
   return (
     <section aria-label="Informações da igreja">
-      <HomeCard className="relative overflow-hidden border-border/70 bg-gradient-to-br from-amber-500/[0.04] via-card to-primary/[0.02]">
+      <HomeCard className="relative overflow-hidden border-border/70 bg-linear-to-br from-amber-500/4 via-card to-primary/2">
         <div
           className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-amber-500/10 blur-3xl"
           aria-hidden="true"
@@ -107,7 +107,7 @@ export function ChurchInfoCard({
               href={normalizeWebsite(churchMeta.website)}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex min-h-[44px] items-center gap-1 text-sm text-amber-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-amber-400"
+              className="inline-flex min-h-11 items-center gap-1 text-sm text-amber-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-amber-400"
             >
               <span aria-hidden="true">↗</span>
               <span className="truncate">{churchMeta.website}</span>
@@ -127,7 +127,7 @@ export function ChurchInfoCard({
                     href={link.href}
                     target={link.key === "phone" ? undefined : "_blank"}
                     rel={link.key === "phone" ? undefined : "noreferrer"}
-                    className="inline-flex min-h-[44px] items-center px-0.5 text-xs text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="inline-flex min-h-11 items-center px-0.5 text-xs text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {link.label}
                   </a>

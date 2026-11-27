@@ -102,7 +102,7 @@ export function TaskCard({
       style={style}
       className={cn(
         "group relative flex flex-col gap-2.5 rounded-xl border bg-card p-3.5 shadow-2xs transition-colors hover:border-border/80",
-        task.isPinned && "border-primary/30 bg-primary/[0.03]",
+        task.isPinned && "border-primary/30 bg-primary/3",
         isDragging && "z-50 opacity-85 shadow-lg ring-2 ring-primary/20",
         (isCompleted || isCanceled) && "bg-muted/35 opacity-80",
       )}
@@ -146,7 +146,7 @@ export function TaskCard({
                   : "border-muted-foreground/40 bg-background hover:border-primary",
             )}
           >
-            {isCompleted ? <CheckIcon className="size-2.5 stroke-[3]" /> : null}
+            {isCompleted ? <CheckIcon className="size-2.5 stroke-3" /> : null}
           </span>
         </button>
 

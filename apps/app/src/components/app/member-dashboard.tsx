@@ -124,7 +124,7 @@ export function MemberDashboard({
               </CardDescription>
             </div>
             <Button asChild variant="ghost" size="sm" className="h-9 shrink-0 text-xs">
-              <Link href="/dashboard/schedules">
+              <Link href="/schedules">
                 Ver escalas
                 <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
               </Link>
@@ -206,7 +206,7 @@ export function MemberDashboard({
                   return (
                     <li key={event.id}>
                       <Link
-                        href={`/dashboard/events/${event.id}`}
+                        href={`/events/${event.id}`}
                         className="flex items-center gap-3 py-3 transition-colors hover:bg-muted/50"
                       >
                         <span className="flex w-10 shrink-0 flex-col items-center">
@@ -267,7 +267,7 @@ function MemberDepartments({
           </p>
         </div>
         <Link
-          href="/dashboard/departments"
+          href="/departments"
           prefetch={true}
           className="group inline-flex shrink-0 items-center gap-1 pb-0.5 text-xs font-medium text-primary hover:underline"
         >
@@ -291,7 +291,7 @@ function MemberDepartments({
             </p>
           </div>
           <Button asChild variant="outline" size="sm" className="h-10">
-            <Link href="/dashboard/departments" prefetch={true}>
+            <Link href="/departments" prefetch={true}>
               Conhecer departamentos
             </Link>
           </Button>
@@ -306,7 +306,7 @@ function MemberDepartments({
             return (
               <Link
                 key={membership.id}
-                href={`/dashboard/departments/${membership.department.id}`}
+                href={`/departments/${membership.department.id}`}
                 prefetch={true}
                 className="group flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-4 transition-[transform,border-color,box-shadow] duration-150 active:scale-[0.99] hover:border-primary/35 hover:shadow-sm motion-reduce:transition-none motion-reduce:active:scale-100"
               >

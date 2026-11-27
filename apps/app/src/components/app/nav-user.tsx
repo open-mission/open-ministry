@@ -193,7 +193,7 @@ export function NavUser({
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
                 <Link
-                  href="/login?redirect=/dashboard"
+                  href="/login?redirect=/"
                   className="flex cursor-pointer items-center gap-2 text-xs"
                 >
                   <UserPlusIcon className="size-4" />
@@ -205,14 +205,14 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
-                <Link href="/dashboard/profile" className="cursor-pointer gap-2">
+                <Link href="/profile" className="cursor-pointer gap-2">
                   <UserIcon className="size-4" />
                   <span>Meu perfil</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link
-                  href="/dashboard/settings"
+                  href="/settings"
                   prefetch={true}
                   className="cursor-pointer gap-2"
                 >
@@ -222,7 +222,7 @@ export function NavUser({
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link
-                  href="/dashboard/notifications"
+                  href="/notifications"
                   prefetch={true}
                   className="cursor-pointer gap-2"
                 >

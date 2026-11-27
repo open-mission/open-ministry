@@ -247,7 +247,7 @@ export function SongDetailHeaderActions({
           songId={song.id}
           songTitle={song.title}
           onSongDeleted={() => {
-            router.push("/dashboard/songs");
+            router.push("/songs");
           }}
         />
       )}

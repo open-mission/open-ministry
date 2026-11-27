@@ -183,7 +183,7 @@ export function TasksCard({
               key={task.id}
               className={cn(
                 "flex items-center gap-3",
-                isFolio ? "min-h-11 py-1.5" : "min-h-[44px] py-1.5",
+                isFolio ? "min-h-11 py-1.5" : "min-h-11 py-1.5",
               )}
             >
               <TaskCheckbox

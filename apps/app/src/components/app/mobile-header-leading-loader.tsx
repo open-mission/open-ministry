@@ -27,6 +27,6 @@ export async function MobileHeaderLeadingLoader() {
 
 export function MobileHeaderLeadingFallback() {
   return (
-    <div className="size-[34px] rounded-[10px] bg-muted/60 animate-pulse lg:hidden" />
+    <div className="size-8.5 rounded-[10px] bg-muted/60 animate-pulse lg:hidden" />
   );
 }

@@ -88,7 +88,7 @@ function VerseThumbnail({
   onError: () => void;
   size?: "md" | "lg";
 }) {
-  const dimensions = size === "lg" ? "size-[52px]" : "size-12";
+  const dimensions = size === "lg" ? "size-13" : "size-12";
 
   const handleImageRef = (node: HTMLImageElement | null) => {
     if (node && node.complete && node.naturalWidth > 0 && status !== "loaded") {
@@ -280,7 +280,7 @@ function VerseActions({
         size="sm"
         onClick={onCopy}
         className={cn(
-          "min-w-[104px] justify-center gap-1.5",
+          "min-w-26 justify-center gap-1.5",
           actionHeight,
           stacked && "w-full",
         )}
@@ -392,7 +392,7 @@ export function VerseOfTheDayWidget({
       onLoad={() => setImageStatus("loaded")}
       onError={() => setImageStatus("error")}
       onRetry={handleRetry}
-      className="sm:aspect-square sm:min-h-[260px]"
+      className="sm:aspect-square sm:min-h-65"
     />
   );
 
@@ -441,7 +441,7 @@ export function VerseOfTheDayWidget({
       {isBelowLg ? (
         <Drawer open={open} onOpenChange={setOpen}>
           <DrawerContent className="max-h-[85dvh] bg-popover">
-            <DrawerHeader className="!text-left">
+            <DrawerHeader className="text-left!">
               <DrawerTitle className="font-heading text-lg">
                 {verse.reference}
               </DrawerTitle>
@@ -478,7 +478,7 @@ export function VerseOfTheDayWidget({
       ) : (
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent
-            className="gap-0 overflow-hidden p-0 sm:max-w-[700px]"
+            className="gap-0 overflow-hidden p-0 sm:max-w-175"
             showCloseButton={false}
           >
             <div className="grid sm:grid-cols-[260px_1fr]">

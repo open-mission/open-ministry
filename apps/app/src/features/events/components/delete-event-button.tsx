@@ -66,7 +66,7 @@ export function DeleteEventButton({
 
       if (result.ok) {
         toast.success("Evento excluído.");
-        router.push("/dashboard/events");
+        router.push("/calendar");
         return;
       }
 
@@ -139,7 +139,7 @@ export function DeleteEventButton({
       <Drawer open={open} onOpenChange={setOpen}>
         {triggerNode ? <DrawerTrigger asChild>{triggerNode}</DrawerTrigger> : null}
         <DrawerContent className="p-0" role="alertdialog">
-          <DrawerHeader className="!text-left px-5 pt-4 pb-2">
+          <DrawerHeader className="text-left! px-5 pt-4 pb-2">
             <div className="flex items-start gap-3">
               <span
                 aria-hidden

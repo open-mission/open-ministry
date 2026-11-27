@@ -65,7 +65,7 @@ export function ReleaseNotesModal() {
     return (
       <Drawer open={isOpen} onOpenChange={handleOpenChange}>
         <DrawerContent className="p-0">
-          <DrawerHeader className="border-b px-5 pt-4 pb-3.5 !text-left text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left space-y-2">
+          <DrawerHeader className="border-b px-5 pt-4 pb-3.5 text-left! text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left space-y-2">
             <div className="flex items-center gap-2">
               <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <RocketIcon className="size-4" />
@@ -92,7 +92,7 @@ export function ReleaseNotesModal() {
             <Button
               type="button"
               onClick={() => releaseNotesStore.close()}
-              className="w-full gap-2 font-semibold min-h-[44px]"
+              className="w-full gap-2 font-semibold min-h-11"
             >
               <span>Explorar novidades</span>
               <ArrowRightIcon className="size-4" />

@@ -248,7 +248,7 @@ export async function resendEmailAction(
     targetEmailOverride,
     context.organization.id,
   );
-  revalidatePath("/dashboard/emails");
+  revalidatePath("/emails");
   return result;
 }
 
@@ -409,6 +409,6 @@ export async function sendTestEmailAction(
     },
   );
 
-  revalidatePath("/dashboard/emails");
+  revalidatePath("/emails");
   return result;
 }

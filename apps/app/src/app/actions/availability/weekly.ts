@@ -179,11 +179,8 @@ export async function saveMyAvailabilityAction(payload: {
       });
 
     revalidatePath("/availability");
-    revalidatePath("/dashboard/availability");
     revalidatePath("/departments");
-    revalidatePath("/dashboard/departments");
-    revalidatePath("/dashboard/schedules");
-    revalidatePath("/dashboard");
+    revalidatePath("/schedules");
     revalidatePath("/");
     return { ok: true, updatedAt: now };
   } catch (error) {

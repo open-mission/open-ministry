@@ -149,7 +149,7 @@ export function NotificationDetailDialog({
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="p-0">
-          <DrawerHeader className="gap-2 border-b px-5 pt-3 pb-3 !text-left text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+          <DrawerHeader className="gap-2 border-b px-5 pt-3 pb-3 text-left! text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
             {badgeRow}
 
             <DrawerTitle className="font-heading text-lg font-bold tracking-tight text-foreground text-left">

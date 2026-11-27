@@ -36,7 +36,7 @@ describe("personal calendar feed items", () => {
     expect(item.type).toBe("assignment");
     expect(item.description).toContain("Escala: Louvor — Vocal");
     expect(item.description).toContain(
-      "https://app.openministry.online/dashboard/events/event-1",
+      "https://app.openministry.online/events/event-1",
     );
     expect(item.metadata?.isMyAssignment).toBe(true);
   });
@@ -86,7 +86,7 @@ describe("personal calendar feed items", () => {
     });
 
     expect(item.description).toBe(
-      "https://app.openministry.online/dashboard/events/event-1",
+      "https://app.openministry.online/events/event-1",
     );
   });
 });

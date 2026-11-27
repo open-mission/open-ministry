@@ -27,7 +27,7 @@ test.describe("Fluxos críticos autenticados", () => {
     });
 
     // 2. Consulta / abertura de diálogo de evento e consulta de escalas
-    await page.goto("/dashboard/events");
+    await page.goto("/calendar");
     await expect(page.locator("body")).toBeVisible();
     const createEventButton = page.getByRole("button", {
       name: /Novo culto ou evento/i,
@@ -40,7 +40,7 @@ test.describe("Fluxos críticos autenticados", () => {
       await page.keyboard.press("Escape");
     }
 
-    await page.goto("/dashboard/schedules");
+    await page.goto("/schedules");
     await expect(page.locator("body")).toBeVisible();
 
     // 3. Painel da Plataforma (acessa se super_admin; redireciona limpo para / se membro comum)
@@ -49,7 +49,7 @@ test.describe("Fluxos críticos autenticados", () => {
     await expect(page.locator("body")).toBeVisible();
 
     // 4. Configurações de WhatsApp da igreja
-    await page.goto("/dashboard/settings?scope=church&tab=whatsapp");
+    await page.goto("/settings?scope=church&tab=whatsapp");
     await expect(page.locator("body")).toBeVisible();
 
     expect(pageErrors).toEqual([]);

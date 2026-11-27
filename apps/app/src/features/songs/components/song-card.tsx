@@ -151,7 +151,7 @@ export function SongCard({
         <div className="min-w-0 space-y-3">
           <div className="flex min-w-0 items-start justify-between gap-2">
             <Link
-              href={`/dashboard/songs/${song.id}`}
+              href={`/songs/${song.id}`}
               prefetch={true}
               className="min-w-0 flex-1 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover:text-primary"
             >
@@ -185,7 +185,7 @@ export function SongCard({
                     </Button>
                   </DrawerTrigger>
                   <DrawerContent className="max-h-[80dvh] rounded-t-[24px] p-0">
-                    <DrawerHeader className="border-b px-5 pt-4 pb-3 !text-left text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+                    <DrawerHeader className="border-b px-5 pt-4 pb-3 text-left! text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
                       <div className="flex items-center gap-2">
                         <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
                           <Music2Icon className="size-4" />
@@ -206,7 +206,7 @@ export function SongCard({
                         className="h-11 justify-start gap-3 rounded-xl px-3 text-sm font-medium"
                       >
                         <Link
-                          href={`/dashboard/songs/${song.id}`}
+                          href={`/songs/${song.id}`}
                           prefetch={true}
                           onClick={() => setMenuOpen(false)}
                         >
@@ -287,7 +287,7 @@ export function SongCard({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuItem asChild>
-                      <Link href={`/dashboard/songs/${song.id}`} prefetch={true}>
+                      <Link href={`/songs/${song.id}`} prefetch={true}>
                         <FileTextIcon className="mr-2 size-4" />
                         Ver detalhes
                       </Link>
@@ -465,7 +465,7 @@ export function SongCard({
           </div>
 
           <Link
-            href={`/dashboard/songs/${song.id}`}
+            href={`/songs/${song.id}`}
             prefetch={true}
             className="ml-auto shrink-0 rounded-md text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >

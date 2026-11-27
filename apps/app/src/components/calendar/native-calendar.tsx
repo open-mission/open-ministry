@@ -566,7 +566,7 @@ function NativeCalendarSidebar({
   onOpenAgenda: () => void;
 }) {
   return (
-    <aside className="hidden w-[232px] shrink-0 flex-col gap-5 border-r border-border/70 pr-4 md:min-h-0 xl:flex">
+    <aside className="hidden w-58 shrink-0 flex-col gap-5 border-r border-border/70 pr-4 md:min-h-0 xl:flex">
       <MiniCalendar
         currentDate={currentDate}
         now={now}

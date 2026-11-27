@@ -108,8 +108,8 @@ export async function POST(request: NextRequest) {
 
     await invalidateSongCache(organization.id);
 
-    revalidatePath("/dashboard/songs");
-    revalidatePath("/dashboard/events");
+    revalidatePath("/songs");
+    revalidatePath("/events");
 
     return Response.json({ song: inserted }, { status: 201 });
   } catch (error) {

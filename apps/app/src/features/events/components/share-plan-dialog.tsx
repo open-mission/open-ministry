@@ -356,7 +356,7 @@ export function SharePlanDialog({
       onOpenChange={setConfirmRegenerateOpen}
     >
       <DrawerContent className="max-h-[85vh] p-0" role="alertdialog">
-        <DrawerHeader className="!text-left px-5 pt-4 pb-2">
+        <DrawerHeader className="text-left! px-5 pt-4 pb-2">
           <DrawerTitle className="font-heading text-lg leading-snug">
             Regenerar link público?
           </DrawerTitle>
@@ -395,7 +395,7 @@ export function SharePlanDialog({
       <Drawer open={open} onOpenChange={handleOpenChange}>
         <DrawerTrigger asChild>{triggerNode}</DrawerTrigger>
         <DrawerContent className="p-0">
-          <DrawerHeader className="border-b px-5 pt-4 pb-3 !text-left text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+          <DrawerHeader className="border-b px-5 pt-4 pb-3 text-left! text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
             <DrawerTitle className="flex items-center justify-start gap-2 font-heading text-xl tracking-tight">
               <Share2Icon className="size-5 text-primary" />
               Compartilhar Cronograma

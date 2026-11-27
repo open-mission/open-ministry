@@ -181,7 +181,7 @@ export function usePlanEditor({
         {
           action: {
             label: "Ver tarefas",
-            onClick: () => router.push("/dashboard/jobs"),
+            onClick: () => router.push("/jobs"),
           },
         },
       );

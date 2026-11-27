@@ -227,8 +227,8 @@ export function SongChordsSheet({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full flex-col gap-0 rounded-none border-0 bg-background p-0 !mt-0 !max-h-[100dvh] !rounded-none data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[100dvh] data-[vaul-drawer-direction=bottom]:rounded-none">
-          <DrawerHeader className="shrink-0 border-b border-border/70 bg-background px-4 pt-3 pb-3 !text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+        <DrawerContent className="flex h-dvh max-h-dvh min-h-0 w-full flex-col gap-0 rounded-none border-0 bg-background p-0 mt-0! max-h-dvh! rounded-none! data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-dvh data-[vaul-drawer-direction=bottom]:rounded-none">
+          <DrawerHeader className="shrink-0 border-b border-border/70 bg-background px-4 pt-3 pb-3 text-left! group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
             <DrawerTitle className="sr-only">{song.title}</DrawerTitle>
             <DrawerDescription className="sr-only">
               Cifra, letra e transposição da música {song.title}.

@@ -161,7 +161,7 @@ export function CalendarDayView({
             size="sm"
             className="ml-auto shrink-0 border-amber-500/30 text-xs hover:bg-amber-500/20"
           >
-            <Link href="/dashboard/availability">Ver disponibilidade</Link>
+            <Link href="/availability">Ver disponibilidade</Link>
           </Button>
         </div>
       )}
@@ -224,7 +224,7 @@ export function CalendarDayView({
             role="region"
             aria-label={`Agenda de ${dayLabel}`}
             tabIndex={0}
-            className="max-h-[650px] overflow-y-auto overscroll-contain focus-visible:outline-none md:min-h-0 md:max-h-none md:flex-1"
+            className="max-h-162.5 overflow-y-auto overscroll-contain focus-visible:outline-none md:min-h-0 md:max-h-none md:flex-1"
           >
             <div
               className="relative flex"

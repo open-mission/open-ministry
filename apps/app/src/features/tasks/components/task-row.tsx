@@ -122,7 +122,7 @@ export function TaskRow({
       style={style}
       className={cn(
         "group relative rounded-xl border bg-card transition-colors",
-        task.isPinned && "border-primary/25 bg-primary/[0.03]",
+        task.isPinned && "border-primary/25 bg-primary/3",
         isDragging && "z-50 opacity-85 shadow-lg ring-2 ring-primary/20",
         (isCompleted || isCanceled) && "bg-muted/30 opacity-80",
       )}
@@ -169,7 +169,7 @@ export function TaskRow({
                     : "border-muted-foreground/40 bg-background hover:border-primary",
             )}
           >
-            {isCompleted ? <CheckIcon className="size-3.5 stroke-[3]" /> : null}
+            {isCompleted ? <CheckIcon className="size-3.5 stroke-3" /> : null}
           </span>
         </button>
 
@@ -321,7 +321,7 @@ export function TaskRow({
               size="sm"
               aria-expanded={expandedGroup}
               onClick={() => setExpandedGroup((v) => !v)}
-              className="min-h-[36px] gap-1 px-2 text-xs text-primary"
+              className="min-h-9 gap-1 px-2 text-xs text-primary"
             >
               <span className="hidden sm:inline">Equipe</span>
               <ChevronDownIcon
@@ -400,7 +400,7 @@ export function TaskRow({
                       )}
                     >
                       {childDone ? (
-                        <CheckIcon className="size-2.5 stroke-[3]" />
+                        <CheckIcon className="size-2.5 stroke-3" />
                       ) : null}
                     </span>
                     <span

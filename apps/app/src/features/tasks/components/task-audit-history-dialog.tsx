@@ -238,7 +238,7 @@ export function TaskAuditHistoryDialog({
           </p>
         </div>
       ) : (
-        <div className="relative space-y-4 pl-6 before:absolute before:inset-y-2 before:left-[11px] before:w-[2px] before:bg-border">
+        <div className="relative space-y-4 pl-6 before:absolute before:inset-y-2 before:left-2.75 before:w-0.5 before:bg-border">
           {logs.map((log) => (
             <div key={log.id} className="relative space-y-1">
               <span className="absolute -left-6 top-1 flex size-5 items-center justify-center rounded-full border-2 border-primary bg-background shadow-xs">
@@ -274,8 +274,8 @@ export function TaskAuditHistoryDialog({
     return (
       <Wrapper open={open} onOpenChange={(v) => !v && onClose()}>
         <DrawerContent className="flex h-auto max-h-[90dvh] data-[vaul-drawer-direction=bottom]:max-h-[90dvh] flex-col gap-0 rounded-t-[24px] bg-background p-0">
-          <DrawerHeader className="shrink-0 border-b px-4 pt-3 pb-3 !text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
-            <DrawerTitle className="font-heading text-lg font-bold flex items-center gap-2 break-words">
+          <DrawerHeader className="shrink-0 border-b px-4 pt-3 pb-3 text-left! group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+            <DrawerTitle className="font-heading text-lg font-bold flex items-center gap-2 wrap-break-word">
               <HistoryIcon className="size-5 shrink-0 text-primary" />
               Histórico de alterações
             </DrawerTitle>
@@ -294,7 +294,7 @@ export function TaskAuditHistoryDialog({
               type="button"
               variant="outline"
               onClick={onClose}
-              className="min-h-[44px] w-full"
+              className="min-h-11 w-full"
             >
               Fechar
             </Button>

@@ -44,7 +44,7 @@ export function SectionNoteStrip({
           className="mt-0.5 size-3.5 shrink-0 text-primary/70"
           aria-hidden="true"
         />
-        <p className="min-w-0 whitespace-pre-line break-words">
+        <p className="min-w-0 whitespace-pre-line wrap-break-word">
           {orphan ? (
             <Badge
               variant="outline"

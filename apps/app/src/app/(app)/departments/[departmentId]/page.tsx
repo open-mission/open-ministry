@@ -152,7 +152,7 @@ async function DepartmentContent({
     <div className="mx-auto flex w-full max-w-6xl min-w-0 flex-col gap-8">
       <div>
         <Link
-          href="/dashboard/departments"
+          href="/departments"
           prefetch={true}
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >

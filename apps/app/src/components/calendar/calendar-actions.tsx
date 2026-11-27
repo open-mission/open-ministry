@@ -151,7 +151,7 @@ function CreateOptionsList({
       ) : null}
       {canCreateRehearsal ? (
         <Link
-          href="/dashboard/rehearsals"
+          href="/rehearsals"
           onClick={onClose}
           className="flex min-h-11 items-center gap-2.5 rounded-lg px-3 text-left text-sm transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
         >
@@ -447,7 +447,7 @@ export function CalendarMobileMoreTrigger() {
     <Drawer open={moreOpen} onOpenChange={handleMoreOpenChange}>
       <DrawerTrigger asChild>{trigger}</DrawerTrigger>
       <DrawerContent className="gap-0 rounded-t-xl border-x-0 border-b-0 bg-popover p-0">
-        <DrawerHeader className="space-y-1 px-5 pt-3 pb-3 !text-left">
+        <DrawerHeader className="space-y-1 px-5 pt-3 pb-3 text-left!">
           {mobileMoreTab === "filters" ? (
             <div className="flex items-center gap-2">
               <Button
@@ -616,7 +616,7 @@ function DesktopCalendarActionsGroup() {
               ) : null}
               {canCreateRehearsal ? (
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard/rehearsals">
+                  <Link href="/rehearsals">
                     <Music2Icon aria-hidden="true" />
                     Novo ensaio
                   </Link>

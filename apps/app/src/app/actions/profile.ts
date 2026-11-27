@@ -109,10 +109,10 @@ export async function updateProfileAction(
     return { error: "Não foi possível salvar seu perfil." };
   }
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/profile");
-  revalidatePath("/dashboard/members");
-  revalidatePath("/dashboard/birthdays");
+  revalidatePath("/");
+  revalidatePath("/profile");
+  revalidatePath("/members");
+  revalidatePath("/birthdays");
 
   return { success: true };
 }
@@ -151,9 +151,9 @@ export async function updateOwnBirthdayAction(
     return { error: "Não foi possível salvar sua data de nascimento." };
   }
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/birthdays");
-  revalidatePath("/dashboard/members");
+  revalidatePath("/");
+  revalidatePath("/birthdays");
+  revalidatePath("/members");
 
   return { success: true };
 }

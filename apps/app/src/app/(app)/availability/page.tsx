@@ -93,8 +93,8 @@ function AvailabilitySkeleton() {
         <Skeleton className="h-8 w-56" />
         <Skeleton className="h-4 w-96 max-w-full" />
       </div>
-      <Skeleton className="h-[560px] rounded-xl" />
-      <Skeleton className="h-[320px] rounded-xl" />
+      <Skeleton className="h-140 rounded-xl" />
+      <Skeleton className="h-80 rounded-xl" />
     </div>
   );
 }

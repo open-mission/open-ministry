@@ -84,7 +84,7 @@ async function loadTaskActorContext(
 
 function buildTaskNotificationHref(scope: string, taskId: string): string {
   const tab = scope === "personal" ? "personal" : "department";
-  return `/dashboard/tasks?tab=${tab}&taskId=${encodeURIComponent(taskId)}`;
+  return `/tasks?tab=${tab}&taskId=${encodeURIComponent(taskId)}`;
 }
 
 /**
@@ -167,7 +167,7 @@ export async function createTaskAction(
 
     const personalNotifHref =
       createdCount > 1
-        ? "/dashboard/tasks?tab=personal"
+        ? "/tasks?tab=personal"
         : buildTaskNotificationHref("personal", primaryTask.id);
 
     // Disparar notificações para cada membro atribuído
@@ -228,7 +228,6 @@ export async function createTaskAction(
     }
 
     revalidatePath("/tasks");
-    revalidatePath("/dashboard/tasks");
     revalidatePath("/");
     return { ok: true, data: { id: primaryTask.id, createdCount, task: primaryTask } };
   } catch (error) {
@@ -367,7 +366,6 @@ export async function updateTaskAction(
     }
 
     revalidatePath("/tasks");
-    revalidatePath("/dashboard/tasks");
     revalidatePath("/");
     return { ok: true, data: { id: updated.id, task: updated } };
   } catch (error) {
@@ -438,7 +436,6 @@ export async function updateTaskStatusAction(
     });
 
     revalidatePath("/tasks");
-    revalidatePath("/dashboard/tasks");
     revalidatePath("/");
     return {
       ok: true,
@@ -505,7 +502,6 @@ export async function reorderTasksAction(
     await reorderTasks(organization.id, userId, uniqueIds);
 
     revalidatePath("/tasks");
-    revalidatePath("/dashboard/tasks");
     return { ok: true, data: undefined };
   } catch (error) {
     Sentry.captureException(error);
@@ -554,7 +550,6 @@ export async function toggleTaskPinAction(
     const isPinned = await toggleTaskPin(organization.id, userId, taskId);
 
     revalidatePath("/tasks");
-    revalidatePath("/dashboard/tasks");
     revalidatePath("/");
     return { ok: true, data: { isPinned } };
   } catch (error) {
@@ -610,7 +605,6 @@ export async function deleteTaskAction(
     sentryLogger.info(`Tarefa excluída com sucesso`, { taskId });
 
     revalidatePath("/tasks");
-    revalidatePath("/dashboard/tasks");
     revalidatePath("/");
     return { ok: true, data: undefined };
   } catch (error) {

@@ -127,7 +127,7 @@ export function ScheduleEditor({
               <div className="min-w-0 space-y-1.5">
                 <CardTitle className="font-heading text-lg tracking-tight">
                   <Link
-                    href={`/dashboard/departments/${department.id}`}
+                    href={`/departments/${department.id}`}
                     prefetch={true}
                     className="underline-offset-4 hover:underline"
                   >
@@ -207,7 +207,7 @@ export function ScheduleEditor({
                 <div className="rounded-lg border border-dashed px-3 py-2 text-[0.8125rem] leading-relaxed text-muted-foreground">
                   Nenhuma pessoa neste departamento ainda.{" "}
                   <Link
-                    href={`/dashboard/departments/${department.id}`}
+                    href={`/departments/${department.id}`}
                     prefetch={true}
                     className="font-medium text-foreground underline underline-offset-4"
                   >
@@ -223,7 +223,7 @@ export function ScheduleEditor({
                     <>
                       Nenhuma função cadastrada.{" "}
                       <Link
-                        href={`/dashboard/departments/${department.id}`}
+                        href={`/departments/${department.id}`}
                         prefetch={true}
                         className="font-medium text-foreground underline underline-offset-4"
                       >

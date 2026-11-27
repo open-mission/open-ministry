@@ -48,7 +48,7 @@ async function ChurchContent() {
 
         {isAdmin ? (
           <Button variant="outline" size="sm" asChild className="gap-2">
-            <Link href="/dashboard/settings">
+            <Link href="/settings">
               <SettingsIcon className="size-4" />
               Painel de Configurações
             </Link>

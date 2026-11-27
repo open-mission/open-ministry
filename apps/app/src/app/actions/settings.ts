@@ -94,7 +94,7 @@ export async function deletePasskeyAction(
         ),
       );
 
-    revalidatePath("/dashboard/settings");
+    revalidatePath("/settings");
     return { success: true };
   } catch (error) {
     console.error("Erro ao excluir passkey", error);
@@ -148,7 +148,7 @@ export async function revokeSessionAction(
         ),
       );
 
-    revalidatePath("/dashboard/settings");
+    revalidatePath("/settings");
     return { success: true };
   } catch (error) {
     console.error("Erro ao revogar sessão", error);
@@ -178,7 +178,7 @@ export async function revokeOtherSessionsAction(): Promise<{
         ),
       );
 
-    revalidatePath("/dashboard/settings");
+    revalidatePath("/settings");
     return { success: true };
   } catch (error) {
     console.error("Erro ao revogar outras sessões", error);
@@ -318,11 +318,11 @@ export async function updateAccountSettingsAction(
     return { error: "Não foi possível atualizar as configurações da conta." };
   }
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/settings");
-  revalidatePath("/dashboard/profile");
-  revalidatePath("/dashboard/members");
-  revalidatePath("/dashboard/birthdays");
+  revalidatePath("/");
+  revalidatePath("/settings");
+  revalidatePath("/profile");
+  revalidatePath("/members");
+  revalidatePath("/birthdays");
 
   return { success: true };
 }
@@ -475,9 +475,9 @@ export async function retryEvolutionMessageAction(
   }
 
   const res = await retryWhatsAppMessage(logId, context.organization.id);
-  revalidatePath("/dashboard/whatsapp");
-  revalidatePath("/dashboard/settings");
-  revalidatePath("/dashboard/announcements");
+  revalidatePath("/whatsapp");
+  revalidatePath("/settings");
+  revalidatePath("/announcements");
   return res;
 }
 
@@ -521,9 +521,9 @@ export async function retryAllFailedEvolutionMessagesAction(
     batchId,
     departmentIds,
   );
-  revalidatePath("/dashboard/whatsapp");
-  revalidatePath("/dashboard/settings");
-  revalidatePath("/dashboard/announcements");
+  revalidatePath("/whatsapp");
+  revalidatePath("/settings");
+  revalidatePath("/announcements");
   return res;
 }
 

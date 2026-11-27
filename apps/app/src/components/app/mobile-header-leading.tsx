@@ -37,11 +37,11 @@ export function MobileHeaderLeading({
             <img
               src={organizationLogo}
               alt={organizationName ?? "Logo da igreja"}
-              className="size-[34px] rounded-[10px] object-cover shrink-0"
+              className="size-8.5 rounded-[10px] object-cover shrink-0"
             />
           ) : (
-            <div className="flex size-[34px] items-center justify-center rounded-[10px] bg-[#1e472f] text-[#faf7ee] shrink-0 shadow-xs dark:border dark:border-[#2c5b3f] dark:bg-[#1a3c28]">
-              <OpenMinistrySymbol className="size-[17px]" />
+            <div className="flex size-8.5 items-center justify-center rounded-[10px] bg-[#1e472f] text-[#faf7ee] shrink-0 shadow-xs dark:border dark:border-[#2c5b3f] dark:bg-[#1a3c28]">
+              <OpenMinistrySymbol className="size-4.25" />
             </div>
           )}
         </Link>

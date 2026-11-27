@@ -158,7 +158,7 @@ async function RehearsalsContent({
           </div>
           {selectedDepartment ? (
             <Button asChild variant="outline" size="sm" className="min-h-9">
-              <Link href="/dashboard/rehearsals">Ver todos os ensaios</Link>
+              <Link href="/rehearsals">Ver todos os ensaios</Link>
             </Button>
           ) : null}
         </div>
@@ -221,7 +221,7 @@ function DepartmentFilter({
       className="flex flex-wrap gap-1 rounded-xl border border-border/70 bg-card/60 p-1"
     >
       <DepartmentFilterLink
-        href="/dashboard/rehearsals"
+        href="/rehearsals"
         active={!selectedDepartmentId}
       >
         Todos os departamentos
@@ -229,7 +229,7 @@ function DepartmentFilter({
       {departments.map((department) => (
         <DepartmentFilterLink
           key={department.id}
-          href={`/dashboard/rehearsals?departmentId=${encodeURIComponent(department.id)}`}
+          href={`/rehearsals?departmentId=${encodeURIComponent(department.id)}`}
           active={selectedDepartmentId === department.id}
         >
           {department.name}
@@ -326,7 +326,7 @@ function RehearsalCard({
   return (
     <li>
       <Link
-        href={`/dashboard/events/${rehearsal.id}`}
+        href={`/events/${rehearsal.id}`}
         prefetch={true}
         className={cn(
           "group flex flex-col gap-3 rounded-xl border border-border/70 bg-card p-3 transition-colors hover:border-violet-500/40 active:bg-muted/40 sm:flex-row sm:items-start sm:p-4",
@@ -380,7 +380,7 @@ function RehearsalCard({
               {visibleTitles.map((songTitle, index) => (
                 <span
                   key={`${songTitle}-${index}`}
-                  className="max-w-[14rem] truncate rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
+                  className="max-w-56 truncate rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
                 >
                   {songTitle}
                 </span>
