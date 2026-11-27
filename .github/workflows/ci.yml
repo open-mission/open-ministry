@@ -50,4 +50,10 @@ jobs:
         run: bun run typecheck
 
       - name: Test
-        run: bun run test
+        shell: bash
+        run: |
+          cd apps/app
+          # Pin the file order: global mock.module() calls leak across test files,
+          # so Bun's filesystem-dependent discovery order makes the suite flaky.
+          files=$(find src -type f \( -name '*.test.ts' -o -name '*.test.tsx' \) | LC_ALL=C sort)
+          bun test --preload ./src/test/setup.ts $files
