@@ -5,6 +5,7 @@ import { DashboardBreadcrumb } from "@/components/app/dashboard-breadcrumb";
 import {
   CalendarHiddenSlot,
   HeaderCenterSlot,
+  HeaderGlobalActionsSlot,
   HeaderUserSlot,
   HomeAwareHeader,
   HomeAwareHeaderFallback,
@@ -59,7 +60,7 @@ export default function DashboardLayout({
           </HeaderCenterSlot>
         </Suspense>
       </CalendarHiddenSlot>
-      <div className="pointer-events-auto ml-auto flex items-center gap-1.5 sm:gap-2">
+      <HeaderGlobalActionsSlot>
         <Suspense fallback={<NotificationBellFallback />}>
           <NotificationBellLoader />
         </Suspense>
@@ -70,7 +71,7 @@ export default function DashboardLayout({
             </Suspense>
           </HeaderUserSlot>
         </Suspense>
-      </div>
+      </HeaderGlobalActionsSlot>
     </>
   );
 

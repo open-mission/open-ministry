@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
+import { resolveHeaderScaffoldLevel } from "./header-scaffold-config";
 
 const HEADER_BASE_CLASS =
   "sticky top-0 z-20 flex min-h-[calc(3.5rem+env(safe-area-inset-top))] shrink-0 items-center gap-2 border-0 bg-background/85 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-xl sm:gap-3 sm:px-6";
@@ -164,4 +165,25 @@ export function HeaderCenterSlot({ children }: { children: ReactNode }) {
  */
 export function HeaderUserSlot({ children }: { children: ReactNode }) {
   return <div className="flex items-center">{children}</div>;
+}
+
+/**
+ * Controla a visibilidade do grupo global (Sino + Avatar) no canto direito.
+ * No mobile (< 768px) em páginas internas/detalhe (`detail`), oculta o grupo
+ * global seguindo o padrão iOS para dar espaço às ações contextuais da tela.
+ */
+export function HeaderGlobalActionsSlot({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const level = resolveHeaderScaffoldLevel(pathname);
+
+  return (
+    <div
+      className={cn(
+        "pointer-events-auto ml-auto flex items-center gap-1.5 sm:gap-2",
+        level === "detail" && "max-md:hidden",
+      )}
+    >
+      {children}
+    </div>
+  );
 }
