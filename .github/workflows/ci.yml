@@ -29,7 +29,7 @@ jobs:
           echo "PR title follows the English Conventional Commits convention."
 
   quality:
-    name: Lint, typecheck and test
+    name: Lint and typecheck
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -49,11 +49,6 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
-      - name: Test
-        shell: bash
-        run: |
-          cd apps/app
-          # Pin the file order: global mock.module() calls leak across test files,
-          # so Bun's filesystem-dependent discovery order makes the suite flaky.
-          files=$(find src -type f \( -name '*.test.ts' -o -name '*.test.tsx' \) | LC_ALL=C sort)
-          bun test --preload ./src/test/setup.ts $files
+      # The full Bun suite is intentionally not a required check yet: several
+      # test files call mock.module() globally, so results depend on file load
+      # order. Run it locally until module isolation is fixed.

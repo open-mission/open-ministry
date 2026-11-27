@@ -72,7 +72,9 @@ docs: define English commit and pull request conventions
   any remaining risk.
 - Link the related issue or task when one exists.
 - Keep the PR focused. Split unrelated changes into separate PRs.
-- Required checks must pass: PR title validation, lint, typecheck and tests.
+- Required checks must pass: PR title validation, lint and typecheck. The full
+  test suite is still run locally only, because some test files use global
+  `mock.module()` and are not isolated from each other yet.
 - Merge with a **merge commit** to preserve the atomic commits and the delivery
   boundary, then delete the head branch.
 - Never push directly to `main`, and never deploy without explicit approval.
