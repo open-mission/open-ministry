@@ -34,6 +34,7 @@
     "@uploadthing/react": "^7.3.3",
     "@upstash/qstash": "^2.12.1",
     "@upstash/redis": "^1.41.0",
+    "@upstash/workflow": "^1.6.0",
     "@youversion/platform-core": "^3.0.0",
     "@youversion/platform-react-ui": "^3.0.0",
     "better-auth": "^1.7.18",

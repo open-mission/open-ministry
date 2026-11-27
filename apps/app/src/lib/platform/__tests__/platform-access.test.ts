@@ -1,4 +1,5 @@
 import { describe, expect, it, mock } from "bun:test";
+import { readFileSync } from "node:fs";
 
 mock.module("server-only", () => ({}));
 
@@ -193,6 +194,19 @@ describe("requireSuperAdmin", () => {
       PlatformAccessError,
     );
     permissionResult = { success: true };
+  });
+});
+
+describe("cookieCache do Better Auth", () => {
+  it("habilita cache de sessão no cookie por 5 minutos", () => {
+    const source = readFileSync(
+      new URL("../../auth.ts", import.meta.url),
+      "utf8",
+    );
+
+    expect(source).toContain("cookieCache:");
+    expect(source).toContain("enabled: true");
+    expect(source).toContain("maxAge: 5 * 60");
   });
 });
 

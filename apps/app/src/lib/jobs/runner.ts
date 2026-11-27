@@ -90,8 +90,8 @@ export async function runBackgroundJob(jobId: string): Promise<void> {
         totalPlannedSeconds: totalPlanSeconds,
       });
 
-      // Salvar arquivo
-      await saveJobFile(job.id, pdfBuffer, "pdf");
+      // Salvar arquivo (UploadThing em produção, disco local no dev/teste)
+      const stored = await saveJobFile(job.id, pdfBuffer, "pdf");
 
       const safeFilename = `cronograma-${eventRow.title
         .toLowerCase()
@@ -111,6 +111,9 @@ export async function runBackgroundJob(jobId: string): Promise<void> {
             downloadUrl: `/api/jobs/${job.id}/download`,
             fileName: safeFilename,
             fileSize: pdfBuffer.length,
+            storageProvider: stored.storageProvider,
+            fileKey: stored.fileKey,
+            ...(stored.fileUrl ? { fileUrl: stored.fileUrl } : {}),
           },
         })
         .where(eq(schema.backgroundJob.id, jobId));
