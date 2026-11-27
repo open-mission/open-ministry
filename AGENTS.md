@@ -46,9 +46,15 @@ Este projeto segue o Git Flow. Respeite estas regras em qualquer alteração:
   - `chore/<nome>` para manutenção, ferramentas e documentação.
 - Ao terminar, faça merge da branch na `develop` com `--no-ff` e remova a branch
   de trabalho.
-- **Commits seguem Conventional Commits** (`feat:`, `fix:`, `chore:`, `docs:` etc.).
-- **Antes de finalizar**, rode `bun run lint`, `bun run typecheck` e
-  `bun run build`.
+- **Commits e PRs são sempre em inglês**, mesmo que a conversa do time seja em
+  português. A convenção completa está em `CONTRIBUTING.md`.
+- **Commits seguem Conventional Commits** (`feat:`, `fix:`, `chore:`, `docs:` etc.),
+  com sujeito em inglês, no imperativo e sem ponto final. Nunca reescreva o
+  histórico já publicado para traduzi-lo.
+- **Título e descrição de PR em inglês**, no formato Conventional Commits, usando
+  o template `.github/pull_request_template.md`. O CI valida o título.
+- **Antes de finalizar**, rode `bun run lint`, `bun run typecheck`,
+  `bun run test` e, quando a mudança afetar build/configuração, `bun run build`.
 - **Para publicar uma release:** faça merge da `develop` na `main` com `--no-ff`
   e, se possível, crie uma tag de versão (`vX.Y.Z`).
 
