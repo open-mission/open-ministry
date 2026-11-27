@@ -6,6 +6,14 @@ O formato segue o padrão [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
 
 ---
 
+## [1.11.2] - 2026-11-27
+
+### Adicionado
+- **Padrão dinâmico de cabeçalho (`PageHeaderScaffold`):** estrutura unificada para o topo das telas conforme a profundidade da navegação — abas principais no celular sem botão de voltar, áreas abertas pelo Explorar com retorno e páginas internas liberadas só para voltar e ações da tela, além de retorno contextual no computador.
+
+### Melhorado
+- **Cabeçalho do Repertório (`/songs`):** migrado para o novo componente padrão de cabeçalho, mantendo consistência visual entre celular e computador.
+
 ## [1.11.1] - 2026-11-27
 
 ### Melhorado
