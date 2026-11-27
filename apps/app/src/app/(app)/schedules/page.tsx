@@ -60,11 +60,12 @@ async function SchedulesContent({
 }) {
   await connection();
 
-  const params = await searchParams;
-  const { organization, session, isAdmin } =
-    await requireOrganizationContext();
-
-  const hasAccess = await can("schedules", "read");
+  const [params, { organization, session, isAdmin }, hasAccess] =
+    await Promise.all([
+      searchParams,
+      requireOrganizationContext(),
+      can("schedules", "read"),
+    ]);
   if (!hasAccess) {
     return (
       <div className="mx-auto flex w-full max-w-4xl flex-col items-center justify-center gap-4 py-16 text-center">

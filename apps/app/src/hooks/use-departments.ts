@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import type { listDepartments } from "@/lib/departments";
 
@@ -32,6 +32,7 @@ export function useDepartmentsQuery(options?: {
     queryKey: departmentKeys.lists(),
     queryFn: fetchDepartments,
     initialData: options?.initialData,
-    staleTime: 60 * 1000,
+    placeholderData: keepPreviousData,
+    staleTime: 2 * 60 * 1000,
   });
 }

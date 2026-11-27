@@ -34,6 +34,7 @@ type CalendarMonthViewProps = {
   timeZone?: string | null;
   onSelectDate: (date: Date) => void;
   onSelectItem: (item: CalendarItem) => void;
+  onPrefetchItem?: (item: CalendarItem) => void;
 };
 
 function isRehearsalItem(item: CalendarItem): boolean {
@@ -88,6 +89,7 @@ export function CalendarMonthView({
   timeZone,
   onSelectDate,
   onSelectItem,
+  onPrefetchItem,
 }: CalendarMonthViewProps) {
   const { days, weekDays } = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
@@ -245,6 +247,8 @@ export function CalendarMonthView({
                       key={item.id}
                       type="button"
                       onClick={() => onSelectItem(item)}
+                      onMouseEnter={() => onPrefetchItem?.(item)}
+                      onFocus={() => onPrefetchItem?.(item)}
                       className={cn(
                         "flex w-full cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-left text-xs font-medium transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                         item.type === "assignment" &&

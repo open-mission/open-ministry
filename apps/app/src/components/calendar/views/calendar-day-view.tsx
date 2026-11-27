@@ -30,6 +30,7 @@ type CalendarDayViewProps = {
   items: CalendarItem[];
   timeZone?: string | null;
   onSelectItem: (item: CalendarItem) => void;
+  onPrefetchItem?: (item: CalendarItem) => void;
   onSwitchToMonth?: () => void;
 };
 
@@ -40,6 +41,7 @@ export function CalendarDayView({
   items,
   timeZone,
   onSelectItem,
+  onPrefetchItem,
   onSwitchToMonth,
 }: CalendarDayViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -274,6 +276,8 @@ export function CalendarDayView({
                       key={item.id}
                       type="button"
                       onClick={() => onSelectItem(item)}
+                      onMouseEnter={() => onPrefetchItem?.(item)}
+                      onFocus={() => onPrefetchItem?.(item)}
                       style={{
                         top: `${position.top}px`,
                         height: `${position.height}px`,

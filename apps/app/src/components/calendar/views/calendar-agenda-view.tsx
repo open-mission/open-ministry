@@ -28,6 +28,7 @@ type CalendarAgendaViewProps = {
   items: CalendarItem[];
   timeZone?: string | null;
   onSelectItem: (item: CalendarItem) => void;
+  onPrefetchItem?: (item: CalendarItem) => void;
   onToday: () => void;
 };
 
@@ -35,6 +36,7 @@ export function CalendarAgendaView({
   items,
   timeZone,
   onSelectItem,
+  onPrefetchItem,
   onToday,
 }: CalendarAgendaViewProps) {
   const sorted = [...items].sort((a, b) => {
@@ -155,6 +157,8 @@ export function CalendarAgendaView({
                     <button
                       type="button"
                       onClick={() => onSelectItem(item)}
+                      onMouseEnter={() => onPrefetchItem?.(item)}
+                      onFocus={() => onPrefetchItem?.(item)}
                       aria-label={`Abrir detalhes de ${item.title}`}
                       className="min-w-0 flex-1 rounded-lg text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                     >

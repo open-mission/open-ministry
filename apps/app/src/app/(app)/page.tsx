@@ -76,6 +76,8 @@ async function HomeContent() {
     events,
     adminDepartments,
     accessibleModuleKeys,
+    memberships,
+    manageOwnAvailability,
   ] = await Promise.all([
     listPeopleSummary(organization.id),
     findPersonByUserId(organization.id, session.user.id),
@@ -83,6 +85,8 @@ async function HomeContent() {
     listUpcomingEvents(organization.id, 8),
     isAdmin ? listDepartments(organization.id) : Promise.resolve([]),
     getUserAccessibleModuleKeys(organization.id, session.user.id, isAdmin),
+    getPersonMembershipsForUser(organization.id, session.user.id),
+    can("schedules", "manageOwnAvailability"),
   ]);
 
   const person =
@@ -95,10 +99,6 @@ async function HomeContent() {
       birthday: session.user.birthday ?? null,
     }));
 
-  const memberships = await getPersonMembershipsForUser(
-    organization.id,
-    session.user.id,
-  );
   const memberDepartmentIds = memberships.map(
     (membership) => membership.departmentId,
   );
@@ -111,15 +111,10 @@ async function HomeContent() {
   let upcomingAssignments: Awaited<ReturnType<typeof getUpcomingAssignments>> =
     [];
   let availability: MyAvailabilityResult | null = null;
-  let canManageOwnAvailability = false;
+  const canManageOwnAvailability = manageOwnAvailability;
 
   if (person) {
     // A disponibilidade é opcional: só é consultada para quem pode gerenciá-la.
-    canManageOwnAvailability = await can(
-      "schedules",
-      "manageOwnAvailability",
-    );
-
     [tasks, departmentAgenda, upcomingAssignments, availability] =
       await Promise.all([
         listTasks({

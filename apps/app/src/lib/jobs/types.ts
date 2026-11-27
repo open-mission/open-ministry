@@ -10,6 +10,12 @@ export type JobResult = {
   fileName?: string;
   fileSize?: number;
   error?: string;
+  /** Onde o PDF foi persistido (UploadThing ou disco local no dev). */
+  storageProvider?: "uploadthing" | "local";
+  fileKey?: string;
+  fileUrl?: string;
+  /** Contagem de destinatários em avisos em background. */
+  recipients?: number;
 };
 
 export type BackgroundJobRecord = {

@@ -14,6 +14,8 @@ export type AnnouncementFormState =
         channels?: string[];
       };
       success?: boolean;
+      /** Canais externos foram enfileirados em background. */
+      queued?: boolean;
     }
   | undefined;
 

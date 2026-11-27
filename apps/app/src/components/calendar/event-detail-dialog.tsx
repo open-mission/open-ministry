@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { ptBR } from "date-fns/locale";
 import {
   CakeIcon,
@@ -18,6 +18,11 @@ import {
 } from "lucide-react";
 
 import { getCalendarEventPreviewAction } from "@/app/actions/calendar";
+import {
+  CALENDAR_EVENT_PREVIEW_STALE_TIME,
+  getCalendarEventPreviewQueryKey,
+  getCalendarPreviewEventId,
+} from "@/components/calendar/calendar-event-preview-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -244,53 +249,18 @@ export function EventPreviewSheet({
   onOpenChange,
 }: EventPreviewSheetProps) {
   const isMobile = useIsMobile();
-  const cacheRef = useRef<Map<string, CalendarEventPreview | null>>(new Map());
-  const [loadingEventId, setLoadingEventId] = useState<string | null>(null);
-  const [preview, setPreview] = useState<CalendarEventPreview | null>(null);
+  const eventId = getCalendarPreviewEventId(item);
 
-  const eventId =
-    item && (item.type === "event" || item.type === "assignment")
-      ? item.metadata?.eventId ?? null
-      : null;
-
-  useEffect(() => {
-    if (!open || !eventId) {
-      return;
-    }
-
-    if (cacheRef.current.has(eventId)) {
-      setPreview(cacheRef.current.get(eventId) ?? null);
-      setLoadingEventId(null);
-      return;
-    }
-
-    let cancelled = false;
-    setPreview(null);
-    setLoadingEventId(eventId);
-
-    getCalendarEventPreviewAction(eventId)
-      .then((result) => {
-        cacheRef.current.set(eventId, result);
-        if (!cancelled) {
-          setPreview(result);
-          setLoadingEventId(null);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setPreview(null);
-          setLoadingEventId(null);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [eventId, open]);
+  const { data: preview, isPending } = useQuery({
+    queryKey: getCalendarEventPreviewQueryKey(eventId ?? "__none__"),
+    queryFn: () => getCalendarEventPreviewAction(eventId!),
+    enabled: Boolean(open && eventId),
+    staleTime: CALENDAR_EVENT_PREVIEW_STALE_TIME,
+  });
 
   if (!item) return null;
 
-  const isLoadingPreview = Boolean(eventId && loadingEventId === eventId);
+  const isLoadingPreview = Boolean(open && eventId && isPending);
   const effectivePreview =
     preview && eventId && preview.eventId === eventId ? preview : null;
 

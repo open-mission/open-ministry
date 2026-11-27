@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 
 import { Redis } from "@upstash/redis";
 import { Client as QStashClient, Receiver } from "@upstash/qstash";
@@ -87,8 +87,13 @@ export async function verifyQueueEndpointAuth(
   const authHeader = req.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
 
-  if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
-    return { ok: true };
+  if (cronSecret && authHeader) {
+    // Comparação em tempo constante sobre digests de tamanho fixo.
+    const expected = createHash("sha256").update(`Bearer ${cronSecret}`).digest();
+    const received = createHash("sha256").update(authHeader).digest();
+    if (timingSafeEqual(received, expected)) {
+      return { ok: true };
+    }
   }
 
   const signature = req.headers.get("upstash-signature");

@@ -97,6 +97,15 @@ export const auth = betterAuth({
   baseURL: getAppBaseUrl(),
   trustedOrigins: getTrustedOrigins,
   secret: process.env.BETTER_AUTH_SECRET,
+  // Sessão assinada no cookie por 5 min: evita uma ida ao Neon a cada clique.
+  // Checagens sensíveis (plataforma, impersonação) leem com
+  // `query: { disableCookieCache: true }` para não usar dados stale.
+  session: {
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60,
+    },
+  },
   rateLimit: {
     // Limites por IP; o better-auth habilita o limiter em produção e deixa
     // desligado em desenvolvimento (default). Janela global: default 10s/100.

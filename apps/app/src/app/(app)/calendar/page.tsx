@@ -49,22 +49,23 @@ async function CalendarContent() {
     );
   }
 
-  const [data, departments] = await Promise.all([
+  const [data, departments, canViewSchedules] = await Promise.all([
     getCalendarDataAction(),
     listDepartmentOptions(organization.id),
+    // Checado também no servidor na server action de escalas; aqui apenas
+    // controla a visibilidade do botão "Ver escalas".
+    can("schedules", "read"),
   ]);
   const departmentIds = departments.map((department) => department.id);
 
   // The create action is delegable per department, so an admin check is not
   // enough: a department leader with the grant must see the button too.
-  const canCreateEvent =
-    isAdmin || (await canAnyDepartment("agenda", "createEvent", departmentIds));
-  const canCreateRehearsal =
-    isAdmin ||
-    (await canAnyDepartment("rehearsals", "createRehearsal", departmentIds));
-  // Checado também no servidor na server action de escalas; aqui apenas
-  // controla a visibilidade do botão "Ver escalas".
-  const canViewSchedules = await can("schedules", "read");
+  const [canCreateEvent, canCreateRehearsal] = await Promise.all([
+    isAdmin ? true : canAnyDepartment("agenda", "createEvent", departmentIds),
+    isAdmin
+      ? true
+      : canAnyDepartment("rehearsals", "createRehearsal", departmentIds),
+  ]);
 
   return (
     <div

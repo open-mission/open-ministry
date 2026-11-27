@@ -172,9 +172,16 @@ function AnnouncementForm({
   useEffect(() => {
     if (state?.success && !handled.current) {
       handled.current = true;
-      toast.success("Aviso enviado com sucesso!", {
-        description: "Comunicado entregue nos canais selecionados.",
-      });
+      if (state.queued) {
+        toast.success("Aviso publicado!", {
+          description:
+            "Os disparos de WhatsApp, e-mail e push estão sendo processados em segundo plano.",
+        });
+      } else {
+        toast.success("Aviso enviado com sucesso!", {
+          description: "Comunicado entregue nos canais selecionados.",
+        });
+      }
       onDone();
     }
   }, [state, onDone]);

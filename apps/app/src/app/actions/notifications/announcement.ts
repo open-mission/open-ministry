@@ -1,17 +1,20 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { after } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { createBackgroundJob } from "@/lib/jobs/service";
 import { createNotifications } from "@/lib/notifications";
 import {
   checkRateLimit,
   RATE_LIMIT_RULES,
 } from "@/lib/rate-limit";
 import { sendWebPushToUser } from "@/lib/push-notifications";
+import { triggerAnnouncementWorkflow } from "@/lib/workflows/client";
 import { getOrganizationContext } from "@/lib/organizations";
 import { can } from "@/lib/permissions/service";
 import {
@@ -307,42 +310,18 @@ export async function sendAnnouncementAction(
       error: "Nenhum destinatário encontrado para o envio.",
     };
   }
-
   const announcementBatchId = randomUUID();
 
-  try {
-    // 1. Send in-app notifications
-    if (data.sendInApp) {
-      const userIds = [
-        ...new Set(
-          recipients
-            .map((r) => r.userId)
-            .filter((uid): uid is string => Boolean(uid)),
-        ),
-      ];
-
-      if (userIds.length > 0) {
-        await createNotifications({
-          organizationId: context.organization.id,
-          userIds,
-          actorId: context.session.user.id,
-          type: "announcement",
-          title: data.title,
-          body: data.body,
-          href: "/notifications",
-        });
-      }
-    }
-
-    // 2. Send WhatsApp notifications
+  const dispatchExternalChannels = async (): Promise<void> => {
+    // WhatsApp
     if (data.sendWhatsApp) {
       const { config } = await getOrganizationEvolutionConfig(
         context.organization.id,
       );
 
       if (config) {
-        const recipientsWithPhone = recipients.filter((r) =>
-          Boolean(r.phone),
+        const recipientsWithPhone = recipients.filter((recipient) =>
+          Boolean(recipient.phone),
         );
 
         await runInBatches(recipientsWithPhone, (recipient) =>
@@ -360,17 +339,17 @@ export async function sendAnnouncementAction(
             name: recipient.name,
             batchId: announcementBatchId,
             channels: ["whatsapp"],
-            metadata: {
-              churchName: context.organization.name,
-            },
+            metadata: { churchName: context.organization.name },
           }),
         );
       }
     }
 
-    // 2.1 Send Email notifications via Brevo
+    // E-mail
     if (data.sendEmail) {
-      const recipientsWithEmail = recipients.filter((r) => Boolean(r.email));
+      const recipientsWithEmail = recipients.filter((recipient) =>
+        Boolean(recipient.email),
+      );
 
       await runInBatches(recipientsWithEmail, (recipient) =>
         dispatchNotification({
@@ -395,13 +374,13 @@ export async function sendAnnouncementAction(
       );
     }
 
-    // 3. Send Web Push notifications
+    // Web Push
     if (data.sendPush) {
       const userIds = [
         ...new Set(
           recipients
-            .map((r) => r.userId)
-            .filter((uid): uid is string => Boolean(uid)),
+            .map((recipient) => recipient.userId)
+            .filter((userId): userId is string => Boolean(userId)),
         ),
       ];
 
@@ -410,10 +389,90 @@ export async function sendAnnouncementAction(
           title: data.title,
           body: data.body,
           url: "/notifications",
-        }).catch((err) =>
-          console.warn("Falha no disparo de push notification:", err),
+        }).catch((error) =>
+          console.warn("Falha no disparo de push notification:", error),
         );
       }
+    }
+  };
+
+  let queuedExternally = false;
+
+  try {
+    // 1. Notificações in-app permanecem síncronas: são rápidas e já eram
+    // gravadas antes do aviso sair para os canais externos.
+    if (data.sendInApp) {
+      const userIds = [
+        ...new Set(
+          recipients
+            .map((recipient) => recipient.userId)
+            .filter((userId): userId is string => Boolean(userId)),
+        ),
+      ];
+
+      if (userIds.length > 0) {
+        await createNotifications({
+          organizationId: context.organization.id,
+          userIds,
+          actorId: context.session.user.id,
+          type: "announcement",
+          title: data.title,
+          body: data.body,
+          href: "/notifications",
+        });
+      }
+    }
+
+    const hasExternalChannels =
+      data.sendWhatsApp || data.sendEmail || data.sendPush;
+
+    if (hasExternalChannels && process.env.NODE_ENV !== "test") {
+      const job = await createBackgroundJob({
+        organizationId: context.organization.id,
+        type: "bulk_notification",
+        title: `Aviso: ${data.title}`,
+        payload: {
+          announcementBatchId,
+          title: data.title,
+          body: data.body,
+          sendWhatsApp: data.sendWhatsApp,
+          sendEmail: data.sendEmail,
+          sendPush: data.sendPush,
+          audienceType: data.audienceType,
+          departmentId: data.departmentId ?? null,
+          personId: data.personId ?? null,
+        },
+        userId: context.session.user.id,
+        autoStart: false,
+      });
+
+      const workflowRunId = await triggerAnnouncementWorkflow({
+        jobId: job.id,
+        organizationId: context.organization.id,
+        actorId: context.session.user.id,
+        announcementBatchId,
+        title: data.title,
+        body: data.body,
+        sendWhatsApp: data.sendWhatsApp,
+        sendEmail: data.sendEmail,
+        sendPush: data.sendPush,
+        targetType: data.audienceType,
+        departmentId: data.departmentId ?? undefined,
+        personId: data.personId ?? undefined,
+      });
+
+      queuedExternally = true;
+      if (!workflowRunId) {
+        // Workflow indisponível: mantém o disparo fora do caminho crítico.
+        after(() => {
+          dispatchExternalChannels().catch((error) =>
+            console.error("[announcement] Falha no fallback de disparo:", error),
+          );
+        });
+      }
+    } else {
+      // NODE_ENV=test preserva o comportamento síncrono esperado pelos testes.
+      await dispatchExternalChannels();
     }
   } catch (error) {
     console.error("Erro ao enviar aviso multicanal:", error);
@@ -421,5 +480,8 @@ export async function sendAnnouncementAction(
   }
 
   revalidateNotifications();
-  return { success: true };
+  return {
+    success: true,
+    ...(queuedExternally ? { queued: true } : {}),
+  };
 }

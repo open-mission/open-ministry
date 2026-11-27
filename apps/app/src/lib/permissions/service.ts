@@ -90,48 +90,51 @@ async function loadOrganizationPermissionBundle(
     `org:${organizationId}:permissions-bundle`,
     120,
     async () => {
-      let moduleRows: (typeof schema.organizationModule.$inferSelect)[] = [];
-
-      try {
-        moduleRows = await db.query.organizationModule.findMany({
-          where: eq(
-            schema.organizationModule.organizationId,
-            organizationId,
-          ),
-        });
-      } catch (error) {
-        console.warn(
-          "[permissions] Falha ao consultar organization_module; usando padrão:",
-          error,
-        );
-      }
-
-      let policyRows: (typeof schema.organizationRolePermission.$inferSelect)[] =
-        [];
-
-      try {
-        policyRows = await db.query.organizationRolePermission.findMany({
-          where: eq(
-            schema.organizationRolePermission.organizationId,
-            organizationId,
-          ),
-        });
-      } catch (error) {
-        console.warn(
-          "[permissions] Falha ao consultar organization_role_permission; usando defaults:",
-          error,
-        );
-      }
-
-      const departments = await db.query.department.findMany({
-        where: eq(schema.department.organizationId, organizationId),
-        columns: { id: true, organizationId: true },
-        with: {
-          modules: {
-            columns: { moduleKey: true },
+      // As três consultas são independentes; o fallback seguro de cada uma
+      // continua local para não derrubar o bundle inteiro.
+      const [moduleRows, policyRows, departments] = await Promise.all([
+        (async () => {
+          try {
+            return await db.query.organizationModule.findMany({
+              where: eq(
+                schema.organizationModule.organizationId,
+                organizationId,
+              ),
+            });
+          } catch (error) {
+            console.warn(
+              "[permissions] Falha ao consultar organization_module; usando padrão:",
+              error,
+            );
+            return [] as (typeof schema.organizationModule.$inferSelect)[];
+          }
+        })(),
+        (async () => {
+          try {
+            return await db.query.organizationRolePermission.findMany({
+              where: eq(
+                schema.organizationRolePermission.organizationId,
+                organizationId,
+              ),
+            });
+          } catch (error) {
+            console.warn(
+              "[permissions] Falha ao consultar organization_role_permission; usando defaults:",
+              error,
+            );
+            return [] as (typeof schema.organizationRolePermission.$inferSelect)[];
+          }
+        })(),
+        db.query.department.findMany({
+          where: eq(schema.department.organizationId, organizationId),
+          columns: { id: true, organizationId: true },
+          with: {
+            modules: {
+              columns: { moduleKey: true },
+            },
           },
-        },
-      });
+        }),
+      ]);
 
       const moduleState = new Map(
         moduleRows.map((row) => [row.moduleKey, row.enabled]),

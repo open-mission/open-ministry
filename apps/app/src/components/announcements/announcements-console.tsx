@@ -149,9 +149,15 @@ export function AnnouncementsConsole({
         .filter(Boolean)
         .join(", ");
 
-      toast.success("Aviso enviado com sucesso!", {
-        description: `Disparado via ${channels || "canais selecionados"}.`,
-      });
+      if (state.queued) {
+        toast.success("Aviso publicado!", {
+          description: `Disparos via ${channels || "canais externos"} estão sendo processados em segundo plano.`,
+        });
+      } else {
+        toast.success("Aviso enviado com sucesso!", {
+          description: `Disparado via ${channels || "canais selecionados"}.`,
+        });
+      }
 
       setTitle("");
       setBody("");

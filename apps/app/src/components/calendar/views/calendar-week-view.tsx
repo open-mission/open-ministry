@@ -35,6 +35,7 @@ type CalendarWeekViewProps = {
   timeZone?: string | null;
   onSelectDate: (date: Date) => void;
   onSelectItem: (item: CalendarItem) => void;
+  onPrefetchItem?: (item: CalendarItem) => void;
 };
 
 const HOUR_HEIGHT = 60; // Pixels per hour
@@ -50,6 +51,7 @@ export function CalendarWeekView({
   timeZone,
   onSelectDate,
   onSelectItem,
+  onPrefetchItem,
 }: CalendarWeekViewProps) {
   const weekStart = startOfWeek(currentDate, { weekStartsOn });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn });
@@ -340,6 +342,8 @@ export function CalendarWeekView({
                           key={item.id}
                           type="button"
                           onClick={() => onSelectItem(item)}
+                          onMouseEnter={() => onPrefetchItem?.(item)}
+                          onFocus={() => onPrefetchItem?.(item)}
                           style={{
                             top: `${position.top}px`,
                             height: `${position.height}px`,

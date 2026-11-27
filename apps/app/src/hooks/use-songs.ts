@@ -1,6 +1,11 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 import type { SongInput } from "@/lib/music/songs-schema";
 import { EMPTY_SONG_USAGE } from "@/lib/song-usage";
@@ -104,7 +109,8 @@ export function useSongsQuery(options?: {
     queryKey: songKeys.list(options?.search ? { search: options.search } : undefined),
     queryFn: () => fetchSongs(options?.search),
     initialData: options?.initialData,
-    staleTime: 30 * 1000,
+    placeholderData: keepPreviousData,
+    staleTime: 2 * 60 * 1000,
   });
 }
 
@@ -116,8 +122,9 @@ export function useSongQuery(
     queryKey: songKeys.detail(songId),
     queryFn: () => fetchSong(songId),
     initialData: options?.initialData,
+    placeholderData: keepPreviousData,
     enabled: Boolean(songId),
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000,
   });
 }
 
