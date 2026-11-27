@@ -222,6 +222,7 @@ describe("Menu Explorar (variante A+C)", () => {
       "/announcements",
       "/calendar",
       "/songs",
+      "/rehearsals",
     ]);
     expect(
       links.some(
